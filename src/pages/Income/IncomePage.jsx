@@ -1,0 +1,419 @@
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  Box,
+  Stack,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  IconButton,
+  Divider,
+  MenuItem,
+  Chip,
+} from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+
+import EmptyState from '../../components/EmptyState';
+
+import { useAuth } from '../../contexts/AuthContext';
+import { useToast } from '../../contexts/ToastContext';
+import { createIncome, deleteIncome, getIncomesByMonth, updateIncome } from '../../api/incomeApi';
+import { getMonthlySummary } from '../../api/summaryApi';
+import { refreshMonthSnapshot } from '../../utils/monthHistoryStorage';
+
+const COLORS = {
+  income: '#22C55E',
+};
+
+const toAmountString = (v) => String(v ?? '').trim().replace(',', '.');
+
+const normalizeDateOnly = (d) => {
+  if (!d) return new Date().toISOString().slice(0, 10);
+  const s = String(d);
+  return s.includes('T') ? s.slice(0, 10) : s;
+};
+
+const isProxySerialization500 = (msg) => String(msg || '').includes('ByteBuddyInterceptor');
+
+const CATEGORY_OPTIONS = ['Работа', 'Фриланс', 'Инвестиции', 'Подарки', 'Другое'];
+const SOURCE_OPTIONS = ['Зарплата', 'Премия', 'Дивиденды', 'Проценты', 'Подработка', 'Другое'];
+
+const addMonthsYM = ({ year, month }, delta) => {
+  const d = new Date(year, (month - 1) + delta, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+};
+
+const ymLabel = ({ year, month }) => `${String(month).padStart(2, '0')}.${year}`;
+
+const ymFromDate = (yyyyMmDd) => {
+  const s = normalizeDateOnly(yyyyMmDd);
+  const [y, m] = s.split('-');
+  return { year: Number(y), month: Number(m) };
+};
+
+export default function IncomePage() {
+  const { user } = useAuth();
+  const toast = useToast();
+
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const [ym, setYm] = useState(() => {
+    const d = new Date();
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  });
+
+  const fmtRub = useMemo(
+    () => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }),
+    []
+  );
+
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({
+    amount: '',
+    category: 'Работа',
+    source: 'Зарплата',
+    date: new Date().toISOString().slice(0, 10),
+  });
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError('');
+      if (!user?.id) throw new Error('Нет user.id');
+
+      const data = await getIncomesByMonth(user.id, ym.year, ym.month, 0, 50);
+      setItems(data?.content ?? []);
+    } catch (e) {
+      const msg = e.message || 'Ошибка загрузки доходов';
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }, [toast, user?.id, ym.year, ym.month]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const openCreate = () => {
+    setEditing(null);
+    setForm({
+      amount: '',
+      category: 'Работа',
+      source: 'Зарплата',
+      date: new Date().toISOString().slice(0, 10),
+    });
+    setOpen(true);
+  };
+
+  const openEdit = (income) => {
+    setEditing(income);
+    setForm({
+      amount: income?.amount ?? '',
+      category: income?.category ?? 'Работа',
+      source: income?.source ?? 'Зарплата',
+      date: normalizeDateOnly(income?.date),
+    });
+    setOpen(true);
+  };
+
+  const save = async () => {
+    let attempted = false;
+
+    try {
+      setSaving(true);
+      setError('');
+      if (!user?.id) throw new Error('Нет user.id');
+
+      const payload = {
+        userId: user.id,
+        amount: toAmountString(form.amount),
+        category: String(form.category).trim(),
+        source: String(form.source).trim(),
+        date: normalizeDateOnly(form.date),
+      };
+
+      const amountNum = Number(payload.amount);
+      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
+      if (!payload.category) throw new Error('Категория обязательна');
+      if (!payload.source) throw new Error('Источник обязателен');
+      if (!payload.date) throw new Error('Дата обязательна');
+
+      attempted = true;
+
+      if (editing?.id) {
+        await updateIncome(editing.id, payload);
+        toast.success('Доход обновлён');
+      } else {
+        await createIncome(payload);
+        toast.success('Доход добавлен');
+      }
+
+      const target = ymFromDate(payload.date);
+      if (editing?.date) {
+        const old = ymFromDate(editing.date);
+        if (old.year !== target.year || old.month !== target.month) {
+          await refreshMonthSnapshot(user.id, old.year, old.month, getMonthlySummary);
+        }
+      }
+      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
+
+      setOpen(false);
+
+      if (target.year !== ym.year || target.month !== ym.month) {
+        setYm(target);
+        return;
+      }
+
+      await load();
+    } catch (e) {
+      const msg = e.message || 'Ошибка сохранения';
+
+      if (isProxySerialization500(msg) && attempted) {
+        const target = ymFromDate(form.date);
+        await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
+
+        setOpen(false);
+
+        toast.success(editing?.id ? 'Доход обновлён' : 'Доход добавлен');
+
+        if (target.year !== ym.year || target.month !== ym.month) {
+          setYm(target);
+          return;
+        }
+
+        await load();
+      } else {
+        setError(msg);
+        toast.error(msg);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (income) => {
+    try {
+      setError('');
+      await deleteIncome(income.id);
+
+      const target = ymFromDate(normalizeDateOnly(income.date));
+      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
+
+      toast.success('Доход удалён');
+      await load();
+    } catch (e) {
+      const msg = e.message || 'Ошибка удаления';
+      setError(msg);
+      toast.error(msg);
+    }
+  };
+
+  const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
+
+  return (
+    <>
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 2 }}>
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: '#0F172A' }}>
+            Доходы
+          </Typography>
+          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)', mt: 0.5 }}>
+            {ymLabel(ym)} · Итого: {fmtRub.format(total)}
+          </Typography>
+        </Box>
+
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ sm: 'center' }}
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))}>
+              ←
+            </Button>
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' } }} />
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, +1))}>
+              →
+            </Button>
+          </Stack>
+
+          <Button
+            onClick={openCreate}
+            variant="contained"
+            fullWidth
+            sx={{
+              width: { xs: '100%', sm: 'auto' },
+              borderRadius: 999,
+              px: 2.2,
+              bgcolor: COLORS.income,
+              '&:hover': { bgcolor: '#16A34A' },
+            }}
+          >
+            Добавить доход
+          </Button>
+        </Stack>
+      </Stack>
+
+      {error ? (
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 2,
+            borderRadius: 3,
+            borderColor: alpha('#EF4444', 0.35),
+            bgcolor: alpha('#fff', 0.9),
+          }}
+        >
+          <CardContent sx={{ py: 1.5 }}>
+            <Typography color="error" variant="body2">
+              {error}
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <Card
+        variant="outlined"
+        sx={{
+          borderRadius: 3,
+          borderColor: 'rgba(15, 23, 42, 0.08)',
+          bgcolor: alpha('#fff', 0.9),
+        }}
+      >
+        <CardContent>
+          <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
+          <Divider sx={{ my: 1.5 }} />
+
+          {!loading && items.length === 0 ? (
+            <EmptyState
+              title="Пока нет записей"
+              description="Добавь первую операцию — и тут появится список за выбранный месяц."
+              actionLabel="Добавить"
+              onAction={openCreate}
+            />
+          ) : (
+            <Box sx={{ overflowX: 'auto' }}>
+              <Table size="small" sx={{ minWidth: 650 }}>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Дата</TableCell>
+                    <TableCell>Сумма</TableCell>
+                    <TableCell>Категория</TableCell>
+                    <TableCell>Источник</TableCell>
+                    <TableCell align="right">Действия</TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {items.map((x) => (
+                    <TableRow key={x.id}>
+                      <TableCell>{normalizeDateOnly(x.date)}</TableCell>
+                      <TableCell>{fmtRub.format(Number(x.amount || 0))}</TableCell>
+                      <TableCell>{x.category}</TableCell>
+                      <TableCell>{x.source}</TableCell>
+                      <TableCell align="right">
+                        <IconButton onClick={() => openEdit(x)} size="small">
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton onClick={() => remove(x)} size="small" color="error">
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        fullScreen={fullScreen}
+        open={open}
+        onClose={() => (!saving ? setOpen(false) : null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
+        <DialogContent sx={{ pt: 1 }}>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Сумма"
+              value={form.amount}
+              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
+              placeholder="50000.00"
+              inputProps={{ inputMode: 'decimal' }}
+            />
+
+            <TextField
+              select
+              label="Категория"
+              value={form.category}
+              onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
+            >
+              {CATEGORY_OPTIONS.map((c) => (
+                <MenuItem key={c} value={c}>
+                  {c}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              select
+              label="Источник"
+              value={form.source}
+              onChange={(e) => setForm((s) => ({ ...s, source: e.target.value }))}
+            >
+              {SOURCE_OPTIONS.map((s) => (
+                <MenuItem key={s} value={s}>
+                  {s}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            <TextField
+              label="Дата"
+              type="date"
+              value={normalizeDateOnly(form.date)}
+              onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
+            Отмена
+          </Button>
+          <Button onClick={save} variant="contained" disabled={saving} fullWidth={fullScreen}>
+            {saving ? 'Сохранение…' : 'Сохранить'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
