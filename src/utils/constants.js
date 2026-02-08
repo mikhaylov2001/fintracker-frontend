@@ -1,5 +1,6 @@
 // Базовый URL твоего backend API
-export const API_BASE_URL = 'http://localhost:8082/api';
+export const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8082";
 
 // Все эндпоинты в одном месте (чтобы не писать строки руками везде)
 export const API_ENDPOINTS = {
