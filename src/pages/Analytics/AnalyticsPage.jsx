@@ -445,7 +445,7 @@ export default function AnalyticsPage() {
                 </Typography>
 
                 <Chip
-                  label={catsLoading ? 'Считаю…' : (isYear ? 'YTD' : 'Месяц')}
+                  label={catsLoading ? 'Считаю…' : (isYear ? 'Год' : 'Месяц')}
                   sx={{
                     borderRadius: 999,
                     borderColor: alpha(topBarColor, 0.35),
