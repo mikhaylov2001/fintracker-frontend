@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Stack,
@@ -31,8 +31,6 @@ import EmptyState from '../../components/EmptyState';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { createIncome, deleteIncome, getIncomesByMonth, updateIncome } from '../../api/incomeApi';
-import { getMonthlySummary } from '../../api/summaryApi';
-import { refreshMonthSnapshot } from '../../utils/monthHistoryStorage';
 
 const COLORS = {
   income: '#22C55E',
@@ -171,14 +169,6 @@ export default function IncomePage() {
       }
 
       const target = ymFromDate(payload.date);
-      if (editing?.date) {
-        const old = ymFromDate(editing.date);
-        if (old.year !== target.year || old.month !== target.month) {
-          await refreshMonthSnapshot(user.id, old.year, old.month, getMonthlySummary);
-        }
-      }
-      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
-
       setOpen(false);
 
       if (target.year !== ym.year || target.month !== ym.month) {
@@ -190,14 +180,12 @@ export default function IncomePage() {
     } catch (e) {
       const msg = e.message || 'Ошибка сохранения';
 
+      // твой костыль под 500 сериализации оставим — но без refreshMonthSnapshot
       if (isProxySerialization500(msg) && attempted) {
-        const target = ymFromDate(form.date);
-        await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
-
         setOpen(false);
-
         toast.success(editing?.id ? 'Доход обновлён' : 'Доход добавлен');
 
+        const target = ymFromDate(form.date);
         if (target.year !== ym.year || target.month !== ym.month) {
           setYm(target);
           return;
@@ -217,9 +205,6 @@ export default function IncomePage() {
     try {
       setError('');
       await deleteIncome(income.id);
-
-      const target = ymFromDate(normalizeDateOnly(income.date));
-      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
 
       toast.success('Доход удалён');
       await load();

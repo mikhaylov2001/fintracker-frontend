@@ -18,13 +18,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { getMonthlySummary } from '../../api/summaryApi';
-
-import {
-  loadMonthHistory,
-  syncMonthHistory,
-  MONTH_HISTORY_EVENT_NAME,
-} from '../../utils/monthHistoryStorage';
+import { getMyMonthlySummary, getMyMonthlySummaries } from '../../api/summaryApi';
 
 const n = (v) => {
   const x = Number(v);
@@ -119,7 +113,7 @@ export default function DashboardPage() {
     return fmtMonth.format(d);
   };
 
-  // ===== KPI режим: месяц / год =====
+  // ===== KPI режим: месяц / год (локально — это нормально) =====
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || 'anon'}`, [user?.id]);
   const [kpiMode, setKpiMode] = useState('month');
 
@@ -149,7 +143,7 @@ export default function DashboardPage() {
     [history]
   );
 
-  // ===== Загрузка summary + истории =====
+  // ===== Загрузка summary + истории (ИЗ БЭКА) =====
   useEffect(() => {
     let cancelled = false;
 
@@ -158,22 +152,13 @@ export default function DashboardPage() {
         setLoading(true);
         setError('');
 
-        if (!user?.id) throw new Error('Нет user.id (проверь authUser в localStorage).');
-
-        const existing = loadMonthHistory(user.id);
-        if (!cancelled) setHistory(existing);
-
-        const cur = await getMonthlySummary(user.id, year, month);
+        // 1) текущий месяц
+        const cur = await getMyMonthlySummary(year, month);
         if (!cancelled) setSummary(cur);
 
-        const nextHistory = await syncMonthHistory({
-          userId: user.id,
-          getMonthlySummary,
-          targetYM: { year, month },
-          prefillMonths: 12,
-        });
-
-        if (!cancelled) setHistory(nextHistory);
+        // 2) история (все месяцы, которые есть на бэке)
+        const all = await getMyMonthlySummaries();
+        if (!cancelled) setHistory(Array.isArray(all) ? all : []);
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
       } finally {
@@ -185,26 +170,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, year, month]);
-
-  // ===== Live update истории =====
-  useEffect(() => {
-    const handler = (e) => {
-      const detail = e?.detail;
-      if (!detail?.userId || detail.userId !== user?.id) return;
-
-      setHistory(loadMonthHistory(user.id));
-
-      if (detail.year === year && detail.month === month) {
-        getMonthlySummary(user.id, year, month)
-          .then(setSummary)
-          .catch(() => {});
-      }
-    };
-
-    window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-    return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-  }, [user?.id, year, month]);
+  }, [year, month]);
 
   // ===== Месяц =====
   const incomeMonth = n(summary?.total_income);
@@ -456,12 +422,6 @@ export default function DashboardPage() {
                               {n(h.savings_rate_percent)}%
                             </Box>
                           </Typography>
-
-                          {h.savedAt ? (
-                            <Typography variant="caption" sx={{ color: 'rgba(15, 23, 42, 0.55)' }}>
-                              Сохранено: {new Date(h.savedAt).toLocaleString('ru-RU')}
-                            </Typography>
-                          ) : null}
                         </Stack>
                       </AccordionDetails>
                     </Accordion>

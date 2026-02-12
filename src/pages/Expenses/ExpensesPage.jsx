@@ -31,8 +31,6 @@ import EmptyState from '../../components/EmptyState';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { getExpensesByMonth, createExpense, updateExpense, deleteExpense } from '../../api/expensesApi';
-import { getMonthlySummary } from '../../api/summaryApi';
-import { refreshMonthSnapshot } from '../../utils/monthHistoryStorage';
 
 const COLORS = {
   expenses: '#F97316',
@@ -169,16 +167,6 @@ export default function ExpensesPage() {
       }
 
       const target = ymFromDate(payload.date);
-
-      if (editing?.date) {
-        const old = ymFromDate(editing.date);
-        if (old.year !== target.year || old.month !== target.month) {
-          await refreshMonthSnapshot(user.id, old.year, old.month, getMonthlySummary);
-        }
-      }
-
-      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
-
       setOpen(false);
 
       if (target.year !== ym.year || target.month !== ym.month) {
@@ -191,13 +179,10 @@ export default function ExpensesPage() {
       const msg = e.message || 'Ошибка сохранения';
 
       if (isProxySerialization500(msg) && attempted) {
-        const target = ymFromDate(form.date);
-        await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
-
         setOpen(false);
-
         toast.success(editing?.id ? 'Расход обновлён' : 'Расход добавлен');
 
+        const target = ymFromDate(form.date);
         if (target.year !== ym.year || target.month !== ym.month) {
           setYm(target);
           return;
@@ -217,9 +202,6 @@ export default function ExpensesPage() {
     try {
       setError('');
       await deleteExpense(expense.id);
-
-      const target = ymFromDate(normalizeDateOnly(expense.date));
-      await refreshMonthSnapshot(user.id, target.year, target.month, getMonthlySummary);
 
       toast.success('Расход удалён');
       await load();
