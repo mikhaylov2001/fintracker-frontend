@@ -3,15 +3,19 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
-
+// REACT_APP_API_BASE_URL должен быть типа: "http://localhost:8082" или "https://your-domain"
+// А полный базовый путь для auth = <origin>/api/auth (см. swagger) [file:7210]
+const ORIGIN = (process.env.REACT_APP_API_BASE_URL || '').replace(/\/+$/, '');
+const AUTH_BASE_URL =
+  ORIGIN
+    ? `${ORIGIN}/api/auth`
+    : (process.env.NODE_ENV === 'development' ? 'http://localhost:8082/api/auth' : '');
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);      // { id, userName, email }
   const [token, setToken] = useState(null);    // JWT
   const [loading, setLoading] = useState(true);
 
-  // Восстанавливаем состояние из localStorage при загрузке приложения
   useEffect(() => {
     const savedToken = localStorage.getItem('authToken');
     const savedUser = localStorage.getItem('authUser');
@@ -24,60 +28,57 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const saveAuthData = (data) => {
-    const { token, user } = data;
-    setToken(token);
-    setUser(user);
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('authUser', JSON.stringify(user));
+    const { token, user } = data || {};
+    setToken(token || null);
+    setUser(user || null);
+
+    if (token) localStorage.setItem('authToken', token);
+    if (user) localStorage.setItem('authUser', JSON.stringify(user));
   };
 
   const login = async ({ userName, password }) => {
-    const res = await fetch(`${API_BASE_URL}/login`, {
+    if (!AUTH_BASE_URL) throw new Error('API base URL is not configured');
+
+    const res = await fetch(`${AUTH_BASE_URL}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userName, password }),
     });
 
     const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Login failed');
-    }
+    if (!res.ok) throw new Error(data.error || 'Login failed');
 
     saveAuthData(data);
     return data;
   };
 
   const register = async ({ userName, email, password, chatId }) => {
-    const res = await fetch(`${API_BASE_URL}/register`, {
+    if (!AUTH_BASE_URL) throw new Error('API base URL is not configured');
+
+    const res = await fetch(`${AUTH_BASE_URL}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userName, email, password, chatId }),
     });
 
     const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Registration failed');
-    }
+    if (!res.ok) throw new Error(data.error || 'Registration failed');
 
     saveAuthData(data);
     return data;
   };
 
-  // Google: backend ждёт { idToken }
   const loginWithGoogle = async (idToken) => {
-    const res = await fetch(`${API_BASE_URL}/google`, {
+    if (!AUTH_BASE_URL) throw new Error('API base URL is not configured');
+
+    const res = await fetch(`${AUTH_BASE_URL}/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ idToken }),
     });
 
     const data = await res.json().catch(() => ({}));
-
-    if (!res.ok) {
-      throw new Error(data.error || 'Google authentication failed');
-    }
+    if (!res.ok) throw new Error(data.error || 'Google authentication failed');
 
     saveAuthData(data);
     return data;
@@ -106,8 +107,6 @@ export const AuthProvider = ({ children }) => {
 
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
 };
