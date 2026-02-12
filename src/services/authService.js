@@ -1,5 +1,5 @@
 // src/services/authService.js
-import api from "../api/api";
+import api from "./api";
 import { API_ENDPOINTS, STORAGE_KEYS } from "../utils/constants";
 
 const saveAuth = (data) => {
