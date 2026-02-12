@@ -7,22 +7,21 @@ import AppLayout from './layouts/AppLayout';
 import LoginPage from './pages/Auth/LoginPage';
 import RegisterPage from './pages/Auth/RegisterPage';
 
-// import DashboardPage from './pages/Dashboard/DashboardPage'; // больше не нужен как /dashboard
 import ExpensesPage from './pages/Expenses/ExpensesPage';
 import IncomePage from './pages/Income/IncomePage';
 import AnalyticsPage from './pages/Analytics/AnalyticsPage';
 
 import PrivateRoutes from './routes/PrivateRoutes';
 import PublicOnlyRoute from './routes/PublicOnlyRoute';
+import HomeRedirect from './routes/HomeRedirect';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
         <Routes>
-          {/* Корень: пока просто отправляем гостя на login
-             (а PublicOnlyRoute уже отправит авторизованного на /u/<userName>) */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Корень: сразу решаем, куда вести */}
+          <Route path="/" element={<HomeRedirect />} />
 
           {/* Только для гостей */}
           <Route element={<PublicOnlyRoute />}>
@@ -33,12 +32,7 @@ function App() {
           {/* Только для авторизованных */}
           <Route element={<PrivateRoutes />}>
             <Route element={<AppLayout />}>
-              {/* Домашняя страница пользователя */}
               <Route path="/u/:userName" element={<AnalyticsPage />} />
-              {/* если хочешь именно DashboardPage, просто замени на:
-                  <Route path="/u/:userName" element={<DashboardPage />} />
-              */}
-
               <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/income" element={<IncomePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />

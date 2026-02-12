@@ -5,13 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 const PublicOnlyRoute = () => {
   const { isAuthenticated, loading, user } = useAuth();
 
-  if (loading) {
-    return <div>Загрузка...</div>;
-  }
+  if (loading) return <div>Загрузка...</div>;
 
   if (isAuthenticated) {
-    const userName = user?.userName || 'me';
-    return <Navigate to={`/u/${encodeURIComponent(userName)}`} replace />;
+    const userName = user?.userName;
+    if (userName) {
+      return <Navigate to={`/u/${encodeURIComponent(userName)}`} replace />;
+    }
+    return <Navigate to="/analytics" replace />;
   }
 
   return <Outlet />;

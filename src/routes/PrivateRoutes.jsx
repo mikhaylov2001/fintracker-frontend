@@ -6,9 +6,7 @@ const PrivateRoutes = () => {
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
-  if (loading) {
-    return <div>Загрузка...</div>;
-  }
+  if (loading) return <div>Загрузка...</div>;
 
   return isAuthenticated ? (
     <Outlet />
