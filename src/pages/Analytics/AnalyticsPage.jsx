@@ -1,3 +1,4 @@
+// src/pages/Analytics/AnalyticsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Typography,
@@ -19,11 +20,9 @@ import { LineChart } from '@mui/x-charts/LineChart';
 
 import { useAuth } from '../../contexts/AuthContext';
 
-import { getMonthlySummary } from '../../api/summaryApi';
-import { getExpensesByMonth } from '../../api/expensesApi';
-import { getIncomesByMonth } from '../../api/incomeApi';
-
-import { loadMonthHistory, syncMonthHistory, MONTH_HISTORY_EVENT_NAME } from '../../utils/monthHistoryStorage';
+import { getMyMonthlySummary, getMyMonthlySummaries } from '../../api/summaryApi';
+import { getMyExpensesByMonth } from '../../api/expensesApi';
+import { getMyIncomesByMonth } from '../../api/incomeApi';
 
 const COLORS = {
   income: '#22C55E',
@@ -95,13 +94,16 @@ const addMonthsYM = ({ year, month }, delta) => {
 };
 
 export default function AnalyticsPage() {
+  // user можно вообще не использовать; оставил только чтобы не ломать общий контекст
   const { user } = useAuth();
 
   const [history, setHistory] = useState([]);
+  const [monthSummary, setMonthSummary] = useState(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const modeKey = useMemo(() => `fintracker:analyticsMode:${user?.id || 'anon'}`, [user?.id]);
+  const modeKey = useMemo(() => `fintracker:analyticsMode:${user?.id || 'me'}`, [user?.id]);
   const [mode, setMode] = useState('month'); // 'month' | 'year'
 
   useEffect(() => {
@@ -133,6 +135,7 @@ export default function AnalyticsPage() {
     []
   );
 
+  // грузим: 1) текущий месяц summary, 2) историю summary за все месяцы (для графиков и YTD)
   useEffect(() => {
     let cancelled = false;
 
@@ -140,42 +143,24 @@ export default function AnalyticsPage() {
       try {
         setLoading(true);
         setError('');
-        if (!user?.id) throw new Error('Нет user.id');
 
-        const existing = loadMonthHistory(user.id);
-        if (!cancelled) setHistory(existing);
+        const cur = await getMyMonthlySummary(year, month);
+        const all = await getMyMonthlySummaries();
 
-        const next = await syncMonthHistory({
-          userId: user.id,
-          getMonthlySummary,
-          targetYM: { year, month },
-          prefillMonths: 12,
-        });
-
-        if (!cancelled) setHistory(next);
+        if (!cancelled) {
+          setMonthSummary(cur || null);
+          setHistory(Array.isArray(all) ? all : []);
+        }
       } catch (e) {
-        if (!cancelled) setError(e.message || 'Ошибка загрузки аналитики');
+        if (!cancelled) setError(e?.message || 'Ошибка загрузки аналитики');
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
     run();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, year, month]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      const detail = e?.detail;
-      if (!detail?.userId || detail.userId !== user?.id) return;
-      setHistory(loadMonthHistory(user.id));
-    };
-
-    window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-    return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-  }, [user?.id]);
+    return () => { cancelled = true; };
+  }, [year, month]);
 
   const last12 = useMemo(() => {
     const cur = { year, month };
@@ -186,7 +171,7 @@ export default function AnalyticsPage() {
 
   const historyMap = useMemo(() => {
     const m = new Map();
-    history.forEach((h) => m.set(`${h.year}-${h.month}`, h));
+    (history || []).forEach((h) => m.set(`${h.year}-${h.month}`, h));
     return m;
   }, [history]);
 
@@ -213,34 +198,13 @@ export default function AnalyticsPage() {
 
   const yearMonths = useMemo(() => {
     const cur = ymNum(year, month);
-    return history.filter((h) => h?.year === year && ymNum(h.year, h.month) <= cur);
+    return (history || []).filter((h) => h?.year === year && ymNum(h.year, h.month) <= cur);
   }, [history, year, month]);
 
   const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
   const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
-
-  const [monthSummary, setMonthSummary] = useState(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      if (!user?.id) return;
-      try {
-        const s = await getMonthlySummary(user.id, year, month);
-        if (!cancelled) setMonthSummary(s);
-      } catch {
-        if (!cancelled) setMonthSummary(null);
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, year, month]);
 
   const mIncome = n(monthSummary?.total_income);
   const mExpenses = n(monthSummary?.total_expenses);
@@ -259,19 +223,19 @@ export default function AnalyticsPage() {
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
 
+  // месяцы, за которые считаем топ-категории (месяц или YTD)
   const monthsForCats = useMemo(() => {
     if (!isYear) return [{ year, month }];
     const arr = [];
-    for (let m = 1; m <= month; m++) arr.push({ year, month: m });
+    for (let mm = 1; mm <= month; mm++) arr.push({ year, month: mm });
     return arr;
   }, [isYear, year, month]);
 
+  // топ категорий: полностью через /me
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      if (!user?.id) return;
-
       try {
         setCatsLoading(true);
 
@@ -279,13 +243,13 @@ export default function AnalyticsPage() {
         const accInc = new Map();
 
         for (const ym of monthsForCats) {
-          const respE = await getExpensesByMonth(user.id, ym.year, ym.month, 0, 500);
+          const respE = await getMyExpensesByMonth(ym.year, ym.month, 0, 500);
           (respE?.content ?? []).forEach((x) => {
             const cat = String(x.category || 'Другое');
             accExp.set(cat, (accExp.get(cat) || 0) + n(x.amount));
           });
 
-          const respI = await getIncomesByMonth(user.id, ym.year, ym.month, 0, 500);
+          const respI = await getMyIncomesByMonth(ym.year, ym.month, 0, 500);
           (respI?.content ?? []).forEach((x) => {
             const cat = String(x.category || 'Другое');
             accInc.set(cat, (accInc.get(cat) || 0) + n(x.amount));
@@ -317,10 +281,8 @@ export default function AnalyticsPage() {
     };
 
     run();
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, monthsForCats]);
+    return () => { cancelled = true; };
+  }, [monthsForCats]);
 
   const activeTopRows = topTab === 'expenses' ? topCatsExpenses : topCatsIncome;
   const topTitle = topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов';
@@ -390,21 +352,26 @@ export default function AnalyticsPage() {
         <Grid item xs={12} md={3}>
           <StatCard label="Баланс" value={fmtRub.format(kpiBalance)} accent={COLORS.balance} />
         </Grid>
-
         <Grid item xs={12} md={3}>
           <StatCard label="Доходы" value={fmtRub.format(kpiIncome)} accent={COLORS.income} />
         </Grid>
-
         <Grid item xs={12} md={3}>
           <StatCard label="Расходы" value={fmtRub.format(kpiExpenses)} accent={COLORS.expenses} />
         </Grid>
-
         <Grid item xs={12} md={3}>
           <StatCard label="Норма сбережений" value={`${kpiRate}%`} sub={kpiSubRate} accent="#A78BFA" />
         </Grid>
 
         <Grid item xs={12}>
-          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              borderColor: 'rgba(15, 23, 42, 0.08)',
+              backgroundColor: alpha('#FFFFFF', 0.86),
+              backdropFilter: 'blur(10px)',
+            }}
+          >
             <CardContent sx={{ p: 2.25 }}>
               <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
                 Cashflow за 12 месяцев
@@ -437,7 +404,15 @@ export default function AnalyticsPage() {
         </Grid>
 
         <Grid item xs={12}>
-          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              borderColor: 'rgba(15, 23, 42, 0.08)',
+              backgroundColor: alpha('#FFFFFF', 0.86),
+              backdropFilter: 'blur(10px)',
+            }}
+          >
             <CardContent sx={{ p: 2.25 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
@@ -456,7 +431,11 @@ export default function AnalyticsPage() {
                 />
               </Stack>
 
-              <Tabs value={topTab} onChange={(e, v) => setTopTab(v)} sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}>
+              <Tabs
+                value={topTab}
+                onChange={(e, v) => setTopTab(v)}
+                sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}
+              >
                 <Tab label="Расходы" value="expenses" />
                 <Tab label="Доходы" value="income" />
               </Tabs>

@@ -1,43 +1,35 @@
-import api from './api';
+import api from '../api/api';
 import { API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
 
+const saveAuth = (data) => {
+  if (data?.token) localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
+  if (data?.user) localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
+};
+
 const authService = {
-  // Регистрация
   register: async (userData) => {
-    const response = await api.post(API_ENDPOINTS.REGISTER, userData);
-    if (response.data.token) {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, response.data.token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data.user));
-    }
-    return response.data;
+    const { data } = await api.post(API_ENDPOINTS.REGISTER, userData);
+    saveAuth(data);
+    return data;
   },
 
-  // Логин
   login: async (credentials) => {
-    const response = await api.post(API_ENDPOINTS.LOGIN, credentials);
-    if (response.data.token) {
-      localStorage.setItem(STORAGE_KEYS.TOKEN, response.data.token);
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(response.data.user));
-    }
-    return response.data;
+    const { data } = await api.post(API_ENDPOINTS.LOGIN, credentials);
+    saveAuth(data);
+    return data;
   },
 
-  // Logout
   logout: () => {
     localStorage.removeItem(STORAGE_KEYS.TOKEN);
     localStorage.removeItem(STORAGE_KEYS.USER);
   },
 
-  // Получить текущего пользователя из localStorage
   getCurrentUser: () => {
     const userStr = localStorage.getItem(STORAGE_KEYS.USER);
     return userStr ? JSON.parse(userStr) : null;
   },
 
-  // Проверка авторизации
-  isAuthenticated: () => {
-    return !!localStorage.getItem(STORAGE_KEYS.TOKEN);
-  },
+  isAuthenticated: () => !!localStorage.getItem(STORAGE_KEYS.TOKEN),
 };
 
 export default authService;

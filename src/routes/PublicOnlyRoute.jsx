@@ -9,10 +9,9 @@ const PublicOnlyRoute = () => {
 
   if (isAuthenticated) {
     const userName = user?.userName;
-    if (userName) {
-      return <Navigate to={`/u/${encodeURIComponent(userName)}`} replace />;
-    }
-    return <Navigate to="/analytics" replace />;
+    return userName
+      ? <Navigate to={`/u/${encodeURIComponent(userName)}`} replace />
+      : <Navigate to="/analytics" replace />;
   }
 
   return <Outlet />;

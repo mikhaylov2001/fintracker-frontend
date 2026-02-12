@@ -2,20 +2,14 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
-const HomeRedirect = () => {
+export default function HomeRedirect() {
   const { isAuthenticated, loading, user } = useAuth();
 
   if (loading) return <div>Загрузка...</div>;
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
 
   const userName = user?.userName;
   return userName
     ? <Navigate to={`/u/${encodeURIComponent(userName)}`} replace />
-    : <Navigate to="/analytics" replace />;
-};
-
-export default HomeRedirect;
-
+    : <Navigate to="/u/me" replace />;
+}
