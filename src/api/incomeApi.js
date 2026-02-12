@@ -1,25 +1,26 @@
 // src/api/incomeApi.js
-import { apiFetch } from './client';
+import api from "../services/api";
+import { API_ENDPOINTS } from "../utils/constants";
 
 // ===== NEW (me) =====
 export const getMyIncomesByMonth = (year, month, page = 0, size = 50) =>
-  apiFetch(`/api/incomes/me/month/${year}/${month}?page=${page}&size=${size}`);
+  api.get(API_ENDPOINTS.MY_INCOMES_BY_MONTH(year, month), { params: { page, size } });
 
 export const getMyIncomes = (page = 0, size = 10) =>
-  apiFetch(`/api/incomes/me?page=${page}&size=${size}`);
+  api.get("/incomes/me", { params: { page, size } });
 
 // ===== LEGACY (userId) =====
 export const getIncomesByMonth = (userId, year, month, page = 0, size = 50) =>
-  apiFetch(`/api/incomes/user/${userId}/month/${year}/${month}?page=${page}&size=${size}`);
+  api.get(`/incomes/user/${userId}/month/${year}/${month}`, { params: { page, size } });
 
 export const getIncomes = getIncomesByMonth;
 
 // ===== CRUD =====
 export const createIncome = (payload) =>
-  apiFetch('/api/incomes', { method: 'POST', body: JSON.stringify(payload) });
+  api.post(API_ENDPOINTS.INCOMES, payload);
 
 export const updateIncome = (incomeId, payload) =>
-  apiFetch(`/api/incomes/${incomeId}`, { method: 'PUT', body: JSON.stringify(payload) });
+  api.put(API_ENDPOINTS.INCOME_BY_ID(incomeId), payload);
 
 export const deleteIncome = (incomeId) =>
-  apiFetch(`/api/incomes/${incomeId}`, { method: 'DELETE' });
+  api.delete(API_ENDPOINTS.INCOME_BY_ID(incomeId));
