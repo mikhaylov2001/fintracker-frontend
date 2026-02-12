@@ -3,10 +3,11 @@ import { Box, Button, TextField, Typography, Paper, Link } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const GOOGLE_CLIENT_ID =
-  '1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta?.env?.VITE_GOOGLE_CLIENT_ID
+  || process.env.REACT_APP_GOOGLE_CLIENT_ID
+  || '1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com';
 
-const RegisterPage = () => {
+export default function RegisterPage() {
   const navigate = useNavigate();
   const { register, loginWithGoogle } = useAuth();
 
@@ -24,8 +25,9 @@ const RegisterPage = () => {
     async (response) => {
       try {
         setError('');
+        // регистрация через Google у тебя фактически делается через /api/auth/google (loginWithGoogle) [file:7211]
         await loginWithGoogle(response.credential);
-        navigate('/dashboard');
+        navigate('/', { replace: true });
       } catch (err) {
         console.error(err);
         setError('Ошибка регистрации через Google');
@@ -62,27 +64,17 @@ const RegisterPage = () => {
         userName: form.userName,
         email: form.email,
         password: form.password,
-        chatId: form.chatId,
+        chatId: form.chatId ? Number(form.chatId) : null,
       });
-      navigate('/login');
+      navigate('/login', { replace: true });
     } catch (err) {
       console.error(err);
       setError('Ошибка при регистрации. Попробуйте ещё раз.');
     }
   };
 
-  const handleGoToLogin = () => navigate('/login');
-
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f5f5',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
       <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
         <Typography variant="h5" component="h1" gutterBottom align="center">
           Регистрация в FinTrackerPro
@@ -97,6 +89,7 @@ const RegisterPage = () => {
             value={form.userName}
             onChange={handleChange}
             required
+            autoComplete="username"
           />
           <TextField
             margin="normal"
@@ -107,6 +100,7 @@ const RegisterPage = () => {
             value={form.email}
             onChange={handleChange}
             required
+            autoComplete="email"
           />
           <TextField
             margin="normal"
@@ -117,6 +111,7 @@ const RegisterPage = () => {
             value={form.password}
             onChange={handleChange}
             required
+            autoComplete="new-password"
           />
           <TextField
             margin="normal"
@@ -125,7 +120,6 @@ const RegisterPage = () => {
             name="chatId"
             value={form.chatId}
             onChange={handleChange}
-            required
           />
 
           {error && (
@@ -134,13 +128,7 @@ const RegisterPage = () => {
             </Typography>
           )}
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            sx={{ mt: 3, mb: 2 }}
-          >
+          <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }}>
             Зарегистрироваться
           </Button>
         </Box>
@@ -151,13 +139,11 @@ const RegisterPage = () => {
 
         <Typography variant="body2" align="center">
           Уже есть аккаунт?{' '}
-          <Link component="button" type="button" onClick={handleGoToLogin}>
+          <Link component="button" type="button" onClick={() => navigate('/login')}>
             Войти
           </Link>
         </Typography>
       </Paper>
     </Box>
   );
-};
-
-export default RegisterPage;
+}

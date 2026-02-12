@@ -1,31 +1,37 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, Button, TextField, Typography, Paper, Link } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
-const GOOGLE_CLIENT_ID =
-  '1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta?.env?.VITE_GOOGLE_CLIENT_ID
+  || process.env.REACT_APP_GOOGLE_CLIENT_ID
+  || '1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com';
 
-const LoginPage = () => {
+export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, loginWithGoogle } = useAuth();
 
   const [form, setForm] = useState({ userName: '', password: '' });
   const [error, setError] = useState('');
   const googleDivRef = useRef(null);
 
+  // куда редиректить после логина (поддержка PrivateRoutes state.from)
+  const afterLoginPath = location.state?.from?.pathname || '/';
+
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError('');
+        // response.credential — это Google ID token (JWT), который на бэке ожидается как idToken [file:7211]
         await loginWithGoogle(response.credential);
-        navigate('/dashboard');
+        navigate(afterLoginPath, { replace: true });
       } catch (err) {
         console.error(err);
         setError('Ошибка входа через Google');
       }
     },
-    [loginWithGoogle, navigate]
+    [loginWithGoogle, navigate, afterLoginPath]
   );
 
   useEffect(() => {
@@ -53,25 +59,15 @@ const LoginPage = () => {
     setError('');
     try {
       await login({ userName: form.userName, password: form.password });
-      navigate('/dashboard');
+      navigate(afterLoginPath, { replace: true });
     } catch (err) {
       console.error(err);
       setError('Неверное имя пользователя или пароль');
     }
   };
 
-  const handleGoToRegister = () => navigate('/register');
-
   return (
-    <Box
-      sx={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        bgcolor: '#f5f5f5',
-      }}
-    >
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
       <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
         <Typography variant="h5" component="h1" gutterBottom align="center">
           Вход в FinTrackerPro
@@ -86,6 +82,7 @@ const LoginPage = () => {
             value={form.userName}
             onChange={handleChange}
             required
+            autoComplete="username"
           />
           <TextField
             margin="normal"
@@ -96,6 +93,7 @@ const LoginPage = () => {
             value={form.password}
             onChange={handleChange}
             required
+            autoComplete="current-password"
           />
 
           {error && (
@@ -104,13 +102,7 @@ const LoginPage = () => {
             </Typography>
           )}
 
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            color="primary"
-            sx={{ mt: 3, mb: 2 }}
-          >
+          <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }}>
             Войти
           </Button>
         </Box>
@@ -121,13 +113,11 @@ const LoginPage = () => {
 
         <Typography variant="body2" align="center">
           Нет аккаунта?{' '}
-          <Link component="button" type="button" onClick={handleGoToRegister}>
+          <Link component="button" type="button" onClick={() => navigate('/register')}>
             Зарегистрироваться
           </Link>
         </Typography>
       </Paper>
     </Box>
   );
-};
-
-export default LoginPage;
+}

@@ -47,16 +47,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       borderColor: 'rgba(15, 23, 42, 0.08)',
       backgroundColor: alpha('#FFFFFF', 0.86),
       backdropFilter: 'blur(10px)',
-      '&:before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 2,
-        background: accent,
-        opacity: 0.75,
-      },
+      '&:before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: accent, opacity: 0.75 },
     }}
   >
     <CardContent sx={{ p: 2.1 }}>
@@ -66,11 +57,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
           {label}
         </Typography>
       </Stack>
-
       <Typography variant="h5" sx={{ mt: 0.6, fontWeight: 850, color: '#0F172A' }}>
         {value}
       </Typography>
-
       {sub ? (
         <Typography variant="body2" sx={{ mt: 0.55, color: 'rgba(15, 23, 42, 0.65)' }}>
           {sub}
@@ -94,7 +83,6 @@ const addMonthsYM = ({ year, month }, delta) => {
 };
 
 export default function AnalyticsPage() {
-  // user можно вообще не использовать; оставил только чтобы не ломать общий контекст
   const { user } = useAuth();
 
   const [history, setHistory] = useState([]);
@@ -135,7 +123,7 @@ export default function AnalyticsPage() {
     []
   );
 
-  // грузим: 1) текущий месяц summary, 2) историю summary за все месяцы (для графиков и YTD)
+  // 1) текущий месяц summary, 2) история summary (все месяцы)
   useEffect(() => {
     let cancelled = false;
 
@@ -144,12 +132,12 @@ export default function AnalyticsPage() {
         setLoading(true);
         setError('');
 
-        const cur = await getMyMonthlySummary(year, month);
-        const all = await getMyMonthlySummaries();
+        const curRes = await getMyMonthlySummary(year, month);
+        const allRes = await getMyMonthlySummaries();
 
         if (!cancelled) {
-          setMonthSummary(cur || null);
-          setHistory(Array.isArray(all) ? all : []);
+          setMonthSummary(curRes.data || null);
+          setHistory(Array.isArray(allRes.data) ? allRes.data : []);
         }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки аналитики');
@@ -178,9 +166,9 @@ export default function AnalyticsPage() {
   const cashflowRows = useMemo(() => {
     return last12.map((ym) => {
       const h = historyMap.get(`${ym.year}-${ym.month}`);
-      const income = n(h?.total_income);
-      const expenses = n(h?.total_expenses);
-      const balance = income - expenses;
+      const income = n(h?.totalIncome);
+      const expenses = n(h?.totalExpenses);
+      const balance = n(h?.balance ?? (income - expenses));
       return {
         label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(2)}`,
         income,
@@ -201,16 +189,16 @@ export default function AnalyticsPage() {
     return (history || []).filter((h) => h?.year === year && ymNum(h.year, h.month) <= cur);
   }, [history, year, month]);
 
-  const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
-  const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
+  const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalIncome), 0), [yearMonths]);
+  const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalExpenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
   const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
 
-  const mIncome = n(monthSummary?.total_income);
-  const mExpenses = n(monthSummary?.total_expenses);
+  const mIncome = n(monthSummary?.totalIncome);
+  const mExpenses = n(monthSummary?.totalExpenses);
   const mBalance = n(monthSummary?.balance);
   const mSavings = n(monthSummary?.savings);
-  const mRate = n(monthSummary?.savings_rate_percent);
+  const mRate = n(monthSummary?.savingsRatePercent);
 
   const kpiIncome = isYear ? ytdIncome : mIncome;
   const kpiExpenses = isYear ? ytdExpenses : mExpenses;
@@ -223,7 +211,6 @@ export default function AnalyticsPage() {
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
 
-  // месяцы, за которые считаем топ-категории (месяц или YTD)
   const monthsForCats = useMemo(() => {
     if (!isYear) return [{ year, month }];
     const arr = [];
@@ -231,7 +218,6 @@ export default function AnalyticsPage() {
     return arr;
   }, [isYear, year, month]);
 
-  // топ категорий: полностью через /me
   useEffect(() => {
     let cancelled = false;
 
@@ -244,13 +230,15 @@ export default function AnalyticsPage() {
 
         for (const ym of monthsForCats) {
           const respE = await getMyExpensesByMonth(ym.year, ym.month, 0, 500);
-          (respE?.content ?? []).forEach((x) => {
+          const pageE = respE.data;
+          (pageE?.content ?? []).forEach((x) => {
             const cat = String(x.category || 'Другое');
             accExp.set(cat, (accExp.get(cat) || 0) + n(x.amount));
           });
 
           const respI = await getMyIncomesByMonth(ym.year, ym.month, 0, 500);
-          (respI?.content ?? []).forEach((x) => {
+          const pageI = respI.data;
+          (pageI?.content ?? []).forEach((x) => {
             const cat = String(x.category || 'Другое');
             accInc.set(cat, (accInc.get(cat) || 0) + n(x.amount));
           });
@@ -331,15 +319,7 @@ export default function AnalyticsPage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-            mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
-          }}
-        >
+        <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: alpha('#EF4444', 0.35), backgroundColor: alpha('#FFFFFF', 0.86) }}>
           <CardContent sx={{ py: 1.75 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -363,15 +343,7 @@ export default function AnalyticsPage() {
         </Grid>
 
         <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
             <CardContent sx={{ p: 2.25 }}>
               <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
                 Cashflow за 12 месяцев
@@ -404,15 +376,7 @@ export default function AnalyticsPage() {
         </Grid>
 
         <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
             <CardContent sx={{ p: 2.25 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
@@ -431,11 +395,7 @@ export default function AnalyticsPage() {
                 />
               </Stack>
 
-              <Tabs
-                value={topTab}
-                onChange={(e, v) => setTopTab(v)}
-                sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}
-              >
+              <Tabs value={topTab} onChange={(e, v) => setTopTab(v)} sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}>
                 <Tab label="Расходы" value="expenses" />
                 <Tab label="Доходы" value="income" />
               </Tabs>

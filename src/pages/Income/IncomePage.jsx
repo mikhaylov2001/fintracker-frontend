@@ -27,14 +27,12 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 import EmptyState from '../../components/EmptyState';
-
-import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { createIncome, deleteIncome, getIncomesByMonth, updateIncome } from '../../api/incomeApi';
 
-const COLORS = {
-  income: '#22C55E',
-};
+// ВАЖНО: me-endpoints (убираем legacy userId)
+import { createIncome, deleteIncome, getMyIncomesByMonth, updateIncome } from '../../api/incomeApi';
+
+const COLORS = { income: '#22C55E' };
 
 const toAmountString = (v) => String(v ?? '').trim().replace(',', '.');
 
@@ -63,9 +61,7 @@ const ymFromDate = (yyyyMmDd) => {
 };
 
 export default function IncomePage() {
-  const { user } = useAuth();
   const toast = useToast();
-
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -97,18 +93,18 @@ export default function IncomePage() {
     try {
       setLoading(true);
       setError('');
-      if (!user?.id) throw new Error('Нет user.id');
 
-      const data = await getIncomesByMonth(user.id, ym.year, ym.month, 0, 50);
+      const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
+      const data = res.data; // axios
       setItems(data?.content ?? []);
     } catch (e) {
-      const msg = e.message || 'Ошибка загрузки доходов';
+      const msg = e?.message || 'Ошибка загрузки доходов';
       setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [toast, user?.id, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month]);
 
   useEffect(() => {
     load();
@@ -142,10 +138,8 @@ export default function IncomePage() {
     try {
       setSaving(true);
       setError('');
-      if (!user?.id) throw new Error('Нет user.id');
 
       const payload = {
-        userId: user.id,
         amount: toAmountString(form.amount),
         category: String(form.category).trim(),
         source: String(form.source).trim(),
@@ -178,9 +172,8 @@ export default function IncomePage() {
 
       await load();
     } catch (e) {
-      const msg = e.message || 'Ошибка сохранения';
+      const msg = e?.message || 'Ошибка сохранения';
 
-      // твой костыль под 500 сериализации оставим — но без refreshMonthSnapshot
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? 'Доход обновлён' : 'Доход добавлен');
@@ -205,11 +198,10 @@ export default function IncomePage() {
     try {
       setError('');
       await deleteIncome(income.id);
-
       toast.success('Доход удалён');
       await load();
     } catch (e) {
-      const msg = e.message || 'Ошибка удаления';
+      const msg = e?.message || 'Ошибка удаления';
       setError(msg);
       toast.error(msg);
     }
@@ -229,12 +221,7 @@ export default function IncomePage() {
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))}>
               ←
@@ -263,15 +250,7 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            mb: 2,
-            borderRadius: 3,
-            borderColor: alpha('#EF4444', 0.35),
-            bgcolor: alpha('#fff', 0.9),
-          }}
-        >
+        <Card variant="outlined" sx={{ mb: 2, borderRadius: 3, borderColor: alpha('#EF4444', 0.35), bgcolor: alpha('#fff', 0.9) }}>
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -280,14 +259,7 @@ export default function IncomePage() {
         </Card>
       ) : null}
 
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-          borderColor: 'rgba(15, 23, 42, 0.08)',
-          bgcolor: alpha('#fff', 0.9),
-        }}
-      >
+      <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', bgcolor: alpha('#fff', 0.9) }}>
         <CardContent>
           <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
           <Divider sx={{ my: 1.5 }} />
@@ -336,13 +308,7 @@ export default function IncomePage() {
         </CardContent>
       </Card>
 
-      <Dialog
-        fullScreen={fullScreen}
-        open={open}
-        onClose={() => (!saving ? setOpen(false) : null)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog fullScreen={fullScreen} open={open} onClose={() => (!saving ? setOpen(false) : null)} fullWidth maxWidth="sm">
         <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -354,12 +320,7 @@ export default function IncomePage() {
               inputProps={{ inputMode: 'decimal' }}
             />
 
-            <TextField
-              select
-              label="Категория"
-              value={form.category}
-              onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
-            >
+            <TextField select label="Категория" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}>
               {CATEGORY_OPTIONS.map((c) => (
                 <MenuItem key={c} value={c}>
                   {c}
@@ -367,12 +328,7 @@ export default function IncomePage() {
               ))}
             </TextField>
 
-            <TextField
-              select
-              label="Источник"
-              value={form.source}
-              onChange={(e) => setForm((s) => ({ ...s, source: e.target.value }))}
-            >
+            <TextField select label="Источник" value={form.source} onChange={(e) => setForm((s) => ({ ...s, source: e.target.value }))}>
               {SOURCE_OPTIONS.map((s) => (
                 <MenuItem key={s} value={s}>
                   {s}

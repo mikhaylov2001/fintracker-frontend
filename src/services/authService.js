@@ -1,42 +1,32 @@
-// src/services/authService.js
-import api from "./api";
-import { API_ENDPOINTS, STORAGE_KEYS } from "../utils/constants";
+// src/services/api.js
+import axios from "axios";
+import { STORAGE_KEYS } from "../utils/constants";
 
-const saveAuth = (data) => {
-  if (data?.token) localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
-  if (data?.user) localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(data.user));
-};
+const api = axios.create({
+  baseURL: "/api", // важно для CRA proxy -> http://localhost:8082 [file:7211]
+  headers: { "Content-Type": "application/json" },
+  withCredentials: true, // оставь true, если refresh/logout завязаны на cookies
+});
 
-const authService = {
-  register: async (userData) => {
-    const { data } = await api.post(API_ENDPOINTS.REGISTER, userData);
-    saveAuth(data);
-    return data;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(STORAGE_KEYS.TOKEN);
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    return config;
   },
+  (error) => Promise.reject(error)
+);
 
-  login: async (credentials) => {
-    const { data } = await api.post(API_ENDPOINTS.LOGIN, credentials);
-    saveAuth(data);
-    return data;
-  },
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem(STORAGE_KEYS.TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.USER);
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
-  loginWithGoogle: async (idToken) => {
-    const { data } = await api.post(API_ENDPOINTS.GOOGLE_AUTH, { idToken });
-    saveAuth(data);
-    return data;
-  },
-
-  logout: () => {
-    localStorage.removeItem(STORAGE_KEYS.TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER);
-  },
-
-  getCurrentUser: () => {
-    const userStr = localStorage.getItem(STORAGE_KEYS.USER);
-    return userStr ? JSON.parse(userStr) : null;
-  },
-
-  isAuthenticated: () => !!localStorage.getItem(STORAGE_KEYS.TOKEN),
-};
-
-export default authService;
+export default api;

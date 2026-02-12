@@ -27,14 +27,12 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
 import EmptyState from '../../components/EmptyState';
-
-import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
-import { getExpensesByMonth, createExpense, updateExpense, deleteExpense } from '../../api/expensesApi';
 
-const COLORS = {
-  expenses: '#F97316',
-};
+// ВАЖНО: используем me-endpoints
+import { getMyExpensesByMonth, createExpense, updateExpense, deleteExpense } from '../../api/expensesApi';
+
+const COLORS = { expenses: '#F97316' };
 
 const toAmountString = (v) => String(v ?? '').trim().replace(',', '.');
 
@@ -43,8 +41,6 @@ const normalizeDateOnly = (d) => {
   const s = String(d);
   return s.includes('T') ? s.slice(0, 10) : s;
 };
-
-const isProxySerialization500 = (msg) => String(msg || '').includes('ByteBuddyInterceptor');
 
 const CATEGORY_OPTIONS = ['Продукты', 'Транспорт', 'Дом', 'Развлечения', 'Здоровье', 'Другое'];
 
@@ -62,7 +58,6 @@ const ymFromDate = (yyyyMmDd) => {
 };
 
 export default function ExpensesPage() {
-  const { user } = useAuth();
   const toast = useToast();
 
   const theme = useTheme();
@@ -96,18 +91,18 @@ export default function ExpensesPage() {
     try {
       setLoading(true);
       setError('');
-      if (!user?.id) throw new Error('Нет user.id');
 
-      const data = await getExpensesByMonth(user.id, ym.year, ym.month, 0, 50);
+      const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
+      const data = res.data;
       setItems(data?.content ?? []);
     } catch (e) {
-      const msg = e.message || 'Ошибка загрузки расходов';
+      const msg = e?.message || 'Ошибка загрузки расходов';
       setError(msg);
       toast.error(msg);
     } finally {
       setLoading(false);
     }
-  }, [toast, user?.id, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month]);
 
   useEffect(() => {
     load();
@@ -136,15 +131,11 @@ export default function ExpensesPage() {
   };
 
   const save = async () => {
-    let attempted = false;
-
     try {
       setSaving(true);
       setError('');
-      if (!user?.id) throw new Error('Нет user.id');
 
       const payload = {
-        userId: user.id,
         amount: toAmountString(form.amount),
         category: String(form.category).trim(),
         description: String(form.description).trim(),
@@ -155,8 +146,6 @@ export default function ExpensesPage() {
       if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.date) throw new Error('Дата обязательна');
-
-      attempted = true;
 
       if (editing?.id) {
         await updateExpense(editing.id, payload);
@@ -176,23 +165,9 @@ export default function ExpensesPage() {
 
       await load();
     } catch (e) {
-      const msg = e.message || 'Ошибка сохранения';
-
-      if (isProxySerialization500(msg) && attempted) {
-        setOpen(false);
-        toast.success(editing?.id ? 'Расход обновлён' : 'Расход добавлен');
-
-        const target = ymFromDate(form.date);
-        if (target.year !== ym.year || target.month !== ym.month) {
-          setYm(target);
-          return;
-        }
-
-        await load();
-      } else {
-        setError(msg);
-        toast.error(msg);
-      }
+      const msg = e?.message || 'Ошибка сохранения';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -202,11 +177,10 @@ export default function ExpensesPage() {
     try {
       setError('');
       await deleteExpense(expense.id);
-
       toast.success('Расход удалён');
       await load();
     } catch (e) {
-      const msg = e.message || 'Ошибка удаления';
+      const msg = e?.message || 'Ошибка удаления';
       setError(msg);
       toast.error(msg);
     }
@@ -226,12 +200,7 @@ export default function ExpensesPage() {
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))}>
               ←
@@ -277,14 +246,7 @@ export default function ExpensesPage() {
         </Card>
       ) : null}
 
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-          borderColor: 'rgba(15, 23, 42, 0.08)',
-          bgcolor: alpha('#fff', 0.9),
-        }}
-      >
+      <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', bgcolor: alpha('#fff', 0.9) }}>
         <CardContent>
           <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
           <Divider sx={{ my: 1.5 }} />
@@ -333,13 +295,7 @@ export default function ExpensesPage() {
         </CardContent>
       </Card>
 
-      <Dialog
-        fullScreen={fullScreen}
-        open={open}
-        onClose={() => (!saving ? setOpen(false) : null)}
-        fullWidth
-        maxWidth="sm"
-      >
+      <Dialog fullScreen={fullScreen} open={open} onClose={() => (!saving ? setOpen(false) : null)} fullWidth maxWidth="sm">
         <DialogTitle>{editing ? 'Редактировать расход' : 'Добавить расход'}</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -351,12 +307,7 @@ export default function ExpensesPage() {
               inputProps={{ inputMode: 'decimal' }}
             />
 
-            <TextField
-              select
-              label="Категория"
-              value={form.category}
-              onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}
-            >
+            <TextField select label="Категория" value={form.category} onChange={(e) => setForm((s) => ({ ...s, category: e.target.value }))}>
               {CATEGORY_OPTIONS.map((c) => (
                 <MenuItem key={c} value={c}>
                   {c}
@@ -364,11 +315,7 @@ export default function ExpensesPage() {
               ))}
             </TextField>
 
-            <TextField
-              label="Описание"
-              value={form.description}
-              onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
-            />
+            <TextField label="Описание" value={form.description} onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))} />
 
             <TextField
               label="Дата"

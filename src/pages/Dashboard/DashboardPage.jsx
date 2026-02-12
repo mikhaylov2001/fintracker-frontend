@@ -113,7 +113,7 @@ export default function DashboardPage() {
     return fmtMonth.format(d);
   };
 
-  // ===== KPI режим: месяц / год (локально — это нормально) =====
+  // ===== KPI режим: месяц / год =====
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || 'anon'}`, [user?.id]);
   const [kpiMode, setKpiMode] = useState('month');
 
@@ -143,7 +143,7 @@ export default function DashboardPage() {
     [history]
   );
 
-  // ===== Загрузка summary + истории (ИЗ БЭКА) =====
+  // ===== Загрузка summary + истории (axios => .data) =====
   useEffect(() => {
     let cancelled = false;
 
@@ -152,13 +152,12 @@ export default function DashboardPage() {
         setLoading(true);
         setError('');
 
-        // 1) текущий месяц
-        const cur = await getMyMonthlySummary(year, month);
-        if (!cancelled) setSummary(cur);
+        const curRes = await getMyMonthlySummary(year, month);
+        if (!cancelled) setSummary(curRes.data);
 
-        // 2) история (все месяцы, которые есть на бэке)
-        const all = await getMyMonthlySummaries();
-        if (!cancelled) setHistory(Array.isArray(all) ? all : []);
+        const allRes = await getMyMonthlySummaries();
+        const allData = allRes.data;
+        if (!cancelled) setHistory(Array.isArray(allData) ? allData : []);
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
       } finally {
@@ -172,12 +171,12 @@ export default function DashboardPage() {
     };
   }, [year, month]);
 
-  // ===== Месяц =====
-  const incomeMonth = n(summary?.total_income);
-  const expenseMonth = n(summary?.total_expenses);
+  // ===== Месяц (camelCase как в MonthlySummaryDto) =====
+  const incomeMonth = n(summary?.totalIncome);
+  const expenseMonth = n(summary?.totalExpenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
-  const savingsRateMonth = n(summary?.savings_rate_percent);
+  const savingsRateMonth = n(summary?.savingsRatePercent);
 
   // ===== Год (YTD) =====
   const ymNum = (y, m) => y * 12 + (m - 1);
@@ -187,8 +186,8 @@ export default function DashboardPage() {
     return history.filter((h) => h?.year === year && ymNum(h.year, h.month) <= curNum);
   }, [history, year, month]);
 
-  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
-  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
+  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalIncome), 0), [yearMonths]);
+  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalExpenses), 0), [yearMonths]);
   const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
 
   const yearSavingsRate = useMemo(() => {
@@ -211,12 +210,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1}
-        sx={{ mb: 2 }}
-        alignItems={{ sm: 'center' }}
-      >
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} alignItems={{ sm: 'center' }}>
         <Box sx={{ flexGrow: 1 }}>
           <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
             Привет, {displayName}
@@ -231,12 +225,7 @@ export default function DashboardPage() {
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Chip
             label={loading ? 'Загрузка…' : 'Актуально'}
             variant="filled"
@@ -391,14 +380,14 @@ export default function DashboardPage() {
                           <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Доходы:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.total_income))}
+                              {fmtRub.format(n(h.totalIncome))}
                             </Box>
                           </Typography>
 
                           <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Расходы:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.total_expenses))}
+                              {fmtRub.format(n(h.totalExpenses))}
                             </Box>
                           </Typography>
 
@@ -419,7 +408,7 @@ export default function DashboardPage() {
                           <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Норма сбережений:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {n(h.savings_rate_percent)}%
+                              {n(h.savingsRatePercent)}%
                             </Box>
                           </Typography>
                         </Stack>

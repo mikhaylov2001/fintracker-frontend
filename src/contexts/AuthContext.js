@@ -28,10 +28,13 @@ export const AuthProvider = ({ children }) => {
 
   const register = async ({ userName, email, password, chatId }) => {
     await authService.register({ userName, email, password, chatId });
+    // если register не логинит — можно не синкать (оставлю безопасно)
     syncFromStorage();
   };
 
   const loginWithGoogle = async (idToken) => {
+    // idToken = response.credential из Google One Tap
+    // бэк ожидает GoogleTokenRequest.idToken [file:7211]
     await authService.loginWithGoogle(idToken);
     syncFromStorage();
   };
@@ -63,4 +66,4 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
+};

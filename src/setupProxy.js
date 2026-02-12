@@ -7,6 +7,7 @@ module.exports = function (app) {
     createProxyMiddleware({
       target: 'http://localhost:8082',
       changeOrigin: true,
+      // logLevel: 'debug',
     })
   );
 };
