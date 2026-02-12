@@ -1,65 +1,113 @@
 // src/contexts/AuthContext.js
+
 import React, { createContext, useState, useContext, useEffect } from "react";
-import authService from "../services/authService";
 
 const AuthContext = createContext(null);
 
+const API_BASE_URL = "http://localhost:8082/api/auth";
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);   // { id, userName, email }
+  const [user, setUser] = useState(null); // { id, userName, email }
   const [token, setToken] = useState(null); // JWT
   const [loading, setLoading] = useState(true);
 
-  const syncFromStorage = () => {
-    const t = localStorage.getItem("authToken");
-    const u = localStorage.getItem("authUser");
-    setToken(t || null);
-    setUser(u ? JSON.parse(u) : null);
-  };
-
   useEffect(() => {
-    syncFromStorage();
+    const savedToken = localStorage.getItem("authToken");
+    const savedUser = localStorage.getItem("authUser");
+
+    if (savedToken && savedUser) {
+      setToken(savedToken);
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch {
+        setUser(null);
+      }
+    }
     setLoading(false);
   }, []);
 
+  const saveAuthData = (data) => {
+    const nextToken = data?.token ?? data?.accessToken ?? data?.jwt;
+    const nextUser = data?.user ?? null;
+
+    if (nextToken) {
+      setToken(nextToken);
+      localStorage.setItem("authToken", nextToken);
+    }
+    if (nextUser) {
+      setUser(nextUser);
+      localStorage.setItem("authUser", JSON.stringify(nextUser));
+    }
+  };
+
   const login = async ({ userName, password }) => {
-    await authService.login({ userName, password });
-    syncFromStorage();
+    const res = await fetch(`${API_BASE_URL}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName, password }),
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || data.message || "Login failed");
+
+    saveAuthData(data);
+    return data;
   };
 
   const register = async ({ userName, email, password, chatId }) => {
-    await authService.register({ userName, email, password, chatId });
-    // если register не логинит — можно не синкать (оставлю безопасно)
-    syncFromStorage();
+    const res = await fetch(`${API_BASE_URL}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName, email, password, chatId }),
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error(data.error || data.message || "Registration failed");
+
+    saveAuthData(data);
+    return data;
   };
 
   const loginWithGoogle = async (idToken) => {
-    // idToken = response.credential из Google One Tap
-    // бэк ожидает GoogleTokenRequest.idToken [file:7211]
-    await authService.loginWithGoogle(idToken);
-    syncFromStorage();
+    const res = await fetch(`${API_BASE_URL}/google`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idToken }),
+      credentials: "include",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok)
+      throw new Error(
+        data.error || data.message || "Google authentication failed"
+      );
+
+    saveAuthData(data);
+    return data;
   };
 
   const logout = () => {
-    authService.logout();
-    syncFromStorage();
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        token,
-        login,
-        register,
-        loginWithGoogle,
-        logout,
-        isAuthenticated: !!token,
-        loading,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    token,
+    login,
+    register,
+    loginWithGoogle,
+    logout,
+    isAuthenticated: !!token,
+    loading,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
