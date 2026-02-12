@@ -1,6 +1,6 @@
 // src/api/client.js
 
-const TOKEN_KEYS = ['authToken', 'token', 'accessToken', 'jwt'];
+const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
 
 const readToken = () => {
   for (const k of TOKEN_KEYS) {
@@ -12,18 +12,15 @@ const readToken = () => {
 
 const writeToken = (token) => {
   if (!token) return;
-  localStorage.setItem('authToken', token);
+  localStorage.setItem("authToken", token);
 };
 
-const API_BASE =
-  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL) ||
-  (typeof process !== 'undefined' && process.env?.REACT_APP_API_BASE_URL) ||
-  'http://localhost:8082';
+const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8082";
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
-  const base = String(API_BASE || '').replace(/\/+$/, '');
-  const p = String(path || '').startsWith('/') ? String(path) : `/${path}`;
+  const base = String(API_BASE || "").replace(/\/+$/, "");
+  const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
   return `${base}${p}`;
 };
 
@@ -43,19 +40,23 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const url = buildUrl('/api/auth/refresh');
+    const url = buildUrl("/api/auth/refresh");
 
     const res = await fetch(url, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
     });
 
     const data = await parseBody(res);
     if (!res.ok) return null;
 
     const newAccess =
-      data?.accessToken || data?.token || data?.jwt || data?.access_token || data?.access_token_value;
+      data?.accessToken ||
+      data?.token ||
+      data?.jwt ||
+      data?.access_token ||
+      data?.access_token_value;
 
     if (newAccess) writeToken(newAccess);
     return newAccess || null;
@@ -76,9 +77,9 @@ export async function apiFetch(path, options = {}) {
 
     const res = await fetch(url, {
       ...options,
-      credentials: options.credentials ?? 'include',
+      credentials: options.credentials ?? "include",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
@@ -98,14 +99,17 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (res.status === 401) {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
-    window.location.href = '/login';
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
+    window.location.href = "/login";
     return;
   }
 
   if (!res.ok) {
-    const msg = typeof data === 'string' ? data : (data?.message || data?.error || res.statusText);
+    const msg =
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 

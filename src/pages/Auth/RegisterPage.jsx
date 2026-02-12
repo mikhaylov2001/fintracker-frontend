@@ -1,36 +1,35 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Box, Button, TextField, Typography, Paper, Link } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
-const GOOGLE_CLIENT_ID = import.meta?.env?.VITE_GOOGLE_CLIENT_ID
-  || process.env.REACT_APP_GOOGLE_CLIENT_ID
-  || '1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID =
+  process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+  "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const { register, loginWithGoogle } = useAuth();
 
   const [form, setForm] = useState({
-    userName: '',
-    email: '',
-    password: '',
-    chatId: '',
+    userName: "",
+    email: "",
+    password: "",
+    chatId: "",
   });
 
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const googleDivRef = useRef(null);
 
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
-        setError('');
-        // регистрация через Google у тебя фактически делается через /api/auth/google (loginWithGoogle) [file:7211]
+        setError("");
         await loginWithGoogle(response.credential);
-        navigate('/', { replace: true });
+        navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError('Ошибка регистрации через Google');
+        setError("Ошибка регистрации через Google");
       }
     },
     [loginWithGoogle, navigate]
@@ -38,7 +37,8 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!window.google?.accounts?.id) return;
-    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0) return;
+    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
+      return;
 
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
@@ -46,10 +46,10 @@ export default function RegisterPage() {
     });
 
     window.google.accounts.id.renderButton(googleDivRef.current, {
-      type: 'standard',
-      theme: 'outline',
-      size: 'large',
-      text: 'signup_with',
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "signup_with",
     });
   }, [handleGoogleCallback]);
 
@@ -58,7 +58,7 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
     try {
       await register({
         userName: form.userName,
@@ -66,16 +66,24 @@ export default function RegisterPage() {
         password: form.password,
         chatId: form.chatId ? Number(form.chatId) : null,
       });
-      navigate('/login', { replace: true });
+      navigate("/login", { replace: true });
     } catch (err) {
       console.error(err);
-      setError('Ошибка при регистрации. Попробуйте ещё раз.');
+      setError("Ошибка при регистрации. Попробуйте ещё раз.");
     }
   };
 
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: '#f5f5f5' }}>
-      <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 400 }}>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        bgcolor: "#f5f5f5",
+      }}
+    >
+      <Paper elevation={3} sx={{ p: 4, width: "100%", maxWidth: 400 }}>
         <Typography variant="h5" component="h1" gutterBottom align="center">
           Регистрация в FinTrackerPro
         </Typography>
@@ -128,18 +136,28 @@ export default function RegisterPage() {
             </Typography>
           )}
 
-          <Button type="submit" fullWidth variant="contained" color="primary" sx={{ mt: 3, mb: 2 }}>
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            color="primary"
+            sx={{ mt: 3, mb: 2 }}
+          >
             Зарегистрироваться
           </Button>
         </Box>
 
-        <Box sx={{ mt: 2, mb: 2, textAlign: 'center' }}>
+        <Box sx={{ mt: 2, mb: 2, textAlign: "center" }}>
           <div ref={googleDivRef} />
         </Box>
 
         <Typography variant="body2" align="center">
-          Уже есть аккаунт?{' '}
-          <Link component="button" type="button" onClick={() => navigate('/login')}>
+          Уже есть аккаунт?{" "}
+          <Link
+            component="button"
+            type="button"
+            onClick={() => navigate("/login")}
+          >
             Войти
           </Link>
         </Typography>

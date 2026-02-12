@@ -1,0 +1,31 @@
+
+> fintracker-frontend@0.1.0 build
+> react-scripts build
+
+Creating an optimized production build...
+Compiled with warnings.
+
+Critical dependency: 'import.meta' cannot be used as a standalone expression. For static analysis, its properties must be accessed directly (e.g., 'import.meta.url') or through destructuring.
+
+Critical dependency: 'import.meta' cannot be used as a standalone expression. For static analysis, its properties must be accessed directly (e.g., 'import.meta.url') or through destructuring.
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  300.14 kB (+507 B)  build/static/js/main.069fcb42.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
