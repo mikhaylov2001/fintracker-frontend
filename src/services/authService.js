@@ -1,5 +1,6 @@
-import api from '../api/api';
-import { API_ENDPOINTS, STORAGE_KEYS } from '../utils/constants';
+// src/services/authService.js
+import api from "../api/api";
+import { API_ENDPOINTS, STORAGE_KEYS } from "../utils/constants";
 
 const saveAuth = (data) => {
   if (data?.token) localStorage.setItem(STORAGE_KEYS.TOKEN, data.token);
@@ -15,6 +16,12 @@ const authService = {
 
   login: async (credentials) => {
     const { data } = await api.post(API_ENDPOINTS.LOGIN, credentials);
+    saveAuth(data);
+    return data;
+  },
+
+  loginWithGoogle: async (idToken) => {
+    const { data } = await api.post(API_ENDPOINTS.GOOGLE_AUTH, { idToken });
     saveAuth(data);
     return data;
   },
