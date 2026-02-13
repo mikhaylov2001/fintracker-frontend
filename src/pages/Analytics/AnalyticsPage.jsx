@@ -29,7 +29,7 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
-/* ────────── constants ────────── */
+/* ────────── constants & helpers (вне компонента) ────────── */
 const COLORS = {
   income: '#22C55E',
   expenses: '#F97316',
@@ -40,6 +40,19 @@ const COLORS = {
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
+};
+
+const ymNum = (y, m) => y * 12 + (m - 1);
+
+const fmtMonthLong = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
+const fmtMonthShort = new Intl.DateTimeFormat('ru-RU', { month: 'short' });
+
+const monthTitleRu = (y, m) => fmtMonthLong.format(new Date(y, m - 1, 1));
+const monthShortRu = (y, m) => fmtMonthShort.format(new Date(y, m - 1, 1));
+
+const addMonthsYM = ({ year, month }, delta) => {
+  const d = new Date(year, month - 1 + delta, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
 /* ────────── StatCard ────────── */
@@ -87,22 +100,8 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
-/* ────────── date helpers ────────── */
-const ymNum = (y, m) => y * 12 + (m - 1);
-
-const monthTitleRu = (y, m) =>
-  new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1));
-
-const monthShortRu = (y, m) =>
-  new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(y, m - 1, 1));
-
-const addMonthsYM = ({ year, month }, delta) => {
-  const d = new Date(year, month - 1 + delta, 1);
-  return { year: d.getFullYear(), month: d.getMonth() + 1 };
-};
-
 /* ════════════════════════════════════════════
-   AnalyticsPage  (исправленная версия)
+   AnalyticsPage
    ════════════════════════════════════════════ */
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -112,7 +111,6 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /* ── стабильный год/месяц ── */
   const [year] = useState(() => new Date().getFullYear());
   const [month] = useState(() => new Date().getMonth() + 1);
 
@@ -142,10 +140,8 @@ export default function AnalyticsPage() {
     setMode(next);
   };
 
-  /* ── вкладка: расходы / доходы ── */
   const [topTab, setTopTab] = useState('expenses');
 
-  /* ── форматтер ── */
   const fmtRub = useMemo(
     () =>
       new Intl.NumberFormat('ru-RU', {
@@ -156,11 +152,7 @@ export default function AnalyticsPage() {
     [],
   );
 
-  /* ══════════════════════════════════════
-     FIX 1 — Загрузка истории
-     • Ранний return вместо throw при !userId
-     • syncMonthHistory обёрнут в свой try/catch
-     ══════════════════════════════════════ */
+  /* ── Загрузка истории ── */
   useEffect(() => {
     let cancelled = false;
 
@@ -204,7 +196,7 @@ export default function AnalyticsPage() {
     };
   }, [userId, year, month]);
 
-  /* ── Live-обновление ── */
+  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
@@ -262,7 +254,10 @@ export default function AnalyticsPage() {
   const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
-  const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
+  const ytdRate = useMemo(
+    () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
+    [ytdIncome, ytdBalance],
+  );
 
   /* ── Текущий месяц (summary) ── */
   const [monthSummary, setMonthSummary] = useState(null);
@@ -300,20 +295,7 @@ export default function AnalyticsPage() {
     ? `Месяцев: ${yearMonths.length}`
     : `Сбережения: ${fmtRub.format(mSavings)}`;
 
-  /* ══════════════════════════════════════
-     FIX 2 — Загрузка категорий
-     Проблемы в оригинале:
-       a) getExpensesByMonth / getIncomesByMonth — legacy-API
-          с userId в path. Нужно использовать /me-endpoints
-          (или тот же fallback-подход).
-       b) Последовательный for-of по месяцам → N*2 запросов
-          последовательно. Нужно параллелить через Promise.all.
-       c) При ошибке одного месяца — падает всё.
-       d) yAxis width: 150 — обрезает текст, если label
-          короткий, и не вмещает длинный.
-       e) margin.left: 40 — слишком мало для horizontal bar
-          с кириллическими метками.
-     ══════════════════════════════════════ */
+  /* ── Топ категорий ── */
   const [topCatsExpenses, setTopCatsExpenses] = useState([]);
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
@@ -337,14 +319,9 @@ export default function AnalyticsPage() {
         const accExp = new Map();
         const accInc = new Map();
 
-        /*
-         * FIX 2a: Параллельная загрузка всех месяцев.
-         * Если один месяц упадёт — остальные всё равно загрузятся.
-         */
         const tasks = monthsForCats.flatMap((ym) => [
           getExpensesByMonth(ym.year, ym.month, 0, 500)
             .then((resp) => {
-              /* FIX 2b: resp может быть axios-обёрткой (resp.data) или чистым объектом */
               const content = resp?.data?.content ?? resp?.content ?? [];
               content.forEach((x) => {
                 const cat = String(x.category || 'Другое');
@@ -404,9 +381,7 @@ export default function AnalyticsPage() {
   const topTitle = topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов';
   const topBarColor = topTab === 'expenses' ? COLORS.expenses : COLORS.income;
 
-  /* ══════════════════════════════════════
-     FIX 3 — ранний возврат при !userId
-     ══════════════════════════════════════ */
+  /* ── Ранний возврат при !userId ── */
   if (!userId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -417,9 +392,7 @@ export default function AnalyticsPage() {
     );
   }
 
-  /* ══════════════════════════════════════
-     RENDER
-     ══════════════════════════════════════ */
+  /* ── RENDER ── */
   return (
     <>
       <Stack
@@ -448,9 +421,7 @@ export default function AnalyticsPage() {
             variant="filled"
             sx={{
               borderRadius: 999,
-              bgcolor: error
-                ? alpha('#F97316', 0.10)
-                : alpha(COLORS.analytics, 0.10),
+              bgcolor: error ? alpha('#F97316', 0.10) : alpha(COLORS.analytics, 0.10),
               color: error ? '#F97316' : COLORS.analytics,
               fontWeight: 700,
             }}
@@ -514,7 +485,7 @@ export default function AnalyticsPage() {
           />
         </Grid>
 
-        {/* ── Cashflow ── */}
+        {/* Cashflow */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
@@ -536,23 +507,10 @@ export default function AnalyticsPage() {
                 <Grid item xs={12} md={7}>
                   <BarChart
                     height={300}
-                    xAxis={[
-                      {
-                        data: cashflowRows.map((r) => r.label),
-                        scaleType: 'band',
-                      },
-                    ]}
+                    xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'band' }]}
                     series={[
-                      {
-                        data: cashflowRows.map((r) => r.income),
-                        label: 'Доходы',
-                        color: COLORS.income,
-                      },
-                      {
-                        data: cashflowRows.map((r) => r.expenses),
-                        label: 'Расходы',
-                        color: COLORS.expenses,
-                      },
+                      { data: cashflowRows.map((r) => r.income), label: 'Доходы', color: COLORS.income },
+                      { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
                     ]}
                   />
                 </Grid>
@@ -560,19 +518,8 @@ export default function AnalyticsPage() {
                 <Grid item xs={12} md={5}>
                   <LineChart
                     height={300}
-                    xAxis={[
-                      {
-                        data: cashflowRows.map((r) => r.label),
-                        scaleType: 'point',
-                      },
-                    ]}
-                    series={[
-                      {
-                        data: cashflowRows.map((r) => r.balance),
-                        label: 'Баланс',
-                        color: COLORS.balance,
-                      },
-                    ]}
+                    xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'point' }]}
+                    series={[{ data: cashflowRows.map((r) => r.balance), label: 'Баланс', color: COLORS.balance }]}
                   />
                 </Grid>
               </Grid>
@@ -580,7 +527,7 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
 
-        {/* ── Топ категорий ── */}
+        {/* Топ категорий */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
@@ -597,10 +544,7 @@ export default function AnalyticsPage() {
                 spacing={1}
                 alignItems={{ sm: 'center' }}
               >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
-                >
+                <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
                   {topTitle}
                 </Typography>
 
@@ -619,11 +563,7 @@ export default function AnalyticsPage() {
               <Tabs
                 value={topTab}
                 onChange={(_e, v) => setTopTab(v)}
-                sx={{
-                  mt: 1,
-                  minHeight: 40,
-                  '& .MuiTab-root': { minHeight: 40 },
-                }}
+                sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}
               >
                 <Tab label="Расходы" value="expenses" />
                 <Tab label="Доходы" value="income" />
@@ -639,19 +579,8 @@ export default function AnalyticsPage() {
                 <BarChart
                   height={270}
                   layout="horizontal"
-                  yAxis={[
-                    {
-                      data: activeTopRows.map((x) => x.category),
-                      scaleType: 'band',
-                    },
-                  ]}
-                  series={[
-                    {
-                      data: activeTopRows.map((x) => x.amount),
-                      label: 'Сумма',
-                      color: topBarColor,
-                    },
-                  ]}
+                  yAxis={[{ data: activeTopRows.map((x) => x.category), scaleType: 'band' }]}
+                  series={[{ data: activeTopRows.map((x) => x.amount), label: 'Сумма', color: topBarColor }]}
                   margin={{ left: 120, right: 20, top: 10, bottom: 30 }}
                 />
               )}

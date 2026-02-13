@@ -26,10 +26,20 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
-/* ────────── helpers ────────── */
+/* ────────── helpers (вне компонента) ────────── */
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
+};
+
+const fmtMonthFormatter = new Intl.DateTimeFormat('ru-RU', {
+  month: 'long',
+  year: 'numeric',
+});
+
+const monthTitle = (y, m) => {
+  const d = new Date(y, m - 1, 1);
+  return fmtMonthFormatter.format(d);
 };
 
 /* ────────── StatCard ────────── */
@@ -84,24 +94,20 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
 );
 
 /* ════════════════════════════════════════════
-   DashboardPage  (исправленная версия)
+   DashboardPage
    ════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { user } = useAuth();
+  const userId = user?.id ?? null;
 
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /* ── текущий год/месяц (стабильные через useState) ── */
   const [year] = useState(() => new Date().getFullYear());
   const [month] = useState(() => new Date().getMonth() + 1);
 
-  /* ── userId — безопасно извлекаем один раз ── */
-  const userId = user?.id ?? null;
-
-  /* ── форматтеры ── */
   const fmtRub = useMemo(
     () =>
       new Intl.NumberFormat('ru-RU', {
@@ -118,17 +124,7 @@ export default function DashboardPage() {
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
-  const fmtMonth = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }),
-    [],
-  );
-
-  const monthTitle = (y, m) => {
-    const d = new Date(y, m - 1, 1);
-    return fmtMonth.format(d);
-  };
-
-  /* ── KPI-режим: месяц / год ── */
+  /* ── KPI режим ── */
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || 'anon'}`, [userId]);
   const [kpiMode, setKpiMode] = useState('month');
 
@@ -155,24 +151,16 @@ export default function DashboardPage() {
     setKpiMode(nextMode);
   };
 
-  /* ── история, отсортированная по убыванию ── */
   const historyDesc = useMemo(
     () => [...history].sort((a, b) => (b.year - a.year) || (b.month - a.month)),
     [history],
   );
 
-  /* ══════════════════════════════════════
-     FIX 1 — Загрузка summary + истории
-     Ранее падало, если:
-       • userId === null/undefined на момент первого рендера
-       • getMonthlySummary бросала ошибку (не-me endpoint / 500)
-       • syncMonthHistory молча валилась и ломала весь поток
-     ══════════════════════════════════════ */
+  /* ── Загрузка summary + истории ── */
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      /* FIX: ждём, пока userId появится из AuthContext */
       if (!userId) {
         setLoading(false);
         return;
@@ -182,20 +170,14 @@ export default function DashboardPage() {
         setLoading(true);
         setError('');
 
-        /* ── 1. Сначала показываем кэш из localStorage ── */
         const existing = loadMonthHistory(userId);
         if (!cancelled) setHistory(existing);
 
-        /* ── 2. Запрашиваем свежую сводку текущего месяца ── */
         let cur = null;
         try {
           cur = await getMonthlySummary(userId, year, month);
         } catch (apiErr) {
           console.warn('[Dashboard] getMonthlySummary failed:', apiErr);
-          /*
-           * FIX 2: Если API сводки не работает — не убиваем
-           * весь дашборд. Показываем данные из кэша + предупреждение.
-           */
           if (!cancelled) {
             setError(
               `Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'неизвестная ошибка'}. Показаны кэшированные данные.`,
@@ -205,7 +187,6 @@ export default function DashboardPage() {
 
         if (!cancelled && cur) setSummary(cur);
 
-        /* ── 3. Синхронизируем историю (в фоне) ── */
         try {
           const nextHistory = await syncMonthHistory({
             userId,
@@ -216,10 +197,6 @@ export default function DashboardPage() {
           if (!cancelled) setHistory(nextHistory);
         } catch (syncErr) {
           console.warn('[Dashboard] syncMonthHistory failed:', syncErr);
-          /*
-           * FIX 3: Если синхронизация упала — сохраняем
-           * ранее загруженный кэш, не сбрасываем состояние.
-           */
         }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
@@ -232,9 +209,9 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, year, month]); // FIX 4: userId вместо user?.id
+  }, [userId, year, month]);
 
-  /* ── Live-обновление истории ── */
+  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
@@ -255,16 +232,16 @@ export default function DashboardPage() {
 
     window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-  }, [userId, year, month]); // FIX 5: userId вместо user?.id
+  }, [userId, year, month]);
 
-  /* ── Показатели месяца ── */
+  /* ── Месяц ── */
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
-  /* ── Показатели года (YTD) ── */
+  /* ── Год (YTD) ── */
   const ymNum = (y, m) => y * 12 + (m - 1);
 
   const yearMonths = useMemo(() => {
@@ -282,7 +259,7 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
-  /* ── Отображаемые KPI ── */
+  /* ── KPI ── */
   const isYear = kpiMode === 'year';
   const periodLabel = isYear
     ? `Показаны данные: ${year} год`
@@ -296,10 +273,6 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || 'пользователь';
 
-  /* ══════════════════════════════════════
-     FIX 6 — Ранний возврат при отсутствии user
-     (вместо throw внутри async)
-     ══════════════════════════════════════ */
   if (!userId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -310,9 +283,6 @@ export default function DashboardPage() {
     );
   }
 
-  /* ══════════════════════════════════════
-     RENDER
-     ══════════════════════════════════════ */
   return (
     <>
       <Stack
