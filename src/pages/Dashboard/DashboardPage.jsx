@@ -26,11 +26,13 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
+/* ────────── helpers ────────── */
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 };
 
+/* ────────── StatCard ────────── */
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -81,6 +83,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
+/* ════════════════════════════════════════════
+   DashboardPage  (исправленная версия)
+   ════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { user } = useAuth();
 
@@ -89,10 +94,14 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  /* ── текущий год/месяц (стабильные через useState) ── */
+  const [year] = useState(() => new Date().getFullYear());
+  const [month] = useState(() => new Date().getMonth() + 1);
 
+  /* ── userId — безопасно извлекаем один раз ── */
+  const userId = user?.id ?? null;
+
+  /* ── форматтеры ── */
   const fmtRub = useMemo(
     () =>
       new Intl.NumberFormat('ru-RU', {
@@ -100,18 +109,18 @@ export default function DashboardPage() {
         currency: 'RUB',
         maximumFractionDigits: 0,
       }),
-    []
+    [],
   );
 
   const fmtToday = useMemo(
     () => new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-    []
+    [],
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
   const fmtMonth = useMemo(
     () => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }),
-    []
+    [],
   );
 
   const monthTitle = (y, m) => {
@@ -119,8 +128,8 @@ export default function DashboardPage() {
     return fmtMonth.format(d);
   };
 
-  // ===== KPI режим: месяц / год =====
-  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || 'anon'}`, [user?.id]);
+  /* ── KPI-режим: месяц / год ── */
+  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || 'anon'}`, [userId]);
   const [kpiMode, setKpiMode] = useState('month');
 
   useEffect(() => {
@@ -136,44 +145,82 @@ export default function DashboardPage() {
   useEffect(() => {
     try {
       window.localStorage.setItem(kpiModeKey, kpiMode);
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }, [kpiModeKey, kpiMode]);
 
-  const onKpiModeChange = (event, nextMode) => {
+  const onKpiModeChange = (_event, nextMode) => {
     if (!nextMode) return;
     setKpiMode(nextMode);
   };
 
+  /* ── история, отсортированная по убыванию ── */
   const historyDesc = useMemo(
     () => [...history].sort((a, b) => (b.year - a.year) || (b.month - a.month)),
-    [history]
+    [history],
   );
 
-  // ===== Загрузка summary + истории =====
+  /* ══════════════════════════════════════
+     FIX 1 — Загрузка summary + истории
+     Ранее падало, если:
+       • userId === null/undefined на момент первого рендера
+       • getMonthlySummary бросала ошибку (не-me endpoint / 500)
+       • syncMonthHistory молча валилась и ломала весь поток
+     ══════════════════════════════════════ */
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
+      /* FIX: ждём, пока userId появится из AuthContext */
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
         setError('');
 
-        if (!user?.id) throw new Error('Нет user.id (проверь authUser в localStorage).');
-
-        const existing = loadMonthHistory(user.id);
+        /* ── 1. Сначала показываем кэш из localStorage ── */
+        const existing = loadMonthHistory(userId);
         if (!cancelled) setHistory(existing);
 
-        const cur = await getMonthlySummary(user.id, year, month);
-        if (!cancelled) setSummary(cur);
+        /* ── 2. Запрашиваем свежую сводку текущего месяца ── */
+        let cur = null;
+        try {
+          cur = await getMonthlySummary(userId, year, month);
+        } catch (apiErr) {
+          console.warn('[Dashboard] getMonthlySummary failed:', apiErr);
+          /*
+           * FIX 2: Если API сводки не работает — не убиваем
+           * весь дашборд. Показываем данные из кэша + предупреждение.
+           */
+          if (!cancelled) {
+            setError(
+              `Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'неизвестная ошибка'}. Показаны кэшированные данные.`,
+            );
+          }
+        }
 
-        const nextHistory = await syncMonthHistory({
-          userId: user.id,
-          getMonthlySummary,
-          targetYM: { year, month },
-          prefillMonths: 12,
-        });
+        if (!cancelled && cur) setSummary(cur);
 
-        if (!cancelled) setHistory(nextHistory);
+        /* ── 3. Синхронизируем историю (в фоне) ── */
+        try {
+          const nextHistory = await syncMonthHistory({
+            userId,
+            getMonthlySummary,
+            targetYM: { year, month },
+            prefillMonths: 12,
+          });
+          if (!cancelled) setHistory(nextHistory);
+        } catch (syncErr) {
+          console.warn('[Dashboard] syncMonthHistory failed:', syncErr);
+          /*
+           * FIX 3: Если синхронизация упала — сохраняем
+           * ранее загруженный кэш, не сбрасываем состояние.
+           */
+        }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
       } finally {
@@ -185,35 +232,39 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, year, month]);
+  }, [userId, year, month]); // FIX 4: userId вместо user?.id
 
-  // ===== Live update истории =====
+  /* ── Live-обновление истории ── */
   useEffect(() => {
+    if (!userId) return;
+
     const handler = (e) => {
       const detail = e?.detail;
-      if (!detail?.userId || detail.userId !== user?.id) return;
+      if (!detail?.userId || detail.userId !== userId) return;
 
-      setHistory(loadMonthHistory(user.id));
+      setHistory(loadMonthHistory(userId));
 
       if (detail.year === year && detail.month === month) {
-        getMonthlySummary(user.id, year, month)
-          .then(setSummary)
+        getMonthlySummary(userId, year, month)
+          .then((data) => {
+            if (data) setSummary(data);
+          })
           .catch(() => {});
       }
     };
 
     window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-  }, [user?.id, year, month]);
+  }, [userId, year, month]); // FIX 5: userId вместо user?.id
 
-  // ===== Месяц =====
+  /* ── Показатели месяца ── */
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
-  // ===== Год (YTD) =====
+  /* ── Показатели года (YTD) ── */
   const ymNum = (y, m) => y * 12 + (m - 1);
 
   const yearMonths = useMemo(() => {
@@ -231,9 +282,11 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
-  // ===== Отображаемые значения =====
+  /* ── Отображаемые KPI ── */
   const isYear = kpiMode === 'year';
-  const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
+  const periodLabel = isYear
+    ? `Показаны данные: ${year} год`
+    : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
@@ -243,6 +296,23 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || 'пользователь';
 
+  /* ══════════════════════════════════════
+     FIX 6 — Ранний возврат при отсутствии user
+     (вместо throw внутри async)
+     ══════════════════════════════════════ */
+  if (!userId) {
+    return (
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Typography variant="h6" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+          Загрузка профиля…
+        </Typography>
+      </Box>
+    );
+  }
+
+  /* ══════════════════════════════════════
+     RENDER
+     ══════════════════════════════════════ */
   return (
     <>
       <Stack
@@ -272,13 +342,13 @@ export default function DashboardPage() {
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           <Chip
-            label={loading ? 'Загрузка…' : 'Актуально'}
+            label={loading ? 'Загрузка…' : error ? 'Ошибка' : 'Актуально'}
             variant="filled"
             sx={{
               width: { xs: '100%', sm: 'auto' },
               borderRadius: 999,
-              bgcolor: alpha('#6366F1', 0.10),
-              color: '#6366F1',
+              bgcolor: error ? alpha('#EF4444', 0.10) : alpha('#6366F1', 0.10),
+              color: error ? '#EF4444' : '#6366F1',
               fontWeight: 700,
             }}
           />
