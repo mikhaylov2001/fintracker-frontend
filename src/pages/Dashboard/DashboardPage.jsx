@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Typography,
   Box,
@@ -8,38 +8,38 @@ import {
   Chip,
   Stack,
   Divider,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import ToggleButton from '@mui/material/ToggleButton';
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import Accordion from "@mui/material/Accordion";
+import AccordionSummary from "@mui/material/AccordionSummary";
+import AccordionDetails from "@mui/material/AccordionDetails";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import ToggleButton from "@mui/material/ToggleButton";
 
-import { useAuth } from '../../contexts/AuthContext';
-import { getMyMonthlySummary, getMyMonthlySummaries } from '../../api/summaryApi';
+import { useAuth } from "../../contexts/AuthContext";
+import { getMyMonthlySummary, getMyMonthlySummaries } from "../../api/summaryApi";
 
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 };
 
-const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
+const StatCard = ({ label, value, sub, accent = "#6366F1" }) => (
   <Card
     variant="outlined"
     sx={{
-      height: '100%',
+      height: "100%",
       borderRadius: 3,
-      position: 'relative',
-      overflow: 'hidden',
-      borderColor: 'rgba(15, 23, 42, 0.08)',
-      backgroundColor: alpha('#FFFFFF', 0.86),
-      backdropFilter: 'blur(10px)',
-      transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
-      '&:before': {
+      position: "relative",
+      overflow: "hidden",
+      borderColor: "rgba(15, 23, 42, 0.08)",
+      backgroundColor: alpha("#FFFFFF", 0.86),
+      backdropFilter: "blur(10px)",
+      transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
+      "&:before": {
         content: '""',
-        position: 'absolute',
+        position: "absolute",
         top: 0,
         left: 0,
         right: 0,
@@ -47,27 +47,27 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
         background: accent,
         opacity: 0.75,
       },
-      '&:hover': {
-        transform: 'translateY(-2px)',
-        borderColor: 'rgba(15, 23, 42, 0.12)',
-        boxShadow: '0 18px 50px rgba(15, 23, 42, 0.10)',
+      "&:hover": {
+        transform: "translateY(-2px)",
+        borderColor: "rgba(15, 23, 42, 0.12)",
+        boxShadow: "0 18px 50px rgba(15, 23, 42, 0.10)",
       },
     }}
   >
     <CardContent sx={{ p: 2.25 }}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.9 }} />
-        <Typography variant="overline" sx={{ color: 'rgba(15, 23, 42, 0.65)', letterSpacing: 0.6 }}>
+        <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)", letterSpacing: 0.6 }}>
           {label}
         </Typography>
       </Stack>
 
-      <Typography variant="h5" sx={{ mt: 0.75, fontWeight: 700, color: '#0F172A' }}>
+      <Typography variant="h5" sx={{ mt: 0.75, fontWeight: 700, color: "#0F172A" }}>
         {value}
       </Typography>
 
       {sub ? (
-        <Typography variant="body2" sx={{ mt: 0.75, color: 'rgba(15, 23, 42, 0.65)' }}>
+        <Typography variant="body2" sx={{ mt: 0.75, color: "rgba(15, 23, 42, 0.65)" }}>
           {sub}
         </Typography>
       ) : null}
@@ -81,7 +81,7 @@ export default function DashboardPage() {
   const [summary, setSummary] = useState(null);
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const now = new Date();
   const year = now.getFullYear();
@@ -89,41 +89,38 @@ export default function DashboardPage() {
 
   const fmtRub = useMemo(
     () =>
-      new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
+      new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "RUB",
         maximumFractionDigits: 0,
       }),
     []
   );
 
   const fmtToday = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
+    () => new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }),
     []
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
   const fmtMonth = useMemo(
-    () => new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }),
+    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
     []
   );
 
-  const monthTitle = (y, m) => {
-    const d = new Date(y, m - 1, 1);
-    return fmtMonth.format(d);
-  };
+  const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
 
-  // ===== KPI режим: месяц / год =====
-  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || 'anon'}`, [user?.id]);
-  const [kpiMode, setKpiMode] = useState('month');
+  // KPI toggle: month/year
+  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || "anon"}`, [user?.id]);
+  const [kpiMode, setKpiMode] = useState("month");
 
   useEffect(() => {
     try {
       const v = window.localStorage.getItem(kpiModeKey);
-      if (v === 'month' || v === 'year') setKpiMode(v);
-      else setKpiMode('month');
+      if (v === "month" || v === "year") setKpiMode(v);
+      else setKpiMode("month");
     } catch {
-      setKpiMode('month');
+      setKpiMode("month");
     }
   }, [kpiModeKey]);
 
@@ -133,7 +130,7 @@ export default function DashboardPage() {
     } catch {}
   }, [kpiModeKey, kpiMode]);
 
-  const onKpiModeChange = (event, nextMode) => {
+  const onKpiModeChange = (e, nextMode) => {
     if (!nextMode) return;
     setKpiMode(nextMode);
   };
@@ -143,22 +140,24 @@ export default function DashboardPage() {
     [history]
   );
 
-  // ===== Загрузка summary + истории (fetch-style: функции возвращают JSON) =====
+  // Load summary + history (fetch-style: functions return JSON)
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
       try {
         setLoading(true);
-        setError('');
+        setError("");
 
         const curData = await getMyMonthlySummary(year, month);
-        if (!cancelled) setSummary(curData || null);
-
         const allData = await getMyMonthlySummaries();
-        if (!cancelled) setHistory(Array.isArray(allData) ? allData : []);
+
+        if (cancelled) return;
+
+        setSummary(curData || null);
+        setHistory(Array.isArray(allData) ? allData : []);
       } catch (e) {
-        if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
+        if (!cancelled) setError(e?.message || "Ошибка загрузки сводки/истории");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -170,16 +169,15 @@ export default function DashboardPage() {
     };
   }, [year, month]);
 
-  // ===== Месяц =====
+  // Month values
   const incomeMonth = n(summary?.totalIncome);
   const expenseMonth = n(summary?.totalExpenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savingsRatePercent);
 
-  // ===== Год (YTD) =====
+  // Year-to-date values from history
   const ymNum = (y, m) => y * 12 + (m - 1);
-
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
     return history.filter((h) => h?.year === year && ymNum(h.year, h.month) <= curNum);
@@ -188,15 +186,9 @@ export default function DashboardPage() {
   const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalIncome), 0), [yearMonths]);
   const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalExpenses), 0), [yearMonths]);
   const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+  const yearSavingsRate = useMemo(() => (yearIncome > 0 ? Math.round((yearBalance / yearIncome) * 100) : 0), [yearIncome, yearBalance]);
 
-  const yearSavingsRate = useMemo(() => {
-    if (yearIncome <= 0) return 0;
-    const r = Math.round((yearBalance / yearIncome) * 100);
-    return Number.isFinite(r) ? r : 0;
-  }, [yearIncome, yearBalance]);
-
-  // ===== Отображаемые значения =====
-  const isYear = kpiMode === 'year';
+  const isYear = kpiMode === "year";
   const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
@@ -205,34 +197,39 @@ export default function DashboardPage() {
   const displayRate = isYear ? yearSavingsRate : savingsRateMonth;
   const displaySavings = isYear ? yearBalance : savingsMonth;
 
-  const displayName = user?.userName || user?.email || 'пользователь';
+  const displayName = user?.userName || user?.email || "пользователь";
 
   return (
     <>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} alignItems={{ sm: 'center' }}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ mb: 2 }} alignItems={{ sm: "center" }}>
         <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: "#0F172A" }}>
             Привет, {displayName}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)", mt: 0.5 }}>
             Сегодня: {todayLabel}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)', mt: 0.5, fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)", mt: 0.5, fontWeight: 500 }}>
             {periodLabel}
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          alignItems={{ sm: "center" }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Chip
-            label={loading ? 'Загрузка…' : 'Актуально'}
+            label={loading ? "Загрузка…" : "Актуально"}
             variant="filled"
             sx={{
-              width: { xs: '100%', sm: 'auto' },
+              width: { xs: "100%", sm: "auto" },
               borderRadius: 999,
-              bgcolor: alpha('#6366F1', 0.10),
-              color: '#6366F1',
+              bgcolor: alpha("#6366F1", 0.10),
+              color: "#6366F1",
               fontWeight: 700,
             }}
           />
@@ -243,11 +240,11 @@ export default function DashboardPage() {
             onChange={onKpiModeChange}
             size="small"
             sx={{
-              width: { xs: '100%', sm: 'auto' },
-              bgcolor: alpha('#FFFFFF', 0.70),
-              border: '1px solid rgba(15, 23, 42, 0.10)',
+              width: { xs: "100%", sm: "auto" },
+              bgcolor: alpha("#FFFFFF", 0.70),
+              border: "1px solid rgba(15, 23, 42, 0.10)",
               borderRadius: 999,
-              '& .MuiToggleButton-root': { border: 0, px: 1.5, flex: { xs: 1, sm: 'unset' } },
+              "& .MuiToggleButton-root": { border: 0, px: 1.5, flex: { xs: 1, sm: "unset" } },
             }}
           >
             <ToggleButton value="month">Месяц</ToggleButton>
@@ -262,8 +259,8 @@ export default function DashboardPage() {
           sx={{
             borderRadius: 3,
             mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
+            borderColor: alpha("#EF4444", 0.35),
+            backgroundColor: alpha("#FFFFFF", 0.86),
           }}
         >
           <CardContent sx={{ py: 1.75 }}>
@@ -301,57 +298,45 @@ export default function DashboardPage() {
             variant="outlined"
             sx={{
               borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
+              borderColor: "rgba(15, 23, 42, 0.08)",
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              backdropFilter: "blur(10px)",
             }}
           >
             <CardContent sx={{ p: 2.25 }}>
-              <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
+              <Typography variant="h6" sx={{ fontWeight: 850, color: "#0F172A" }}>
                 Итоги операций за месяц
               </Typography>
 
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
+              <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ flexWrap: 'wrap' }}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Доходы:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(incomeMonth)}
-                  </Box>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} sx={{ flexWrap: "wrap" }}>
+                <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                  Доходы: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(incomeMonth)}</Box>
                 </Typography>
 
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Расходы:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(expenseMonth)}
-                  </Box>
+                <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                  Расходы: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(expenseMonth)}</Box>
                 </Typography>
 
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Сбережения:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(savingsMonth)}
-                  </Box>
+                <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                  Сбережения: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(savingsMonth)}</Box>
                 </Typography>
 
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Норма сбережений:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {savingsRateMonth}%
-                  </Box>
+                <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                  Норма сбережений: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{savingsRateMonth}%</Box>
                 </Typography>
               </Stack>
 
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
+              <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
 
-              <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+              <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
                 История сохранена: {history.length} месяцев
               </Typography>
 
               <Box sx={{ mt: 1.25 }}>
                 {historyDesc.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+                  <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
                     Пока нет сохранённых месяцев.
                   </Typography>
                 ) : (
@@ -363,52 +348,33 @@ export default function DashboardPage() {
                       sx={{
                         borderRadius: 2,
                         mb: 1,
-                        border: '1px solid rgba(15, 23, 42, 0.08)',
-                        bgcolor: 'transparent',
-                        '&:before': { display: 'none' },
+                        border: "1px solid rgba(15, 23, 42, 0.08)",
+                        bgcolor: "transparent",
+                        "&:before": { display: "none" },
                       }}
                     >
                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography sx={{ fontWeight: 800, color: '#0F172A', textTransform: 'capitalize' }}>
+                        <Typography sx={{ fontWeight: 800, color: "#0F172A", textTransform: "capitalize" }}>
                           {monthTitle(h.year, h.month)}
                         </Typography>
                       </AccordionSummary>
 
                       <AccordionDetails sx={{ pt: 0 }}>
                         <Stack spacing={0.75}>
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                            Доходы:{' '}
-                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.totalIncome))}
-                            </Box>
+                          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                            Доходы: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(n(h.totalIncome))}</Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                            Расходы:{' '}
-                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.totalExpenses))}
-                            </Box>
+                          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                            Расходы: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(n(h.totalExpenses))}</Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                            Баланс:{' '}
-                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.balance))}
-                            </Box>
+                          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                            Баланс: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(n(h.balance))}</Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                            Сбережения:{' '}
-                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.savings))}
-                            </Box>
+                          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                            Сбережения: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{fmtRub.format(n(h.savings))}</Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                            Норма сбережений:{' '}
-                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {n(h.savingsRatePercent)}%
-                            </Box>
+                          <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.75)" }}>
+                            Норма сбережений: <Box component="span" sx={{ fontWeight: 800, color: "#0F172A" }}>{n(h.savingsRatePercent)}%</Box>
                           </Typography>
                         </Stack>
                       </AccordionDetails>

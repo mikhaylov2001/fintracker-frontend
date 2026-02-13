@@ -1,4 +1,3 @@
-// src/pages/Analytics/AnalyticsPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -25,10 +24,7 @@ import {
   Legend,
 } from "recharts";
 
-import {
-  getMyMonthlySummary,
-  getMyMonthlySummaries,
-} from "../../api/summaryApi";
+import { getMyMonthlySummary, getMyMonthlySummaries } from "../../api/summaryApi";
 import { getMyExpensesByMonth } from "../../api/expensesApi";
 import { getMyIncomesByMonth } from "../../api/incomeApi";
 
@@ -37,20 +33,13 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-const ymKey = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
+const COLORS = ["#6366F1", "#22C55E", "#F97316", "#A78BFA", "#06B6D4", "#EF4444", "#F59E0B", "#10B981"];
 
-const COLORS = [
-  "#6366F1",
-  "#22C55E",
-  "#F97316",
-  "#A78BFA",
-  "#06B6D4",
-  "#EF4444",
-  "#F59E0B",
-  "#10B981",
-  "#3B82F6",
-  "#EC4899",
-];
+const extractContent = (resp) => {
+  if (Array.isArray(resp)) return resp;
+  if (Array.isArray(resp?.content)) return resp.content;
+  return [];
+};
 
 export default function AnalyticsPage() {
   const now = new Date();
@@ -67,23 +56,20 @@ export default function AnalyticsPage() {
     []
   );
 
-  const fmtMonth = useMemo(
+  const fmtMonthShort = useMemo(
     () => new Intl.DateTimeFormat("ru-RU", { month: "short" }),
     []
   );
 
   const [monthSummary, setMonthSummary] = useState(null);
   const [history, setHistory] = useState([]);
-  const [categories, setCategories] = useState({
-    expenses: [],
-    incomes: [],
-  });
+  const [categories, setCategories] = useState({ expenses: [], incomes: [] });
 
   const [loading, setLoading] = useState(true);
   const [loadingCats, setLoadingCats] = useState(true);
   const [error, setError] = useState("");
 
-  // 1) summary + history
+  // summary + history (fetch-style)
   useEffect(() => {
     let cancelled = false;
 
@@ -112,7 +98,7 @@ export default function AnalyticsPage() {
     };
   }, [year, month]);
 
-  // 2) category breakdown for current month
+  // categories for current month
   useEffect(() => {
     let cancelled = false;
 
@@ -123,37 +109,28 @@ export default function AnalyticsPage() {
         const respE = await getMyExpensesByMonth(year, month, 0, 500);
         const respI = await getMyIncomesByMonth(year, month, 0, 500);
 
-        const pageE = respE; // fetch-style: уже JSON
-        const pageI = respI; // fetch-style: уже JSON
+        const eItems = extractContent(respE);
+        const iItems = extractContent(respI);
 
-        const eItems = Array.isArray(pageE?.content) ? pageE.content : [];
-        const iItems = Array.isArray(pageI?.content) ? pageI.content : [];
-
-        const byCategory = (items, amountField = "amount") => {
+        const toAgg = (items) => {
           const map = new Map();
           for (const it of items) {
-            const cat = String(it?.category || "Без категории").trim() || "Без категории";
-            const amt = n(it?.[amountField]);
-            map.set(cat, (map.get(cat) || 0) + amt);
+            const name = String(it?.category || "Без категории").trim() || "Без категории";
+            map.set(name, (map.get(name) || 0) + n(it?.amount));
           }
           return Array.from(map.entries())
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value);
         };
 
-        const expensesCats = byCategory(eItems, "amount");
-        const incomesCats = byCategory(iItems, "amount");
-
         if (cancelled) return;
 
         setCategories({
-          expenses: expensesCats,
-          incomes: incomesCats,
+          expenses: toAgg(eItems),
+          incomes: toAgg(iItems),
         });
-      } catch {
-        if (!cancelled) {
-          setCategories({ expenses: [], incomes: [] });
-        }
+      } catch (e) {
+        if (!cancelled) setCategories({ expenses: [], incomes: [] });
       } finally {
         if (!cancelled) setLoadingCats(false);
       }
@@ -165,7 +142,6 @@ export default function AnalyticsPage() {
     };
   }, [year, month]);
 
-  // chart data: last 6 months from history (includes current if backend already has it)
   const historySorted = useMemo(() => {
     const arr = Array.isArray(history) ? [...history] : [];
     arr.sort((a, b) => (a.year - b.year) || (a.month - b.month));
@@ -177,16 +153,12 @@ export default function AnalyticsPage() {
     return take.map((h) => {
       const d = new Date(h.year, (h.month || 1) - 1, 1);
       return {
-        key: ymKey(h.year, h.month),
-        name: fmtMonth.format(d),
+        name: fmtMonthShort.format(d),
         income: n(h.totalIncome),
         expense: n(h.totalExpenses),
-        savings: n(h.savings),
-        balance: n(h.balance),
-        savingsRate: n(h.savingsRatePercent),
       };
     });
-  }, [historySorted, fmtMonth]);
+  }, [historySorted, fmtMonthShort]);
 
   const income = n(monthSummary?.totalIncome);
   const expense = n(monthSummary?.totalExpenses);
@@ -214,111 +186,58 @@ export default function AnalyticsPage() {
       <Grid container spacing={2}>
         {/* KPIs */}
         <Grid item xs={12} md={3}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
-              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
-                Доходы (месяц)
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                {fmtRub.format(income)}
-              </Typography>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>Доходы (месяц)</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>{fmtRub.format(income)}</Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={3}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
-              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
-                Расходы (месяц)
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                {fmtRub.format(expense)}
-              </Typography>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>Расходы (месяц)</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>{fmtRub.format(expense)}</Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={3}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
-              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
-                Баланс (месяц)
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                {fmtRub.format(balance)}
-              </Typography>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>Баланс (месяц)</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>{fmtRub.format(balance)}</Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={12} md={3}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
-              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
-                Норма сбережений
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                {`${savingsRate}%`}
-              </Typography>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>Норма сбережений</Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>{`${savingsRate}%`}</Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Bar chart: last 6 months */}
+        {/* Bar chart */}
         <Grid item xs={12} md={8}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 900, color: "#0F172A" }}>
                 Доходы и расходы (последние 6 месяцев)
               </Typography>
               <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
 
-              <Box sx={{ width: "100%", height: 320 }}>
-                <ResponsiveContainer>
+              {/* FIX for recharts width(-1)/height(-1) */}
+              <Box sx={{ width: "100%", height: 320, minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={last6}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip
-                      formatter={(v) => fmtRub.format(n(v))}
-                      labelFormatter={(label) => `Месяц: ${label}`}
-                    />
+                    <Tooltip formatter={(v) => fmtRub.format(n(v))} />
                     <Legend />
                     <Bar dataKey="income" name="Доходы" fill="#22C55E" radius={[6, 6, 0, 0]} />
                     <Bar dataKey="expense" name="Расходы" fill="#F97316" radius={[6, 6, 0, 0]} />
@@ -329,28 +248,23 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
 
-        {/* Pie: expenses by category */}
+        {/* Pie chart expenses */}
         <Grid item xs={12} md={4}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              backgroundColor: alpha("#FFFFFF", 0.86),
-              borderColor: "rgba(15, 23, 42, 0.08)",
-            }}
-          >
+          <Card variant="outlined" sx={{ borderRadius: 3, backgroundColor: alpha("#FFFFFF", 0.86), borderColor: "rgba(15, 23, 42, 0.08)" }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 900, color: "#0F172A" }}>
                 Расходы по категориям
               </Typography>
+
               <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)", mt: 0.25 }}>
                 {loadingCats ? "Загрузка…" : "Текущий месяц"}
               </Typography>
 
               <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
 
-              <Box sx={{ width: "100%", height: 320 }}>
-                <ResponsiveContainer>
+              {/* FIX for recharts width(-1)/height(-1) */}
+              <Box sx={{ width: "100%", height: 320, minWidth: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={categories.expenses}
@@ -360,8 +274,8 @@ export default function AnalyticsPage() {
                       innerRadius={60}
                       paddingAngle={2}
                     >
-                      {(categories.expenses || []).map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      {(categories.expenses || []).map((_, index) => (
+                        <Cell key={index} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(v) => fmtRub.format(n(v))} />
