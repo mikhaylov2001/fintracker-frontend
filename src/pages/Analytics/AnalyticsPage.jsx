@@ -1,424 +1,384 @@
 // src/pages/Analytics/AnalyticsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Typography,
   Box,
-  Grid,
   Card,
   CardContent,
-  Stack,
-  Chip,
   Divider,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import ToggleButton from '@mui/material/ToggleButton';
-import { BarChart } from '@mui/x-charts/BarChart';
-import { LineChart } from '@mui/x-charts/LineChart';
+  Grid,
+  Stack,
+  Typography,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
-import { useAuth } from '../../contexts/AuthContext';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from "recharts";
 
-import { getMyMonthlySummary, getMyMonthlySummaries } from '../../api/summaryApi';
-import { getMyExpensesByMonth } from '../../api/expensesApi';
-import { getMyIncomesByMonth } from '../../api/incomeApi';
-
-const COLORS = {
-  income: '#22C55E',
-  expenses: '#F97316',
-  balance: '#6366F1',
-  analytics: '#6366F1',
-};
+import {
+  getMyMonthlySummary,
+  getMyMonthlySummaries,
+} from "../../api/summaryApi";
+import { getMyExpensesByMonth } from "../../api/expensesApi";
+import { getMyIncomesByMonth } from "../../api/incomeApi";
 
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 };
 
-const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
-  <Card
-    variant="outlined"
-    sx={{
-      height: '100%',
-      borderRadius: 3,
-      position: 'relative',
-      overflow: 'hidden',
-      borderColor: 'rgba(15, 23, 42, 0.08)',
-      backgroundColor: alpha('#FFFFFF', 0.86),
-      backdropFilter: 'blur(10px)',
-      '&:before': { content: '""', position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: accent, opacity: 0.75 },
-    }}
-  >
-    <CardContent sx={{ p: 2.1 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
-        <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.9 }} />
-        <Typography variant="overline" sx={{ color: 'rgba(15, 23, 42, 0.65)', letterSpacing: 0.6 }}>
-          {label}
-        </Typography>
-      </Stack>
-      <Typography variant="h5" sx={{ mt: 0.6, fontWeight: 850, color: '#0F172A' }}>
-        {value}
-      </Typography>
-      {sub ? (
-        <Typography variant="body2" sx={{ mt: 0.55, color: 'rgba(15, 23, 42, 0.65)' }}>
-          {sub}
-        </Typography>
-      ) : null}
-    </CardContent>
-  </Card>
-);
+const ymKey = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
 
-const ymNum = (y, m) => y * 12 + (m - 1);
-
-const monthTitleRu = (y, m) =>
-  new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' }).format(new Date(y, m - 1, 1));
-
-const monthShortRu = (y, m) =>
-  new Intl.DateTimeFormat('ru-RU', { month: 'short' }).format(new Date(y, m - 1, 1));
-
-const addMonthsYM = ({ year, month }, delta) => {
-  const d = new Date(year, (month - 1) + delta, 1);
-  return { year: d.getFullYear(), month: d.getMonth() + 1 };
-};
+const COLORS = [
+  "#6366F1",
+  "#22C55E",
+  "#F97316",
+  "#A78BFA",
+  "#06B6D4",
+  "#EF4444",
+  "#F59E0B",
+  "#10B981",
+  "#3B82F6",
+  "#EC4899",
+];
 
 export default function AnalyticsPage() {
-  const { user } = useAuth();
-
-  const [history, setHistory] = useState([]);
-  const [monthSummary, setMonthSummary] = useState(null);
-
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const modeKey = useMemo(() => `fintracker:analyticsMode:${user?.id || 'me'}`, [user?.id]);
-  const [mode, setMode] = useState('month'); // 'month' | 'year'
-
-  useEffect(() => {
-    try {
-      const v = window.localStorage.getItem(modeKey);
-      if (v === 'month' || v === 'year') setMode(v);
-    } catch {}
-  }, [modeKey]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(modeKey, mode);
-    } catch {}
-  }, [modeKey, mode]);
-
-  const onModeChange = (e, next) => {
-    if (!next) return;
-    setMode(next);
-  };
-
-  const [topTab, setTopTab] = useState('expenses'); // 'expenses' | 'income'
-
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
   const fmtRub = useMemo(
-    () => new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }),
+    () =>
+      new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "RUB",
+        maximumFractionDigits: 0,
+      }),
     []
   );
 
-  // 1) текущий месяц summary, 2) история summary (все месяцы)
+  const fmtMonth = useMemo(
+    () => new Intl.DateTimeFormat("ru-RU", { month: "short" }),
+    []
+  );
+
+  const [monthSummary, setMonthSummary] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [categories, setCategories] = useState({
+    expenses: [],
+    incomes: [],
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [loadingCats, setLoadingCats] = useState(true);
+  const [error, setError] = useState("");
+
+  // 1) summary + history
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
       try {
         setLoading(true);
-        setError('');
+        setError("");
 
-        const curRes = await getMyMonthlySummary(year, month);
-        const allRes = await getMyMonthlySummaries();
+        const curData = await getMyMonthlySummary(year, month);
+        const allData = await getMyMonthlySummaries();
 
-        if (!cancelled) {
-          setMonthSummary(curRes.data || null);
-          setHistory(Array.isArray(allRes.data) ? allRes.data : []);
-        }
+        if (cancelled) return;
+
+        setMonthSummary(curData || null);
+        setHistory(Array.isArray(allData) ? allData : []);
       } catch (e) {
-        if (!cancelled) setError(e?.message || 'Ошибка загрузки аналитики');
+        if (!cancelled) setError(e?.message || "Ошибка загрузки аналитики");
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
     run();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [year, month]);
 
-  const last12 = useMemo(() => {
-    const cur = { year, month };
-    const arr = [];
-    for (let i = 11; i >= 0; i--) arr.push(addMonthsYM(cur, -i));
-    return arr;
-  }, [year, month]);
-
-  const historyMap = useMemo(() => {
-    const m = new Map();
-    (history || []).forEach((h) => m.set(`${h.year}-${h.month}`, h));
-    return m;
-  }, [history]);
-
-  const cashflowRows = useMemo(() => {
-    return last12.map((ym) => {
-      const h = historyMap.get(`${ym.year}-${ym.month}`);
-      const income = n(h?.totalIncome);
-      const expenses = n(h?.totalExpenses);
-      const balance = n(h?.balance ?? (income - expenses));
-      return {
-        label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(2)}`,
-        income,
-        expenses,
-        balance,
-      };
-    });
-  }, [last12, historyMap]);
-
-  const isYear = mode === 'year';
-
-  const periodLabel = useMemo(() => {
-    return isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitleRu(year, month)}`;
-  }, [isYear, year, month]);
-
-  const yearMonths = useMemo(() => {
-    const cur = ymNum(year, month);
-    return (history || []).filter((h) => h?.year === year && ymNum(h.year, h.month) <= cur);
-  }, [history, year, month]);
-
-  const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalIncome), 0), [yearMonths]);
-  const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.totalExpenses), 0), [yearMonths]);
-  const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
-  const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
-
-  const mIncome = n(monthSummary?.totalIncome);
-  const mExpenses = n(monthSummary?.totalExpenses);
-  const mBalance = n(monthSummary?.balance);
-  const mSavings = n(monthSummary?.savings);
-  const mRate = n(monthSummary?.savingsRatePercent);
-
-  const kpiIncome = isYear ? ytdIncome : mIncome;
-  const kpiExpenses = isYear ? ytdExpenses : mExpenses;
-  const kpiBalance = isYear ? ytdBalance : mBalance;
-  const kpiRate = isYear ? ytdRate : mRate;
-
-  const kpiSubRate = isYear ? `Месяцев: ${yearMonths.length}` : `Сбережения: ${fmtRub.format(mSavings)}`;
-
-  const [topCatsExpenses, setTopCatsExpenses] = useState([]);
-  const [topCatsIncome, setTopCatsIncome] = useState([]);
-  const [catsLoading, setCatsLoading] = useState(false);
-
-  const monthsForCats = useMemo(() => {
-    if (!isYear) return [{ year, month }];
-    const arr = [];
-    for (let mm = 1; mm <= month; mm++) arr.push({ year, month: mm });
-    return arr;
-  }, [isYear, year, month]);
-
+  // 2) category breakdown for current month
   useEffect(() => {
     let cancelled = false;
 
-    const run = async () => {
+    const runCats = async () => {
       try {
-        setCatsLoading(true);
+        setLoadingCats(true);
 
-        const accExp = new Map();
-        const accInc = new Map();
+        const respE = await getMyExpensesByMonth(year, month, 0, 500);
+        const respI = await getMyIncomesByMonth(year, month, 0, 500);
 
-        for (const ym of monthsForCats) {
-          const respE = await getMyExpensesByMonth(ym.year, ym.month, 0, 500);
-          const pageE = respE.data;
-          (pageE?.content ?? []).forEach((x) => {
-            const cat = String(x.category || 'Другое');
-            accExp.set(cat, (accExp.get(cat) || 0) + n(x.amount));
-          });
+        const pageE = respE; // fetch-style: уже JSON
+        const pageI = respI; // fetch-style: уже JSON
 
-          const respI = await getMyIncomesByMonth(ym.year, ym.month, 0, 500);
-          const pageI = respI.data;
-          (pageI?.content ?? []).forEach((x) => {
-            const cat = String(x.category || 'Другое');
-            accInc.set(cat, (accInc.get(cat) || 0) + n(x.amount));
-          });
-        }
+        const eItems = Array.isArray(pageE?.content) ? pageE.content : [];
+        const iItems = Array.isArray(pageI?.content) ? pageI.content : [];
 
-        const topExp = [...accExp.entries()]
-          .map(([category, amount]) => ({ category, amount }))
-          .sort((a, b) => b.amount - a.amount)
-          .slice(0, 6);
+        const byCategory = (items, amountField = "amount") => {
+          const map = new Map();
+          for (const it of items) {
+            const cat = String(it?.category || "Без категории").trim() || "Без категории";
+            const amt = n(it?.[amountField]);
+            map.set(cat, (map.get(cat) || 0) + amt);
+          }
+          return Array.from(map.entries())
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value);
+        };
 
-        const topInc = [...accInc.entries()]
-          .map(([category, amount]) => ({ category, amount }))
-          .sort((a, b) => b.amount - a.amount)
-          .slice(0, 6);
+        const expensesCats = byCategory(eItems, "amount");
+        const incomesCats = byCategory(iItems, "amount");
 
-        if (!cancelled) {
-          setTopCatsExpenses(topExp);
-          setTopCatsIncome(topInc);
-        }
+        if (cancelled) return;
+
+        setCategories({
+          expenses: expensesCats,
+          incomes: incomesCats,
+        });
       } catch {
         if (!cancelled) {
-          setTopCatsExpenses([]);
-          setTopCatsIncome([]);
+          setCategories({ expenses: [], incomes: [] });
         }
       } finally {
-        if (!cancelled) setCatsLoading(false);
+        if (!cancelled) setLoadingCats(false);
       }
     };
 
-    run();
-    return () => { cancelled = true; };
-  }, [monthsForCats]);
+    runCats();
+    return () => {
+      cancelled = true;
+    };
+  }, [year, month]);
 
-  const activeTopRows = topTab === 'expenses' ? topCatsExpenses : topCatsIncome;
-  const topTitle = topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов';
-  const topBarColor = topTab === 'expenses' ? COLORS.expenses : COLORS.income;
+  // chart data: last 6 months from history (includes current if backend already has it)
+  const historySorted = useMemo(() => {
+    const arr = Array.isArray(history) ? [...history] : [];
+    arr.sort((a, b) => (a.year - b.year) || (a.month - b.month));
+    return arr;
+  }, [history]);
+
+  const last6 = useMemo(() => {
+    const take = historySorted.slice(-6);
+    return take.map((h) => {
+      const d = new Date(h.year, (h.month || 1) - 1, 1);
+      return {
+        key: ymKey(h.year, h.month),
+        name: fmtMonth.format(d),
+        income: n(h.totalIncome),
+        expense: n(h.totalExpenses),
+        savings: n(h.savings),
+        balance: n(h.balance),
+        savingsRate: n(h.savingsRatePercent),
+      };
+    });
+  }, [historySorted, fmtMonth]);
+
+  const income = n(monthSummary?.totalIncome);
+  const expense = n(monthSummary?.totalExpenses);
+  const balance = n(monthSummary?.balance);
+  const savingsRate = n(monthSummary?.savingsRatePercent);
 
   return (
-    <>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} alignItems={{ sm: 'center' }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
-            Аналитика
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.70)', mt: 0.5 }}>
-            {periodLabel}
-          </Typography>
-        </Box>
+    <Box>
+      <Stack spacing={1} sx={{ mb: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 900, color: "#0F172A" }}>
+          Аналитика
+        </Typography>
 
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}>
-          <Chip
-            label={loading ? 'Загрузка…' : 'Актуально'}
-            variant="filled"
-            sx={{
-              borderRadius: 999,
-              bgcolor: alpha(COLORS.analytics, 0.10),
-              color: COLORS.analytics,
-              fontWeight: 700,
-            }}
-          />
+        <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+          {loading ? "Загрузка…" : `Текущий месяц: ${month}/${year}`}
+        </Typography>
 
-          <ToggleButtonGroup
-            value={mode}
-            exclusive
-            onChange={onModeChange}
-            size="small"
-            sx={{
-              bgcolor: alpha('#FFFFFF', 0.70),
-              border: '1px solid rgba(15, 23, 42, 0.10)',
-              borderRadius: 999,
-              '& .MuiToggleButton-root': { border: 0, px: 1.5 },
-            }}
-          >
-            <ToggleButton value="month">Месяц</ToggleButton>
-            <ToggleButton value="year">Год</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
+        {error ? (
+          <Typography variant="body2" color="error">
+            {error}
+          </Typography>
+        ) : null}
       </Stack>
 
-      {error ? (
-        <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: alpha('#EF4444', 0.35), backgroundColor: alpha('#FFFFFF', 0.86) }}>
-          <CardContent sx={{ py: 1.75 }}>
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Grid container spacing={2}>
+        {/* KPIs */}
         <Grid item xs={12} md={3}>
-          <StatCard label="Баланс" value={fmtRub.format(kpiBalance)} accent={COLORS.balance} />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard label="Доходы" value={fmtRub.format(kpiIncome)} accent={COLORS.income} />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard label="Расходы" value={fmtRub.format(kpiExpenses)} accent={COLORS.expenses} />
-        </Grid>
-        <Grid item xs={12} md={3}>
-          <StatCard label="Норма сбережений" value={`${kpiRate}%`} sub={kpiSubRate} accent="#A78BFA" />
-        </Grid>
-
-        <Grid item xs={12}>
-          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
-            <CardContent sx={{ p: 2.25 }}>
-              <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
-                Cashflow за 12 месяцев
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+                Доходы (месяц)
               </Typography>
-
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
-
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={7}>
-                  <BarChart
-                    height={300}
-                    xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'band' }]}
-                    series={[
-                      { data: cashflowRows.map((r) => r.income), label: 'Доходы', color: COLORS.income },
-                      { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
-                    ]}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={5}>
-                  <LineChart
-                    height={300}
-                    xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'point' }]}
-                    series={[{ data: cashflowRows.map((r) => r.balance), label: 'Баланс', color: COLORS.balance }]}
-                  />
-                </Grid>
-              </Grid>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {fmtRub.format(income)}
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12}>
-          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: 'rgba(15, 23, 42, 0.08)', backgroundColor: alpha('#FFFFFF', 0.86), backdropFilter: 'blur(10px)' }}>
-            <CardContent sx={{ p: 2.25 }}>
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
-                <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
-                  {topTitle}
+        <Grid item xs={12} md={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+                Расходы (месяц)
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {fmtRub.format(expense)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+                Баланс (месяц)
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {fmtRub.format(balance)}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} md={3}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="overline" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+                Норма сбережений
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 900 }}>
+                {`${savingsRate}%`}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Bar chart: last 6 months */}
+        <Grid item xs={12} md={8}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: "#0F172A" }}>
+                Доходы и расходы (последние 6 месяцев)
+              </Typography>
+              <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
+
+              <Box sx={{ width: "100%", height: 320 }}>
+                <ResponsiveContainer>
+                  <BarChart data={last6}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip
+                      formatter={(v) => fmtRub.format(n(v))}
+                      labelFormatter={(label) => `Месяц: ${label}`}
+                    />
+                    <Legend />
+                    <Bar dataKey="income" name="Доходы" fill="#22C55E" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="expense" name="Расходы" fill="#F97316" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Pie: expenses by category */}
+        <Grid item xs={12} md={4}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              backgroundColor: alpha("#FFFFFF", 0.86),
+              borderColor: "rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" sx={{ fontWeight: 900, color: "#0F172A" }}>
+                Расходы по категориям
+              </Typography>
+              <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)", mt: 0.25 }}>
+                {loadingCats ? "Загрузка…" : "Текущий месяц"}
+              </Typography>
+
+              <Divider sx={{ my: 1.5, borderColor: "rgba(15, 23, 42, 0.10)" }} />
+
+              <Box sx={{ width: "100%", height: 320 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie
+                      data={categories.expenses}
+                      dataKey="value"
+                      nameKey="name"
+                      outerRadius={110}
+                      innerRadius={60}
+                      paddingAngle={2}
+                    >
+                      {(categories.expenses || []).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(v) => fmtRub.format(n(v))} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </Box>
+
+              {(!categories.expenses || categories.expenses.length === 0) && !loadingCats ? (
+                <Typography variant="body2" sx={{ color: "rgba(15, 23, 42, 0.65)" }}>
+                  Нет данных за месяц.
                 </Typography>
-
-                <Chip
-                  label={catsLoading ? 'Считаю…' : (isYear ? 'Год' : 'Месяц')}
-                  sx={{
-                    borderRadius: 999,
-                    borderColor: alpha(topBarColor, 0.35),
-                    color: topBarColor,
-                    bgcolor: alpha(topBarColor, 0.08),
-                  }}
-                  variant="outlined"
-                />
-              </Stack>
-
-              <Tabs value={topTab} onChange={(e, v) => setTopTab(v)} sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}>
-                <Tab label="Расходы" value="expenses" />
-                <Tab label="Доходы" value="income" />
-              </Tabs>
-
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
-
-              {activeTopRows.length === 0 ? (
-                <Typography variant="body2" sx={{ color: 'rgba(15,23,42,0.65)' }}>
-                  Нет данных по категориям за выбранный период.
-                </Typography>
-              ) : (
-                <BarChart
-                  height={270}
-                  layout="horizontal"
-                  yAxis={[{ data: activeTopRows.map((x) => x.category), scaleType: 'band', width: 150 }]}
-                  series={[{ data: activeTopRows.map((x) => x.amount), label: 'Сумма', color: topBarColor }]}
-                  margin={{ left: 40, right: 20, top: 10, bottom: 10 }}
-                />
-              )}
+              ) : null}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-    </>
+    </Box>
   );
 }

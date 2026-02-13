@@ -143,7 +143,7 @@ export default function DashboardPage() {
     [history]
   );
 
-  // ===== Загрузка summary + истории (axios => .data) =====
+  // ===== Загрузка summary + истории (fetch-style: функции возвращают JSON) =====
   useEffect(() => {
     let cancelled = false;
 
@@ -152,11 +152,10 @@ export default function DashboardPage() {
         setLoading(true);
         setError('');
 
-        const curRes = await getMyMonthlySummary(year, month);
-        if (!cancelled) setSummary(curRes.data);
+        const curData = await getMyMonthlySummary(year, month);
+        if (!cancelled) setSummary(curData || null);
 
-        const allRes = await getMyMonthlySummaries();
-        const allData = allRes.data;
+        const allData = await getMyMonthlySummaries();
         if (!cancelled) setHistory(Array.isArray(allData) ? allData : []);
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
@@ -171,7 +170,7 @@ export default function DashboardPage() {
     };
   }, [year, month]);
 
-  // ===== Месяц (camelCase как в MonthlySummaryDto) =====
+  // ===== Месяц =====
   const incomeMonth = n(summary?.totalIncome);
   const expenseMonth = n(summary?.totalExpenses);
   const balanceMonth = n(summary?.balance);
