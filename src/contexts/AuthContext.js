@@ -1,35 +1,32 @@
 // src/contexts/AuthContext.js
-
 import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext(null);
-
-const API_ORIGIN = process.env.REACT_APP_API_BASE_URL || "http://localhost:8082";
-const API_BASE_URL = `${API_ORIGIN}/api/auth`;
-
+const API_BASE_URL = "/api/auth";
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // { id, userName, email }
-  const [token, setToken] = useState(null); // JWT
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const savedToken = localStorage.getItem("authToken");
     const savedUser = localStorage.getItem("authUser");
 
-    if (savedToken && savedUser) {
-      setToken(savedToken);
+    if (savedToken) setToken(savedToken);
+    if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch {
         setUser(null);
       }
     }
+
     setLoading(false);
   }, []);
 
   const saveAuthData = (data) => {
-    const nextToken = data?.token ?? data?.accessToken ?? data?.jwt;
+    const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
     const nextUser = data?.user ?? null;
 
     if (nextToken) {
@@ -66,8 +63,9 @@ export const AuthProvider = ({ children }) => {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok)
+    if (!res.ok) {
       throw new Error(data.error || data.message || "Registration failed");
+    }
 
     saveAuthData(data);
     return data;
@@ -82,10 +80,11 @@ export const AuthProvider = ({ children }) => {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok)
+    if (!res.ok) {
       throw new Error(
         data.error || data.message || "Google authentication failed"
       );
+    }
 
     saveAuthData(data);
     return data;

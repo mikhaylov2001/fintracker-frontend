@@ -15,13 +15,15 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", token);
 };
 
-const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8082";
+// По умолчанию пусто => все запросы относительные (/api/...)
+// Если надо — можно задать REACT_APP_API_BASE_URL вручную (например https://xxx.up.railway.app)
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
   const base = String(API_BASE || "").replace(/\/+$/, "");
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  return `${base}${p}`;
+  return base ? `${base}${p}` : p;
 };
 
 const parseBody = async (res) => {
@@ -93,9 +95,7 @@ export async function apiFetch(path, options = {}) {
 
   if (res.status === 401) {
     const newToken = await refreshToken();
-    if (newToken) {
-      ({ res, data } = await doRequest());
-    }
+    if (newToken) ({ res, data } = await doRequest());
   }
 
   if (res.status === 401) {

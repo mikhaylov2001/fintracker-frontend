@@ -1,22 +1,9 @@
 // src/utils/constants.js
 
-const DEV_ORIGIN = "http://localhost:8082";
-const normalizeOrigin = (v) => String(v || "").replace(/\/+$/, "");
-
-const origin =
-  process.env.REACT_APP_API_BASE_URL
-    ? normalizeOrigin(process.env.REACT_APP_API_BASE_URL)
-    : (process.env.NODE_ENV === "development" ? DEV_ORIGIN : "");
-
-export const API_BASE_URL = origin ? `${origin}/api` : "";
-
-if (!API_BASE_URL) {
-  // eslint-disable-next-line no-console
-  console.error(
-    "REACT_APP_API_BASE_URL is missing for this deployment. " +
-      "Set it in Vercel Environment Variables (Production + Preview) and redeploy."
-  );
-}
+// Базовый путь всегда относительный.
+// Dev: CRA proxy проксирует /api -> http://localhost:8082
+// Prod: vercel.json перепишет /api -> Railway
+export const API_BASE_URL = "/api";
 
 // выровнено с твоим AuthContext (authToken/authUser)
 export const STORAGE_KEYS = {
@@ -25,7 +12,7 @@ export const STORAGE_KEYS = {
 };
 
 export const API_ENDPOINTS = {
-  // Auth (swagger: /api/auth/...) [file:7210]
+  // Auth (swagger: /api/auth/...)
   LOGIN: "/auth/login",
   REGISTER: "/auth/register",
   GOOGLE_AUTH: "/auth/google",

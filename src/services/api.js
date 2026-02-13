@@ -1,10 +1,11 @@
 // src/services/api.js
 import axios from "axios";
-import { API_BASE_URL, STORAGE_KEYS } from "../utils/constants";
+import { STORAGE_KEYS } from "../utils/constants";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: "/api",
   headers: { "Content-Type": "application/json" },
+  withCredentials: true,
 });
 
 api.interceptors.request.use(
@@ -19,7 +20,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error?.response?.status === 401) {
       localStorage.removeItem(STORAGE_KEYS.TOKEN);
       localStorage.removeItem(STORAGE_KEYS.USER);
       window.location.href = "/login";
