@@ -113,7 +113,7 @@ export default function DashboardPage() {
   const userId = user?.id;
 
   const [summary, setSummary] = useState(null);
-  const [history, setHistory] = useState([]); // массив сводок за 12 мес
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -153,7 +153,6 @@ export default function DashboardPage() {
 
   const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
 
-  // KPI режим
   const kpiModeKey = useMemo(
     () => `fintracker:kpiMode:${userId || 'anon'}`,
     [userId]
@@ -186,7 +185,6 @@ export default function DashboardPage() {
     [history]
   );
 
-  // Загрузка summary + истории (12 месяцев из API)
   useEffect(() => {
     let cancelled = false;
 
@@ -203,7 +201,7 @@ export default function DashboardPage() {
         const cur = unwrap(rawCur);
         if (!cancelled) setSummary(cur);
 
-        // история за 12 месяцев: текущий и 11 назад
+        // история за 12 месяцев
         const baseYM = { year, month };
         const tasks = [];
         const rows = [];
@@ -244,14 +242,12 @@ export default function DashboardPage() {
     };
   }, [userId, year, month]);
 
-  // Месяц
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
-  // Год (YTD) из history
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
     return history.filter(
@@ -282,7 +278,6 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
-  // Отображаемые значения
   const isYear = kpiMode === 'year';
   const periodLabel = isYear
     ? `Показаны данные: ${year} год`
@@ -307,11 +302,7 @@ export default function DashboardPage() {
         <Box sx={{ flexGrow: 1 }}>
           <Typography
             variant="h5"
-            sx={{
-              fontWeight: 900,
-              lineHeight: 1.15,
-              color: '#0F172A',
-            }}
+            sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}
           >
             Привет, {displayName}
           </Typography>
@@ -395,7 +386,8 @@ export default function DashboardPage() {
       ) : null}
 
       <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
+        {/* KPI равномерной сеткой */}
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Баланс"
             value={fmtRub.format(displayBalance)}
@@ -403,7 +395,7 @@ export default function DashboardPage() {
           />
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Доходы"
             value={fmtRub.format(displayIncome)}
@@ -411,7 +403,7 @@ export default function DashboardPage() {
           />
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Расходы"
             value={fmtRub.format(displayExpenses)}
@@ -419,7 +411,7 @@ export default function DashboardPage() {
           />
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Норма сбережений"
             value={`${displayRate}%`}
@@ -428,6 +420,7 @@ export default function DashboardPage() {
           />
         </Grid>
 
+        {/* Итоги и история — без изменений */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
