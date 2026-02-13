@@ -1,15 +1,17 @@
 // src/api/summaryApi.js
 import { apiFetch } from "./client";
 
+const asAxios = async (p) => ({ data: await apiFetch(p) });
+
 export const getMyMonthlySummary = (year, month) =>
-  apiFetch(`/api/summary/me/month/${year}/${month}`);
+  asAxios(`/api/summary/me/month/${year}/${month}`);
 
 export const getMyMonthlySummaries = () =>
-  apiFetch("/api/summary/me/monthly/all");
+  asAxios("/api/summary/me/monthly/all");
 
 export const getMyUsedMonths = () =>
-  apiFetch("/api/summary/me/months");
+  asAxios("/api/summary/me/months");
 
-// legacy (если вдруг ещё где-то нужно)
+// legacy
 export const getMonthlySummary = (userId, year, month) =>
-  apiFetch(`/api/summary/${userId}/month/${year}/${month}`);
+  asAxios(`/api/summary/${userId}/month/${year}/${month}`);
