@@ -18,11 +18,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import MenuIcon from '@mui/icons-material/Menu';
-import DarkModeOutlinedIcon from '@mui/icons-material/DarkModeOutlined';
-import LightModeOutlinedIcon from '@mui/icons-material/LightModeOutlined';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-import { useColorMode } from '../contexts/ColorModeContext'; // <-- поправь путь под свой проект
 
 const COLORS = {
   income: '#22C55E',
@@ -59,19 +55,26 @@ export default function TopNavBar({
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const { mode, toggle } = useColorMode();
-  const isDark = mode === 'dark';
-
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [open, setOpen] = useState(false);
 
   const items = useMemo(() => {
     const arr = [];
-    if (showDashboard) arr.push({ label: 'Дашборд', path: '/dashboard', color: COLORS.dashboard });
+    if (showDashboard)
+      arr.push({
+        label: 'Дашборд',
+        path: '/dashboard',
+        color: COLORS.dashboard,
+      });
     arr.push({ label: 'Доходы', path: '/income', color: COLORS.income });
     arr.push({ label: 'Расходы', path: '/expenses', color: COLORS.expenses });
-    if (showAnalytics) arr.push({ label: 'Аналитика', path: '/analytics', color: COLORS.analytics });
+    if (showAnalytics)
+      arr.push({
+        label: 'Аналитика',
+        path: '/analytics',
+        color: COLORS.analytics,
+      });
     return arr;
   }, [showDashboard, showAnalytics]);
 
@@ -82,7 +85,9 @@ export default function TopNavBar({
     setOpen(false);
   };
 
-  const iOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const iOS =
+    typeof navigator !== 'undefined' &&
+    /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const appBarBg = alpha(theme.palette.background.paper, 0.75);
   const appBarBorder = theme.palette.divider;
@@ -101,7 +106,9 @@ export default function TopNavBar({
         }}
       >
         <Toolbar sx={{ minHeight: 64 }}>
-          <Typography sx={{ flexGrow: 1, fontWeight: 900, letterSpacing: 0.2 }}>
+          <Typography
+            sx={{ flexGrow: 1, fontWeight: 900, letterSpacing: 0.2 }}
+          >
             FinTrackerPro
           </Typography>
 
@@ -118,53 +125,34 @@ export default function TopNavBar({
                 </Button>
               ))}
 
-              <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'} placement="bottom">
-                <IconButton
-                  onClick={toggle}
-                  aria-label="Переключить тему"
-                  sx={{
-                    borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
-                    bgcolor: alpha(theme.palette.background.paper, 0.55),
-                  }}
-                >
-                  {isDark ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
-                </IconButton>
-              </Tooltip>
-
               {showLogout ? (
-                <Button onClick={onLogout} variant="outlined" sx={navBtnSx(COLORS.danger, false)}>
+                <Button
+                  onClick={onLogout}
+                  variant="outlined"
+                  sx={navBtnSx(COLORS.danger, false)}
+                >
                   Выйти
                 </Button>
               ) : null}
             </Stack>
           ) : (
             <Stack direction="row" spacing={1} alignItems="center">
-              <Tooltip title={isDark ? 'Светлая тема' : 'Тёмная тема'} placement="bottom">
+              <Tooltip title="Меню" placement="bottom">
                 <IconButton
-                  onClick={toggle}
-                  aria-label="Переключить тему"
+                  onClick={() => setOpen(true)}
                   sx={{
                     borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+                    border: `1px solid ${alpha(
+                      theme.palette.text.primary,
+                      0.12
+                    )}`,
                     bgcolor: alpha(theme.palette.background.paper, 0.55),
                   }}
+                  aria-label="Открыть меню"
                 >
-                  {isDark ? <LightModeOutlinedIcon /> : <DarkModeOutlinedIcon />}
+                  <MenuIcon />
                 </IconButton>
               </Tooltip>
-
-              <IconButton
-                onClick={() => setOpen(true)}
-                sx={{
-                  borderRadius: 2,
-                  border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
-                  bgcolor: alpha(theme.palette.background.paper, 0.55),
-                }}
-                aria-label="Открыть меню"
-              >
-                <MenuIcon />
-              </IconButton>
             </Stack>
           )}
         </Toolbar>
@@ -187,7 +175,12 @@ export default function TopNavBar({
         <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
           <Typography sx={{ fontWeight: 900 }}>Меню</Typography>
 
-          <Stack direction="row" spacing={1} sx={{ mt: 1 }} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ mt: 1 }}
+            alignItems="center"
+          >
             <Chip
               label={userLabel}
               sx={{
@@ -196,7 +189,10 @@ export default function TopNavBar({
                 color: alpha(theme.palette.text.primary, 0.85),
                 fontWeight: 700,
                 maxWidth: 240,
-                '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
+                '& .MuiChip-label': {
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                },
               }}
             />
           </Stack>
@@ -221,26 +217,16 @@ export default function TopNavBar({
               <ListItemText
                 primary={x.label}
                 primaryTypographyProps={{
-                  sx: { fontWeight: 850, color: is(x.path) ? x.color : theme.palette.text.primary },
+                  sx: {
+                    fontWeight: 850,
+                    color: is(x.path)
+                      ? x.color
+                      : theme.palette.text.primary,
+                  },
                 }}
               />
             </ListItemButton>
           ))}
-        </List>
-
-        <Divider sx={{ mt: 1 }} />
-
-        <List sx={{ py: 0 }}>
-          <ListItemButton
-            onClick={toggle}
-            sx={{ mx: 1, my: 0.5, borderRadius: 2 }}
-          >
-            <ListItemText
-              primary={isDark ? 'Светлая тема' : 'Тёмная тема'}
-              primaryTypographyProps={{ sx: { fontWeight: 850, color: theme.palette.text.primary } }}
-            />
-            {isDark ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
-          </ListItemButton>
         </List>
 
         {showLogout ? (

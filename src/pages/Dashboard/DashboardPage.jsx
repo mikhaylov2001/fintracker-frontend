@@ -386,7 +386,7 @@ export default function DashboardPage() {
       ) : null}
 
       <Grid container spacing={2}>
-        {/* KPI равномерной сеткой */}
+        {/* KPI: ровно по ширине */}
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Баланс"
@@ -420,7 +420,7 @@ export default function DashboardPage() {
           />
         </Grid>
 
-        {/* Итоги и история — без изменений */}
+        {/* Итоги месяца — как в исходном дизайне, на всю ширину */}
         <Grid item xs={12}>
           <Card
             variant="outlined"

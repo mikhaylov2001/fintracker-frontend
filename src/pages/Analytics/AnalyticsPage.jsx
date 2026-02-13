@@ -26,7 +26,6 @@ const COLORS = {
   income: '#22C55E',
   expenses: '#F97316',
   balance: '#6366F1',
-  analytics: '#6366F1',
 };
 
 const n = (v) => {
@@ -137,8 +136,8 @@ export default function AnalyticsPage() {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
 
-  const [mode, setMode] = useState('month'); // 'month' | 'year'
-  const [topTab, setTopTab] = useState('expenses'); // 'expenses' | 'income'
+  const [mode, setMode] = useState('month');
+  const [topTab, setTopTab] = useState('expenses');
 
   const fmtRub = useMemo(
     () =>
@@ -362,7 +361,6 @@ export default function AnalyticsPage() {
   const topBarColor =
     topTab === 'expenses' ? COLORS.expenses : COLORS.income;
 
-
   return (
     <Box
       sx={{
@@ -454,7 +452,7 @@ export default function AnalyticsPage() {
       ) : null}
 
       <Grid container spacing={2}>
-        {/* KPI равномерно */}
+        {/* KPI: ровно по ширине */}
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Баланс"
@@ -485,7 +483,7 @@ export default function AnalyticsPage() {
           />
         </Grid>
 
-        {/* Cashflow */}
+        {/* Cashflow — чуть выше и шире */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
@@ -510,7 +508,7 @@ export default function AnalyticsPage() {
               <Grid container spacing={2}>
                 <Grid item xs={12} md={7}>
                   <BarChart
-                    height={300}
+                    height={320}
                     xAxis={[
                       { data: cashflowRows.map((r) => r.label), scaleType: 'band' },
                     ]}
@@ -530,7 +528,7 @@ export default function AnalyticsPage() {
                 </Grid>
                 <Grid item xs={12} md={5}>
                   <LineChart
-                    height={300}
+                    height={320}
                     xAxis={[
                       { data: cashflowRows.map((r) => r.label), scaleType: 'point' },
                     ]}
@@ -548,7 +546,7 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
 
-        {/* Топ категорий */}
+        {/* Топ категорий — чуть шире */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
@@ -637,7 +635,7 @@ export default function AnalyticsPage() {
                       color: topBarColor,
                     },
                   ]}
-                  margin={{ left: 120, right: 20, top: 10, bottom: 30 }}
+                  margin={{ left: 100, right: 10, top: 10, bottom: 30 }}
                 />
               )}
             </CardContent>
