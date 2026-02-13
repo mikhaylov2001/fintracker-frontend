@@ -403,8 +403,9 @@ export default function DashboardPage() {
               <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
                 <Box sx={{ width: '100%' }}>
                   <StatCard
-                    label="Доходы"
+                    label="Доходыы"
                     value={fmtRub.format(displayIncome)}
+                    sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
                     accent="#22C55E"
                   />
                 </Box>
