@@ -15,14 +15,25 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", token);
 };
 
-// По умолчанию пусто => все запросы относительные (/api/...)
-// Если надо — можно задать REACT_APP_API_BASE_URL вручную (например https://xxx.up.railway.app)
-const API_BASE = (process.env.REACT_APP_API_BASE_URL || "").trim();
+// Можно задать REACT_APP_API_BASE_URL (например https://xxx.up.railway.app) для локалки/другого хоста
+const rawBase = (process.env.REACT_APP_API_BASE_URL || "").trim();
+
+// На Vercel всегда ходим через same-origin (/api/...), чтобы работали rewrites и не было CORS
+const isVercelHost = () => {
+  if (typeof window === "undefined") return false;
+  const h = String(window.location.hostname || "").toLowerCase();
+  // fintrackerpro.vercel.app и любые *.vercel.app
+  return h === "vercel.app" || h.endsWith(".vercel.app");
+};
+
+const API_BASE = isVercelHost() ? "" : rawBase;
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
+
   const base = String(API_BASE || "").replace(/\/+$/, "");
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+
   return base ? `${base}${p}` : p;
 };
 

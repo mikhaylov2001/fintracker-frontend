@@ -1,16 +1,15 @@
 // src/api/summaryApi.js
-import api from "../services/api";
-import { API_ENDPOINTS } from "../utils/constants";
+import { apiFetch } from "./client";
 
 export const getMyMonthlySummary = (year, month) =>
-  api.get(API_ENDPOINTS.MY_SUMMARY_MONTH(year, month));
+  apiFetch(`/api/summary/me/month/${year}/${month}`);
 
 export const getMyMonthlySummaries = () =>
-  api.get(API_ENDPOINTS.MY_SUMMARIES_ALL);
+  apiFetch("/api/summary/me/monthly/all");
 
 export const getMyUsedMonths = () =>
-  api.get(API_ENDPOINTS.MY_USED_MONTHS);
+  apiFetch("/api/summary/me/months");
 
 // legacy (если вдруг ещё где-то нужно)
 export const getMonthlySummary = (userId, year, month) =>
-  api.get(`/summary/${userId}/month/${year}/${month}`);
+  apiFetch(`/api/summary/${userId}/month/${year}/${month}`);
