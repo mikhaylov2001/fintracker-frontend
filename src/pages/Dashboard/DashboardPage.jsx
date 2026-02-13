@@ -20,12 +20,6 @@ import ToggleButton from '@mui/material/ToggleButton';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMonthlySummary } from '../../api/summaryApi';
 
-import {
-  loadMonthHistory,
-  syncMonthHistory,
-  MONTH_HISTORY_EVENT_NAME,
-} from '../../utils/monthHistoryStorage';
-
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -35,6 +29,12 @@ const unwrap = (raw) => {
   if (!raw) return null;
   if (raw.data && typeof raw.data === 'object') return raw.data;
   return raw;
+};
+
+const ymNum = (y, m) => y * 12 + (m - 1);
+const addMonthsYM = ({ year, month }, delta) => {
+  const d = new Date(year, month - 1 + delta, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
@@ -113,7 +113,7 @@ export default function DashboardPage() {
   const userId = user?.id;
 
   const [summary, setSummary] = useState(null);
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState([]); // массив сводок за 12 мес
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -151,10 +151,7 @@ export default function DashboardPage() {
     []
   );
 
-  const monthTitle = (y, m) => {
-    const d = new Date(y, m - 1, 1);
-    return fmtMonth.format(d);
-  };
+  const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
 
   // KPI режим
   const kpiModeKey = useMemo(
@@ -179,9 +176,9 @@ export default function DashboardPage() {
     } catch {}
   }, [kpiModeKey, kpiMode]);
 
-  const onKpiModeChange = (event, nextMode) => {
-    if (!nextMode) return;
-    setKpiMode(nextMode);
+  const onKpiModeChange = (_e, next) => {
+    if (!next) return;
+    setKpiMode(next);
   };
 
   const historyDesc = useMemo(
@@ -189,7 +186,7 @@ export default function DashboardPage() {
     [history]
   );
 
-  // Загрузка summary + истории
+  // Загрузка summary + истории (12 месяцев из API)
   useEffect(() => {
     let cancelled = false;
 
@@ -201,24 +198,38 @@ export default function DashboardPage() {
         if (!userId)
           throw new Error('Нет user.id (проверь authUser в localStorage).');
 
-        // 1) локальная история
-        const existing = loadMonthHistory(userId);
-        if (!cancelled) setHistory(existing);
-
-        // 2) текущий месяц
+        // текущий месяц
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
         if (!cancelled) setSummary(cur);
 
-        // 3) синхрон из БД (до 12 месяцев)
-        const nextHistory = await syncMonthHistory({
-          userId,
-          getMonthlySummary,
-          targetYM: { year, month },
-          prefillMonths: 12,
-        });
+        // история за 12 месяцев: текущий и 11 назад
+        const baseYM = { year, month };
+        const tasks = [];
+        const rows = [];
 
-        if (!cancelled) setHistory(nextHistory);
+        for (let i = 0; i < 12; i++) {
+          const ym = addMonthsYM(baseYM, -i);
+          tasks.push(
+            getMonthlySummary(userId, ym.year, ym.month)
+              .then((raw) => {
+                const d = unwrap(raw);
+                if (
+                  d &&
+                  (n(d.total_income) ||
+                    n(d.total_expenses) ||
+                    n(d.balance) ||
+                    n(d.savings))
+                ) {
+                  rows.push({ ...d, year: ym.year, month: ym.month });
+                }
+              })
+              .catch(() => {})
+          );
+        }
+
+        await Promise.all(tasks);
+        if (!cancelled) setHistory(rows);
       } catch (e) {
         if (!cancelled)
           setError(e?.message || 'Ошибка загрузки сводки/истории');
@@ -233,26 +244,6 @@ export default function DashboardPage() {
     };
   }, [userId, year, month]);
 
-  // Live update истории
-  useEffect(() => {
-    const handler = (e) => {
-      const detail = e?.detail;
-      if (!detail?.userId || detail.userId !== userId) return;
-
-      setHistory(loadMonthHistory(userId));
-
-      if (detail.year === year && detail.month === month) {
-        getMonthlySummary(userId, year, month)
-          .then((raw) => setSummary(unwrap(raw)))
-          .catch(() => {});
-      }
-    };
-
-    window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-    return () =>
-      window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
-  }, [userId, year, month]);
-
   // Месяц
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
@@ -261,12 +252,10 @@ export default function DashboardPage() {
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
   // Год (YTD) из history
-  const ymNum = (y, m) => y * 12 + (m - 1);
-
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
     return history.filter(
-      (h) => h?.year === year && ymNum(h.year, h.month) <= curNum
+      (h) => h.year === year && ymNum(h.year, h.month) <= curNum
     );
   }, [history, year, month]);
 
@@ -434,11 +423,7 @@ export default function DashboardPage() {
           <StatCard
             label="Норма сбережений"
             value={`${displayRate}%`}
-            sub={
-              isYear
-                ? `Сбережения за год: ${fmtRub.format(yearSavings)}`
-                : `Сбережения: ${fmtRub.format(displaySavings)}`
-            }
+            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
             accent="#A78BFA"
           />
         </Grid>
@@ -655,16 +640,6 @@ export default function DashboardPage() {
                               {n(h.savings_rate_percent)}%
                             </Box>
                           </Typography>
-
-                          {h.savedAt ? (
-                            <Typography
-                              variant="caption"
-                              sx={{ color: 'rgba(15, 23, 42, 0.55)' }}
-                            >
-                              Сохранено:{' '}
-                              {new Date(h.savedAt).toLocaleString('ru-RU')}
-                            </Typography>
-                          ) : null}
                         </Stack>
                       </AccordionDetails>
                     </Accordion>
