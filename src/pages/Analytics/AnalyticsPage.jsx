@@ -362,7 +362,6 @@ export default function AnalyticsPage() {
   const topBarColor =
     topTab === 'expenses' ? COLORS.expenses : COLORS.income;
 
-  const displayName = user?.userName || user?.email || 'пользователь';
 
   return (
     <Box
