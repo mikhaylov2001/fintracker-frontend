@@ -29,7 +29,6 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
-/* ────────── constants & helpers (вне компонента) ────────── */
 const COLORS = {
   income: '#22C55E',
   expenses: '#F97316',
@@ -55,7 +54,33 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/* ────────── StatCard ────────── */
+/**
+ * API может вернуть { data: { ... } } или просто { ... }.
+ * Всегда возвращаем «голый» объект.
+ */
+const unwrap = (raw) => {
+  if (!raw) return null;
+  if (raw.data && typeof raw.data === 'object' && ('total_income' in raw.data || 'totalIncome' in raw.data)) {
+    return raw.data;
+  }
+  return raw;
+};
+
+/**
+ * Аналогично для списков (expenses/incomes):
+ * API может вернуть { data: { content: [...] } } или { content: [...] } или [...]
+ */
+const unwrapList = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (raw.data && typeof raw.data === 'object') {
+    if (Array.isArray(raw.data.content)) return raw.data.content;
+    if (Array.isArray(raw.data)) return raw.data;
+  }
+  if (Array.isArray(raw.content)) return raw.content;
+  return [];
+};
+
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -100,9 +125,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
-/* ════════════════════════════════════════════
-   AnalyticsPage
-   ════════════════════════════════════════════ */
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -114,7 +136,6 @@ export default function AnalyticsPage() {
   const [year] = useState(() => new Date().getFullYear());
   const [month] = useState(() => new Date().getMonth() + 1);
 
-  /* ── режим: месяц / год ── */
   const modeKey = useMemo(() => `fintracker:analyticsMode:${userId || 'anon'}`, [userId]);
   const [mode, setMode] = useState('month');
 
@@ -122,17 +143,13 @@ export default function AnalyticsPage() {
     try {
       const v = window.localStorage.getItem(modeKey);
       if (v === 'month' || v === 'year') setMode(v);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }, [modeKey]);
 
   useEffect(() => {
     try {
       window.localStorage.setItem(modeKey, mode);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }, [modeKey, mode]);
 
   const onModeChange = (_e, next) => {
@@ -152,7 +169,6 @@ export default function AnalyticsPage() {
     [],
   );
 
-  /* ── Загрузка истории ── */
   useEffect(() => {
     let cancelled = false;
 
@@ -180,7 +196,7 @@ export default function AnalyticsPage() {
         } catch (syncErr) {
           console.warn('[Analytics] syncMonthHistory failed:', syncErr);
           if (!cancelled && existing.length === 0) {
-            setError('Не удалось синхронизировать историю. Показаны кэшированные данные.');
+            setError('Не удалось синхронизировать историю.');
           }
         }
       } catch (e) {
@@ -196,7 +212,6 @@ export default function AnalyticsPage() {
     };
   }, [userId, year, month]);
 
-  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
@@ -210,7 +225,6 @@ export default function AnalyticsPage() {
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
   }, [userId]);
 
-  /* ── 12 месяцев для cashflow ── */
   const last12 = useMemo(() => {
     const cur = { year, month };
     const arr = [];
@@ -239,7 +253,6 @@ export default function AnalyticsPage() {
     });
   }, [last12, historyMap]);
 
-  /* ── KPI ── */
   const isYear = mode === 'year';
 
   const periodLabel = isYear
@@ -259,7 +272,6 @@ export default function AnalyticsPage() {
     [ytdIncome, ytdBalance],
   );
 
-  /* ── Текущий месяц (summary) ── */
   const [monthSummary, setMonthSummary] = useState(null);
 
   useEffect(() => {
@@ -268,7 +280,8 @@ export default function AnalyticsPage() {
     const run = async () => {
       if (!userId) return;
       try {
-        const s = await getMonthlySummary(userId, year, month);
+        const raw = await getMonthlySummary(userId, year, month);
+        const s = unwrap(raw);
         if (!cancelled) setMonthSummary(s);
       } catch {
         if (!cancelled) setMonthSummary(null);
@@ -295,7 +308,6 @@ export default function AnalyticsPage() {
     ? `Месяцев: ${yearMonths.length}`
     : `Сбережения: ${fmtRub.format(mSavings)}`;
 
-  /* ── Топ категорий ── */
   const [topCatsExpenses, setTopCatsExpenses] = useState([]);
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
@@ -322,8 +334,7 @@ export default function AnalyticsPage() {
         const tasks = monthsForCats.flatMap((ym) => [
           getExpensesByMonth(ym.year, ym.month, 0, 500)
             .then((resp) => {
-              const content = resp?.data?.content ?? resp?.content ?? [];
-              content.forEach((x) => {
+              unwrapList(resp).forEach((x) => {
                 const cat = String(x.category || 'Другое');
                 accExp.set(cat, (accExp.get(cat) || 0) + n(x.amount));
               });
@@ -334,8 +345,7 @@ export default function AnalyticsPage() {
 
           getIncomesByMonth(ym.year, ym.month, 0, 500)
             .then((resp) => {
-              const content = resp?.data?.content ?? resp?.content ?? [];
-              content.forEach((x) => {
+              unwrapList(resp).forEach((x) => {
                 const cat = String(x.category || 'Другое');
                 accInc.set(cat, (accInc.get(cat) || 0) + n(x.amount));
               });
@@ -381,7 +391,6 @@ export default function AnalyticsPage() {
   const topTitle = topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов';
   const topBarColor = topTab === 'expenses' ? COLORS.expenses : COLORS.income;
 
-  /* ── Ранний возврат при !userId ── */
   if (!userId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
@@ -392,7 +401,6 @@ export default function AnalyticsPage() {
     );
   }
 
-  /* ── RENDER ── */
   return (
     <>
       <Stack
@@ -485,7 +493,6 @@ export default function AnalyticsPage() {
           />
         </Grid>
 
-        {/* Cashflow */}
         <Grid item xs={12}>
           <Card
             variant="outlined"
@@ -527,7 +534,6 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
 
-        {/* Топ категорий */}
         <Grid item xs={12}>
           <Card
             variant="outlined"

@@ -41,6 +41,19 @@ const monthTitle = (y, m) => {
   return fmtMonthFormatter.format(d);
 };
 
+/**
+ * API может вернуть { data: { ... } } (axios-обёртка) или просто { ... }.
+ * Эта функция всегда возвращает «голый» объект с полями summary.
+ */
+const unwrap = (raw) => {
+  if (!raw) return null;
+  if (raw.data && typeof raw.data === 'object' && 'total_income' in raw.data) return raw.data;
+  if ('total_income' in raw) return raw;
+  if (raw.data && typeof raw.data === 'object' && 'totalIncome' in raw.data) return raw.data;
+  if ('totalIncome' in raw) return raw;
+  return raw.data ?? raw;
+};
+
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -162,32 +175,17 @@ export default function DashboardPage() {
         setError('');
 
         const existing = loadMonthHistory(userId);
-        console.log('[DEBUG] loadMonthHistory result:', JSON.stringify(existing, null, 2));
         if (!cancelled) setHistory(existing);
 
         let cur = null;
         try {
-          cur = await getMonthlySummary(userId, year, month);
-          // =====================================================
-          // КЛЮЧЕВОЙ ЛОГ: смотри что РЕАЛЬНО возвращает API
-          // =====================================================
-          console.log('[DEBUG] getMonthlySummary RAW response:', cur);
-          console.log('[DEBUG] getMonthlySummary JSON:', JSON.stringify(cur, null, 2));
-          console.log('[DEBUG] typeof cur:', typeof cur);
-          console.log('[DEBUG] cur.total_income:', cur?.total_income);
-          console.log('[DEBUG] cur.totalIncome:', cur?.totalIncome);
-          console.log('[DEBUG] cur.data:', cur?.data);
-          console.log('[DEBUG] cur.data?.total_income:', cur?.data?.total_income);
-          console.log('[DEBUG] cur.data?.totalIncome:', cur?.data?.totalIncome);
-          console.log('[DEBUG] Object.keys(cur):', cur ? Object.keys(cur) : 'null');
-          if (cur?.data) {
-            console.log('[DEBUG] Object.keys(cur.data):', Object.keys(cur.data));
-          }
+          const raw = await getMonthlySummary(userId, year, month);
+          cur = unwrap(raw);
         } catch (apiErr) {
-          console.error('[DEBUG] getMonthlySummary ERROR:', apiErr);
+          console.warn('[Dashboard] getMonthlySummary failed:', apiErr);
           if (!cancelled) {
             setError(
-              `Не удалось загрузить сводку: ${apiErr?.message || 'неизвестная ошибка'}`,
+              `Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'неизвестная ошибка'}. Показаны кэшированные данные.`,
             );
           }
         }
@@ -201,10 +199,9 @@ export default function DashboardPage() {
             targetYM: { year, month },
             prefillMonths: 12,
           });
-          console.log('[DEBUG] syncMonthHistory result:', JSON.stringify(nextHistory?.slice?.(0, 2), null, 2));
           if (!cancelled) setHistory(nextHistory);
         } catch (syncErr) {
-          console.warn('[DEBUG] syncMonthHistory failed:', syncErr);
+          console.warn('[Dashboard] syncMonthHistory failed:', syncErr);
         }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
@@ -230,7 +227,8 @@ export default function DashboardPage() {
 
       if (detail.year === year && detail.month === month) {
         getMonthlySummary(userId, year, month)
-          .then((data) => {
+          .then((raw) => {
+            const data = unwrap(raw);
             if (data) setSummary(data);
           })
           .catch(() => {});
@@ -240,13 +238,6 @@ export default function DashboardPage() {
     window.addEventListener(MONTH_HISTORY_EVENT_NAME, handler);
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
   }, [userId, year, month]);
-
-  // =====================================================
-  // DEBUG: логируем что видит компонент
-  // =====================================================
-  console.log('[DEBUG] summary state:', summary);
-  console.log('[DEBUG] summary?.total_income:', summary?.total_income);
-  console.log('[DEBUG] summary?.totalIncome:', summary?.totalIncome);
 
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
@@ -370,20 +361,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : null}
-
-      {/* DEBUG CARD — покажет raw данные прямо на странице */}
-      <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: '#6366F1', bgcolor: '#F8FAFC' }}>
-        <CardContent>
-          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: 12 }}>
-            {`[DEBUG] summary state:\n${JSON.stringify(summary, null, 2)}\n\n` +
-             `incomeMonth: ${incomeMonth}\n` +
-             `expenseMonth: ${expenseMonth}\n` +
-             `balanceMonth: ${balanceMonth}\n` +
-             `savingsMonth: ${savingsMonth}\n` +
-             `savingsRateMonth: ${savingsRateMonth}`}
-          </Typography>
-        </CardContent>
-      </Card>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
