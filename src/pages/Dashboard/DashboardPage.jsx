@@ -385,58 +385,30 @@ export default function DashboardPage() {
         </Card>
       ) : null}
 
-      <Grid
-              container
-              spacing={2}
-              sx={{ mb: 2, alignItems: 'stretch' }}
-            >
-                    <Grid
-                      container
-                      spacing={2}
-                      sx={{ mb: 2, alignItems: 'stretch' }}
-                    >
-                      <Grid item xs={12} sm={6} md={6} sx={{ display: 'flex' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <StatCard
-                            label="Баланс"
-                            value={fmtRub.format(displayBalance)}
-                            accent="#6366F1"
-                          />
-                        </Box>
-                      </Grid>
+      <StatCard
+        label="Балан"
+        value={fmtRub.format(displayBalance)}
+        accent="#6366F1"
+      />
 
-                      <Grid item xs={12} sm={6} md={6} sx={{ display: 'flex' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <StatCard
-                            label="Доходы"
-                            value={fmtRub.format(displayIncome)}
-                            sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-                            accent="#22C55E"
-                          />
-                        </Box>
-                      </Grid>
+      <StatCard
+        label="Доходы"
+        value={fmtRub.format(displayIncome)}
+        accent="#22C55E"
+      />
 
-                      <Grid item xs={12} sm={6} md={6} sx={{ display: 'flex' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <StatCard
-                            label="Расходы"
-                            value={fmtRub.format(displayExpenses)}
-                            accent="#F97316"
-                          />
-                        </Box>
-                      </Grid>
+      <StatCard
+        label="Расходы"
+        value={fmtRub.format(displayExpenses)}
+        accent="#F97316"
+      />
 
-                      <Grid item xs={12} sm={6} md={6} sx={{ display: 'flex' }}>
-                        <Box sx={{ width: '100%' }}>
-                          <StatCard
-                            label="Норма сбережений"
-                            value={`${displayRate}%`}
-                            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-                            accent="#A78BFA"
-                          />
-                        </Box>
-                      </Grid>
-                    </Grid>
+      <StatCard
+        label="Норма сбережений"
+        value={`${displayRate}%`}
+        accent="#A78BFA"
+      />
+
 
                 <Grid item xs={12}>
                   <Card
