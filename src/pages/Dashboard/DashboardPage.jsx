@@ -385,53 +385,65 @@ export default function DashboardPage() {
         </Card>
       ) : null}
 
-      <Grid container spacing={2}>
-        {/* KPI: ровно по ширине */}
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Баланс"
-            value={fmtRub.format(displayBalance)}
-            accent="#6366F1"
-          />
-        </Grid>
+      <Grid
+              container
+              spacing={2}
+              sx={{ mb: 2, alignItems: 'stretch' }}
+            >
+              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
+                <Box sx={{ width: '100%' }}>
+                  <StatCard
+                    label="Баланс"
+                    value={fmtRub.format(displayBalance)}
+                    accent="#6366F1"
+                  />
+                </Box>
+              </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Доходы"
-            value={fmtRub.format(displayIncome)}
-            accent="#22C55E"
-          />
-        </Grid>
+              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
+                <Box sx={{ width: '100%' }}>
+                  <StatCard
+                    label="Доходы"
+                    value={fmtRub.format(displayIncome)}
+                    accent="#22C55E"
+                  />
+                </Box>
+              </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Расходы"
-            value={fmtRub.format(displayExpenses)}
-            accent="#F97316"
-          />
-        </Grid>
+              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
+                <Box sx={{ width: '100%' }}>
+                  <StatCard
+                    label="Расходы"
+                    value={fmtRub.format(displayExpenses)}
+                    accent="#F97316"
+                  />
+                </Box>
+              </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            label="Норма сбережений"
-            value={`${displayRate}%`}
-            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-            accent="#A78BFA"
-          />
-        </Grid>
+              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
+                <Box sx={{ width: '100%' }}>
+                  <StatCard
+                    label="Норма сбережений"
+                    value={`${displayRate}%`}
+                    sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+                    accent="#A78BFA"
+                  />
+                </Box>
+              </Grid>
 
-        {/* Итоги месяца — как в исходном дизайне, на всю ширину */}
-        <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
+                <Grid item xs={12}>
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 3,
+                      borderColor: 'rgba(15, 23, 42, 0.08)',
+                      backgroundColor: alpha('#FFFFFF', 0.96),
+                      backdropFilter: 'blur(10px)',
+                      width: '100%',
+                    }}
+                  >
+                    <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+
               <Typography
                 variant="h6"
                 sx={{ fontWeight: 850, color: '#0F172A' }}
