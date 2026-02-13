@@ -26,6 +26,7 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
+/* ────────── helpers ────────── */
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -36,24 +37,17 @@ const fmtMonthFormatter = new Intl.DateTimeFormat('ru-RU', {
   year: 'numeric',
 });
 
-const monthTitle = (y, m) => {
-  const d = new Date(y, m - 1, 1);
-  return fmtMonthFormatter.format(d);
-};
+const monthTitle = (y, m) => fmtMonthFormatter.format(new Date(y, m - 1, 1));
 
-/**
- * API может вернуть { data: { ... } } (axios-обёртка) или просто { ... }.
- * Эта функция всегда возвращает «голый» объект с полями summary.
- */
 const unwrap = (raw) => {
   if (!raw) return null;
-  if (raw.data && typeof raw.data === 'object' && 'total_income' in raw.data) return raw.data;
-  if ('total_income' in raw) return raw;
-  if (raw.data && typeof raw.data === 'object' && 'totalIncome' in raw.data) return raw.data;
-  if ('totalIncome' in raw) return raw;
-  return raw.data ?? raw;
+  if (raw.data && typeof raw.data === 'object' && ('total_income' in raw.data || 'totalIncome' in raw.data)) {
+    return raw.data;
+  }
+  return raw;
 };
 
+/* ────────── StatCard (светлая тема, мобильная) ────────── */
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -62,10 +56,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       borderRadius: 3,
       position: 'relative',
       overflow: 'hidden',
-      borderColor: 'rgba(15, 23, 42, 0.08)',
-      backgroundColor: alpha('#FFFFFF', 0.86),
-      backdropFilter: 'blur(10px)',
-      transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
+      borderColor: '#E2E8F0',
+      backgroundColor: '#FFFFFF',
+      transition: 'transform 140ms ease, box-shadow 140ms ease',
       '&:before': {
         content: '""',
         position: 'absolute',
@@ -78,25 +71,22 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       },
       '&:hover': {
         transform: 'translateY(-2px)',
-        borderColor: 'rgba(15, 23, 42, 0.12)',
-        boxShadow: '0 18px 50px rgba(15, 23, 42, 0.10)',
+        boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
       },
     }}
   >
-    <CardContent sx={{ p: 2.25 }}>
+    <CardContent sx={{ p: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.9 }} />
-        <Typography variant="overline" sx={{ color: 'rgba(15, 23, 42, 0.65)', letterSpacing: 0.6 }}>
+        <Typography variant="overline" sx={{ color: '#64748B', letterSpacing: 0.6 }}>
           {label}
         </Typography>
       </Stack>
-
-      <Typography variant="h5" sx={{ mt: 0.75, fontWeight: 700, color: '#0F172A' }}>
+      <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 700, color: '#0F172A' }}>
         {value}
       </Typography>
-
       {sub ? (
-        <Typography variant="body2" sx={{ mt: 0.75, color: 'rgba(15, 23, 42, 0.65)' }}>
+        <Typography variant="body2" sx={{ mt: 0.5, color: '#64748B' }}>
           {sub}
         </Typography>
       ) : null}
@@ -104,6 +94,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
+/* ════════════════════════════════════════════
+   DashboardPage
+   ════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -123,15 +116,16 @@ export default function DashboardPage() {
         currency: 'RUB',
         maximumFractionDigits: 0,
       }),
-    [],
+    []
   );
 
   const fmtToday = useMemo(
     () => new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }),
-    [],
+    []
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
+  /* ── KPI режим ── */
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || 'anon'}`, [userId]);
   const [kpiMode, setKpiMode] = useState('month');
 
@@ -158,9 +152,10 @@ export default function DashboardPage() {
 
   const historyDesc = useMemo(
     () => [...history].sort((a, b) => (b.year - a.year) || (b.month - a.month)),
-    [history],
+    [history]
   );
 
+  /* ── Загрузка данных ── */
   useEffect(() => {
     let cancelled = false;
 
@@ -184,12 +179,9 @@ export default function DashboardPage() {
         } catch (apiErr) {
           console.warn('[Dashboard] getMonthlySummary failed:', apiErr);
           if (!cancelled) {
-            setError(
-              `Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'неизвестная ошибка'}. Показаны кэшированные данные.`,
-            );
+            setError(`Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'ошибка'}`);
           }
         }
-
         if (!cancelled && cur) setSummary(cur);
 
         try {
@@ -199,12 +191,14 @@ export default function DashboardPage() {
             targetYM: { year, month },
             prefillMonths: 12,
           });
-          if (!cancelled) setHistory(nextHistory);
+          if (!cancelled && nextHistory && nextHistory.length > 0) {
+            setHistory(nextHistory);
+          }
         } catch (syncErr) {
           console.warn('[Dashboard] syncMonthHistory failed:', syncErr);
         }
       } catch (e) {
-        if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
+        if (!cancelled) setError(e?.message || 'Ошибка загрузки');
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -216,15 +210,14 @@ export default function DashboardPage() {
     };
   }, [userId, year, month]);
 
+  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
     const handler = (e) => {
       const detail = e?.detail;
       if (!detail?.userId || detail.userId !== userId) return;
-
       setHistory(loadMonthHistory(userId));
-
       if (detail.year === year && detail.month === month) {
         getMonthlySummary(userId, year, month)
           .then((raw) => {
@@ -239,12 +232,14 @@ export default function DashboardPage() {
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
   }, [userId, year, month]);
 
+  /* ── Показатели месяца ── */
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
+  /* ── Показатели года ── */
   const ymNum = (y, m) => y * 12 + (m - 1);
 
   const yearMonths = useMemo(() => {
@@ -255,6 +250,7 @@ export default function DashboardPage() {
   const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
   const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+  const yearSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
 
   const yearSavingsRate = useMemo(() => {
     if (yearIncome <= 0) return 0;
@@ -262,23 +258,24 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
+  /* ── Отображаемые KPI ── */
   const isYear = kpiMode === 'year';
   const periodLabel = isYear
-    ? `Показаны данные: ${year} год`
+    ? `Показаны данные: ${year} год (${yearMonths.length} мес.)`
     : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
   const displayBalance = isYear ? yearBalance : balanceMonth;
   const displayRate = isYear ? yearSavingsRate : savingsRateMonth;
-  const displaySavings = isYear ? yearBalance : savingsMonth;
+  const displaySavings = isYear ? yearSavings : savingsMonth;
 
   const displayName = user?.userName || user?.email || 'пользователь';
 
   if (!userId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+        <Typography variant="h6" sx={{ color: '#64748B' }}>
           Загрузка профиля…
         </Typography>
       </Box>
@@ -286,7 +283,8 @@ export default function DashboardPage() {
   }
 
   return (
-    <>
+    <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh', p: { xs: 2, md: 3 } }}>
+      {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
@@ -297,12 +295,10 @@ export default function DashboardPage() {
           <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
             Привет, {displayName}
           </Typography>
-
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
             Сегодня: {todayLabel}
           </Typography>
-
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)', mt: 0.5, fontWeight: 500 }}>
+          <Typography variant="body2" sx={{ color: '#475569', mt: 0.5, fontWeight: 500 }}>
             {periodLabel}
           </Typography>
         </Box>
@@ -319,12 +315,11 @@ export default function DashboardPage() {
             sx={{
               width: { xs: '100%', sm: 'auto' },
               borderRadius: 999,
-              bgcolor: error ? alpha('#EF4444', 0.10) : alpha('#6366F1', 0.10),
+              bgcolor: error ? '#FEE2E2' : '#EEF2FF',
               color: error ? '#EF4444' : '#6366F1',
               fontWeight: 700,
             }}
           />
-
           <ToggleButtonGroup
             value={kpiMode}
             exclusive
@@ -332,10 +327,16 @@ export default function DashboardPage() {
             size="small"
             sx={{
               width: { xs: '100%', sm: 'auto' },
-              bgcolor: alpha('#FFFFFF', 0.70),
-              border: '1px solid rgba(15, 23, 42, 0.10)',
+              bgcolor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
               borderRadius: 999,
-              '& .MuiToggleButton-root': { border: 0, px: 1.5, flex: { xs: 1, sm: 'unset' } },
+              '& .MuiToggleButton-root': {
+                border: 0,
+                px: 1.5,
+                flex: { xs: 1, sm: 'unset' },
+                color: '#64748B',
+                '&.Mui-selected': { color: '#0F172A', fontWeight: 700, bgcolor: '#F1F5F9' },
+              },
             }}
           >
             <ToggleButton value="month">Месяц</ToggleButton>
@@ -345,15 +346,7 @@ export default function DashboardPage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-            mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
-          }}
-        >
+        <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: '#FECACA', bgcolor: '#FFF' }}>
           <CardContent sx={{ py: 1.75 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -362,88 +355,90 @@ export default function DashboardPage() {
         </Card>
       ) : null}
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
+      {/* KPI Cards — под мобилу: xs=12, sm=6 */}
+      <Grid container spacing={1.5}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Баланс" value={fmtRub.format(displayBalance)} accent="#6366F1" />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Доходы" value={fmtRub.format(displayIncome)} accent="#22C55E" />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} accent="#F97316" />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Норма сбережений"
             value={`${displayRate}%`}
-            sub={isYear ? `Месяцев учтено: ${yearMonths.length}` : `Сбережения: ${fmtRub.format(displaySavings)}`}
+            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
             accent="#A78BFA"
           />
         </Grid>
 
+        {/* Итоги месяца */}
         <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: '#E2E8F0', bgcolor: '#FFFFFF' }}>
+            <CardContent sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
-                Итоги операций за месяц
+                Итоги операций за {monthTitle(year, month)}
               </Typography>
-
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
-
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ flexWrap: 'wrap' }}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+              <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
+              <Stack direction="column" spacing={0.75}>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
                   Доходы:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(incomeMonth)}
                   </Box>
                 </Typography>
-
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
                   Расходы:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(expenseMonth)}
                   </Box>
                 </Typography>
-
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
                   Сбережения:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(savingsMonth)}
                   </Box>
                 </Typography>
-
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                <Typography variant="body2" sx={{ color: '#475569' }}>
                   Норма сбережений:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {savingsRateMonth}%
                   </Box>
                 </Typography>
               </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
 
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
-
-              <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
-                История сохранена: {history.length} месяцев
+        {/* История месяцев */}
+        <Grid item xs={12}>
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: '#E2E8F0', bgcolor: '#FFFFFF' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
+                История по месяцам
               </Typography>
+              <Typography variant="body2" sx={{ color: '#64748B', mt: 0.5 }}>
+                Сохранено месяцев: {history.length} · Следите за нормой сбережений из месяца в месяц
+              </Typography>
+              <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
+              {historyDesc.length === 0 ? (
+                <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                  {loading
+                    ? 'Загрузка истории…'
+                    : 'Пока нет сохранённых месяцев. Данные появятся после первой операции.'}
+                </Typography>
+              ) : (
+                historyDesc.map((h) => {
+                  const hIncome = n(h.total_income);
+                  const hExpenses = n(h.total_expenses);
+                  const hBalance = n(h.balance);
+                  const hSavings = n(h.savings);
+                  const hRate = n(h.savings_rate_percent);
 
-              <Box sx={{ mt: 1.25 }}>
-                {historyDesc.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
-                    Пока нет сохранённых месяцев.
-                  </Typography>
-                ) : (
-                  historyDesc.map((h) => (
+                  return (
                     <Accordion
                       key={`${h.year}-${h.month}`}
                       disableGutters
@@ -451,69 +446,91 @@ export default function DashboardPage() {
                       sx={{
                         borderRadius: 2,
                         mb: 1,
-                        border: '1px solid rgba(15, 23, 42, 0.08)',
-                        bgcolor: 'transparent',
+                        border: '1px solid #E2E8F0',
+                        bgcolor: '#FAFBFC',
                         '&:before': { display: 'none' },
                       }}
                     >
                       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <Typography sx={{ fontWeight: 800, color: '#0F172A', textTransform: 'capitalize' }}>
-                          {monthTitle(h.year, h.month)}
-                        </Typography>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={1}
+                          sx={{ width: '100%', pr: 1 }}
+                        >
+                          <Typography
+                            sx={{
+                              fontWeight: 800,
+                              color: '#0F172A',
+                              textTransform: 'capitalize',
+                              flexGrow: 1,
+                            }}
+                          >
+                            {monthTitle(h.year, h.month)}
+                          </Typography>
+                          <Chip
+                            label={`${hRate}%`}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              bgcolor:
+                                hRate >= 20 ? '#DCFCE7' : hRate >= 0 ? '#FEF3C7' : '#FEE2E2',
+                              color: hRate >= 20 ? '#16A34A' : hRate >= 0 ? '#D97706' : '#EF4444',
+                            }}
+                          />
+                          <Typography variant="body2" sx={{ color: '#64748B', ml: 1 }}>
+                            {fmtRub.format(hBalance)}
+                          </Typography>
+                        </Stack>
                       </AccordionSummary>
 
                       <AccordionDetails sx={{ pt: 0 }}>
-                        <Stack spacing={0.75}>
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                        <Stack spacing={0.5}>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
                             Доходы:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.total_income))}
+                              {fmtRub.format(hIncome)}
                             </Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
                             Расходы:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.total_expenses))}
+                              {fmtRub.format(hExpenses)}
                             </Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
                             Баланс:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.balance))}
+                              {fmtRub.format(hBalance)}
                             </Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
                             Сбережения:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {fmtRub.format(n(h.savings))}
+                              {fmtRub.format(hSavings)}
                             </Box>
                           </Typography>
-
-                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
                             Норма сбережений:{' '}
                             <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                              {n(h.savings_rate_percent)}%
+                              {hRate}%
                             </Box>
                           </Typography>
-
                           {h.savedAt ? (
-                            <Typography variant="caption" sx={{ color: 'rgba(15, 23, 42, 0.55)' }}>
+                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>
                               Сохранено: {new Date(h.savedAt).toLocaleString('ru-RU')}
                             </Typography>
                           ) : null}
                         </Stack>
                       </AccordionDetails>
                     </Accordion>
-                  ))
-                )}
-              </Box>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
         </Grid>
       </Grid>
-    </>
+    </Box>
   );
 }

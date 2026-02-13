@@ -29,6 +29,7 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
+/* ────────── constants ────────── */
 const COLORS = {
   income: '#22C55E',
   expenses: '#F97316',
@@ -54,10 +55,6 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/**
- * API может вернуть { data: { ... } } или просто { ... }.
- * Всегда возвращаем «голый» объект.
- */
 const unwrap = (raw) => {
   if (!raw) return null;
   if (raw.data && typeof raw.data === 'object' && ('total_income' in raw.data || 'totalIncome' in raw.data)) {
@@ -66,10 +63,6 @@ const unwrap = (raw) => {
   return raw;
 };
 
-/**
- * Аналогично для списков (expenses/incomes):
- * API может вернуть { data: { content: [...] } } или { content: [...] } или [...]
- */
 const unwrapList = (raw) => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;
@@ -81,6 +74,7 @@ const unwrapList = (raw) => {
   return [];
 };
 
+/* ────────── StatCard (светлая тема, мобильная) ────────── */
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -89,9 +83,8 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       borderRadius: 3,
       position: 'relative',
       overflow: 'hidden',
-      borderColor: 'rgba(15, 23, 42, 0.08)',
-      backgroundColor: alpha('#FFFFFF', 0.86),
-      backdropFilter: 'blur(10px)',
+      borderColor: '#E2E8F0',
+      backgroundColor: '#FFFFFF',
       '&:before': {
         content: '""',
         position: 'absolute',
@@ -104,20 +97,18 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       },
     }}
   >
-    <CardContent sx={{ p: 2.1 }}>
+    <CardContent sx={{ p: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.9 }} />
-        <Typography variant="overline" sx={{ color: 'rgba(15, 23, 42, 0.65)', letterSpacing: 0.6 }}>
+        <Typography variant="overline" sx={{ color: '#64748B', letterSpacing: 0.6 }}>
           {label}
         </Typography>
       </Stack>
-
-      <Typography variant="h5" sx={{ mt: 0.6, fontWeight: 850, color: '#0F172A' }}>
+      <Typography variant="h5" sx={{ mt: 0.5, fontWeight: 850, color: '#0F172A' }}>
         {value}
       </Typography>
-
       {sub ? (
-        <Typography variant="body2" sx={{ mt: 0.55, color: 'rgba(15, 23, 42, 0.65)' }}>
+        <Typography variant="body2" sx={{ mt: 0.5, color: '#64748B' }}>
           {sub}
         </Typography>
       ) : null}
@@ -125,6 +116,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
+/* ════════════════════════════════════════════
+   AnalyticsPage
+   ════════════════════════════════════════════ */
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -166,9 +160,10 @@ export default function AnalyticsPage() {
         currency: 'RUB',
         maximumFractionDigits: 0,
       }),
-    [],
+    []
   );
 
+  /* ── Загрузка истории ── */
   useEffect(() => {
     let cancelled = false;
 
@@ -192,11 +187,34 @@ export default function AnalyticsPage() {
             targetYM: { year, month },
             prefillMonths: 12,
           });
-          if (!cancelled) setHistory(next);
+          if (!cancelled && next && next.length > 0) setHistory(next);
         } catch (syncErr) {
           console.warn('[Analytics] syncMonthHistory failed:', syncErr);
-          if (!cancelled && existing.length === 0) {
-            setError('Не удалось синхронизировать историю.');
+          if (existing.length === 0) {
+            try {
+              const directHistory = [];
+              const cur = { year, month };
+              const fetches = [];
+              for (let i = 0; i < 12; i++) {
+                const ym = addMonthsYM(cur, -i);
+                fetches.push(
+                  getMonthlySummary(userId, ym.year, ym.month)
+                    .then((raw) => {
+                      const d = unwrap(raw);
+                      if (d && (n(d.total_income) > 0 || n(d.total_expenses) > 0)) {
+                        directHistory.push({ ...d, year: ym.year, month: ym.month });
+                      }
+                    })
+                    .catch(() => {})
+                );
+              }
+              await Promise.all(fetches);
+              if (!cancelled && directHistory.length > 0) {
+                setHistory(directHistory);
+              }
+            } catch {
+              /* ignore */
+            }
           }
         }
       } catch (e) {
@@ -212,6 +230,7 @@ export default function AnalyticsPage() {
     };
   }, [userId, year, month]);
 
+  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
@@ -225,6 +244,7 @@ export default function AnalyticsPage() {
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
   }, [userId]);
 
+  /* ── Cashflow ── */
   const last12 = useMemo(() => {
     const cur = { year, month };
     const arr = [];
@@ -238,21 +258,24 @@ export default function AnalyticsPage() {
     return m;
   }, [history]);
 
-  const cashflowRows = useMemo(() => {
-    return last12.map((ym) => {
-      const h = historyMap.get(`${ym.year}-${ym.month}`);
-      const income = n(h?.total_income);
-      const expenses = n(h?.total_expenses);
-      const balance = income - expenses;
-      return {
-        label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(2)}`,
-        income,
-        expenses,
-        balance,
-      };
-    });
-  }, [last12, historyMap]);
+  const cashflowRows = useMemo(
+    () =>
+      last12.map((ym) => {
+        const h = historyMap.get(`${ym.year}-${ym.month}`);
+        const income = n(h?.total_income);
+        const expenses = n(h?.total_expenses);
+        const balance = income - expenses;
+        return {
+          label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(2)}`,
+          income,
+          expenses,
+          balance,
+        };
+      }),
+    [last12, historyMap]
+  );
 
+  /* ── KPI ── */
   const isYear = mode === 'year';
 
   const periodLabel = isYear
@@ -267,16 +290,17 @@ export default function AnalyticsPage() {
   const ytdIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
+  const ytdSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
   const ytdRate = useMemo(
     () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
-    [ytdIncome, ytdBalance],
+    [ytdIncome, ytdBalance]
   );
 
+  /* ── Summary текущего месяца ── */
   const [monthSummary, setMonthSummary] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
-
     const run = async () => {
       if (!userId) return;
       try {
@@ -287,7 +311,6 @@ export default function AnalyticsPage() {
         if (!cancelled) setMonthSummary(null);
       }
     };
-
     run();
     return () => {
       cancelled = true;
@@ -304,10 +327,9 @@ export default function AnalyticsPage() {
   const kpiExpenses = isYear ? ytdExpenses : mExpenses;
   const kpiBalance = isYear ? ytdBalance : mBalance;
   const kpiRate = isYear ? ytdRate : mRate;
-  const kpiSubRate = isYear
-    ? `Месяцев: ${yearMonths.length}`
-    : `Сбережения: ${fmtRub.format(mSavings)}`;
+  const kpiSavings = isYear ? ytdSavings : mSavings;
 
+  /* ── Топ категорий ── */
   const [topCatsExpenses, setTopCatsExpenses] = useState([]);
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
@@ -340,7 +362,7 @@ export default function AnalyticsPage() {
               });
             })
             .catch((err) => {
-              console.warn(`[Analytics] expenses ${ym.year}-${ym.month} failed:`, err?.message);
+              console.warn(`[Analytics] expenses ${ym.year}-${ym.month}:`, err?.message);
             }),
 
           getIncomesByMonth(ym.year, ym.month, 0, 500)
@@ -351,7 +373,7 @@ export default function AnalyticsPage() {
               });
             })
             .catch((err) => {
-              console.warn(`[Analytics] income ${ym.year}-${ym.month} failed:`, err?.message);
+              console.warn(`[Analytics] income ${ym.year}-${ym.month}:`, err?.message);
             }),
         ]);
 
@@ -394,7 +416,7 @@ export default function AnalyticsPage() {
   if (!userId) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
-        <Typography variant="h6" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+        <Typography variant="h6" sx={{ color: '#64748B' }}>
           Загрузка профиля…
         </Typography>
       </Box>
@@ -402,7 +424,8 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <>
+    <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh', p: { xs: 2, md: 3 } }}>
+      {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
@@ -413,7 +436,7 @@ export default function AnalyticsPage() {
           <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
             Аналитика
           </Typography>
-          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.70)', mt: 0.5 }}>
+          <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>
             {periodLabel}
           </Typography>
         </Box>
@@ -429,22 +452,26 @@ export default function AnalyticsPage() {
             variant="filled"
             sx={{
               borderRadius: 999,
-              bgcolor: error ? alpha('#F97316', 0.10) : alpha(COLORS.analytics, 0.10),
+              bgcolor: error ? alpha('#F97316', 0.1) : '#EEF2FF',
               color: error ? '#F97316' : COLORS.analytics,
               fontWeight: 700,
             }}
           />
-
           <ToggleButtonGroup
             value={mode}
             exclusive
             onChange={onModeChange}
             size="small"
             sx={{
-              bgcolor: alpha('#FFFFFF', 0.70),
-              border: '1px solid rgba(15, 23, 42, 0.10)',
+              bgcolor: '#FFFFFF',
+              border: '1px solid #E2E8F0',
               borderRadius: 999,
-              '& .MuiToggleButton-root': { border: 0, px: 1.5 },
+              '& .MuiToggleButton-root': {
+                border: 0,
+                px: 1.5,
+                color: '#64748B',
+                '&.Mui-selected': { color: '#0F172A', fontWeight: 700, bgcolor: '#F1F5F9' },
+              },
             }}
           >
             <ToggleButton value="month">Месяц</ToggleButton>
@@ -454,15 +481,7 @@ export default function AnalyticsPage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-            mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
-          }}
-        >
+        <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: '#FECACA', bgcolor: '#FFF' }}>
           <CardContent sx={{ py: 1.75 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -471,49 +490,38 @@ export default function AnalyticsPage() {
         </Card>
       ) : null}
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={3}>
+      <Grid container spacing={1.5}>
+        {/* KPI — xs=12, sm=6 для мобилы */}
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Баланс" value={fmtRub.format(kpiBalance)} accent={COLORS.balance} />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Доходы" value={fmtRub.format(kpiIncome)} accent={COLORS.income} />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard label="Расходы" value={fmtRub.format(kpiExpenses)} accent={COLORS.expenses} />
         </Grid>
-
-        <Grid item xs={12} md={3}>
+        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Норма сбережений"
             value={`${kpiRate}%`}
-            sub={kpiSubRate}
+            sub={`Сбережения: ${fmtRub.format(kpiSavings)}`}
             accent="#A78BFA"
           />
         </Grid>
 
+        {/* Cashflow */}
         <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: '#E2E8F0', bgcolor: '#FFFFFF' }}>
+            <CardContent sx={{ p: 2 }}>
               <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
                 Cashflow за 12 месяцев
               </Typography>
-
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
-
+              <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
               <Grid container spacing={2}>
                 <Grid item xs={12} md={7}>
                   <BarChart
-                    height={300}
+                    height={260}
                     xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'band' }]}
                     series={[
                       { data: cashflowRows.map((r) => r.income), label: 'Доходы', color: COLORS.income },
@@ -521,10 +529,9 @@ export default function AnalyticsPage() {
                     ]}
                   />
                 </Grid>
-
                 <Grid item xs={12} md={5}>
                   <LineChart
-                    height={300}
+                    height={260}
                     xAxis={[{ data: cashflowRows.map((r) => r.label), scaleType: 'point' }]}
                     series={[{ data: cashflowRows.map((r) => r.balance), label: 'Баланс', color: COLORS.balance }]}
                   />
@@ -534,26 +541,14 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
 
+        {/* Топ категорий */}
         <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1}
-                alignItems={{ sm: 'center' }}
-              >
+          <Card variant="outlined" sx={{ borderRadius: 3, borderColor: '#E2E8F0', bgcolor: '#FFFFFF' }}>
+            <CardContent sx={{ p: 2 }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
                 <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
                   {topTitle}
                 </Typography>
-
                 <Chip
                   label={catsLoading ? 'Считаю…' : isYear ? `${year} год` : monthTitleRu(year, month)}
                   sx={{
@@ -569,21 +564,25 @@ export default function AnalyticsPage() {
               <Tabs
                 value={topTab}
                 onChange={(_e, v) => setTopTab(v)}
-                sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40 } }}
+                sx={{ mt: 1, minHeight: 40, '& .MuiTab-root': { minHeight: 40, color: '#64748B' } }}
               >
                 <Tab label="Расходы" value="expenses" />
                 <Tab label="Доходы" value="income" />
               </Tabs>
 
-              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.10)' }} />
+              <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
-              {activeTopRows.length === 0 ? (
-                <Typography variant="body2" sx={{ color: 'rgba(15,23,42,0.65)' }}>
+              {catsLoading ? (
+                <Typography variant="body2" sx={{ color: '#64748B' }}>
+                  Загрузка данных по категориям…
+                </Typography>
+              ) : activeTopRows.length === 0 ? (
+                <Typography variant="body2" sx={{ color: '#94A3B8' }}>
                   Нет данных по категориям за выбранный период.
                 </Typography>
               ) : (
                 <BarChart
-                  height={270}
+                  height={230}
                   layout="horizontal"
                   yAxis={[{ data: activeTopRows.map((x) => x.category), scaleType: 'band' }]}
                   series={[{ data: activeTopRows.map((x) => x.amount), label: 'Сумма', color: topBarColor }]}
@@ -594,6 +593,6 @@ export default function AnalyticsPage() {
           </Card>
         </Grid>
       </Grid>
-    </>
+    </Box>
   );
 }
