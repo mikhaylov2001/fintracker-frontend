@@ -26,7 +26,6 @@ import {
   MONTH_HISTORY_EVENT_NAME,
 } from '../../utils/monthHistoryStorage';
 
-/* ────────── helpers (вне компонента) ────────── */
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -42,7 +41,6 @@ const monthTitle = (y, m) => {
   return fmtMonthFormatter.format(d);
 };
 
-/* ────────── StatCard ────────── */
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -93,9 +91,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
-/* ════════════════════════════════════════════
-   DashboardPage
-   ════════════════════════════════════════════ */
 export default function DashboardPage() {
   const { user } = useAuth();
   const userId = user?.id ?? null;
@@ -124,7 +119,6 @@ export default function DashboardPage() {
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
-  /* ── KPI режим ── */
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || 'anon'}`, [userId]);
   const [kpiMode, setKpiMode] = useState('month');
 
@@ -141,9 +135,7 @@ export default function DashboardPage() {
   useEffect(() => {
     try {
       window.localStorage.setItem(kpiModeKey, kpiMode);
-    } catch {
-      /* ignore */
-    }
+    } catch {}
   }, [kpiModeKey, kpiMode]);
 
   const onKpiModeChange = (_event, nextMode) => {
@@ -156,7 +148,6 @@ export default function DashboardPage() {
     [history],
   );
 
-  /* ── Загрузка summary + истории ── */
   useEffect(() => {
     let cancelled = false;
 
@@ -171,16 +162,32 @@ export default function DashboardPage() {
         setError('');
 
         const existing = loadMonthHistory(userId);
+        console.log('[DEBUG] loadMonthHistory result:', JSON.stringify(existing, null, 2));
         if (!cancelled) setHistory(existing);
 
         let cur = null;
         try {
           cur = await getMonthlySummary(userId, year, month);
+          // =====================================================
+          // КЛЮЧЕВОЙ ЛОГ: смотри что РЕАЛЬНО возвращает API
+          // =====================================================
+          console.log('[DEBUG] getMonthlySummary RAW response:', cur);
+          console.log('[DEBUG] getMonthlySummary JSON:', JSON.stringify(cur, null, 2));
+          console.log('[DEBUG] typeof cur:', typeof cur);
+          console.log('[DEBUG] cur.total_income:', cur?.total_income);
+          console.log('[DEBUG] cur.totalIncome:', cur?.totalIncome);
+          console.log('[DEBUG] cur.data:', cur?.data);
+          console.log('[DEBUG] cur.data?.total_income:', cur?.data?.total_income);
+          console.log('[DEBUG] cur.data?.totalIncome:', cur?.data?.totalIncome);
+          console.log('[DEBUG] Object.keys(cur):', cur ? Object.keys(cur) : 'null');
+          if (cur?.data) {
+            console.log('[DEBUG] Object.keys(cur.data):', Object.keys(cur.data));
+          }
         } catch (apiErr) {
-          console.warn('[Dashboard] getMonthlySummary failed:', apiErr);
+          console.error('[DEBUG] getMonthlySummary ERROR:', apiErr);
           if (!cancelled) {
             setError(
-              `Не удалось загрузить сводку за ${monthTitle(year, month)}: ${apiErr?.message || 'неизвестная ошибка'}. Показаны кэшированные данные.`,
+              `Не удалось загрузить сводку: ${apiErr?.message || 'неизвестная ошибка'}`,
             );
           }
         }
@@ -194,9 +201,10 @@ export default function DashboardPage() {
             targetYM: { year, month },
             prefillMonths: 12,
           });
+          console.log('[DEBUG] syncMonthHistory result:', JSON.stringify(nextHistory?.slice?.(0, 2), null, 2));
           if (!cancelled) setHistory(nextHistory);
         } catch (syncErr) {
-          console.warn('[Dashboard] syncMonthHistory failed:', syncErr);
+          console.warn('[DEBUG] syncMonthHistory failed:', syncErr);
         }
       } catch (e) {
         if (!cancelled) setError(e?.message || 'Ошибка загрузки сводки/истории');
@@ -211,7 +219,6 @@ export default function DashboardPage() {
     };
   }, [userId, year, month]);
 
-  /* ── Live update ── */
   useEffect(() => {
     if (!userId) return;
 
@@ -234,14 +241,19 @@ export default function DashboardPage() {
     return () => window.removeEventListener(MONTH_HISTORY_EVENT_NAME, handler);
   }, [userId, year, month]);
 
-  /* ── Месяц ── */
+  // =====================================================
+  // DEBUG: логируем что видит компонент
+  // =====================================================
+  console.log('[DEBUG] summary state:', summary);
+  console.log('[DEBUG] summary?.total_income:', summary?.total_income);
+  console.log('[DEBUG] summary?.totalIncome:', summary?.totalIncome);
+
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
   const balanceMonth = n(summary?.balance);
   const savingsMonth = n(summary?.savings);
   const savingsRateMonth = n(summary?.savings_rate_percent);
 
-  /* ── Год (YTD) ── */
   const ymNum = (y, m) => y * 12 + (m - 1);
 
   const yearMonths = useMemo(() => {
@@ -259,7 +271,6 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
-  /* ── KPI ── */
   const isYear = kpiMode === 'year';
   const periodLabel = isYear
     ? `Показаны данные: ${year} год`
@@ -359,6 +370,20 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       ) : null}
+
+      {/* DEBUG CARD — покажет raw данные прямо на странице */}
+      <Card variant="outlined" sx={{ borderRadius: 3, mb: 2, borderColor: '#6366F1', bgcolor: '#F8FAFC' }}>
+        <CardContent>
+          <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', fontSize: 12 }}>
+            {`[DEBUG] summary state:\n${JSON.stringify(summary, null, 2)}\n\n` +
+             `incomeMonth: ${incomeMonth}\n` +
+             `expenseMonth: ${expenseMonth}\n` +
+             `balanceMonth: ${balanceMonth}\n` +
+             `savingsMonth: ${savingsMonth}\n` +
+             `savingsRateMonth: ${savingsRateMonth}`}
+          </Typography>
+        </CardContent>
+      </Card>
 
       <Grid container spacing={2}>
         <Grid item xs={12} md={3}>
