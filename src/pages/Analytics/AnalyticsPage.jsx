@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Typography,
   Box,
-  Grid,
   Card,
   CardContent,
   Stack,
@@ -70,12 +69,15 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     variant="outlined"
     sx={{
       height: '100%',
+      minHeight: 118,
       borderRadius: 3,
       position: 'relative',
       overflow: 'hidden',
       borderColor: 'rgba(15, 23, 42, 0.08)',
-      backgroundColor: alpha('#FFFFFF', 0.86),
+      backgroundColor: alpha('#FFFFFF', 0.9),
       backdropFilter: 'blur(10px)',
+      transition:
+        'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
       '&:before': {
         content: '""',
         position: 'absolute',
@@ -86,9 +88,14 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
         background: accent,
         opacity: 0.75,
       },
+      '&:hover': {
+        transform: 'translateY(-2px)',
+        borderColor: 'rgba(15, 23, 42, 0.12)',
+        boxShadow: '0 18px 50px rgba(15, 23, 42, 0.1)',
+      },
     }}
   >
-    <CardContent sx={{ p: 2.25 }}>
+    <CardContent sx={{ p: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1}>
         <Box
           sx={{
@@ -97,29 +104,50 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
             borderRadius: 999,
             bgcolor: accent,
             opacity: 0.9,
+            flex: '0 0 auto',
           }}
         />
         <Typography
           variant="overline"
-          sx={{ color: 'rgba(15, 23, 42, 0.65)', letterSpacing: 0.6 }}
+          sx={{
+            color: 'rgba(15, 23, 42, 0.65)',
+            letterSpacing: 0.6,
+            lineHeight: 1.1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
         >
           {label}
         </Typography>
       </Stack>
+
       <Typography
         variant="h5"
-        sx={{ mt: 0.75, fontWeight: 850, color: '#0F172A' }}
+        sx={{
+          mt: 0.75,
+          fontWeight: 800,
+          color: '#0F172A',
+          lineHeight: 1.05,
+        }}
       >
         {value}
       </Typography>
-      {sub ? (
-        <Typography
-          variant="body2"
-          sx={{ mt: 0.75, color: 'rgba(15, 23, 42, 0.65)' }}
-        >
-          {sub}
-        </Typography>
-      ) : null}
+
+      <Typography
+        variant="caption"
+        sx={{
+          mt: 0.6,
+          color: 'rgba(15, 23, 42, 0.62)',
+          display: 'block',
+          minHeight: 18,
+          whiteSpace: 'nowrap',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+        }}
+      >
+        {sub && String(sub).trim() ? sub : ' '}
+      </Typography>
     </CardContent>
   </Card>
 );
@@ -221,9 +249,7 @@ export default function AnalyticsPage() {
         const expenses = n(h?.total_expenses);
         const balance = income - expenses;
         return {
-          label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(
-            2
-          )}`,
+          label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(2)}`,
           income,
           expenses,
           balance,
@@ -352,275 +378,291 @@ export default function AnalyticsPage() {
     };
   }, [userId, monthsForCats]);
 
-  const activeTopRows =
-    topTab === 'expenses' ? topCatsExpenses : topCatsIncome;
+  const activeTopRows = topTab === 'expenses' ? topCatsExpenses : topCatsIncome;
   const topTitle =
     topTab === 'expenses'
       ? 'Топ категорий расходов'
       : 'Топ категорий доходов';
-  const topBarColor =
-    topTab === 'expenses' ? COLORS.expenses : COLORS.income;
+  const topBarColor = topTab === 'expenses' ? COLORS.expenses : COLORS.income;
 
-  return (
+  // Общий контейнер — одинаковая ширина на всех страницах
+  const PageWrap = ({ children }) => (
     <Box
       sx={{
-        bgcolor: '#F8FAFC',
-        minHeight: '100vh',
-        p: { xs: 2, md: 3 },
+        width: '100%',
+        mx: 'auto',
+        px: { xs: 2, md: 3, lg: 4 },
+        maxWidth: { xs: '100%', sm: 720, md: 1040, lg: 1240, xl: 1400 },
       }}
     >
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        spacing={1}
-        sx={{ mb: 2 }}
-        alignItems={{ sm: 'center' }}
-      >
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}
-          >
-            Аналитика
-          </Typography>
-          <Typography
-            variant="body2"
-            sx={{ color: 'rgba(15, 23, 42, 0.75)', mt: 0.5 }}
-          >
-            {periodLabel}
-          </Typography>
-        </Box>
+      {children}
+    </Box>
+  );
 
+  return (
+    <>
+      <PageWrap>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
           spacing={1}
+          sx={{ mb: 2 }}
           alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Chip
-            label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
-            variant="filled"
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              borderRadius: 999,
-              bgcolor: error
-                ? alpha('#F97316', 0.1)
-                : alpha('#6366F1', 0.1),
-              color: error ? '#F97316' : '#6366F1',
-              fontWeight: 700,
-            }}
-          />
+          <Box sx={{ flexGrow: 1 }}>
+            <Typography
+              variant="h5"
+              sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}
+            >
+              Аналитика
+            </Typography>
+            <Typography
+              variant="body2"
+              sx={{ color: 'rgba(15, 23, 42, 0.75)', mt: 0.5, fontWeight: 500 }}
+            >
+              {periodLabel}
+            </Typography>
+          </Box>
 
-          <ToggleButtonGroup
-            value={mode}
-            exclusive
-            onChange={(_e, next) => next && setMode(next)}
-            size="small"
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ sm: 'center' }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <Chip
+              label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
+              variant="filled"
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                borderRadius: 999,
+                bgcolor: error ? alpha('#F97316', 0.1) : alpha('#6366F1', 0.1),
+                color: error ? '#F97316' : '#6366F1',
+                fontWeight: 700,
+              }}
+            />
+
+            <ToggleButtonGroup
+              value={mode}
+              exclusive
+              onChange={(_e, next) => next && setMode(next)}
+              size="small"
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                bgcolor: alpha('#FFFFFF', 0.7),
+                border: '1px solid rgba(15, 23, 42, 0.1)',
+                borderRadius: 999,
+                '& .MuiToggleButton-root': {
+                  border: 0,
+                  px: 1.5,
+                  flex: { xs: 1, sm: 'unset' },
+                },
+              }}
+            >
+              <ToggleButton value="month">Месяц</ToggleButton>
+              <ToggleButton value="year">Год</ToggleButton>
+            </ToggleButtonGroup>
+          </Stack>
+        </Stack>
+
+        {error ? (
+          <Card
+            variant="outlined"
             sx={{
-              width: { xs: '100%', sm: 'auto' },
-              bgcolor: alpha('#FFFFFF', 0.7),
-              border: '1px solid rgba(15, 23, 42, 0.1)',
-              borderRadius: 999,
-              '& .MuiToggleButton-root': {
-                border: 0,
-                px: 1.5,
-                flex: { xs: 1, sm: 'unset' },
-              },
+              borderRadius: 3,
+              mb: 2,
+              borderColor: alpha('#EF4444', 0.35),
+              backgroundColor: alpha('#FFFFFF', 0.86),
             }}
           >
-            <ToggleButton value="month">Месяц</ToggleButton>
-            <ToggleButton value="year">Год</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-      </Stack>
+            <CardContent sx={{ py: 1.75 }}>
+              <Typography color="error" variant="body2">
+                {error}
+              </Typography>
+            </CardContent>
+          </Card>
+        ) : null}
 
-      {error ? (
-        <Card
-          variant="outlined"
+        {/* KPI: мобилка 2×2, десктоп 4×1 */}
+        <Box
           sx={{
-            borderRadius: 3,
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))',
+            },
+            gap: 2,
             mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
           }}
         >
-          <CardContent sx={{ py: 1.75 }}>
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      <Grid container spacing={2}>
-        {/* KPI: ровно по ширине */}
-        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Баланс"
             value={fmtRub.format(kpiBalance)}
+            sub=" "
             accent={COLORS.balance}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Доходы"
             value={fmtRub.format(kpiIncome)}
+            sub=" "
             accent={COLORS.income}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Расходы"
             value={fmtRub.format(kpiExpenses)}
+            sub=" "
             accent={COLORS.expenses}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
           <StatCard
             label="Норма сбережений"
             value={`${kpiRate}%`}
             sub={`Сбережения: ${fmtRub.format(kpiSavings)}`}
             accent="#A78BFA"
           />
-        </Grid>
+        </Box>
 
-        {/* Cashflow — чуть выше и шире */}
-        <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
+        {/* Cashflow */}
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 2,
+            borderRadius: 3,
+            borderColor: 'rgba(15, 23, 42, 0.08)',
+            backgroundColor: alpha('#FFFFFF', 0.96),
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden',
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+            <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
+              Cashflow за 12 месяцев
+            </Typography>
+            <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
+
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: '1.2fr 1fr' },
+                gap: 2,
+              }}
+            >
+              <Box sx={{ width: '100%', height: { xs: 280, md: 320 } }}>
+                <BarChart
+                  height={320}
+                  xAxis={[
+                    {
+                      data: cashflowRows.map((r) => r.label),
+                      scaleType: 'band',
+                    },
+                  ]}
+                  series={[
+                    {
+                      data: cashflowRows.map((r) => r.income),
+                      label: 'Доходы',
+                      color: COLORS.income,
+                    },
+                    {
+                      data: cashflowRows.map((r) => r.expenses),
+                      label: 'Расходы',
+                      color: COLORS.expenses,
+                    },
+                  ]}
+                />
+              </Box>
+
+              <Box sx={{ width: '100%', height: { xs: 280, md: 320 } }}>
+                <LineChart
+                  height={320}
+                  xAxis={[
+                    {
+                      data: cashflowRows.map((r) => r.label),
+                      scaleType: 'point',
+                    },
+                  ]}
+                  series={[
+                    {
+                      data: cashflowRows.map((r) => r.balance),
+                      label: 'Баланс',
+                      color: COLORS.balance,
+                      curve: 'natural',
+                    },
+                  ]}
+                />
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
+
+        {/* Топ категорий */}
+        <Card
+          variant="outlined"
+          sx={{
+            borderRadius: 3,
+            borderColor: 'rgba(15, 23, 42, 0.08)',
+            backgroundColor: alpha('#FFFFFF', 0.96),
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden',
+          }}
+        >
+          <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              alignItems={{ sm: 'center' }}
+            >
               <Typography
                 variant="h6"
-                sx={{ fontWeight: 850, color: '#0F172A' }}
+                sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
               >
-                Cashflow за 12 месяцев
+                {topTitle}
               </Typography>
-              <Divider
-                sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }}
-              />
-
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={7}>
-                  <BarChart
-                    height={320}
-                    xAxis={[
-                      { data: cashflowRows.map((r) => r.label), scaleType: 'band' },
-                    ]}
-                    series={[
-                      {
-                        data: cashflowRows.map((r) => r.income),
-                        label: 'Доходы',
-                        color: COLORS.income,
-                      },
-                      {
-                        data: cashflowRows.map((r) => r.expenses),
-                        label: 'Расходы',
-                        color: COLORS.expenses,
-                      },
-                    ]}
-                  />
-                </Grid>
-                <Grid item xs={12} md={5}>
-                  <LineChart
-                    height={320}
-                    xAxis={[
-                      { data: cashflowRows.map((r) => r.label), scaleType: 'point' },
-                    ]}
-                    series={[
-                      {
-                        data: cashflowRows.map((r) => r.balance),
-                        label: 'Баланс',
-                        color: COLORS.balance,
-                      },
-                    ]}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Топ категорий — чуть шире */}
-        <Grid item xs={12}>
-          <Card
-            variant="outlined"
-            sx={{
-              borderRadius: 3,
-              borderColor: 'rgba(15, 23, 42, 0.08)',
-              backgroundColor: alpha('#FFFFFF', 0.86),
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <CardContent sx={{ p: 2.25 }}>
-              <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1}
-                alignItems={{ sm: 'center' }}
-              >
-                <Typography
-                  variant="h6"
-                  sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
-                >
-                  {topTitle}
-                </Typography>
-                <Chip
-                  label={
-                    catsLoading
-                      ? 'Считаю…'
-                      : mode === 'year'
-                      ? `${year} год`
-                      : monthTitleRu(year, month)
-                  }
-                  sx={{
-                    borderRadius: 999,
-                    borderColor: alpha(topBarColor, 0.35),
-                    color: topBarColor,
-                    bgcolor: alpha(topBarColor, 0.08),
-                  }}
-                  variant="outlined"
-                />
-              </Stack>
-
-              <Tabs
-                value={topTab}
-                onChange={(_e, v) => setTopTab(v)}
+              <Chip
+                label={
+                  catsLoading
+                    ? 'Считаю…'
+                    : mode === 'year'
+                    ? `${year} год`
+                    : monthTitleRu(year, month)
+                }
                 sx={{
-                  mt: 1,
-                  minHeight: 40,
-                  '& .MuiTab-root': { minHeight: 40, color: 'rgba(15,23,42,0.65)' },
+                  borderRadius: 999,
+                  borderColor: alpha(topBarColor, 0.35),
+                  color: topBarColor,
+                  bgcolor: alpha(topBarColor, 0.08),
                 }}
-              >
-                <Tab label="Расходы" value="expenses" />
-                <Tab label="Доходы" value="income" />
-              </Tabs>
-
-              <Divider
-                sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }}
+                variant="outlined"
               />
+            </Stack>
 
-              {catsLoading ? (
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-                >
-                  Загрузка данных по категориям…
-                </Typography>
-              ) : activeTopRows.length === 0 ? (
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(148, 163, 184, 1)' }}
-                >
-                  Нет данных по категориям за выбранный период.
-                </Typography>
-              ) : (
+            <Tabs
+              value={topTab}
+              onChange={(_e, v) => setTopTab(v)}
+              sx={{
+                mt: 1,
+                minHeight: 40,
+                '& .MuiTab-root': {
+                  minHeight: 40,
+                  color: 'rgba(15,23,42,0.65)',
+                },
+              }}
+            >
+              <Tab label="Расходы" value="expenses" />
+              <Tab label="Доходы" value="income" />
+            </Tabs>
+
+            <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
+
+            {catsLoading ? (
+              <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+                Загрузка данных по категориям…
+              </Typography>
+            ) : activeTopRows.length === 0 ? (
+              <Typography variant="body2" sx={{ color: 'rgba(148, 163, 184, 1)' }}>
+                Нет данных по категориям за выбранный период.
+              </Typography>
+            ) : (
+              <Box sx={{ width: '100%', height: { xs: 260, md: 280 }, minWidth: 0 }}>
                 <BarChart
-                  height={270}
+                  height={280}
                   layout="horizontal"
                   yAxis={[
                     {
@@ -635,13 +677,13 @@ export default function AnalyticsPage() {
                       color: topBarColor,
                     },
                   ]}
-                  margin={{ left: 100, right: 10, top: 10, bottom: 30 }}
+                  margin={{ left: 120, right: 20, top: 10, bottom: 30 }}
                 />
-              )}
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-    </Box>
+              </Box>
+            )}
+          </CardContent>
+        </Card>
+      </PageWrap>
+    </>
   );
 }
