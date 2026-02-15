@@ -65,6 +65,24 @@ const fmtMonthShort = new Intl.DateTimeFormat('ru-RU', { month: 'short' });
 const monthTitleRu = (y, m) => fmtMonthLong.format(new Date(y, m - 1, 1));
 const monthShortRu = (y, m) => fmtMonthShort.format(new Date(y, m - 1, 1));
 
+/* ---------- Dynamic Y-axis helpers (balance) ---------- */
+const roundUpToStep = (value, step) => Math.ceil(value / step) * step;
+
+const niceStep = (maxVal) => {
+  if (maxVal <= 50_000) return 10_000;
+  if (maxVal <= 200_000) return 25_000;
+  if (maxVal <= 500_000) return 50_000;
+  return 100_000;
+};
+
+// headroom: +15% but at least +10k
+const withHeadroom = (maxVal) => {
+  const raw = maxVal + Math.max(10_000, maxVal * 0.15);
+  const step = niceStep(raw);
+  return roundUpToStep(raw, step);
+};
+/* ------------------------------------------------------ */
+
 const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   <Card
     variant="outlined"
@@ -418,30 +436,15 @@ export default function AnalyticsPage() {
         alignItems={{ sm: 'center' }}
       >
         <Box sx={{ flexGrow: 1 }}>
-          <Typography
-            variant="h5"
-            sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}
-          >
+          <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.15, color: '#0F172A' }}>
             Аналитика
           </Typography>
-          <Typography
-            variant="body2"
-            sx={{
-              color: 'rgba(15, 23, 42, 0.75)',
-              mt: 0.5,
-              fontWeight: 500,
-            }}
-          >
+          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)', mt: 0.5, fontWeight: 500 }}>
             {periodLabel}
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <Chip
             label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
             variant="filled"
@@ -464,11 +467,7 @@ export default function AnalyticsPage() {
               bgcolor: alpha('#FFFFFF', 0.7),
               border: '1px solid rgba(15, 23, 42, 0.1)',
               borderRadius: 999,
-              '& .MuiToggleButton-root': {
-                border: 0,
-                px: 1.5,
-                flex: { xs: 1, sm: 'unset' },
-              },
+              '& .MuiToggleButton-root': { border: 0, px: 1.5, flex: { xs: 1, sm: 'unset' } },
             }}
           >
             <ToggleButton value="month">Месяц</ToggleButton>
@@ -477,59 +476,18 @@ export default function AnalyticsPage() {
         </Stack>
       </Stack>
 
-      {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-            mb: 2,
-            borderColor: alpha('#EF4444', 0.35),
-            backgroundColor: alpha('#FFFFFF', 0.86),
-          }}
-        >
-          <CardContent sx={{ py: 1.75 }}>
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: {
-            xs: 'repeat(2, minmax(0, 1fr))',
-            md: 'repeat(4, minmax(0, 1fr))',
-          },
+          gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
           gap: 2,
           mb: 2,
         }}
       >
-        <StatCard
-          label="Баланс"
-          value={fmtRub.format(kpiBalance)}
-          sub=" "
-          accent={COLORS.balance}
-        />
-        <StatCard
-          label="Доходы"
-          value={fmtRub.format(kpiIncome)}
-          sub=" "
-          accent={COLORS.income}
-        />
-        <StatCard
-          label="Расходы"
-          value={fmtRub.format(kpiExpenses)}
-          sub=" "
-          accent={COLORS.expenses}
-        />
-        <StatCard
-          label="Норма сбережений"
-          value={`${kpiRate}%`}
-          sub={`Сбережения: ${fmtRub.format(kpiSavings)}`}
-          accent="#A78BFA"
-        />
+        <StatCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} />
+        <StatCard label="Доходы" value={fmtRub.format(kpiIncome)} sub=" " accent={COLORS.income} />
+        <StatCard label="Расходы" value={fmtRub.format(kpiExpenses)} sub=" " accent={COLORS.expenses} />
+        <StatCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent="#A78BFA" />
       </Box>
 
       {/* Cashflow card */}
@@ -551,7 +509,6 @@ export default function AnalyticsPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-          {/* BarChart */}
           <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
             <BarChart
               height={340}
@@ -566,16 +523,8 @@ export default function AnalyticsPage() {
                 },
               ]}
               series={[
-                {
-                  data: cashflowRows.map((r) => r.income),
-                  label: 'Доходы',
-                  color: COLORS.income,
-                },
-                {
-                  data: cashflowRows.map((r) => r.expenses),
-                  label: 'Расходы',
-                  color: COLORS.expenses,
-                },
+                { data: cashflowRows.map((r) => r.income), label: 'Доходы', color: COLORS.income },
+                { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
               ]}
               grid={{ horizontal: true }}
               margin={{ left: 52, right: 16, top: 10, bottom: 50 }}
@@ -583,7 +532,6 @@ export default function AnalyticsPage() {
             />
           </Box>
 
-          {/* Separator */}
           <Box
             sx={{
               position: 'relative',
@@ -611,14 +559,7 @@ export default function AnalyticsPage() {
                 gap: 1,
               }}
             >
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: COLORS.balance,
-                }}
-              />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
               <Typography
                 variant="caption"
                 sx={{
@@ -631,18 +572,11 @@ export default function AnalyticsPage() {
               >
                 Баланс
               </Typography>
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: COLORS.balance,
-                }}
-              />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
             </Box>
           </Box>
 
-          {/* LineChart - баланс */}
+          {/* Balance chart (dynamic max + headroom) */}
           <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
@@ -657,8 +591,11 @@ export default function AnalyticsPage() {
               yAxis={[
                 {
                   min: 0,
-                  max: 300000,
                   tickNumber: 7,
+                  domainLimit: (_minVal, maxVal) => {
+                    const max = withHeadroom(Number(maxVal || 0));
+                    return { min: 0, max };
+                  },
                 },
               ]}
               series={[
@@ -681,19 +618,12 @@ export default function AnalyticsPage() {
                   stroke: COLORS.balance,
                   fill: '#ffffff',
                 },
-                '& .MuiAreaElement-root': {
-                  fill: "url('#balanceGradient')",
-                },
-                '& .MuiChartsAxis-line': {
-                  stroke: 'rgba(15, 23, 42, 0.18)',
-                },
-                '& .MuiChartsAxis-tickLabel': {
-                  fill: 'rgba(15, 23, 42, 0.55)',
-                  fontSize: 11,
-                },
-                '& .MuiChartsGrid-line': {
-                  stroke: 'rgba(15, 23, 42, 0.06)',
-                },
+                '& .MuiAreaElement-root': { fill: "url('#balanceGradient')" },
+
+                '& .MuiChartsAxis-line': { stroke: 'rgba(15, 23, 42, 0.18)' },
+                '& .MuiChartsAxis-tickLabel': { fill: 'rgba(15, 23, 42, 0.55)', fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: 'rgba(15, 23, 42, 0.06)' },
+
                 '.MuiChartsLegend-root': { display: 'none' },
               }}
             >
@@ -703,7 +633,7 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Top categories */}
+      {/* Top categories (оставил как было по логике, визуал не менял) */}
       <Card
         variant="outlined"
         sx={{
@@ -715,25 +645,12 @@ export default function AnalyticsPage() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            alignItems={{ sm: 'center' }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
-            >
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
               {topTitle}
             </Typography>
             <Chip
-              label={
-                catsLoading
-                  ? 'Считаю…'
-                  : mode === 'year'
-                    ? `${year} год`
-                    : monthTitleRu(year, month)
-              }
+              label={catsLoading ? 'Считаю…' : mode === 'year' ? `${year} год` : monthTitleRu(year, month)}
               sx={{
                 borderRadius: 999,
                 borderColor: alpha(topBarColor, 0.35),
@@ -750,10 +667,7 @@ export default function AnalyticsPage() {
             sx={{
               mt: 1,
               minHeight: 40,
-              '& .MuiTab-root': {
-                minHeight: 40,
-                color: 'rgba(15,23,42,0.65)',
-              },
+              '& .MuiTab-root': { minHeight: 40, color: 'rgba(15,23,42,0.65)' },
             }}
           >
             <Tab label="Расходы" value="expenses" />
@@ -763,17 +677,11 @@ export default function AnalyticsPage() {
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
           {catsLoading ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-            >
+            <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
               Загрузка данных по категориям…
             </Typography>
           ) : activeTopRows.length === 0 ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(148, 163, 184, 1)' }}
-            >
+            <Typography variant="body2" sx={{ color: 'rgba(148, 163, 184, 1)' }}>
               Нет данных по категориям за выбранный период.
             </Typography>
           ) : (
@@ -791,11 +699,7 @@ export default function AnalyticsPage() {
                 ]}
                 xAxis={[{ tickLabelStyle: { fontSize: 11 } }]}
                 series={[
-                  {
-                    data: activeTopRows.map((x) => x.amount),
-                    label: 'Сумма',
-                    color: topBarColor,
-                  },
+                  { data: activeTopRows.map((x) => x.amount), label: 'Сумма', color: topBarColor },
                 ]}
                 grid={{ vertical: true }}
                 margin={{ left: 12, right: 16, top: 10, bottom: 28 }}
