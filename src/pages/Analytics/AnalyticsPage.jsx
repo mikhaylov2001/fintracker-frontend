@@ -478,7 +478,6 @@ export default function AnalyticsPage() {
         </Card>
       ) : null}
 
-      {/* KPI: мобилка 2×2, десктоп 4×1 */}
       <Box
         sx={{
           display: 'grid',
@@ -516,7 +515,7 @@ export default function AnalyticsPage() {
         />
       </Box>
 
-      {/* Cashflow: Доходы/Расходы (отдельная карточка) */}
+      {/* Cashflow: Bar + Line в одной карточке */}
       <Card
         variant="outlined"
         sx={{
@@ -535,6 +534,7 @@ export default function AnalyticsPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
+          {/* BarChart */}
           <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <BarChart
               height={320}
@@ -565,28 +565,21 @@ export default function AnalyticsPage() {
               sx={{ '.MuiChartsLegend-root': { justifyContent: 'center' } }}
             />
           </Box>
-        </CardContent>
-      </Card>
 
-      {/* Баланс (прежний стиль, отдельная карточка) */}
-      <Card
-        variant="outlined"
-        sx={{
-          mb: 2,
-          borderRadius: 3,
-          borderColor: 'rgba(15, 23, 42, 0.08)',
-          backgroundColor: alpha('#FFFFFF', 0.96),
-          backdropFilter: 'blur(10px)',
-          overflow: 'hidden',
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
+          {/* Разделитель между графиками */}
+          <Typography
+            variant="body2"
+            sx={{
+              fontWeight: 800,
+              color: '#0F172A',
+              mt: 3,
+              mb: 1.5,
+            }}
+          >
             Баланс за 12 месяцев
           </Typography>
 
-          <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
-
+          {/* LineChart */}
           <Box sx={{ width: '100%', height: { xs: 240, md: 300 } }}>
             <LineChart
               height={300}
@@ -608,13 +601,13 @@ export default function AnalyticsPage() {
               ]}
               grid={{ horizontal: true }}
               margin={{ left: 52, right: 16, top: 10, bottom: 28 }}
-              hideLegend
+              sx={{ '.MuiChartsLegend-root': { display: 'none' } }}
             />
           </Box>
         </CardContent>
       </Card>
 
-      {/* Top categories */}
+      {/* Топ категории */}
       <Card
         variant="outlined"
         sx={{
