@@ -15,8 +15,9 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
-import { ChartsTooltip } from '@mui/x-charts/ChartsTooltip';
 import { useDrawingArea } from '@mui/x-charts/hooks';
+import { ChartsTooltipContainer } from '@mui/x-charts/ChartsTooltipContainer';
+import { ChartsItemTooltipContent } from '@mui/x-charts/ChartsTooltip';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getMonthlySummary } from '../../api/summaryApi';
@@ -195,6 +196,65 @@ function BalanceAreaGradient({ id = 'balanceGradient', color = COLORS.balance })
         <stop offset="100%" stopColor={alpha(color, 0.02)} />
       </linearGradient>
     </defs>
+  );
+}
+
+/**
+ * Tooltip без стрелки, но с “лидер-линией” ровно к точке.
+ * Важное: render внутри ChartsTooltipContainer, чтобы anchor="node" реально работал.
+ */
+function BalancePinnedTooltip(props) {
+  return (
+    <ChartsTooltipContainer
+      {...props}
+      trigger="item"
+      anchor="node"
+      position="top"
+      placement="top"
+      disablePortal
+      slotProps={{
+        popper: {
+          placement: 'top',
+          modifiers: [
+            { name: 'offset', options: { offset: [0, 8] } },
+            { name: 'preventOverflow', options: { padding: 8 } },
+            { name: 'flip', options: { fallbackPlacements: ['top', 'bottom'] } },
+          ],
+        },
+      }}
+    >
+      {/* Линия к точке (визуально заменяет стрелку) */}
+      <Box
+        sx={{
+          position: 'absolute',
+          left: '50%',
+          top: '100%',
+          width: 2,
+          height: 14,
+          transform: 'translateX(-50%)',
+          bgcolor: alpha(COLORS.balance, 0.55),
+          borderRadius: 999,
+          pointerEvents: 'none',
+        }}
+      />
+      {/* Сам контент тултипа */}
+      <Box
+        sx={{
+          // “карточка” тултипа
+          bgcolor: alpha('#0F172A', 0.92),
+          color: '#fff',
+          borderRadius: 2,
+          px: 1.25,
+          py: 0.85,
+          boxShadow: '0 18px 50px rgba(15, 23, 42, 0.28)',
+          border: `1px solid ${alpha('#FFFFFF', 0.12)}`,
+          pointerEvents: 'none',
+          maxWidth: 240,
+        }}
+      >
+        <ChartsItemTooltipContent />
+      </Box>
+    </ChartsTooltipContainer>
   );
 }
 
@@ -559,65 +619,17 @@ export default function AnalyticsPage() {
             />
           </Box>
 
-          <Box
-            sx={{
-              position: 'relative',
-              mt: 6,
-              mb: 3,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Divider
-              sx={{
-                position: 'absolute',
-                width: '100%',
-                borderColor: 'rgba(15, 23, 42, 0.08)',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'relative',
-                px: 2,
-                bgcolor: alpha('#FFFFFF', 0.96),
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: COLORS.balance,
-                }}
-              />
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: 'rgba(15, 23, 42, 0.5)',
-                  letterSpacing: 0.8,
-                  textTransform: 'uppercase',
-                  fontSize: 11,
-                }}
-              >
+          <Box sx={{ position: 'relative', mt: 6, mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Divider sx={{ position: 'absolute', width: '100%', borderColor: 'rgba(15, 23, 42, 0.08)' }} />
+            <Box sx={{ position: 'relative', px: 2, bgcolor: alpha('#FFFFFF', 0.96), display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
+              <Typography variant="caption" sx={{ fontWeight: 700, color: 'rgba(15, 23, 42, 0.5)', letterSpacing: 0.8, textTransform: 'uppercase', fontSize: 11 }}>
                 Баланс
               </Typography>
-              <Box
-                sx={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: '50%',
-                  bgcolor: COLORS.balance,
-                }}
-              />
+              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
             </Box>
           </Box>
 
-          {/* Balance: dynamic axis + tooltip anchored to node (точно в точку) */}
           <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
@@ -649,16 +661,8 @@ export default function AnalyticsPage() {
                   showMark: true,
                 },
               ]}
-              slotProps={{
-                // В v8 настройки popper нужно давать здесь (tooltip.slotProps.popper может игнорироваться)
-                popper: {
-                  placement: 'top',
-                  modifiers: [
-                    { name: 'offset', options: { offset: [0, 6] } },
-                    { name: 'preventOverflow', options: { padding: 8 } },
-                    { name: 'flip', options: { fallbackPlacements: ['top', 'bottom'] } },
-                  ],
-                },
+              slots={{
+                tooltip: BalancePinnedTooltip,
               }}
               grid={{ horizontal: true }}
               margin={{ left: 52, right: 16, top: 14, bottom: 28 }}
@@ -670,24 +674,14 @@ export default function AnalyticsPage() {
                   stroke: COLORS.balance,
                   fill: '#ffffff',
                 },
-                '& .MuiAreaElement-root': {
-                  fill: "url('#balanceGradient')",
-                },
-                '& .MuiChartsAxis-line': {
-                  stroke: 'rgba(15, 23, 42, 0.18)',
-                },
-                '& .MuiChartsAxis-tickLabel': {
-                  fill: 'rgba(15, 23, 42, 0.55)',
-                  fontSize: 11,
-                },
-                '& .MuiChartsGrid-line': {
-                  stroke: 'rgba(15, 23, 42, 0.06)',
-                },
+                '& .MuiAreaElement-root': { fill: "url('#balanceGradient')" },
+                '& .MuiChartsAxis-line': { stroke: 'rgba(15, 23, 42, 0.18)' },
+                '& .MuiChartsAxis-tickLabel': { fill: 'rgba(15, 23, 42, 0.55)', fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: 'rgba(15, 23, 42, 0.06)' },
                 '.MuiChartsLegend-root': { display: 'none' },
               }}
             >
               <BalanceAreaGradient id="balanceGradient" color={COLORS.balance} />
-              <ChartsTooltip trigger="item" anchor="node" position="top" placement="top" />
             </LineChart>
           </Box>
         </CardContent>
@@ -704,38 +698,17 @@ export default function AnalyticsPage() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            alignItems={{ sm: 'center' }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
-            >
-              {topTab === 'expenses'
-                ? 'Топ категорий расходов'
-                : 'Топ категорий доходов'}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
+            <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
+              {topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов'}
             </Typography>
             <Chip
-              label={
-                catsLoading
-                  ? 'Считаю…'
-                  : mode === 'year'
-                    ? `${year} год`
-                    : monthTitleRu(year, month)
-              }
+              label={catsLoading ? 'Считаю…' : mode === 'year' ? `${year} год` : monthTitleRu(year, month)}
               sx={{
                 borderRadius: 999,
-                borderColor: alpha(
-                  topTab === 'expenses' ? COLORS.expenses : COLORS.income,
-                  0.35
-                ),
+                borderColor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.35),
                 color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
-                bgcolor: alpha(
-                  topTab === 'expenses' ? COLORS.expenses : COLORS.income,
-                  0.08
-                ),
+                bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.08),
               }}
               variant="outlined"
             />
@@ -747,10 +720,7 @@ export default function AnalyticsPage() {
             sx={{
               mt: 1,
               minHeight: 40,
-              '& .MuiTab-root': {
-                minHeight: 40,
-                color: 'rgba(15,23,42,0.65)',
-              },
+              '& .MuiTab-root': { minHeight: 40, color: 'rgba(15,23,42,0.65)' },
             }}
           >
             <Tab label="Расходы" value="expenses" />
@@ -760,17 +730,11 @@ export default function AnalyticsPage() {
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
           {catsLoading ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-            >
+            <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
               Загрузка данных по категориям…
             </Typography>
           ) : (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).length === 0 ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(148, 163, 184, 1)' }}
-            >
+            <Typography variant="body2" sx={{ color: 'rgba(148, 163, 184, 1)' }}>
               Нет данных по категориям за выбранный период.
             </Typography>
           ) : (
@@ -780,9 +744,7 @@ export default function AnalyticsPage() {
                 layout="horizontal"
                 yAxis={[
                   {
-                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map(
-                      (x) => x.category
-                    ),
+                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                     scaleType: 'band',
                     width: 78,
                     tickLabelStyle: { fontSize: 11 },
@@ -791,9 +753,7 @@ export default function AnalyticsPage() {
                 xAxis={[{ tickLabelStyle: { fontSize: 11 } }]}
                 series={[
                   {
-                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map(
-                      (x) => x.amount
-                    ),
+                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.amount),
                     label: 'Сумма',
                     color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
                   },
