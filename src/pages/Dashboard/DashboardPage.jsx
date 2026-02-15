@@ -113,10 +113,11 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
           mt: 0.6,
           color: 'rgba(15, 23, 42, 0.62)',
           display: 'block',
-          minHeight: 18,
-          whiteSpace: 'nowrap',
+          lineHeight: 1.2,
+          minHeight: { xs: 32, md: 18 },
+          whiteSpace: { xs: 'normal', md: 'nowrap' },
           overflow: 'hidden',
-          textOverflow: 'ellipsis',
+          textOverflow: { xs: 'clip', md: 'ellipsis' },
         }}
       >
         {sub && String(sub).trim() ? sub : ' '}
@@ -124,6 +125,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     </CardContent>
   </Card>
 );
+
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -448,12 +450,12 @@ export default function DashboardPage() {
             accent="#F97316"
           />
 
-         <StatCard
-           label="Норма сбережений"
-           value={`${displayRate}%`}
-           sub=" "
-           accent="#A78BFA"
-         />
+          <StatCard
+            label="Норма сбережений"
+            value={`${displayRate}%`}
+            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+            accent="#A78BFA"
+          />
         </Box>
 
         {/* Итоги */}

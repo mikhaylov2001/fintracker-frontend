@@ -137,13 +137,15 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       <Typography
         variant="caption"
         sx={{
-          mt: 0.6,
+          mt: 0.55,
           color: 'rgba(15, 23, 42, 0.62)',
           display: 'block',
-          minHeight: 18,
-          whiteSpace: 'nowrap',
+          lineHeight: 1.2,
+          fontSize: 12,
+          minHeight: { xs: 32, md: 18 },
+          whiteSpace: { xs: 'normal', md: 'nowrap' },
           overflow: 'hidden',
-          textOverflow: 'ellipsis',
+          textOverflow: { xs: 'clip', md: 'ellipsis' },
         }}
       >
         {sub && String(sub).trim() ? sub : ' '}
@@ -476,7 +478,7 @@ export default function AnalyticsPage() {
         <StatCard
           label="Норма сбережений"
           value={`${kpiRate}%`}
-          sub=" "
+          sub={`Сбережения: ${fmtRub.format(kpiSavings)}`}
           accent="#A78BFA"
         />
       </Box>
