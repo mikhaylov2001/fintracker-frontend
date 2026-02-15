@@ -437,7 +437,7 @@ export default function DashboardPage() {
           />
 
           <StatCard
-            label="Норма сбережений"
+            label="Норма сбережени"
             value={`${displayRate}%`}
             sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
             accent="#A78BFA"
