@@ -515,7 +515,7 @@ export default function AnalyticsPage() {
         />
       </Box>
 
-      {/* Cashflow: Bar + Line в одной карточке (с фиксом отступов) */}
+      {/* Cashflow: улучшенный вид с визуальным разделением */}
       <Card
         variant="outlined"
         sx={{
@@ -534,8 +534,8 @@ export default function AnalyticsPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-          {/* BarChart - увеличил margin.bottom до 46, чтобы подписи оси не налезали */}
-          <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
+          {/* BarChart - Доходы/Расходы */}
+          <Box sx={{ width: '100%', height: { xs: 280, md: 340 }, mb: 3 }}>
             <BarChart
               height={340}
               xAxis={[
@@ -561,26 +561,70 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ horizontal: true }}
-              margin={{ left: 52, right: 16, top: 10, bottom: 46 }}
+              margin={{ left: 52, right: 16, top: 10, bottom: 40 }}
               sx={{ '.MuiChartsLegend-root': { justifyContent: 'center' } }}
             />
           </Box>
 
-          {/* Чёткий разделитель между графиками */}
-          <Divider sx={{ my: 2, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
-
-          <Typography
-            variant="h6"
+          {/* Элегантный разделитель с акцентом */}
+          <Box
             sx={{
-              fontWeight: 850,
-              color: '#0F172A',
-              mb: 1.5,
+              position: 'relative',
+              my: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            Баланс за 12 месяцев
-          </Typography>
+            <Divider
+              sx={{
+                position: 'absolute',
+                width: '100%',
+                borderColor: 'rgba(15, 23, 42, 0.08)',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'relative',
+                px: 2,
+                bgcolor: alpha('#FFFFFF', 0.96),
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: COLORS.balance,
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 700,
+                  color: 'rgba(15, 23, 42, 0.5)',
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                  fontSize: 11,
+                }}
+              >
+                Баланс
+              </Typography>
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: COLORS.balance,
+                }}
+              />
+            </Box>
+          </Box>
 
-          {/* LineChart */}
+          {/* LineChart - Баланс */}
           <Box sx={{ width: '100%', height: { xs: 240, md: 300 } }}>
             <LineChart
               height={300}
