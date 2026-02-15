@@ -306,9 +306,18 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || 'пользователь';
 
-  // общий контейнер: KPI и Итоги всегда одинаковой ширины
+  // ВАЖНО: гибкая ширина — на мобилке как раньше, на десктопе шире
   const PageWrap = ({ children }) => (
-    <Box sx={{ px: 2, width: '100%', maxWidth: 560, mx: 'auto' }}>{children}</Box>
+    <Box
+      sx={{
+        width: '100%',
+        mx: 'auto',
+        px: { xs: 2, md: 3, lg: 4 },
+        maxWidth: { xs: '100%', sm: 720, md: 1040, lg: 1240, xl: 1400 },
+      }}
+    >
+      {children}
+    </Box>
   );
 
   return (
@@ -406,11 +415,14 @@ export default function DashboardPage() {
           </Card>
         ) : null}
 
-        {/* KPI: всегда ровно по ширине, 2×2 */}
+        {/* KPI: мобилка 2 колонки, десктоп 4 колонки */}
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(4, minmax(0, 1fr))',
+            },
             gap: 2,
             mb: 2,
           }}
@@ -437,7 +449,7 @@ export default function DashboardPage() {
           />
 
           <StatCard
-            label="Норма сбережени"
+            label="Норма сбережений"
             value={`${displayRate}%`}
             sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
             accent="#A78BFA"
@@ -456,14 +468,18 @@ export default function DashboardPage() {
           }}
         >
           <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-            <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', mb: 1.5 }}>
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 850, color: '#0F172A', mb: 1.5 }}
+            >
               Итоги операций за месяц
             </Typography>
 
             <Divider sx={{ mb: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
+            {/* мобилка 2×2, десктоп 4 в ряд */}
             <Grid container spacing={1.25}>
-              <Grid item xs={6}>
+              <Grid item xs={6} md={3}>
                 <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Доходы:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
@@ -472,7 +488,7 @@ export default function DashboardPage() {
                 </Typography>
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid item xs={6} md={3}>
                 <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Расходы:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
@@ -481,7 +497,7 @@ export default function DashboardPage() {
                 </Typography>
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid item xs={6} md={3}>
                 <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Сбережения:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
@@ -490,7 +506,7 @@ export default function DashboardPage() {
                 </Typography>
               </Grid>
 
-              <Grid item xs={6}>
+              <Grid item xs={6} md={3}>
                 <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Норма:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
