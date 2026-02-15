@@ -515,7 +515,7 @@ export default function AnalyticsPage() {
         />
       </Box>
 
-      {/* Cashflow: улучшенный вид с визуальным разделением */}
+      {/* Cashflow: исправлен отступ снизу у BarChart */}
       <Card
         variant="outlined"
         sx={{
@@ -534,8 +534,8 @@ export default function AnalyticsPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-          {/* BarChart - Доходы/Расходы */}
-          <Box sx={{ width: '100%', height: { xs: 280, md: 340 }, mb: 3 }}>
+          {/* BarChart - увеличен margin.bottom до 50 */}
+          <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
             <BarChart
               height={340}
               xAxis={[
@@ -561,16 +561,17 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ horizontal: true }}
-              margin={{ left: 52, right: 16, top: 10, bottom: 40 }}
+              margin={{ left: 52, right: 16, top: 10, bottom: 50 }}
               sx={{ '.MuiChartsLegend-root': { justifyContent: 'center' } }}
             />
           </Box>
 
-          {/* Элегантный разделитель с акцентом */}
+          {/* Элегантный разделитель с большим отступом сверху */}
           <Box
             sx={{
               position: 'relative',
-              my: 3,
+              mt: 4,
+              mb: 3,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -624,7 +625,7 @@ export default function AnalyticsPage() {
             </Box>
           </Box>
 
-          {/* LineChart - Баланс */}
+          {/* LineChart */}
           <Box sx={{ width: '100%', height: { xs: 240, md: 300 } }}>
             <LineChart
               height={300}
