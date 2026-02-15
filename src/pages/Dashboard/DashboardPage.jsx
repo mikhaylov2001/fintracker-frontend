@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Typography,
   Box,
-  Grid,
   Card,
   CardContent,
   Chip,
@@ -69,7 +68,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     }}
   >
     <CardContent sx={{ p: 2 }}>
-      {/* FIX: ellipsis works in flex only with minWidth:0 */}
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
         <Box
           sx={{
@@ -417,7 +415,6 @@ export default function DashboardPage() {
           </Card>
         ) : null}
 
-        {/* KPI */}
         <Box
           sx={{
             display: 'grid',
@@ -458,7 +455,6 @@ export default function DashboardPage() {
           />
         </Box>
 
-        {/* Итоги операций за месяц (улучшенная читабельность на мобилке) */}
         <Card
           variant="outlined"
           sx={{

@@ -115,7 +115,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     }}
   >
     <CardContent sx={{ p: 2 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
         <Box
           sx={{
             width: 8,
@@ -132,6 +132,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
             color: 'rgba(15, 23, 42, 0.65)',
             letterSpacing: 0.6,
             lineHeight: 1.1,
+            minWidth: 0,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -409,11 +410,6 @@ export default function AnalyticsPage() {
     };
   }, [userId, monthsForCats]);
 
-  const activeTopRows = topTab === 'expenses' ? topCatsExpenses : topCatsIncome;
-  const topTitle =
-    topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов';
-  const topBarColor = topTab === 'expenses' ? COLORS.expenses : COLORS.income;
-
   const PageWrap = ({ children }) => (
     <Box
       sx={{
@@ -564,7 +560,7 @@ export default function AnalyticsPage() {
             </Box>
           </Box>
 
-          {/* Balance (dynamic axis + tooltip pinned to point) */}
+          {/* Balance: dynamic axis + tooltip strictly anchored to the node */}
           <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
@@ -596,17 +592,21 @@ export default function AnalyticsPage() {
                   showMark: true,
                 },
               ]}
-              tooltip={{ trigger: 'item' }}
+              // IMPORTANT: put all tooltip settings here
               slotProps={{
                 tooltip: {
+                  trigger: 'item',
                   anchor: 'node',
                   position: 'top',
                   placement: 'top',
                 },
                 popper: {
+                  placement: 'top',
                   modifiers: [
-                    { name: 'offset', options: { offset: [0, 8] } },
+                    { name: 'offset', options: { offset: [0, 6] } },
                     { name: 'preventOverflow', options: { padding: 8 } },
+                    // Важно для точного позиционирования стрелки:
+                    { name: 'flip', options: { fallbackPlacements: ['top', 'bottom'] } },
                   ],
                 },
               }}
