@@ -625,10 +625,10 @@ export default function AnalyticsPage() {
             </Box>
           </Box>
 
-          {/* LineChart */}
-          <Box sx={{ width: '100%', height: { xs: 240, md: 300 } }}>
+          {/* LineChart - Баланс (улучшенный стиль) */}
+          <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
-              height={300}
+              height={320}
               xAxis={[
                 {
                   data: cashflowRows.map((r) => r.label),
@@ -642,116 +642,52 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.balance),
                   label: 'Баланс',
                   color: COLORS.balance,
+
+                  // Важно: убираем “горошек” на всех точках, оставляем точку только при наведении
+                  showMark: false, // можно функцией, но false проще и чище [web:593][web:586]
+
+                  // Если поддерживается в твоей версии — делает заливку под линией
+                  area: true,
                   curve: 'natural',
                 },
               ]}
               grid={{ horizontal: true }}
-              margin={{ left: 52, right: 16, top: 10, bottom: 28 }}
-              sx={{ '.MuiChartsLegend-root': { display: 'none' } }}
+              margin={{ left: 52, right: 16, top: 14, bottom: 28 }}
+              sx={{
+                // Линия — чуть толще и приятнее
+                '& .MuiLineElement-root': {
+                  strokeWidth: 3,
+                },
+
+                // Заливка под линией — очень лёгкая (не кричит)
+                '& .MuiAreaElement-root': {
+                  fill: alpha(COLORS.balance, 0.12),
+                },
+
+                // Если где-то всё равно рисуются точки — делаем их незаметными
+                '& .MuiMarkElement-root': {
+                  r: 0,
+                },
+
+                // Оси и подписи — мягче
+                '& .MuiChartsAxis-line': {
+                  stroke: 'rgba(15, 23, 42, 0.18)',
+                },
+                '& .MuiChartsAxis-tickLabel': {
+                  fill: 'rgba(15, 23, 42, 0.55)',
+                  fontSize: 11,
+                },
+
+                // Сетка — легче
+                '& .MuiChartsGrid-line': {
+                  stroke: 'rgba(15, 23, 42, 0.06)',
+                },
+
+                // Легенду скрываем (как и было)
+                '.MuiChartsLegend-root': { display: 'none' },
+              }}
             />
           </Box>
-        </CardContent>
-      </Card>
-
-      {/* Топ категории */}
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-          borderColor: 'rgba(15, 23, 42, 0.08)',
-          backgroundColor: alpha('#FFFFFF', 0.96),
-          backdropFilter: 'blur(10px)',
-          overflow: 'hidden',
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            alignItems={{ sm: 'center' }}
-          >
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
-            >
-              {topTitle}
-            </Typography>
-            <Chip
-              label={
-                catsLoading
-                  ? 'Считаю…'
-                  : mode === 'year'
-                    ? `${year} год`
-                    : monthTitleRu(year, month)
-              }
-              sx={{
-                borderRadius: 999,
-                borderColor: alpha(topBarColor, 0.35),
-                color: topBarColor,
-                bgcolor: alpha(topBarColor, 0.08),
-              }}
-              variant="outlined"
-            />
-          </Stack>
-
-          <Tabs
-            value={topTab}
-            onChange={(_e, v) => setTopTab(v)}
-            sx={{
-              mt: 1,
-              minHeight: 40,
-              '& .MuiTab-root': {
-                minHeight: 40,
-                color: 'rgba(15,23,42,0.65)',
-              },
-            }}
-          >
-            <Tab label="Расходы" value="expenses" />
-            <Tab label="Доходы" value="income" />
-          </Tabs>
-
-          <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
-
-          {catsLoading ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-            >
-              Загрузка данных по категориям…
-            </Typography>
-          ) : activeTopRows.length === 0 ? (
-            <Typography
-              variant="body2"
-              sx={{ color: 'rgba(148, 163, 184, 1)' }}
-            >
-              Нет данных по категориям за выбранный период.
-            </Typography>
-          ) : (
-            <Box sx={{ width: '100%', height: { xs: 260, md: 280 }, minWidth: 0 }}>
-              <BarChart
-                height={280}
-                layout="horizontal"
-                yAxis={[
-                  {
-                    data: activeTopRows.map((x) => x.category),
-                    scaleType: 'band',
-                    width: 78,
-                    tickLabelStyle: { fontSize: 11 },
-                  },
-                ]}
-                xAxis={[{ tickLabelStyle: { fontSize: 11 } }]}
-                series={[
-                  {
-                    data: activeTopRows.map((x) => x.amount),
-                    label: 'Сумма',
-                    color: topBarColor,
-                  },
-                ]}
-                grid={{ vertical: true }}
-                margin={{ left: 12, right: 16, top: 10, bottom: 28 }}
-                sx={{ '.MuiChartsLegend-root': { justifyContent: 'center' } }}
-              />
-            </Box>
           )}
         </CardContent>
       </Card>
