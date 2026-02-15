@@ -37,30 +37,19 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
+// Стиль C: “горизонтальная” KPI-карточка
+const StatCard = ({ label, value, sub, accent = '#6366F1', icon = null }) => (
   <Card
     variant="outlined"
     sx={{
       height: '100%',
-      minHeight: 128,
       borderRadius: 3,
-      position: 'relative',
       overflow: 'hidden',
       borderColor: 'rgba(15, 23, 42, 0.08)',
       backgroundColor: alpha('#FFFFFF', 0.86),
       backdropFilter: 'blur(10px)',
       transition:
         'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
-      '&:before': {
-        content: '""',
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 2,
-        background: accent,
-        opacity: 0.75,
-      },
       '&:hover': {
         transform: 'translateY(-2px)',
         borderColor: 'rgba(15, 23, 42, 0.12)',
@@ -68,45 +57,78 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       },
     }}
   >
-    <CardContent sx={{ p: 2.25 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
+    <CardContent sx={{ p: 2 }}>
+      <Stack direction="row" spacing={1.5} alignItems="center">
         <Box
           sx={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            bgcolor: accent,
-            opacity: 0.9,
-          }}
-        />
-        <Typography
-          variant="overline"
-          sx={{
-            color: 'rgba(15, 23, 42, 0.65)',
-            letterSpacing: 0.6,
+            width: 40,
+            height: 40,
+            borderRadius: 2.25,
+            bgcolor: alpha(accent, 0.12),
+            color: accent,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flex: '0 0 auto',
           }}
         >
-          {label}
-        </Typography>
+          {icon || (
+            <Box
+              sx={{
+                width: 10,
+                height: 10,
+                borderRadius: 999,
+                bgcolor: accent,
+                opacity: 0.9,
+              }}
+            />
+          )}
+        </Box>
+
+        <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+          <Typography
+            variant="overline"
+            sx={{
+              color: 'rgba(15, 23, 42, 0.65)',
+              letterSpacing: 0.6,
+              lineHeight: 1.1,
+              display: 'block',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {label}
+          </Typography>
+
+          <Typography
+            variant="h5"
+            sx={{
+              mt: 0.25,
+              fontWeight: 800,
+              color: '#0F172A',
+              lineHeight: 1.05,
+            }}
+          >
+            {value}
+          </Typography>
+
+          <Typography
+            variant="caption"
+            sx={{
+              mt: 0.35,
+              color: 'rgba(15, 23, 42, 0.62)',
+              display: 'block',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              minHeight: 18,
+            }}
+          >
+            {sub && String(sub).trim() ? sub : ' '}
+          </Typography>
+        </Box>
       </Stack>
-
-      <Typography
-        variant="h5"
-        sx={{ mt: 0.75, fontWeight: 700, color: '#0F172A' }}
-      >
-        {value}
-      </Typography>
-
-      {sub && sub.trim() ? (
-        <Typography
-          variant="body2"
-          sx={{ mt: 0.75, color: 'rgba(15, 23, 42, 0.65)' }}
-        >
-          {sub}
-        </Typography>
-      ) : (
-        <Box sx={{ mt: 0.75, height: 20 }} />
-      )}
     </CardContent>
   </Card>
 );
@@ -387,7 +409,7 @@ export default function DashboardPage() {
       ) : null}
 
       <Grid container spacing={2} sx={{ mb: 2, alignItems: 'stretch' }}>
-        {/* KPI: 2 в ряд на телефоне (xs=6) */}
+        {/* KPI 2×2 на мобилке */}
         <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
           <StatCard
             label="Баланс"
@@ -408,7 +430,7 @@ export default function DashboardPage() {
 
         <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
           <StatCard
-            label="Расходыы"
+            label="Расходы"
             value={fmtRub.format(displayExpenses)}
             sub=" "
             accent="#F97316"
@@ -417,9 +439,9 @@ export default function DashboardPage() {
 
         <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
           <StatCard
-            label="Норма сбережений"
+            label="Норма"
             value={`${displayRate}%`}
-            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+            sub={`Сбереж.: ${fmtRub.format(displaySavings)}`}
             accent="#A78BFA"
           />
         </Grid>
@@ -444,14 +466,8 @@ export default function DashboardPage() {
                 Итоги операций за месяц
               </Typography>
 
-              <Divider
-                sx={{
-                  mb: 1.5,
-                  borderColor: 'rgba(15, 23, 42, 0.1)',
-                }}
-              />
+              <Divider sx={{ mb: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-              {/* Мини-сетка 2×2 для ровного распределения на мобилке */}
               <Grid container spacing={1.25}>
                 <Grid item xs={6}>
                   <Typography
@@ -514,12 +530,7 @@ export default function DashboardPage() {
                 </Grid>
               </Grid>
 
-              <Divider
-                sx={{
-                  my: 1.5,
-                  borderColor: 'rgba(15, 23, 42, 0.1)',
-                }}
-              />
+              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
               <Typography
                 variant="body2"
@@ -571,10 +582,7 @@ export default function DashboardPage() {
                             Доходы:{' '}
                             <Box
                               component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
+                              sx={{ fontWeight: 800, color: '#0F172A' }}
                             >
                               {fmtRub.format(n(h.total_income))}
                             </Box>
@@ -587,10 +595,7 @@ export default function DashboardPage() {
                             Расходы:{' '}
                             <Box
                               component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
+                              sx={{ fontWeight: 800, color: '#0F172A' }}
                             >
                               {fmtRub.format(n(h.total_expenses))}
                             </Box>
@@ -603,10 +608,7 @@ export default function DashboardPage() {
                             Баланс:{' '}
                             <Box
                               component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
+                              sx={{ fontWeight: 800, color: '#0F172A' }}
                             >
                               {fmtRub.format(n(h.balance))}
                             </Box>
@@ -619,10 +621,7 @@ export default function DashboardPage() {
                             Сбережения:{' '}
                             <Box
                               component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
+                              sx={{ fontWeight: 800, color: '#0F172A' }}
                             >
                               {fmtRub.format(n(h.savings))}
                             </Box>
@@ -635,10 +634,7 @@ export default function DashboardPage() {
                             Норма сбережений:{' '}
                             <Box
                               component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
+                              sx={{ fontWeight: 800, color: '#0F172A' }}
                             >
                               {n(h.savings_rate_percent)}%
                             </Box>
