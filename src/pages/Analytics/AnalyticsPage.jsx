@@ -15,6 +15,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
+import { ChartsTooltip } from '@mui/x-charts/ChartsTooltip';
 import { useDrawingArea } from '@mui/x-charts/hooks';
 
 import { useAuth } from '../../contexts/AuthContext';
@@ -181,7 +182,14 @@ function BalanceAreaGradient({ id = 'balanceGradient', color = COLORS.balance })
 
   return (
     <defs>
-      <linearGradient id={id} x1="0" x2="0" y1={y1} y2={y2} gradientUnits="userSpaceOnUse">
+      <linearGradient
+        id={id}
+        x1="0"
+        x2="0"
+        y1={y1}
+        y2={y2}
+        gradientUnits="userSpaceOnUse"
+      >
         <stop offset="0%" stopColor={alpha(color, 0.34)} />
         <stop offset="55%" stopColor={alpha(color, 0.12)} />
         <stop offset="100%" stopColor={alpha(color, 0.02)} />
@@ -302,7 +310,9 @@ export default function AnalyticsPage() {
 
   const yearMonths = useMemo(() => {
     const cur = ymNum(year, month);
-    return history.filter((h) => h.year === year && ymNum(h.year, h.month) <= cur);
+    return history.filter(
+      (h) => h.year === year && ymNum(h.year, h.month) <= cur
+    );
   }, [history, year, month]);
 
   const ytdIncome = useMemo(
@@ -549,18 +559,65 @@ export default function AnalyticsPage() {
             />
           </Box>
 
-          <Box sx={{ position: 'relative', mt: 6, mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Divider sx={{ position: 'absolute', width: '100%', borderColor: 'rgba(15, 23, 42, 0.08)' }} />
-            <Box sx={{ position: 'relative', px: 2, bgcolor: alpha('#FFFFFF', 0.96), display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
-              <Typography variant="caption" sx={{ fontWeight: 700, color: 'rgba(15, 23, 42, 0.5)', letterSpacing: 0.8, textTransform: 'uppercase', fontSize: 11 }}>
+          <Box
+            sx={{
+              position: 'relative',
+              mt: 6,
+              mb: 3,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Divider
+              sx={{
+                position: 'absolute',
+                width: '100%',
+                borderColor: 'rgba(15, 23, 42, 0.08)',
+              }}
+            />
+            <Box
+              sx={{
+                position: 'relative',
+                px: 2,
+                bgcolor: alpha('#FFFFFF', 0.96),
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: COLORS.balance,
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 700,
+                  color: 'rgba(15, 23, 42, 0.5)',
+                  letterSpacing: 0.8,
+                  textTransform: 'uppercase',
+                  fontSize: 11,
+                }}
+              >
                 Баланс
               </Typography>
-              <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: COLORS.balance }} />
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  bgcolor: COLORS.balance,
+                }}
+              />
             </Box>
           </Box>
 
-          {/* Balance: dynamic axis + tooltip strictly anchored to the node */}
+          {/* Balance: dynamic axis + tooltip anchored to node (точно в точку) */}
           <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
@@ -592,20 +649,13 @@ export default function AnalyticsPage() {
                   showMark: true,
                 },
               ]}
-              // IMPORTANT: put all tooltip settings here
               slotProps={{
-                tooltip: {
-                  trigger: 'item',
-                  anchor: 'node',
-                  position: 'top',
-                  placement: 'top',
-                },
+                // В v8 настройки popper нужно давать здесь (tooltip.slotProps.popper может игнорироваться)
                 popper: {
                   placement: 'top',
                   modifiers: [
                     { name: 'offset', options: { offset: [0, 6] } },
                     { name: 'preventOverflow', options: { padding: 8 } },
-                    // Важно для точного позиционирования стрелки:
                     { name: 'flip', options: { fallbackPlacements: ['top', 'bottom'] } },
                   ],
                 },
@@ -620,14 +670,24 @@ export default function AnalyticsPage() {
                   stroke: COLORS.balance,
                   fill: '#ffffff',
                 },
-                '& .MuiAreaElement-root': { fill: "url('#balanceGradient')" },
-                '& .MuiChartsAxis-line': { stroke: 'rgba(15, 23, 42, 0.18)' },
-                '& .MuiChartsAxis-tickLabel': { fill: 'rgba(15, 23, 42, 0.55)', fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: 'rgba(15, 23, 42, 0.06)' },
+                '& .MuiAreaElement-root': {
+                  fill: "url('#balanceGradient')",
+                },
+                '& .MuiChartsAxis-line': {
+                  stroke: 'rgba(15, 23, 42, 0.18)',
+                },
+                '& .MuiChartsAxis-tickLabel': {
+                  fill: 'rgba(15, 23, 42, 0.55)',
+                  fontSize: 11,
+                },
+                '& .MuiChartsGrid-line': {
+                  stroke: 'rgba(15, 23, 42, 0.06)',
+                },
                 '.MuiChartsLegend-root': { display: 'none' },
               }}
             >
               <BalanceAreaGradient id="balanceGradient" color={COLORS.balance} />
+              <ChartsTooltip trigger="item" anchor="node" position="top" placement="top" />
             </LineChart>
           </Box>
         </CardContent>
@@ -644,17 +704,38 @@ export default function AnalyticsPage() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
-            <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}>
-              {topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов'}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ sm: 'center' }}
+          >
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: 850, color: '#0F172A', flexGrow: 1 }}
+            >
+              {topTab === 'expenses'
+                ? 'Топ категорий расходов'
+                : 'Топ категорий доходов'}
             </Typography>
             <Chip
-              label={catsLoading ? 'Считаю…' : mode === 'year' ? `${year} год` : monthTitleRu(year, month)}
+              label={
+                catsLoading
+                  ? 'Считаю…'
+                  : mode === 'year'
+                    ? `${year} год`
+                    : monthTitleRu(year, month)
+              }
               sx={{
                 borderRadius: 999,
-                borderColor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.35),
+                borderColor: alpha(
+                  topTab === 'expenses' ? COLORS.expenses : COLORS.income,
+                  0.35
+                ),
                 color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
-                bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.08),
+                bgcolor: alpha(
+                  topTab === 'expenses' ? COLORS.expenses : COLORS.income,
+                  0.08
+                ),
               }}
               variant="outlined"
             />
@@ -666,7 +747,10 @@ export default function AnalyticsPage() {
             sx={{
               mt: 1,
               minHeight: 40,
-              '& .MuiTab-root': { minHeight: 40, color: 'rgba(15,23,42,0.65)' },
+              '& .MuiTab-root': {
+                minHeight: 40,
+                color: 'rgba(15,23,42,0.65)',
+              },
             }}
           >
             <Tab label="Расходы" value="expenses" />
@@ -676,11 +760,17 @@ export default function AnalyticsPage() {
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
           {catsLoading ? (
-            <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
+            >
               Загрузка данных по категориям…
             </Typography>
           ) : (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).length === 0 ? (
-            <Typography variant="body2" sx={{ color: 'rgba(148, 163, 184, 1)' }}>
+            <Typography
+              variant="body2"
+              sx={{ color: 'rgba(148, 163, 184, 1)' }}
+            >
               Нет данных по категориям за выбранный период.
             </Typography>
           ) : (
@@ -690,7 +780,9 @@ export default function AnalyticsPage() {
                 layout="horizontal"
                 yAxis={[
                   {
-                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
+                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map(
+                      (x) => x.category
+                    ),
                     scaleType: 'band',
                     width: 78,
                     tickLabelStyle: { fontSize: 11 },
@@ -699,7 +791,9 @@ export default function AnalyticsPage() {
                 xAxis={[{ tickLabelStyle: { fontSize: 11 } }]}
                 series={[
                   {
-                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.amount),
+                    data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map(
+                      (x) => x.amount
+                    ),
                     label: 'Сумма',
                     color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
                   },
