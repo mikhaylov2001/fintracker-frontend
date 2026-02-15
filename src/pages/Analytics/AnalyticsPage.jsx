@@ -515,7 +515,7 @@ export default function AnalyticsPage() {
         />
       </Box>
 
-      {/* Cashflow: Bar + Line в одной карточке */}
+      {/* Cashflow: Bar + Line в одной карточке (с фиксом отступов) */}
       <Card
         variant="outlined"
         sx={{
@@ -534,10 +534,10 @@ export default function AnalyticsPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-          {/* BarChart */}
-          <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
+          {/* BarChart - увеличил margin.bottom до 46, чтобы подписи оси не налезали */}
+          <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
             <BarChart
-              height={320}
+              height={340}
               xAxis={[
                 {
                   data: cashflowRows.map((r) => r.label),
@@ -561,18 +561,19 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ horizontal: true }}
-              margin={{ left: 52, right: 16, top: 10, bottom: 28 }}
+              margin={{ left: 52, right: 16, top: 10, bottom: 46 }}
               sx={{ '.MuiChartsLegend-root': { justifyContent: 'center' } }}
             />
           </Box>
 
-          {/* Разделитель между графиками */}
+          {/* Чёткий разделитель между графиками */}
+          <Divider sx={{ my: 2, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
+
           <Typography
-            variant="body2"
+            variant="h6"
             sx={{
-              fontWeight: 800,
+              fontWeight: 850,
               color: '#0F172A',
-              mt: 3,
               mb: 1.5,
             }}
           >
