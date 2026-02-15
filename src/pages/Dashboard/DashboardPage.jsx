@@ -448,12 +448,12 @@ export default function DashboardPage() {
             accent="#F97316"
           />
 
-          <StatCard
-            label="Норма сбережений"
-            value={`${displayRate}%`}
-            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-            accent="#A78BFA"
-          />
+         <StatCard
+           label="Норма сбережений"
+           value={`${displayRate}%`}
+           sub=" "
+           accent="#A78BFA"
+         />
         </Box>
 
         {/* Итоги */}
