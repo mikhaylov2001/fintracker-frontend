@@ -79,7 +79,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
             flex: '0 0 auto',
           }}
         />
-        {/* Без сокращений: на xs разрешаем 2 строки */}
         <Typography
           variant="overline"
           sx={{
@@ -131,7 +130,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
   </Card>
 );
 
-/* “Табличные” строки для итогов месяца */
 function SummaryRow({ label, value, color }) {
   return (
     <Box
@@ -490,7 +488,12 @@ export default function DashboardPage() {
         <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent="#6366F1" />
         <StatCard label="Доходы" value={fmtRub.format(displayIncome)} sub={`Расходы: ${fmtRub.format(displayExpenses)}`} accent="#22C55E" />
         <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} sub=" " accent="#F97316" />
-        <StatCard label="Норма сбережений" value={`${displayRate}%`} sub={`Сбережения: ${fmtRub.format(displaySavings)}`} accent="#A78BFA" />
+        <StatCard
+          label="Норма сбережений"
+          value={`${displayRate}%`}
+          sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+          accent="#A78BFA"
+        />
       </Box>
 
       <Card
@@ -524,7 +527,6 @@ export default function DashboardPage() {
 
           <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-          {/* “Табличный” вид вместо карточек */}
           <Box
             sx={{
               border: '1px solid rgba(15, 23, 42, 0.08)',
@@ -543,10 +545,6 @@ export default function DashboardPage() {
             <Divider sx={{ borderColor: 'rgba(15, 23, 42, 0.08)' }} />
             <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
               <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color="#A78BFA" />
-            </Box>
-            <Divider sx={{ borderColor: 'rgba(15, 23, 42, 0.08)' }} />
-            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-              <SummaryRow label="Норма сбережений" value={`${savingsRateMonth}%`} color="#A78BFA" />
             </Box>
           </Box>
 
@@ -623,6 +621,13 @@ export default function DashboardPage() {
                         Сбережения:{' '}
                         <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                           {fmtRub.format(n(h.savings))}
+                        </Box>
+                      </Typography>
+
+                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                        Норма сбережений:{' '}
+                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                          {n(h.savings_rate_percent)}%
                         </Box>
                       </Typography>
                     </Stack>
