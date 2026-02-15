@@ -570,7 +570,7 @@ export default function AnalyticsPage() {
           <Box
             sx={{
               position: 'relative',
-              mt: 4,
+              mt: 6,
               mb: 3,
               display: 'flex',
               alignItems: 'center',
