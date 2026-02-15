@@ -69,7 +69,8 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     }}
   >
     <CardContent sx={{ p: 2 }}>
-      <Stack direction="row" alignItems="center" spacing={1}>
+      {/* FIX: ellipsis works in flex only with minWidth:0 */}
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
         <Box
           sx={{
             width: 8,
@@ -86,6 +87,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
             color: 'rgba(15, 23, 42, 0.65)',
             letterSpacing: 0.6,
             lineHeight: 1.1,
+            minWidth: 0,
             whiteSpace: 'nowrap',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
@@ -125,7 +127,6 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     </CardContent>
   </Card>
 );
-
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -308,7 +309,6 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || 'пользователь';
 
-  // ВАЖНО: гибкая ширина — на мобилке как раньше, на десктопе шире
   const PageWrap = ({ children }) => (
     <Box
       sx={{
@@ -417,7 +417,7 @@ export default function DashboardPage() {
           </Card>
         ) : null}
 
-        {/* KPI: мобилка 2 колонки, десктоп 4 колонки */}
+        {/* KPI */}
         <Box
           sx={{
             display: 'grid',
@@ -458,7 +458,7 @@ export default function DashboardPage() {
           />
         </Box>
 
-        {/* Итоги */}
+        {/* Итоги операций за месяц (улучшенная читабельность на мобилке) */}
         <Card
           variant="outlined"
           sx={{
@@ -470,59 +470,113 @@ export default function DashboardPage() {
           }}
         >
           <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 850, color: '#0F172A', mb: 1.5 }}
+            <Stack
+              direction="row"
+              alignItems="baseline"
+              justifyContent="space-between"
+              sx={{ mb: 0.5 }}
             >
-              Итоги операций за месяц
-            </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
+                Итоги операций за месяц
+              </Typography>
 
-            <Divider sx={{ mb: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
-
-            {/* мобилка 2×2, десктоп 4 в ряд */}
-            <Grid container spacing={1.25}>
-              <Grid item xs={6} md={3}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Доходы:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(incomeMonth)}
-                  </Box>
-                </Typography>
-              </Grid>
-
-              <Grid item xs={6} md={3}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Расходы:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(expenseMonth)}
-                  </Box>
-                </Typography>
-              </Grid>
-
-              <Grid item xs={6} md={3}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Сбережения:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {fmtRub.format(savingsMonth)}
-                  </Box>
-                </Typography>
-              </Grid>
-
-              <Grid item xs={6} md={3}>
-                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Норма сбережений:{' '}
-                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                    {savingsRateMonth}%
-                  </Box>
-                </Typography>
-              </Grid>
-            </Grid>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: 'rgba(15, 23, 42, 0.55)',
+                  fontWeight: 700,
+                  textTransform: 'capitalize',
+                }}
+              >
+                {monthTitle(year, month)}
+              </Typography>
+            </Stack>
 
             <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-            <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
-              История сохранена: {history.length} месяцев
-            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: 'repeat(2, minmax(0, 1fr))',
+                  sm: 'repeat(4, minmax(0, 1fr))',
+                },
+                gap: { xs: 1, sm: 1.25 },
+              }}
+            >
+              {[
+                { label: 'Доходы', value: fmtRub.format(incomeMonth), color: '#22C55E' },
+                { label: 'Расходы', value: fmtRub.format(expenseMonth), color: '#F97316' },
+                { label: 'Сбережения', value: fmtRub.format(savingsMonth), color: '#A78BFA' },
+                { label: 'Норма сбереж.', value: `${savingsRateMonth}%`, color: '#A78BFA' },
+              ].map((x) => (
+                <Box
+                  key={x.label}
+                  sx={{
+                    border: '1px solid rgba(15, 23, 42, 0.08)',
+                    borderRadius: 2.5,
+                    p: { xs: 1.1, sm: 1.25 },
+                    bgcolor: alpha('#FFFFFF', 0.9),
+                    minWidth: 0,
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 999,
+                        bgcolor: x.color,
+                        flex: '0 0 auto',
+                      }}
+                    />
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: 'rgba(15, 23, 42, 0.6)',
+                        fontWeight: 800,
+                        fontSize: { xs: 11, sm: 12 },
+                        minWidth: 0,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {x.label}
+                    </Typography>
+                  </Stack>
+
+                  <Typography
+                    sx={{
+                      mt: 0.6,
+                      fontWeight: 950,
+                      color: '#0F172A',
+                      lineHeight: 1.05,
+                      fontSize: { xs: 17, sm: 18, md: 18 },
+                      whiteSpace: 'nowrap',
+                      letterSpacing: -0.2,
+                    }}
+                  >
+                    {x.value}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+
+            <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
+
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={{ xs: 0.25, sm: 1.25 }}
+              sx={{ color: 'rgba(15, 23, 42, 0.6)' }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                История сохранена: {history.length} месяцев
+              </Typography>
+              <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                Обновлено: {todayLabel}
+              </Typography>
+            </Stack>
 
             <Box sx={{ mt: 1.25 }}>
               {historyDesc.length === 0 ? (
