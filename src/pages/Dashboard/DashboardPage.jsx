@@ -508,7 +508,7 @@ export default function DashboardPage() {
 
               <Grid item xs={6} md={3}>
                 <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                  Норма:{' '}
+                  Норма сбережений:{' '}
                   <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {savingsRateMonth}%
                   </Box>
