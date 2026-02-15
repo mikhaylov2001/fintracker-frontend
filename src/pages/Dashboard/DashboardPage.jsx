@@ -42,6 +42,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
     variant="outlined"
     sx={{
       height: '100%',
+      minHeight: 128, // ключ к “ровности” на мобилке
       borderRadius: 3,
       position: 'relative',
       overflow: 'hidden',
@@ -103,7 +104,10 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
         >
           {sub}
         </Typography>
-      ) : null}
+      ) : (
+        // маленькая “заглушка”, чтобы карточки с/без sub выглядели одинаково по ритму
+        <Box sx={{ mt: 0.75, height: 20 }} />
+      )}
     </CardContent>
   </Card>
 );
@@ -196,12 +200,10 @@ export default function DashboardPage() {
         if (!userId)
           throw new Error('Нет user.id (проверь authUser в localStorage).');
 
-        // текущий месяц
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
         if (!cancelled) setSummary(cur);
 
-        // история за 12 месяцев
         const baseYM = { year, month };
         const tasks = [];
         const rows = [];
@@ -263,10 +265,8 @@ export default function DashboardPage() {
     () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
     [yearMonths]
   );
-  const yearBalance = useMemo(
-    () => yearIncome - yearExpenses,
-    [yearIncome, yearExpenses]
-  );
+  const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+
   const yearSavings = useMemo(
     () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
     [yearMonths]
@@ -385,158 +385,104 @@ export default function DashboardPage() {
         </Card>
       ) : null}
 
-      <Grid
-              container
-              spacing={2}
-              sx={{ mb: 2, alignItems: 'stretch' }}
-            >
-              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
-                <Box sx={{ width: '100%' }}>
-                  <StatCard
-                    label="Баланс"
-                    value={fmtRub.format(displayBalance)}
-                    accent="#6366F1"
-                  />
-                </Box>
-              </Grid>
+      <Grid container spacing={2} sx={{ mb: 2, alignItems: 'stretch' }}>
+        {/* KPI: на телефоне 2x2 */}
+        <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
+          <StatCard
+            label="Баланс"
+            value={fmtRub.format(displayBalance)}
+            accent="#6366F1"
+          />
+        </Grid>
 
-              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
-                <Box sx={{ width: '100%' }}>
-                  <StatCard
-                    label="Доходы"
-                    value={fmtRub.format(displayIncome)}
-                    sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-                    accent="#22C55E"
-                  />
-                </Box>
-              </Grid>
+        <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
+          <StatCard
+            label="Доходы"
+            value={fmtRub.format(displayIncome)}
+            sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+            accent="#22C55E"
+          />
+        </Grid>
 
-              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
-                <Box sx={{ width: '100%' }}>
-                  <StatCard
-                    label="Расходы"
-                    value={fmtRub.format(displayExpenses)}
-                    accent="#F97316"
-                  />
-                </Box>
-              </Grid>
+        <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
+          <StatCard
+            label="Расходы"
+            value={fmtRub.format(displayExpenses)}
+            accent="#F97316"
+          />
+        </Grid>
 
-              <Grid item xs={12} sm={6} md={3} sx={{ display: 'flex' }}>
-                <Box sx={{ width: '100%' }}>
-                  <StatCard
-                    label="Норма сбережений"
-                    value={`${displayRate}%`}
-                    sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-                    accent="#A78BFA"
-                  />
-                </Box>
-              </Grid>
+        <Grid item xs={6} sm={6} md={3} sx={{ display: 'flex' }}>
+          <StatCard
+            label="Норма сбережений"
+            value={`${displayRate}%`}
+            sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+            accent="#A78BFA"
+          />
+        </Grid>
 
-                <Grid item xs={12}>
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 3,
-                      borderColor: 'rgba(15, 23, 42, 0.08)',
-                      backgroundColor: alpha('#FFFFFF', 0.96),
-                      backdropFilter: 'blur(10px)',
-                      width: '100%',
-                    }}
-                  >
-                    <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-
-              <Typography
-                variant="h6"
-                sx={{ fontWeight: 850, color: '#0F172A' }}
-              >
+        {/* Итоги операций: тоже ровно по ширине */}
+        <Grid item xs={12}>
+          <Card
+            variant="outlined"
+            sx={{
+              borderRadius: 3,
+              borderColor: 'rgba(15, 23, 42, 0.08)',
+              backgroundColor: alpha('#FFFFFF', 0.96),
+              backdropFilter: 'blur(10px)',
+              width: '100%',
+            }}
+          >
+            <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+              <Typography variant="h6" sx={{ fontWeight: 850, color: '#0F172A' }}>
                 Итоги операций за месяц
               </Typography>
 
-              <Divider
-                sx={{
-                  my: 1.5,
-                  borderColor: 'rgba(15, 23, 42, 0.1)',
-                }}
-              />
+              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
               <Stack
-                direction={{ xs: 'column', sm: 'row' }}
-                spacing={1.25}
-                sx={{ flexWrap: 'wrap' }}
+                direction="column"
+                spacing={0.75}
+                sx={{ maxWidth: 520 }}
               >
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                >
+                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Доходы:{' '}
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 800, color: '#0F172A' }}
-                  >
+                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(incomeMonth)}
                   </Box>
                 </Typography>
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                >
+                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Расходы:{' '}
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 800, color: '#0F172A' }}
-                  >
+                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(expenseMonth)}
                   </Box>
                 </Typography>
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                >
+                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Сбережения:{' '}
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 800, color: '#0F172A' }}
-                  >
+                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {fmtRub.format(savingsMonth)}
                   </Box>
                 </Typography>
 
-                <Typography
-                  variant="body2"
-                  sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                >
+                <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                   Норма сбережений:{' '}
-                  <Box
-                    component="span"
-                    sx={{ fontWeight: 800, color: '#0F172A' }}
-                  >
+                  <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                     {savingsRateMonth}%
                   </Box>
                 </Typography>
               </Stack>
 
-              <Divider
-                sx={{
-                  my: 1.5,
-                  borderColor: 'rgba(15, 23, 42, 0.1)',
-                }}
-              />
+              <Divider sx={{ my: 1.5, borderColor: 'rgba(15, 23, 42, 0.1)' }} />
 
-              <Typography
-                variant="body2"
-                sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-              >
+              <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
                 История сохранена: {history.length} месяцев
               </Typography>
 
               <Box sx={{ mt: 1.25 }}>
                 {historyDesc.length === 0 ? (
-                  <Typography
-                    variant="body2"
-                    sx={{ color: 'rgba(15, 23, 42, 0.65)' }}
-                  >
+                  <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.65)' }}>
                     Пока нет сохранённых месяцев.
                   </Typography>
                 ) : (
@@ -567,82 +513,37 @@ export default function DashboardPage() {
 
                       <AccordionDetails sx={{ pt: 0 }}>
                         <Stack spacing={0.75}>
-                          <Typography
-                            variant="body2"
-                            sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                          >
+                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Доходы:{' '}
-                            <Box
-                              component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
-                            >
+                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {fmtRub.format(n(h.total_income))}
                             </Box>
                           </Typography>
 
-                          <Typography
-                            variant="body2"
-                            sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                          >
+                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Расходы:{' '}
-                            <Box
-                              component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
-                            >
+                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {fmtRub.format(n(h.total_expenses))}
                             </Box>
                           </Typography>
 
-                          <Typography
-                            variant="body2"
-                            sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                          >
+                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Баланс:{' '}
-                            <Box
-                              component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
-                            >
+                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {fmtRub.format(n(h.balance))}
                             </Box>
                           </Typography>
 
-                          <Typography
-                            variant="body2"
-                            sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                          >
+                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Сбережения:{' '}
-                            <Box
-                              component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
-                            >
+                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {fmtRub.format(n(h.savings))}
                             </Box>
                           </Typography>
 
-                          <Typography
-                            variant="body2"
-                            sx={{ color: 'rgba(15, 23, 42, 0.75)' }}
-                          >
+                          <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
                             Норма сбережений:{' '}
-                            <Box
-                              component="span"
-                              sx={{
-                                fontWeight: 800,
-                                color: '#0F172A',
-                              }}
-                            >
+                            <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
                               {n(h.savings_rate_percent)}%
                             </Box>
                           </Typography>
