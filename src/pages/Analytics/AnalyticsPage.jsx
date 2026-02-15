@@ -16,8 +16,10 @@ import ToggleButton from '@mui/material/ToggleButton';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
-import { ChartsTooltipContainer } from '@mui/x-charts/ChartsTooltipContainer';
-import { ChartsItemTooltipContent } from '@mui/x-charts/ChartsTooltip';
+import {
+  ChartsTooltipContainer,
+  ChartsItemTooltipContent,
+} from '@mui/x-charts/ChartsTooltip';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getMonthlySummary } from '../../api/summaryApi';
@@ -128,16 +130,21 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
             flex: '0 0 auto',
           }}
         />
+        {/* Без сокращений: на xs разрешаем 2 строки */}
         <Typography
           variant="overline"
           sx={{
             color: 'rgba(15, 23, 42, 0.65)',
             letterSpacing: 0.6,
-            lineHeight: 1.1,
+            lineHeight: 1.15,
             minWidth: 0,
-            whiteSpace: 'nowrap',
+            whiteSpace: 'normal',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
+            display: '-webkit-box',
+            WebkitBoxOrient: 'vertical',
+            WebkitLineClamp: { xs: 2, sm: 1 },
+            fontSize: { xs: 10.5, sm: 11.5 },
           }}
         >
           {label}
@@ -201,7 +208,7 @@ function BalanceAreaGradient({ id = 'balanceGradient', color = COLORS.balance })
 
 /**
  * Tooltip без стрелки, но с “лидер-линией” ровно к точке.
- * Важное: render внутри ChartsTooltipContainer, чтобы anchor="node" реально работал.
+ * Важно: используем ChartsTooltipContainer из '@mui/x-charts/ChartsTooltip'. [web:826]
  */
 function BalancePinnedTooltip(props) {
   return (
@@ -223,7 +230,6 @@ function BalancePinnedTooltip(props) {
         },
       }}
     >
-      {/* Линия к точке (визуально заменяет стрелку) */}
       <Box
         sx={{
           position: 'absolute',
@@ -237,10 +243,9 @@ function BalancePinnedTooltip(props) {
           pointerEvents: 'none',
         }}
       />
-      {/* Сам контент тултипа */}
+
       <Box
         sx={{
-          // “карточка” тултипа
           bgcolor: alpha('#0F172A', 0.92),
           color: '#fff',
           borderRadius: 2,
@@ -661,9 +666,7 @@ export default function AnalyticsPage() {
                   showMark: true,
                 },
               ]}
-              slots={{
-                tooltip: BalancePinnedTooltip,
-              }}
+              slots={{ tooltip: BalancePinnedTooltip }}
               grid={{ horizontal: true }}
               margin={{ left: 52, right: 16, top: 14, bottom: 28 }}
               sx={{
