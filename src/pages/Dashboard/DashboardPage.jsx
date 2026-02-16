@@ -17,7 +17,6 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import { useNavigate } from "react-router-dom";
 
-import AppBackground from "../../layouts/AppBackground";
 import { useAuth } from "../../contexts/AuthContext";
 import { getMonthlySummary } from "../../api/summaryApi";
 
@@ -60,11 +59,10 @@ const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
       borderRadius: 3,
       position: "relative",
       overflow: "hidden",
-      borderColor: "rgba(15,23,42,0.8)",
-      backgroundColor: "rgba(15,23,42,0.9)",
+      borderColor: "rgba(15,23,42,0.75)",
+      backgroundColor: "rgba(15,23,42,0.90)",
       backdropFilter: "blur(12px)",
-      transition:
-        "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
+      transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
       cursor: onClick ? "pointer" : "default",
       "&:before": {
         content: '""',
@@ -74,33 +72,22 @@ const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
         right: 0,
         height: 2,
         background: accent,
-        opacity: 0.85,
+        opacity: 0.9,
       },
       "&:hover": {
         transform: onClick ? "translateY(-2px)" : "none",
-        borderColor: onClick
-          ? "rgba(248,250,252,0.3)"
-          : "rgba(15,23,42,0.8)",
+        borderColor: onClick ? "rgba(248,250,252,0.22)" : "rgba(15,23,42,0.75)",
         boxShadow: onClick ? "0 18px 50px rgba(0,0,0,0.35)" : "none",
       },
     }}
   >
     <CardContent sx={{ p: 2 }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            bgcolor: accent,
-            opacity: 0.9,
-            flex: "0 0 auto",
-          }}
-        />
+        <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.95 }} />
         <Typography
           variant="overline"
           sx={{
-            color: "rgba(148,163,184,0.9)",
+            color: "rgba(148,163,184,0.95)",
             letterSpacing: 0.6,
             lineHeight: 1.15,
             minWidth: 0,
@@ -119,12 +106,7 @@ const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
 
       <Typography
         variant="h5"
-        sx={{
-          mt: 0.75,
-          fontWeight: 900,
-          color: "rgba(248,250,252,0.95)",
-          lineHeight: 1.05,
-        }}
+        sx={{ mt: 0.75, fontWeight: 950, color: "rgba(248,250,252,0.96)", lineHeight: 1.05 }}
       >
         {value}
       </Typography>
@@ -161,15 +143,7 @@ function SummaryRow({ label, value, color }) {
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            bgcolor: color,
-            flex: "0 0 auto",
-          }}
-        />
+        <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: color }} />
         <Typography
           variant="body2"
           sx={{
@@ -193,7 +167,7 @@ function SummaryRow({ label, value, color }) {
         variant="body2"
         sx={{
           fontWeight: 950,
-          color: "rgba(248,250,252,0.95)",
+          color: "rgba(248,250,252,0.96)",
           whiteSpace: "nowrap",
           letterSpacing: -0.2,
         }}
@@ -219,49 +193,30 @@ export default function DashboardPage() {
   const month = now.getMonth() + 1;
 
   const fmtRub = useMemo(
-    () =>
-      new Intl.NumberFormat("ru-RU", {
-        style: "currency",
-        currency: "RUB",
-        maximumFractionDigits: 0,
-      }),
+    () => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }),
     []
   );
 
   const fmtToday = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
+    () => new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }),
     []
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
   const fmtMonth = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ru-RU", {
-        month: "long",
-        year: "numeric",
-      }),
+    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
     []
   );
   const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
 
-  const kpiModeKey = useMemo(
-    () => `fintracker:kpiMode:${userId || "anon"}`,
-    [userId]
-  );
+  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || "anon"}`, [userId]);
   const [kpiMode, setKpiMode] = useState("month");
 
   useEffect(() => {
     try {
       const v = window.localStorage.getItem(kpiModeKey);
       if (v === "month" || v === "year") setKpiMode(v);
-    } catch {
-      setKpiMode("month");
-    }
+    } catch {}
   }, [kpiModeKey]);
 
   useEffect(() => {
@@ -288,8 +243,7 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        if (!userId)
-          throw new Error("Нет user.id (проверь authUser в localStorage).");
+        if (!userId) throw new Error("Нет user.id (проверь authUser в localStorage).");
 
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
@@ -307,10 +261,7 @@ export default function DashboardPage() {
                 const d = unwrap(raw);
                 if (
                   d &&
-                  (n(d.total_income) ||
-                    n(d.total_expenses) ||
-                    n(d.balance) ||
-                    n(d.savings))
+                  (n(d.total_income) || n(d.total_expenses) || n(d.balance) || n(d.savings))
                 ) {
                   rows.push({ ...d, year: ym.year, month: ym.month });
                 }
@@ -322,8 +273,7 @@ export default function DashboardPage() {
         await Promise.all(tasks);
         if (!cancelled) setHistory(rows);
       } catch (e) {
-        if (!cancelled)
-          setError(e?.message || "Ошибка загрузки сводки/истории");
+        if (!cancelled) setError(e?.message || "Ошибка загрузки сводки/истории");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -343,27 +293,13 @@ export default function DashboardPage() {
 
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
-    return history.filter(
-      (h) => h.year === year && ymNum(h.year, h.month) <= curNum
-    );
+    return history.filter((h) => h.year === year && ymNum(h.year, h.month) <= curNum);
   }, [history, year, month]);
 
-  const yearIncome = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
-    [yearMonths]
-  );
-  const yearExpenses = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
-    [yearMonths]
-  );
-  const yearBalance = useMemo(
-    () => yearIncome - yearExpenses,
-    [yearIncome, yearExpenses]
-  );
-  const yearSavings = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
-    [yearMonths]
-  );
+  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
+  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
+  const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+  const yearSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
 
   const yearSavingsRate = useMemo(() => {
     if (yearIncome <= 0) return 0;
@@ -372,9 +308,7 @@ export default function DashboardPage() {
   }, [yearIncome, yearBalance]);
 
   const isYear = kpiMode === "year";
-  const periodLabel = isYear
-    ? `Показаны данные: ${year} год`
-    : `Показаны данные: ${monthTitle(year, month)}`;
+  const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
@@ -384,461 +318,306 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || "пользователь";
 
-  const PageWrap = ({ children }) => (
-    <Box sx={{ width: "100%", mx: 0, px: 0, maxWidth: "100%" }}>{children}</Box>
-  );
-
   return (
-    <AppBackground sx={{ py: { xs: 2.5, md: 3 } }}>
-      <Box sx={{ color: "rgba(248,250,252,0.96)" }}>
-        <PageWrap>
-          {/* HERO */}
-          <Box sx={{ px: { xs: 2, md: 3, lg: 4 } }}>
+    <Box sx={{ width: "100%", px: { xs: 2, md: 3, lg: 4 }, color: "rgba(248,250,252,0.96)" }}>
+      {/* HERO */}
+      <Card
+        variant="outlined"
+        sx={{
+          borderRadius: 5,
+          borderColor: "rgba(15,23,42,0.75)",
+          backgroundColor: "rgba(15,23,42,0.90)",
+          backdropFilter: "blur(18px)",
+          overflow: "hidden",
+          mb: 2,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            alignItems={{ sm: "center" }}
+            sx={{ mb: 1.25 }}
+          >
+            <Box sx={{ flexGrow: 1 }}>
+              <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15 }}>
+                Финансовая свобода
+              </Typography>
+
+              <Typography variant="body2" sx={{ color: "rgba(148,163,184,0.98)", mt: 0.5 }}>
+                Привет, {displayName} • Сегодня: {todayLabel}
+              </Typography>
+
+              <Typography variant="body2" sx={{ color: "rgba(209,213,219,0.98)", mt: 0.5, fontWeight: 600 }}>
+                {periodLabel}
+              </Typography>
+            </Box>
+
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              alignItems={{ sm: "center" }}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              <Chip
+                label={loading ? "Загрузка…" : "Актуально"}
+                variant="filled"
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  borderRadius: 999,
+                  bgcolor: "rgba(15,23,42,0.9)",
+                  color: "rgba(248,250,252,0.92)",
+                  fontWeight: 800,
+                  border: "1px solid rgba(148,163,184,0.55)",
+                  backdropFilter: "blur(10px)",
+                }}
+              />
+
+              <ToggleButtonGroup
+                value={kpiMode}
+                exclusive
+                onChange={onKpiModeChange}
+                size="small"
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  bgcolor: "rgba(15,23,42,0.9)",
+                  border: "1px solid rgba(148,163,184,0.55)",
+                  borderRadius: 999,
+                  backdropFilter: "blur(10px)",
+                  "& .MuiToggleButton-root": {
+                    border: 0,
+                    px: 1.5,
+                    flex: { xs: 1, sm: "unset" },
+                    color: "rgba(209,213,219,0.98)",
+                    fontWeight: 800,
+                  },
+                  "& .MuiToggleButton-root.Mui-selected": {
+                    color: "#020617",
+                    backgroundColor: "rgba(248,250,252,0.96)",
+                  },
+                }}
+              >
+                <ToggleButton value="month">Месяц</ToggleButton>
+                <ToggleButton value="year">Год</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Stack>
+
+          {error ? (
             <Card
               variant="outlined"
               sx={{
-                borderRadius: 5,
-                borderColor: "rgba(15,23,42,0.8)",
-                backgroundColor: "rgba(15,23,42,0.9)",
-                backdropFilter: "blur(18px)",
-                overflow: "hidden",
-                mb: 2,
+                borderRadius: 3,
+                borderColor: alpha("#EF4444", 0.7),
+                backgroundColor: "rgba(127,29,29,0.7)",
               }}
             >
-              <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={1}
-                  alignItems={{ sm: "center" }}
-                  sx={{ mb: 1.25 }}
-                >
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 950,
-                        lineHeight: 1.15,
-                        color: "rgba(248,250,252,0.98)",
-                      }}
-                    >
-                      Финансовая свобода
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "rgba(148,163,184,0.98)", mt: 0.5 }}
-                    >
-                      Привет, {displayName} • Сегодня: {todayLabel}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "rgba(209,213,219,0.98)",
-                        mt: 0.5,
-                        fontWeight: 600,
-                      }}
-                    >
-                      {periodLabel}
-                    </Typography>
-                  </Box>
-
-                  <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1}
-                    alignItems={{ sm: "center" }}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
-                  >
-                    <Chip
-                      label={loading ? "Загрузка…" : "Актуально"}
-                      variant="filled"
-                      sx={{
-                        width: { xs: "100%", sm: "auto" },
-                        borderRadius: 999,
-                        bgcolor: "rgba(15,23,42,0.9)",
-                        color: "rgba(248,250,252,0.92)",
-                        fontWeight: 800,
-                        border: "1px solid rgba(148,163,184,0.6)",
-                        backdropFilter: "blur(10px)",
-                      }}
-                    />
-
-                    <ToggleButtonGroup
-                      value={kpiMode}
-                      exclusive
-                      onChange={onKpiModeChange}
-                      size="small"
-                      sx={{
-                        width: { xs: "100%", sm: "auto" },
-                        bgcolor: "rgba(15,23,42,0.9)",
-                        border: "1px solid rgba(148,163,184,0.6)",
-                        borderRadius: 999,
-                        backdropFilter: "blur(10px)",
-                        "& .MuiToggleButton-root": {
-                          border: 0,
-                          px: 1.5,
-                          flex: { xs: 1, sm: "unset" },
-                          color: "rgba(209,213,219,0.98)",
-                          fontWeight: 800,
-                        },
-                        "& .MuiToggleButton-root.Mui-selected": {
-                          color: "#020617",
-                          backgroundColor: "rgba(248,250,252,0.96)",
-                        },
-                      }}
-                    >
-                      <ToggleButton value="month">Месяц</ToggleButton>
-                      <ToggleButton value="year">Год</ToggleButton>
-                    </ToggleButtonGroup>
-                  </Stack>
-                </Stack>
-
-                {error ? (
-                  <Card
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 3,
-                      borderColor: alpha("#EF4444", 0.7),
-                      backgroundColor: "rgba(127,29,29,0.7)",
-                    }}
-                  >
-                    <CardContent sx={{ py: 1.5 }}>
-                      <Typography
-                        sx={{
-                          color: "rgba(254,242,242,0.98)",
-                          fontWeight: 700,
-                        }}
-                        variant="body2"
-                      >
-                        {error}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                ) : null}
+              <CardContent sx={{ py: 1.5 }}>
+                <Typography sx={{ color: "rgba(254,242,242,0.98)", fontWeight: 700 }} variant="body2">
+                  {error}
+                </Typography>
               </CardContent>
             </Card>
-          </Box>
+          ) : null}
+        </CardContent>
+      </Card>
 
-          {/* KPI */}
+      {/* KPI */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent="#6366F1" />
+
+        <StatCard
+          label="Доходы"
+          value={fmtRub.format(displayIncome)}
+          sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+          accent="#22C55E"
+          onClick={() => navigate("/income")}
+        />
+
+        <StatCard
+          label="Расходы"
+          value={fmtRub.format(displayExpenses)}
+          sub=" "
+          accent="#F97316"
+          onClick={() => navigate("/expenses")}
+        />
+
+        <StatCard
+          label="Норма сбережений"
+          value={`${displayRate}%`}
+          sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+          accent="#A78BFA"
+        />
+      </Box>
+
+      {/* DETAILS + HISTORY */}
+      <Card
+        variant="outlined"
+        sx={{
+          borderRadius: 5,
+          borderColor: "rgba(15,23,42,0.75)",
+          backgroundColor: "rgba(15,23,42,0.90)",
+          backdropFilter: "blur(18px)",
+          width: "100%",
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
+            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+              Итоги операций за месяц
+            </Typography>
+
+            <Typography
+              variant="caption"
+              sx={{
+                color: "rgba(148,163,184,0.98)",
+                fontWeight: 800,
+                textTransform: "capitalize",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {monthTitle(year, month)}
+            </Typography>
+          </Stack>
+
+          <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.10)" }} />
+
           <Box
             sx={{
-              px: { xs: 2, md: 3, lg: 4 },
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "repeat(2, minmax(0, 1fr))",
-                md: "repeat(4, minmax(0, 1fr))",
-              },
-              gap: 2,
-              mb: 2,
+              border: "1px solid rgba(255,255,255,0.10)",
+              borderRadius: 2.5,
+              bgcolor: "rgba(2,6,23,0.35)",
+              backdropFilter: "blur(10px)",
+              overflow: "hidden",
             }}
           >
-            <StatCard
-              label="Баланс"
-              value={fmtRub.format(displayBalance)}
-              sub=" "
-              accent="#6366F1"
-            />
-
-            <StatCard
-              label="Доходы"
-              value={fmtRub.format(displayIncome)}
-              sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-              accent="#22C55E"
-              onClick={() => navigate("/income")}
-            />
-
-            <StatCard
-              label="Расходы"
-              value={fmtRub.format(displayExpenses)}
-              sub=" "
-              accent="#F97316"
-              onClick={() => navigate("/expenses")}
-            />
-
-            <StatCard
-              label="Норма сбережений"
-              value={`${displayRate}%`}
-              sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-              accent="#A78BFA"
-            />
+            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
+              <SummaryRow label="Доходы" value={fmtRub.format(n(summary?.total_income))} color="#22C55E" />
+            </Box>
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.10)" }} />
+            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
+              <SummaryRow label="Расходы" value={fmtRub.format(n(summary?.total_expenses))} color="#F97316" />
+            </Box>
+            <Divider sx={{ borderColor: "rgba(255,255,255,0.10)" }} />
+            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
+              <SummaryRow label="Сбережения" value={fmtRub.format(n(summary?.savings))} color="#A78BFA" />
+            </Box>
           </Box>
 
-          {/* Детали + история */}
-          <Box sx={{ px: { xs: 2, md: 3, lg: 4 } }}>
-            <Card
-              variant="outlined"
-              sx={{
-                borderRadius: 5,
-                borderColor: "rgba(15,23,42,0.8)",
-                backgroundColor: "rgba(15,23,42,0.9)",
-                backdropFilter: "blur(18px)",
-                width: "100%",
-              }}
-            >
-              <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-                <Stack
-                  direction="row"
-                  alignItems="baseline"
-                  justifyContent="space-between"
-                  sx={{ mb: 0.5 }}
-                >
-                  <Typography
-                    variant="h6"
+          <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.10)" }} />
+
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: "rgba(148,163,184,0.98)" }}>
+            <Typography variant="caption" sx={{ fontWeight: 800 }}>
+              История сохранена: {history.length} месяцев
+            </Typography>
+            <Typography variant="caption" sx={{ fontWeight: 800 }}>
+              Обновлено: {todayLabel}
+            </Typography>
+          </Stack>
+
+          <Box sx={{ mt: 1.25 }}>
+            {historyDesc.length === 0 ? (
+              <Typography variant="body2" sx={{ color: "rgba(148,163,184,0.98)" }}>
+                Пока нет сохранённых месяцев.
+              </Typography>
+            ) : (
+              historyDesc.map((h) => {
+                const raw = Number(h?.savings_rate_percent);
+                const has = Number.isFinite(raw);
+                const v = has ? Math.round(raw) : null;
+
+                const pctColor =
+                  !has ? "rgba(148,163,184,0.98)" : v > 0 ? "#22C55E" : v < 0 ? "#EF4444" : "rgba(148,163,184,0.98)";
+                const pctText = has ? `(${v}%)` : "(—%)";
+
+                return (
+                  <Accordion
+                    key={`${h.year}-${h.month}`}
+                    disableGutters
+                    elevation={0}
                     sx={{
-                      fontWeight: 900,
-                      color: "rgba(248,250,252,0.98)",
+                      borderRadius: 2,
+                      mb: 1,
+                      border: "1px solid rgba(255,255,255,0.10)",
+                      bgcolor: "rgba(2,6,23,0.35)",
+                      backdropFilter: "blur(10px)",
+                      "&:before": { display: "none" },
                     }}
                   >
-                    Итоги операций за месяц
-                  </Typography>
-
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "rgba(148,163,184,0.98)",
-                      fontWeight: 800,
-                      textTransform: "capitalize",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {monthTitle(year, month)}
-                  </Typography>
-                </Stack>
-
-                <Divider
-                  sx={{
-                    my: 1.5,
-                    borderColor: "rgba(30,64,175,0.7)",
-                  }}
-                />
-
-                <Box
-                  sx={{
-                    border: "1px solid rgba(30,64,175,0.7)",
-                    borderRadius: 2.5,
-                    bgcolor: "rgba(15,23,42,0.9)",
-                    backdropFilter: "blur(10px)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-                    <SummaryRow
-                      label="Доходы"
-                      value={fmtRub.format(incomeMonth)}
-                      color="#22C55E"
-                    />
-                  </Box>
-                  <Divider sx={{ borderColor: "rgba(30,64,175,0.7)" }} />
-                  <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-                    <SummaryRow
-                      label="Расходы"
-                      value={fmtRub.format(expenseMonth)}
-                      color="#F97316"
-                    />
-                  </Box>
-                  <Divider sx={{ borderColor: "rgba(30,64,175,0.7)" }} />
-                  <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-                    <SummaryRow
-                      label="Сбережения"
-                      value={fmtRub.format(savingsMonth)}
-                      color="#A78BFA"
-                    />
-                  </Box>
-                </Box>
-
-                <Divider
-                  sx={{
-                    my: 1.5,
-                    borderColor: "rgba(30,64,175,0.7)",
-                  }}
-                />
-
-                <Stack
-                  direction={{ xs: "column", sm: "row" }}
-                  spacing={{ xs: 0.25, sm: 1.25 }}
-                  sx={{ color: "rgba(148,163,184,0.98)" }}
-                >
-                  <Typography variant="caption" sx={{ fontWeight: 800 }}>
-                    История сохранена: {history.length} месяцев
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 800 }}>
-                    Обновлено: {todayLabel}
-                  </Typography>
-                </Stack>
-
-                <Box sx={{ mt: 1.25 }}>
-                  {historyDesc.length === 0 ? (
-                    <Typography
-                      variant="body2"
-                      sx={{ color: "rgba(148,163,184,0.98)" }}
-                    >
-                      Пока нет сохранённых месяцев.
-                    </Typography>
-                  ) : (
-                    historyDesc.map((h) => {
-                      const raw = Number(h?.savings_rate_percent);
-                      const has = Number.isFinite(raw);
-                      const v = has ? Math.round(raw) : null;
-
-                      const pctColor =
-                        !has
-                          ? "rgba(148,163,184,0.98)"
-                          : v > 0
-                          ? "#22C55E"
-                          : v < 0
-                          ? "#EF4444"
-                          : "rgba(148,163,184,0.98)";
-
-                      const pctText = has ? `(${v}%)` : "(—%)";
-
-                      return (
-                        <Accordion
-                          key={`${h.year}-${h.month}`}
-                          disableGutters
-                          elevation={0}
+                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "rgba(148,163,184,0.98)" }} />}>
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
+                        <Typography
                           sx={{
-                            borderRadius: 2,
-                            mb: 1,
-                            border: "1px solid rgba(30,64,175,0.7)",
-                            bgcolor: "rgba(15,23,42,0.9)",
-                            backdropFilter: "blur(10px)",
-                            "&:before": { display: "none" },
+                            fontWeight: 900,
+                            color: "rgba(248,250,252,0.98)",
+                            textTransform: "capitalize",
+                            minWidth: 0,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          <AccordionSummary
-                            expandIcon={
-                              <ExpandMoreIcon
-                                sx={{ color: "rgba(148,163,184,0.98)" }}
-                              />
-                            }
-                          >
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="space-between"
-                              sx={{ width: "100%", gap: 1, minWidth: 0 }}
-                            >
-                              <Typography
-                                sx={{
-                                  fontWeight: 900,
-                                  color: "rgba(248,250,252,0.98)",
-                                  textTransform: "capitalize",
-                                  minWidth: 0,
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
-                                  whiteSpace: "nowrap",
-                                }}
-                              >
-                                {monthTitle(h.year, h.month)}
-                              </Typography>
+                          {monthTitle(h.year, h.month)}
+                        </Typography>
 
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  fontWeight: 950,
-                                  color: pctColor,
-                                  whiteSpace: "nowrap",
-                                  flex: "0 0 auto",
-                                }}
-                              >
-                                {pctText}
-                              </Typography>
-                            </Stack>
-                          </AccordionSummary>
+                        <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap", flex: "0 0 auto" }}>
+                          {pctText}
+                        </Typography>
+                      </Stack>
+                    </AccordionSummary>
 
-                          <AccordionDetails sx={{ pt: 0 }}>
-                            <Stack spacing={0.75}>
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "rgba(209,213,219,0.98)" }}
-                              >
-                                Доходы:{" "}
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: "rgba(248,250,252,0.98)",
-                                  }}
-                                >
-                                  {fmtRub.format(n(h.total_income))}
-                                </Box>
-                              </Typography>
+                    <AccordionDetails sx={{ pt: 0 }}>
+                      <Stack spacing={0.75} sx={{ color: "rgba(209,213,219,0.98)" }}>
+                        <Typography variant="body2">
+                          Доходы:{" "}
+                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                            {fmtRub.format(n(h.total_income))}
+                          </Box>
+                        </Typography>
 
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "rgba(209,213,219,0.98)" }}
-                              >
-                                Расходы:{" "}
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: "rgba(248,250,252,0.98)",
-                                  }}
-                                >
-                                  {fmtRub.format(n(h.total_expenses))}
-                                </Box>
-                              </Typography>
+                        <Typography variant="body2">
+                          Расходы:{" "}
+                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                            {fmtRub.format(n(h.total_expenses))}
+                          </Box>
+                        </Typography>
 
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "rgba(209,213,219,0.98)" }}
-                              >
-                                Баланс:{" "}
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: "rgba(248,250,252,0.98)",
-                                  }}
-                                >
-                                  {fmtRub.format(n(h.balance))}
-                                </Box>
-                              </Typography>
+                        <Typography variant="body2">
+                          Баланс:{" "}
+                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                            {fmtRub.format(n(h.balance))}
+                          </Box>
+                        </Typography>
 
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "rgba(209,213,219,0.98)" }}
-                              >
-                                Сбережения:{" "}
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: "rgba(248,250,252,0.98)",
-                                  }}
-                                >
-                                  {fmtRub.format(n(h.savings))}
-                                </Box>
-                              </Typography>
+                        <Typography variant="body2">
+                          Сбережения:{" "}
+                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                            {fmtRub.format(n(h.savings))}
+                          </Box>
+                        </Typography>
 
-                              <Typography
-                                variant="body2"
-                                sx={{ color: "rgba(209,213,219,0.98)" }}
-                              >
-                                Норма сбережений:{" "}
-                                <Box
-                                  component="span"
-                                  sx={{
-                                    fontWeight: 900,
-                                    color: "rgba(248,250,252,0.98)",
-                                  }}
-                                >
-                                  {n(h.savings_rate_percent)}%
-                                </Box>
-                              </Typography>
-                            </Stack>
-                          </AccordionDetails>
-                        </Accordion>
-                      );
-                    })
-                  )}
-                </Box>
-              </CardContent>
-            </Card>
+                        <Typography variant="body2">
+                          Норма сбережений:{" "}
+                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                            {n(h.savings_rate_percent)}%
+                          </Box>
+                        </Typography>
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })
+            )}
           </Box>
-        </PageWrap>
-      </Box>
-    </AppBackground>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }
