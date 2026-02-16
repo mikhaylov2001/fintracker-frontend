@@ -322,12 +322,16 @@ export default function IncomePage() {
           borderRadius: 3,
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
+          overflow: 'hidden',
         }}
       >
-        {/* Делаем “Список” визуально шире: уменьшаем внутренние поля,
-            а у таблицы добавляем свой мягкий padding */}
-        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-          <Box sx={{ px: { xs: 1, sm: 1 } }}>
+        <CardContent
+          sx={{
+            p: 0,
+            '&:last-child': { pb: 0 },
+          }}
+        >
+          <Box sx={{ px: { xs: 2, md: 2.5 }, pt: { xs: 2, md: 2.25 } }}>
             <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
               Список
             </Typography>
@@ -336,7 +340,7 @@ export default function IncomePage() {
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
               <EmptyState
                 title="Пока нет записей"
                 description="Добавь первую операцию — и тут появится список за выбранный месяц."
@@ -345,22 +349,17 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box
-              sx={{
-                px: { xs: 0.5, sm: 1 }, // чуть “воздуха”, но таблица шире
-                overflowX: 'hidden',
-              }}
-            >
+            <Box sx={{ width: '100%', overflowX: 'hidden' }}>
               <Table
                 size="small"
                 sx={{
                   width: '100%',
-                  minWidth: { sm: 720 }, // desktop only
+                  minWidth: { sm: 720 },
                   tableLayout: { xs: 'fixed', sm: 'auto' },
 
                   '& th, & td': {
-                    px: { xs: 0.75, sm: 2 },
-                    py: { xs: 0.6, sm: 1 },
+                    px: { xs: 1.25, sm: 2.5 },
+                    py: { xs: 0.7, sm: 1.05 },
                     fontSize: { xs: 12, sm: 13 },
                     lineHeight: 1.15,
                     overflow: 'hidden',
@@ -374,8 +373,6 @@ export default function IncomePage() {
                     bgcolor: '#FFFFFF',
                   },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
-
-                  // чуть мягче линии (чтобы не выглядело “как на границах”)
                   '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
@@ -406,7 +403,7 @@ export default function IncomePage() {
                       align="right"
                       sx={{
                         width: { xs: '14%', sm: 120 },
-                        pr: { xs: 0.5, sm: 2 },
+                        pr: { xs: 1, sm: 2.5 },
                         whiteSpace: 'nowrap',
                       }}
                     >
@@ -421,16 +418,14 @@ export default function IncomePage() {
                   {items.map((x) => (
                     <TableRow key={x.id} hover>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {isMobile
-                          ? normalizeDateOnly(x.date).slice(5) // MM-DD
-                          : normalizeDateOnly(x.date)}
+                        {isMobile ? normalizeDateOnly(x.date).slice(5) : normalizeDateOnly(x.date)}
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                      <TableCell sx={{ pr: { xs: 1, sm: 2.5 } }}>
                         <Typography
                           component="div"
                           sx={{
@@ -468,20 +463,31 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      <TableCell
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
-                        title={x.source || ''}
-                      >
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} title={x.source || ''}>
                         {x.source}
                       </TableCell>
 
-                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <IconButton onClick={() => openEdit(x)} size="small">
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton onClick={() => remove(x)} size="small" color="error">
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
+                      {/* ВАЖНО: выравнивание иконок по центру строки */}
+                      <TableCell
+                        align="right"
+                        sx={{
+                          whiteSpace: 'nowrap',
+                          verticalAlign: 'middle',
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          spacing={0.5}
+                          justifyContent="flex-end"
+                          alignItems="center"
+                        >
+                          <IconButton onClick={() => openEdit(x)} size="small">
+                            <EditOutlinedIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton onClick={() => remove(x)} size="small" color="error">
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))}
