@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Stack,
@@ -49,6 +49,7 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
+// Формат ДД.ММ.ГГГГ для отображения
 const formatDateRu = (dateLike) => {
   const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
   const [y, m, d] = s.split('-');
@@ -56,19 +57,36 @@ const formatDateRu = (dateLike) => {
   return `${d}.${m}.${y}`;
 };
 
-const ruToIso = (ru) => {
+// Формат ДД.ММ для мобилки (короткий)
+const formatDateRuShort = (dateLike) => {
+  const s = normalizeDateOnly(dateLike);
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return s;
+  return `${d}.${m}`;
+};
+
+// Только цифры
+const digitsOnly = (s) => String(s || '').replace(/\D/g, '');
+
+// Автовставка точек при вводе: 16022026 -> 16.02.2026
+const formatRuDateTyping = (input) => {
+  const d = digitsOnly(input).slice(0, 8);
+  const p1 = d.slice(0, 2);
+  const p2 = d.slice(2, 4);
+  const p3 = d.slice(4, 8);
+  let out = p1;
+  if (p2) out += '.' + p2;
+  if (p3) out += '.' + p3;
+  return out;
+};
+
+// Преобразование ДД.ММ.ГГГГ -> YYYY-MM-DD (только если полная)
+const ruToIsoStrict = (ru) => {
   const v = String(ru || '').trim();
-  if (!v) return '';
-  // ожидаем ДД.ММ.ГГГГ
-  const parts = v.split('.');
-  if (parts.length !== 3) return '';
-  const [dd, mm, yyyy] = parts;
-  if (!dd || !mm || !yyyy) return '';
-  const d = dd.padStart(2, '0');
-  const m = mm.padStart(2, '0');
-  const y = yyyy;
-  if (y.length !== 4) return '';
-  return `${y}-${m}-${d}`; // YYYY-MM-DD
+  const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return '';
+  const [, dd, mm, yyyy] = m;
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 const addMonthsYM = ({ year, month }, delta) => {
@@ -120,8 +138,11 @@ export default function IncomePage() {
     amount: '',
     category: 'Работа',
     source: 'Зарплата',
-    date: new Date().toISOString().slice(0, 10), // храним ISO
+    date: new Date().toISOString().slice(0, 10),
+    dateRu: '', // для отображения в поле ввода
   });
+
+  const amountRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -145,25 +166,35 @@ export default function IncomePage() {
   }, [load]);
 
   const openCreate = () => {
+    const iso = new Date().toISOString().slice(0, 10);
     setEditing(null);
     setForm({
       amount: '',
       category: 'Работа',
       source: 'Зарплата',
-      date: new Date().toISOString().slice(0, 10),
+      date: iso,
+      dateRu: formatDateRu(iso),
     });
     setOpen(true);
+    setTimeout(() => {
+      amountRef.current?.focus?.();
+    }, 150);
   };
 
   const openEdit = (income) => {
+    const iso = normalizeDateOnly(income?.date);
     setEditing(income);
     setForm({
       amount: income?.amount ?? '',
       category: income?.category ?? 'Работа',
       source: income?.source ?? 'Зарплата',
-      date: normalizeDateOnly(income?.date),
+      date: iso,
+      dateRu: formatDateRu(iso),
     });
     setOpen(true);
+    setTimeout(() => {
+      amountRef.current?.focus?.();
+    }, 150);
   };
 
   const save = async () => {
@@ -181,7 +212,8 @@ export default function IncomePage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
+      if (!Number.isFinite(amountNum) || amountNum < 0.01)
+        throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.source) throw new Error('Источник обязателен');
       if (!payload.date) throw new Error('Дата обязательна');
@@ -266,14 +298,30 @@ export default function IncomePage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
-            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))} sx={{ minWidth: 44, px: 1.2 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => setYm((s) => addMonthsYM(s, -1))}
+              sx={{ minWidth: 44, px: 1.2 }}
+            >
               ←
             </Button>
 
-            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
+            <Chip
+              label={ymLabel(ym)}
+              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
+            />
 
-            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, +1))} sx={{ minWidth: 44, px: 1.2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setYm((s) => addMonthsYM(s, +1))}
+              sx={{ minWidth: 44, px: 1.2 }}
+            >
               →
             </Button>
           </Stack>
@@ -296,7 +344,15 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Card variant="outlined" sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}>
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 2,
+            borderRadius: 3,
+            borderColor: '#FECACA',
+            bgcolor: '#FFFFFF',
+          }}
+        >
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -311,19 +367,19 @@ export default function IncomePage() {
           borderRadius: 3,
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
-          mx: { xs: -2, md: 0 },
-          width: { xs: 'calc(100% + 32px)', md: 'auto' },
         }}
       >
-        <CardContent sx={{ px: { xs: 1.25, sm: 2.5 }, py: { xs: 1.7, sm: 2.3 } }}>
-          <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
-            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
+        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
+              Список
+            </Typography>
           </Box>
 
-          <Divider sx={{ my: 1.6, borderColor: '#E2E8F0' }} />
+          <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
+            <Box sx={{ px: { xs: 1, sm: 1 } }}>
               <EmptyState
                 title="Пока нет записей"
                 description="Добавь первую операцию — и тут появится список за выбранный месяц."
@@ -332,19 +388,24 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box sx={{ px: { xs: 0.25, sm: 0 }, overflowX: 'hidden' }}>
+            <Box
+              sx={{
+                px: { xs: 0.5, sm: 1 },
+                overflowX: 'hidden',
+              }}
+            >
               <Table
                 size="small"
                 sx={{
                   width: '100%',
-                  minWidth: { sm: 780 }, // расширили для читабельности
+                  minWidth: { sm: 720 },
                   tableLayout: { xs: 'fixed', sm: 'auto' },
 
                   '& th, & td': {
-                    px: { xs: 1.1, sm: 2.6 },
-                    py: { xs: 0.85, sm: 1.15 },
-                    fontSize: { xs: 12.5, sm: 14 },
-                    lineHeight: 1.2,
+                    px: { xs: 0.75, sm: 2 },
+                    py: { xs: 0.6, sm: 1 },
+                    fontSize: { xs: 12, sm: 13 },
+                    lineHeight: 1.15,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
@@ -356,43 +417,44 @@ export default function IncomePage() {
                     bgcolor: '#FFFFFF',
                   },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
+
                   '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell
-                      align="center"
-                      sx={{
-                        width: { xs: '22%', sm: 150 },
-                        whiteSpace: 'nowrap',
-                        textAlign: 'center',
-                      }}
-                    >
+                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '28%', sm: 170 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '36%', sm: 260 } }}>
+                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
                       Категория
                     </TableCell>
 
-                    <TableCell sx={{ width: 240, display: { xs: 'none', sm: 'table-cell' } }}>
+                    <TableCell
+                      sx={{
+                        width: 200,
+                        display: { xs: 'none', sm: 'table-cell' },
+                      }}
+                    >
                       Источник
                     </TableCell>
 
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '14%', sm: 140 },
-                        pr: { xs: 0.9, sm: 2.6 },
+                        width: { xs: '14%', sm: 120 },
+                        pr: { xs: 0.5, sm: 2 },
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Действия</Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Действия
+                      </Box>
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -400,22 +462,24 @@ export default function IncomePage() {
                 <TableBody>
                   {items.map((x) => (
                     <TableRow key={x.id} hover>
-                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
-                        {formatDateRu(x.date)}
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {isMobile
+                          ? formatDateRuShort(x.date)
+                          : formatDateRu(x.date)}
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      <TableCell sx={{ pr: { xs: 1, sm: 2.6 } }}>
+                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
                         <Typography
                           component="div"
                           sx={{
-                            fontSize: { xs: 12.5, sm: 14 },
+                            fontSize: { xs: 12, sm: 13 },
                             fontWeight: 800,
                             color: '#0F172A',
-                            lineHeight: 1.2,
+                            lineHeight: 1.15,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
@@ -431,8 +495,8 @@ export default function IncomePage() {
                           <Typography
                             component="div"
                             sx={{
-                              mt: 0.25,
-                              fontSize: 11.5,
+                              mt: 0.2,
+                              fontSize: 11,
                               color: '#64748B',
                               lineHeight: 1.15,
                               whiteSpace: 'nowrap',
@@ -446,34 +510,18 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} title={x.source || ''}>
+                      <TableCell
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                        title={x.source || ''}
+                      >
                         {x.source}
                       </TableCell>
 
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <IconButton
-                          onClick={() => openEdit(x)}
-                          size="small"
-                          sx={{
-                            bgcolor: 'rgba(15, 23, 42, 0.06)',
-                            borderRadius: 2,
-                            '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
-                          }}
-                        >
+                        <IconButton onClick={() => openEdit(x)} size="small">
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
-
-                        <IconButton
-                          onClick={() => remove(x)}
-                          size="small"
-                          sx={{
-                            ml: 0.5,
-                            bgcolor: 'rgba(239, 68, 68, 0.10)',
-                            borderRadius: 2,
-                            color: '#EF4444',
-                            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
-                          }}
-                        >
+                        <IconButton onClick={() => remove(x)} size="small" color="error">
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
@@ -488,17 +536,28 @@ export default function IncomePage() {
 
       <Dialog
         fullScreen={fullScreen}
+        scroll="paper"
         open={open}
         onClose={() => (!saving ? setOpen(false) : null)}
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
+        <DialogTitle>
+          {editing ? 'Редактировать доход' : 'Добавить доход'}
+        </DialogTitle>
 
-        <DialogContent sx={{ pt: 1 }}>
+        <DialogContent
+          sx={{
+            pt: 1,
+            maxHeight: fullScreen ? 'calc(100vh - 140px)' : 520,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Сумма"
+              inputRef={amountRef}
               value={form.amount}
               onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
               placeholder="50000.00"
@@ -508,35 +567,52 @@ export default function IncomePage() {
 
             <Autocomplete
               freeSolo
+              disablePortal
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
-              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
-              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, category: newValue ?? '' }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, category: newInput }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Категория" fullWidth />
+              )}
             />
 
             <Autocomplete
               freeSolo
+              disablePortal
               options={SOURCE_OPTIONS}
               value={form.source}
-              onChange={(_e, newValue) => setForm((s) => ({ ...s, source: newValue ?? '' }))}
-              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, source: newInput }))}
-              renderInput={(params) => <TextField {...params} label="Источник" fullWidth />}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, source: newValue ?? '' }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, source: newInput }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Источник" fullWidth />
+              )}
             />
 
-            {/* Ручной ввод даты ДД.ММ.ГГГГ */}
             <TextField
               label="Дата"
-              value={formatDateRu(form.date)}
+              value={form.dateRu || ''}
               onChange={(e) => {
-                const iso = ruToIso(e.target.value);
-                // если пользователь ещё не дописал, просто не обновляем iso
-                if (iso) setForm((s) => ({ ...s, date: iso }));
+                const ru = formatRuDateTyping(e.target.value);
+                const iso = ruToIsoStrict(ru);
+                setForm((s) => ({
+                  ...s,
+                  dateRu: ru,
+                  date: iso || s.date,
+                }));
               }}
               placeholder="16.02.2026"
               inputProps={{ inputMode: 'numeric' }}
               fullWidth
-              helperText="Формат: ДД.ММ.ГГГГ"
+              helperText="Введите цифры: ДДММГГГГ (точки добавятся сами)"
             />
           </Stack>
         </DialogContent>
@@ -549,7 +625,12 @@ export default function IncomePage() {
             gap: 1,
           }}
         >
-          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
+          <Button
+            onClick={() => setOpen(false)}
+            variant="outlined"
+            disabled={saving}
+            fullWidth={fullScreen}
+          >
             Отмена
           </Button>
           <Button
@@ -557,7 +638,10 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ bgcolor: COLORS.income, '&:hover': { bgcolor: '#16A34A' } }}
+            sx={{
+              bgcolor: COLORS.income,
+              '&:hover': { bgcolor: '#16A34A' },
+            }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
