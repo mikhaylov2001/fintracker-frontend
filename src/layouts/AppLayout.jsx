@@ -23,10 +23,14 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
+  const go = (path) => {
+    setOpen(false);
+    navigate(path);
+  };
+
   return (
     <AppBackground sx={{ py: { xs: 2, md: 2.5 } }}>
       <Box sx={{ display: "flex", width: "100%", minHeight: "100vh" }}>
-        {/* Top bar */}
         <AppBar
           position="fixed"
           elevation={0}
@@ -46,34 +50,46 @@ export default function AppLayout() {
             </IconButton>
 
             <Typography
-              sx={{ fontWeight: 950, flexGrow: 1, color: "rgba(248,250,252,0.95)" }}
+              sx={{
+                fontWeight: 950,
+                flexGrow: 1,
+                color: "rgba(248,250,252,0.95)",
+              }}
             >
               FinTrackerPro
             </Typography>
 
-            {/* Верхние кнопки (замени/добавь свои) */}
             <Button
               onClick={() => navigate("/income")}
-              sx={{ color: "rgba(248,250,252,0.9)", display: { xs: "none", sm: "inline-flex" } }}
+              sx={{
+                color: "rgba(248,250,252,0.9)",
+                display: { xs: "none", sm: "inline-flex" },
+              }}
             >
               Доходы
             </Button>
             <Button
               onClick={() => navigate("/expenses")}
-              sx={{ color: "rgba(248,250,252,0.9)", display: { xs: "none", sm: "inline-flex" } }}
+              sx={{
+                color: "rgba(248,250,252,0.9)",
+                display: { xs: "none", sm: "inline-flex" },
+              }}
             >
               Расходы
             </Button>
             <Button
               onClick={() => navigate("/analytics")}
-              sx={{ color: "rgba(248,250,252,0.9)", display: { xs: "none", sm: "inline-flex" } }}
+              sx={{
+                color: "rgba(248,250,252,0.9)",
+                display: { xs: "none", sm: "inline-flex" },
+              }}
             >
               Аналитика
             </Button>
           </Toolbar>
         </AppBar>
 
-        {/* Sidebar (desktop) */}
+        {/* Sidebar desktop */}
         <Box
           sx={{
             width: { xs: 0, md: drawerWidth },
@@ -84,7 +100,7 @@ export default function AppLayout() {
           <Box
             sx={{
               position: "fixed",
-              top: 64, // высота AppBar
+              top: 64,
               left: 0,
               width: drawerWidth,
               height: "calc(100vh - 64px)",
@@ -138,7 +154,7 @@ export default function AppLayout() {
           </Box>
         </Box>
 
-        {/* Sidebar (mobile drawer) */}
+        {/* Drawer mobile */}
         <Drawer
           open={open}
           onClose={() => setOpen(false)}
@@ -163,29 +179,28 @@ export default function AppLayout() {
           <Divider sx={{ borderColor: "rgba(255,255,255,0.10)" }} />
 
           <List>
-            <ListItemButton onClick={() => (setOpen(false), navigate("/income"))}>
+            <ListItemButton onClick={() => go("/income")}>
               <ListItemText primary="Доходы" />
             </ListItemButton>
-            <ListItemButton onClick={() => (setOpen(false), navigate("/expenses"))}>
+            <ListItemButton onClick={() => go("/expenses")}>
               <ListItemText primary="Расходы" />
             </ListItemButton>
-            <ListItemButton onClick={() => (setOpen(false), navigate("/analytics"))}>
+            <ListItemButton onClick={() => go("/analytics")}>
               <ListItemText primary="Аналитика" />
             </ListItemButton>
           </List>
         </Drawer>
 
-        {/* Main content area */}
+        {/* Main */}
         <Box
           component="main"
           sx={{
             flexGrow: 1,
             width: "100%",
-            pt: "64px", // чтобы контент не оказался под AppBar
-            pl: { xs: 0, md: `${drawerWidth}px` }, // чтобы не залезало под сайдбар
+            pt: "64px",
+            pl: { xs: 0, md: `${drawerWidth}px` },
           }}
         >
-          {/* Тут рендерится DashboardPage и остальные */}
           <Outlet />
         </Box>
       </Box>
