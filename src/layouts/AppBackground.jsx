@@ -17,7 +17,6 @@ export default function AppBackground({ children, sx }) {
         ...sx,
       }}
     >
-      {/* сетка */}
       <Box
         sx={{
           position: "absolute",
@@ -32,7 +31,6 @@ export default function AppBackground({ children, sx }) {
         }}
       />
 
-      {/* blurred-circles */}
       <Box
         sx={{
           position: "absolute",
@@ -62,8 +60,10 @@ export default function AppBackground({ children, sx }) {
         }}
       />
 
-      {/* контент поверх фона */}
-      <Box sx={{ position: "relative", zIndex: 1 }}>{children}</Box>
+      {/* Важно: контент всегда поверх фона */}
+      <Box sx={{ position: "relative", zIndex: 1, width: "100%" }}>
+        {children}
+      </Box>
     </Box>
   );
 }
