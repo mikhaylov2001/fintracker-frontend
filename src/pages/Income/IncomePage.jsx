@@ -85,7 +85,7 @@ export default function IncomePage() {
   const theme = useTheme();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // ИСПОЛЬЗУЕМ ниже, чтобы ESLint не ругался
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -237,6 +237,10 @@ export default function IncomePage() {
 
   const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
 
+  // компактнее кнопки на телефоне => гарантированно влезают и видны
+  const actionBtnPad = isMobile ? 0.45 : 0.6;
+  const actionColWidth = isMobile ? 92 : 120; // маленький запас под 2 кнопки
+
   return (
     <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh', p: { xs: 2, md: 3 } }}>
       <Stack
@@ -269,7 +273,10 @@ export default function IncomePage() {
               ←
             </Button>
 
-            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
+            <Chip
+              label={ymLabel(ym)}
+              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
+            />
 
             <Button
               variant="outlined"
@@ -344,7 +351,7 @@ export default function IncomePage() {
                 sx={{
                   width: '100%',
                   tableLayout: 'fixed',
-                  '& .MuiTableCell-root': { borderBottom: 0 }, // без линий [web:1006]
+                  '& .MuiTableCell-root': { borderBottom: 0 }, // без линий/рамок
 
                   '& th, & td': {
                     px: { xs: 1.25, sm: 2.5 },
@@ -355,7 +362,12 @@ export default function IncomePage() {
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
                   },
-                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap', bgcolor: '#FFFFFF' },
+                  '& th': {
+                    fontWeight: 900,
+                    color: '#0F172A',
+                    whiteSpace: 'nowrap',
+                    bgcolor: '#FFFFFF',
+                  },
                   '& td': { whiteSpace: 'normal' },
                 }}
               >
@@ -369,15 +381,14 @@ export default function IncomePage() {
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: 'auto' }}>
+                    <TableCell sx={{ width: `calc(100% - ${98 + 110}px - ${actionColWidth}px)` }}>
                       Категория
                     </TableCell>
 
-                    {/* ВАЖНО: фиксируем ширину, чтобы 2 кнопки всегда влезали */}
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: 88, sm: 120 },
+                        width: actionColWidth,
                         pr: { xs: 1, sm: 2.5 },
                         color: 'transparent',
                         userSelect: 'none',
@@ -435,14 +446,15 @@ export default function IncomePage() {
                         </Typography>
                       </TableCell>
 
-                      {/* кнопки редактирования ВИДНЫ на всех устройствах */}
                       <TableCell
                         align="right"
                         sx={{
-                          width: { xs: 88, sm: 120 },
+                          width: actionColWidth,
                           pr: { xs: 1, sm: 2.5 },
                           whiteSpace: 'nowrap',
                           verticalAlign: 'middle',
+                          overflow: 'visible',
+                          textOverflow: 'clip',
                         }}
                       >
                         <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
@@ -450,7 +462,7 @@ export default function IncomePage() {
                             onClick={() => openEdit(x)}
                             size="small"
                             sx={{
-                              p: 0.6,
+                              p: actionBtnPad,
                               bgcolor: 'rgba(15, 23, 42, 0.06)',
                               borderRadius: 2,
                               '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
@@ -463,7 +475,7 @@ export default function IncomePage() {
                             onClick={() => remove(x)}
                             size="small"
                             sx={{
-                              p: 0.6,
+                              p: actionBtnPad,
                               bgcolor: 'rgba(239, 68, 68, 0.10)',
                               borderRadius: 2,
                               color: '#EF4444',
