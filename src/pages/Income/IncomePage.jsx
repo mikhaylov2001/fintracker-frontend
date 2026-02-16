@@ -15,6 +15,11 @@ import {
   MenuItem,
   Chip,
   IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -75,10 +80,171 @@ const ymFromDate = (yyyyMmDd) => {
   return { year: Number(y), month: Number(m) };
 };
 
+function Actions({ onEdit, onDelete }) {
+  return (
+    <Stack direction="row" spacing={0.6} alignItems="center" sx={{ flexShrink: 0 }}>
+      <IconButton
+        onClick={onEdit}
+        size="small"
+        sx={{
+          p: 0.8,
+          bgcolor: 'rgba(15, 23, 42, 0.06)',
+          borderRadius: 2,
+          '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
+        }}
+      >
+        <EditOutlinedIcon fontSize="small" />
+      </IconButton>
+
+      <IconButton
+        onClick={onDelete}
+        size="small"
+        sx={{
+          p: 0.8,
+          bgcolor: 'rgba(239, 68, 68, 0.10)',
+          borderRadius: 2,
+          color: '#EF4444',
+          '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
+        }}
+      >
+        <DeleteOutlineIcon fontSize="small" />
+      </IconButton>
+    </Stack>
+  );
+}
+
+function MobileList({ items, fmtRub, onEdit, onDelete }) {
+  return (
+    <Stack spacing={1.2} sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+      {items.map((x) => (
+        <Card
+          key={x.id}
+          variant="outlined"
+          sx={{
+            borderRadius: 3,
+            borderColor: '#E2E8F0',
+            bgcolor: '#FFFFFF',
+            boxShadow: 'none',
+          }}
+        >
+          <CardContent sx={{ py: 1.4, '&:last-child': { pb: 1.4 } }}>
+            <Stack direction="row" spacing={1.2} alignItems="flex-start">
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Stack direction="row" spacing={1} alignItems="baseline" sx={{ flexWrap: 'wrap' }}>
+                  <Typography sx={{ fontWeight: 900, color: '#0F172A' }}>
+                    {fmtRub.format(Number(x.amount || 0))}
+                  </Typography>
+
+                  <Typography sx={{ color: '#64748B', fontSize: 12 }}>
+                    {formatDateRu(x.date)}
+                  </Typography>
+                </Stack>
+
+                <Typography
+                  sx={{
+                    mt: 0.6,
+                    fontWeight: 850,
+                    color: '#0F172A',
+                    lineHeight: 1.2,
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {x.category}
+                </Typography>
+
+                <Typography
+                  sx={{
+                    mt: 0.25,
+                    color: '#64748B',
+                    fontSize: 12,
+                    lineHeight: 1.2,
+                    whiteSpace: 'normal',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {x.source}
+                </Typography>
+              </Box>
+
+              <Actions onEdit={() => onEdit(x)} onDelete={() => onDelete(x)} />
+            </Stack>
+          </CardContent>
+        </Card>
+      ))}
+    </Stack>
+  );
+}
+
+function DesktopTable({ items, fmtRub, onEdit, onDelete }) {
+  return (
+    <Box sx={{ width: '100%', overflowX: 'auto', pb: 1 }}>
+      <Table
+        size="small"
+        sx={{
+          width: '100%',
+          minWidth: 820,
+          '& .MuiTableCell-root': { borderBottom: 0 },
+          '& th, & td': {
+            px: 2.5,
+            py: 1.05,
+            fontSize: 13,
+            lineHeight: 1.2,
+            verticalAlign: 'top',
+          },
+          '& th': {
+            fontWeight: 900,
+            color: '#0F172A',
+            whiteSpace: 'nowrap',
+            bgcolor: '#FFFFFF',
+          },
+        }}
+      >
+        <TableHead>
+          <TableRow>
+            <TableCell sx={{ width: 140 }}>Дата</TableCell>
+            <TableCell sx={{ width: 170 }}>Сумма</TableCell>
+            <TableCell sx={{ width: 220 }}>Категория</TableCell>
+            <TableCell sx={{ width: 220 }}>Источник</TableCell>
+            <TableCell align="right" sx={{ width: 140 }} />
+          </TableRow>
+        </TableHead>
+
+        <TableBody>
+          {items.map((x) => (
+            <TableRow key={x.id} hover>
+              <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateRu(x.date)}</TableCell>
+
+              <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                {fmtRub.format(Number(x.amount || 0))}
+              </TableCell>
+
+              {/* На десктопе тоже всё видно: переносим строки, не режем */}
+              <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                {x.category}
+              </TableCell>
+
+              <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word', color: '#64748B' }}>
+                {x.source}
+              </TableCell>
+
+              <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                <Actions onEdit={() => onEdit(x)} onDelete={() => onDelete(x)} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Box>
+  );
+}
+
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
+
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -167,8 +333,7 @@ export default function IncomePage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01)
-        throw new Error('Сумма должна быть больше 0');
+      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.source) throw new Error('Источник обязателен');
       if (!payload.date) throw new Error('Дата обязательна');
@@ -319,92 +484,20 @@ export default function IncomePage() {
                 onAction={openCreate}
               />
             </Box>
+          ) : isMobile ? (
+            <MobileList
+              items={items}
+              fmtRub={fmtRub}
+              onEdit={openEdit}
+              onDelete={remove}
+            />
           ) : (
-            <Stack spacing={1.2} sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
-              {items.map((x) => (
-                <Card
-                  key={x.id}
-                  variant="outlined"
-                  sx={{
-                    borderRadius: 3,
-                    borderColor: '#E2E8F0',
-                    bgcolor: '#FFFFFF',
-                    boxShadow: 'none',
-                  }}
-                >
-                  <CardContent sx={{ py: 1.4, '&:last-child': { pb: 1.4 } }}>
-                    <Stack direction="row" spacing={1.2} alignItems="flex-start">
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Stack direction="row" spacing={1} alignItems="baseline" sx={{ flexWrap: 'wrap' }}>
-                          <Typography sx={{ fontWeight: 900, color: '#0F172A' }}>
-                            {fmtRub.format(Number(x.amount || 0))}
-                          </Typography>
-
-                          <Typography sx={{ color: '#64748B', fontSize: 12 }}>
-                            {formatDateRu(x.date)}
-                          </Typography>
-                        </Stack>
-
-                        <Typography
-                          sx={{
-                            mt: 0.6,
-                            fontWeight: 850,
-                            color: '#0F172A',
-                            lineHeight: 1.2,
-                            whiteSpace: 'normal',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {x.category}
-                        </Typography>
-
-                        <Typography
-                          sx={{
-                            mt: 0.25,
-                            color: '#64748B',
-                            fontSize: 12,
-                            lineHeight: 1.2,
-                            whiteSpace: 'normal',
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          {x.source}
-                        </Typography>
-                      </Box>
-
-                      <Stack direction="row" spacing={0.6} alignItems="center" sx={{ flexShrink: 0 }}>
-                        <IconButton
-                          onClick={() => openEdit(x)}
-                          size="small"
-                          sx={{
-                            p: 0.8,
-                            bgcolor: 'rgba(15, 23, 42, 0.06)',
-                            borderRadius: 2,
-                            '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
-                          }}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-
-                        <IconButton
-                          onClick={() => remove(x)}
-                          size="small"
-                          sx={{
-                            p: 0.8,
-                            bgcolor: 'rgba(239, 68, 68, 0.10)',
-                            borderRadius: 2,
-                            color: '#EF4444',
-                            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
-                          }}
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
-                </Card>
-              ))}
-            </Stack>
+            <DesktopTable
+              items={items}
+              fmtRub={fmtRub}
+              onEdit={openEdit}
+              onDelete={remove}
+            />
           )}
         </CardContent>
       </Card>
