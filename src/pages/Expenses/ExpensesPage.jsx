@@ -25,6 +25,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Autocomplete from '@mui/material/Autocomplete';
+import { useLocation } from 'react-router-dom';
 
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
@@ -119,6 +120,7 @@ const isProxySerialization500 = (msg) =>
 export default function ExpensesPage() {
   const toast = useToast();
   const theme = useTheme();
+  const location = useLocation(); // <-- для ?new=1
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -177,7 +179,7 @@ export default function ExpensesPage() {
     load();
   }, [load]);
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     const iso = new Date().toISOString().slice(0, 10);
     setEditing(null);
     setDateErr('');
@@ -192,7 +194,13 @@ export default function ExpensesPage() {
     setTimeout(() => {
       amountRef.current?.focus?.();
     }, 150);
-  };
+  }, []);
+
+  // <-- АВТО-ОТКРЫТИЕ диалога при /expenses?new=1
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get('new') === '1') openCreate();
+  }, [location.search, openCreate]);
 
   const openEdit = (expense) => {
     const iso = normalizeDateOnly(expense?.date);
@@ -402,7 +410,6 @@ export default function ExpensesPage() {
                   width: '100%',
                   minWidth: { sm: 720 },
                   tableLayout: { xs: 'fixed', sm: 'auto' },
-
                   '& th, & td': {
                     px: { xs: 0.75, sm: 2 },
                     py: { xs: 0.6, sm: 1 },
@@ -427,19 +434,15 @@ export default function ExpensesPage() {
                     <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
-
                     <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
-
                     <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
                       Категория
                     </TableCell>
-
                     <TableCell sx={{ width: 260, display: { xs: 'none', sm: 'table-cell' } }}>
                       Описание
                     </TableCell>
-
                     <TableCell
                       align="right"
                       sx={{
@@ -448,9 +451,7 @@ export default function ExpensesPage() {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Действия
-                      </Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Действия</Box>
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -536,9 +537,7 @@ export default function ExpensesPage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          {editing ? 'Редактировать расход' : 'Добавить расход'}
-        </DialogTitle>
+        <DialogTitle>{editing ? 'Редактировать расход' : 'Добавить расход'}</DialogTitle>
 
         <DialogContent
           sx={{
@@ -617,6 +616,7 @@ export default function ExpensesPage() {
           <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
             Отмена
           </Button>
+
           <Button
             onClick={save}
             variant="contained"

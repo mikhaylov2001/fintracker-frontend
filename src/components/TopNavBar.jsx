@@ -51,6 +51,7 @@ export default function TopNavBar({
   showLogout = true,
   onLogout,
   userLabel = 'Пользователь',
+  userName,
 }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -59,26 +60,35 @@ export default function TopNavBar({
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
   const [open, setOpen] = useState(false);
 
+  const dashboardPath = userName ? `/u/${userName}` : '/';
+  const isDashboardActive = () => pathname.startsWith('/u/');
+
   const items = useMemo(() => {
     const arr = [];
-    if (showDashboard)
+
+    if (showDashboard) {
       arr.push({
         label: 'Дашборд',
-        path: '/dashboard',
+        path: dashboardPath,
         color: COLORS.dashboard,
+        match: 'dashboard',
       });
-    arr.push({ label: 'Доходы', path: '/income', color: COLORS.income });
-    arr.push({ label: 'Расходы', path: '/expenses', color: COLORS.expenses });
-    if (showAnalytics)
+    }
+
+    // КНОПКИ ведут на добавление
+    arr.push({ label: 'Доходы', path: '/income?new=1', color: COLORS.income });
+    arr.push({ label: 'Расходы', path: '/expenses?new=1', color: COLORS.expenses });
+
+    if (showAnalytics) {
       arr.push({
         label: 'Аналитика',
         path: '/analytics',
         color: COLORS.analytics,
       });
-    return arr;
-  }, [showDashboard, showAnalytics]);
+    }
 
-  const is = (p) => pathname === p;
+    return arr;
+  }, [showDashboard, showAnalytics, dashboardPath]);
 
   const go = (path) => {
     navigate(path);
@@ -107,23 +117,36 @@ export default function TopNavBar({
       >
         <Toolbar sx={{ minHeight: 64 }}>
           <Typography
-            sx={{ flexGrow: 1, fontWeight: 900, letterSpacing: 0.2 }}
+            onClick={() => navigate(dashboardPath)}
+            sx={{
+              flexGrow: 1,
+              fontWeight: 900,
+              letterSpacing: 0.2,
+              cursor: 'pointer',
+              userSelect: 'none',
+            }}
           >
             FinTrackerPro
           </Typography>
 
           {isDesktop ? (
             <Stack direction="row" spacing={1} alignItems="center">
-              {items.map((x) => (
-                <Button
-                  key={x.path}
-                  onClick={() => navigate(x.path)}
-                  variant="outlined"
-                  sx={navBtnSx(x.color, is(x.path))}
-                >
-                  {x.label}
-                </Button>
-              ))}
+              {items.map((x) => {
+                const basePath = x.path.split('?')[0];
+                const active =
+                  x.match === 'dashboard' ? isDashboardActive() : pathname === basePath;
+
+                return (
+                  <Button
+                    key={x.path}
+                    onClick={() => navigate(x.path)}
+                    variant="outlined"
+                    sx={navBtnSx(x.color, active)}
+                  >
+                    {x.label}
+                  </Button>
+                );
+              })}
 
               {showLogout ? (
                 <Button
@@ -142,10 +165,7 @@ export default function TopNavBar({
                   onClick={() => setOpen(true)}
                   sx={{
                     borderRadius: 2,
-                    border: `1px solid ${alpha(
-                      theme.palette.text.primary,
-                      0.12
-                    )}`,
+                    border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
                     bgcolor: alpha(theme.palette.background.paper, 0.55),
                   }}
                   aria-label="Открыть меню"
@@ -175,12 +195,7 @@ export default function TopNavBar({
         <Box sx={{ px: 2, pt: 2, pb: 1.5 }}>
           <Typography sx={{ fontWeight: 900 }}>Меню</Typography>
 
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ mt: 1 }}
-            alignItems="center"
-          >
+          <Stack direction="row" spacing={1} sx={{ mt: 1 }} alignItems="center">
             <Chip
               label={userLabel}
               sx={{
@@ -189,10 +204,7 @@ export default function TopNavBar({
                 color: alpha(theme.palette.text.primary, 0.85),
                 fontWeight: 700,
                 maxWidth: 240,
-                '& .MuiChip-label': {
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                },
+                '& .MuiChip-label': { overflow: 'hidden', textOverflow: 'ellipsis' },
               }}
             />
           </Stack>
@@ -201,32 +213,36 @@ export default function TopNavBar({
         <Divider />
 
         <List sx={{ py: 0 }}>
-          {items.map((x) => (
-            <ListItemButton
-              key={x.path}
-              selected={is(x.path)}
-              onClick={() => go(x.path)}
-              sx={{
-                mx: 1,
-                my: 0.5,
-                borderRadius: 2,
-                '&.Mui-selected': { bgcolor: alpha(x.color, 0.12) },
-                '&.Mui-selected:hover': { bgcolor: alpha(x.color, 0.16) },
-              }}
-            >
-              <ListItemText
-                primary={x.label}
-                primaryTypographyProps={{
-                  sx: {
-                    fontWeight: 850,
-                    color: is(x.path)
-                      ? x.color
-                      : theme.palette.text.primary,
-                  },
+          {items.map((x) => {
+            const basePath = x.path.split('?')[0];
+            const active =
+              x.match === 'dashboard' ? isDashboardActive() : pathname === basePath;
+
+            return (
+              <ListItemButton
+                key={x.path}
+                selected={active}
+                onClick={() => go(x.path)}
+                sx={{
+                  mx: 1,
+                  my: 0.5,
+                  borderRadius: 2,
+                  '&.Mui-selected': { bgcolor: alpha(x.color, 0.12) },
+                  '&.Mui-selected:hover': { bgcolor: alpha(x.color, 0.16) },
                 }}
-              />
-            </ListItemButton>
-          ))}
+              >
+                <ListItemText
+                  primary={x.label}
+                  primaryTypographyProps={{
+                    sx: {
+                      fontWeight: 850,
+                      color: active ? x.color : theme.palette.text.primary,
+                    },
+                  }}
+                />
+              </ListItemButton>
+            );
+          })}
         </List>
 
         {showLogout ? (

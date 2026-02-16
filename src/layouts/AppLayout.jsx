@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { Box, Container } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
@@ -7,6 +7,7 @@ import TopNavBar from '../components/TopNavBar';
 
 export default function AppLayout() {
   const navigate = useNavigate();
+  const { userName } = useParams(); // <-- берём из /u/:userName
   const { user, logout } = useAuth();
 
   const handleLogout = () => {
@@ -25,7 +26,12 @@ export default function AppLayout() {
         `,
       }}
     >
-      <TopNavBar onLogout={handleLogout} userLabel={user?.userName || user?.email || 'Пользователь'} />
+      <TopNavBar
+        onLogout={handleLogout}
+        userName={userName}
+        userLabel={user?.userName || user?.email || userName || 'Пользователь'}
+      />
+
       <Container maxWidth="lg" sx={{ py: 3 }}>
         <Outlet />
       </Container>

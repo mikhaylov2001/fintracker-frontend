@@ -25,6 +25,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import Autocomplete from '@mui/material/Autocomplete';
+import { useLocation } from 'react-router-dom';
 
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
@@ -113,6 +114,7 @@ const ymFromDate = (yyyyMmDd) => {
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
+  const location = useLocation(); // <-- для ?new=1
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -171,7 +173,7 @@ export default function IncomePage() {
     load();
   }, [load]);
 
-  const openCreate = () => {
+  const openCreate = useCallback(() => {
     const iso = new Date().toISOString().slice(0, 10);
     setEditing(null);
     setDateErr('');
@@ -186,7 +188,13 @@ export default function IncomePage() {
     setTimeout(() => {
       amountRef.current?.focus?.();
     }, 150);
-  };
+  }, []);
+
+  // <-- АВТО-ОТКРЫТИЕ диалога при /income?new=1
+  useEffect(() => {
+    const q = new URLSearchParams(location.search);
+    if (q.get('new') === '1') openCreate();
+  }, [location.search, openCreate]);
 
   const openEdit = (income) => {
     const iso = normalizeDateOnly(income?.date);
@@ -308,12 +316,7 @@ export default function IncomePage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, -1))}
@@ -322,10 +325,7 @@ export default function IncomePage() {
               ←
             </Button>
 
-            <Chip
-              label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
-            />
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
 
             <Button
               variant="outlined"
@@ -398,19 +398,13 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box
-              sx={{
-                px: { xs: 0.5, sm: 1 },
-                overflowX: 'hidden',
-              }}
-            >
+            <Box sx={{ px: { xs: 0.5, sm: 1 }, overflowX: 'hidden' }}>
               <Table
                 size="small"
                 sx={{
                   width: '100%',
                   minWidth: { sm: 720 },
                   tableLayout: { xs: 'fixed', sm: 'auto' },
-
                   '& th, & td': {
                     px: { xs: 0.75, sm: 2 },
                     py: { xs: 0.6, sm: 1 },
@@ -427,7 +421,6 @@ export default function IncomePage() {
                     bgcolor: '#FFFFFF',
                   },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
-
                   '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
@@ -445,12 +438,7 @@ export default function IncomePage() {
                       Категория
                     </TableCell>
 
-                    <TableCell
-                      sx={{
-                        width: 200,
-                        display: { xs: 'none', sm: 'table-cell' },
-                      }}
-                    >
+                    <TableCell sx={{ width: 200, display: { xs: 'none', sm: 'table-cell' } }}>
                       Источник
                     </TableCell>
 
@@ -462,9 +450,7 @@ export default function IncomePage() {
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Действия
-                      </Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Действия</Box>
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -518,10 +504,7 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      <TableCell
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
-                        title={x.source || ''}
-                      >
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} title={x.source || ''}>
                         {x.source}
                       </TableCell>
 
@@ -550,9 +533,7 @@ export default function IncomePage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          {editing ? 'Редактировать доход' : 'Добавить доход'}
-        </DialogTitle>
+        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
 
         <DialogContent
           sx={{
@@ -631,23 +612,16 @@ export default function IncomePage() {
             gap: 1,
           }}
         >
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            disabled={saving}
-            fullWidth={fullScreen}
-          >
+          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
             Отмена
           </Button>
+
           <Button
             onClick={save}
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{
-              bgcolor: COLORS.income,
-              '&:hover': { bgcolor: '#16A34A' },
-            }}
+            sx={{ bgcolor: COLORS.income, '&:hover': { bgcolor: '#16A34A' } }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
