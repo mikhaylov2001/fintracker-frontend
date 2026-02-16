@@ -324,21 +324,33 @@ export default function IncomePage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        <CardContent>
-          <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
-            Список
-          </Typography>
+        {/* Делаем “Список” визуально шире: уменьшаем внутренние поля,
+            а у таблицы добавляем свой мягкий padding */}
+        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
+              Список
+            </Typography>
+          </Box>
+
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <EmptyState
-              title="Пока нет записей"
-              description="Добавь первую операцию — и тут появится список за выбранный месяц."
-              actionLabel="Добавить"
-              onAction={openCreate}
-            />
+            <Box sx={{ px: { xs: 1, sm: 1 } }}>
+              <EmptyState
+                title="Пока нет записей"
+                description="Добавь первую операцию — и тут появится список за выбранный месяц."
+                actionLabel="Добавить"
+                onAction={openCreate}
+              />
+            </Box>
           ) : (
-            <Box sx={{ overflowX: 'hidden' }}>
+            <Box
+              sx={{
+                px: { xs: 0.5, sm: 1 }, // чуть “воздуха”, но таблица шире
+                overflowX: 'hidden',
+              }}
+            >
               <Table
                 size="small"
                 sx={{
@@ -355,13 +367,20 @@ export default function IncomePage() {
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
                   },
-                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' },
+                  '& th': {
+                    fontWeight: 900,
+                    color: '#0F172A',
+                    whiteSpace: 'nowrap',
+                    bgcolor: '#FFFFFF',
+                  },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
+
+                  // чуть мягче линии (чтобы не выглядело “как на границах”)
+                  '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    {/* xs: проценты => влезает на любых телефонах */}
                     <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
@@ -374,7 +393,6 @@ export default function IncomePage() {
                       Категория
                     </TableCell>
 
-                    {/* Desktop-only колонка */}
                     <TableCell
                       sx={{
                         width: 200,
@@ -431,7 +449,6 @@ export default function IncomePage() {
                           {x.category}
                         </Typography>
 
-                        {/* На мобилке источник второй строкой (стиль прежний/нейтральный) */}
                         {isMobile ? (
                           <Typography
                             component="div"
@@ -452,9 +469,7 @@ export default function IncomePage() {
                       </TableCell>
 
                       <TableCell
-                        sx={{
-                          display: { xs: 'none', sm: 'table-cell' },
-                        }}
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
                         title={x.source || ''}
                       >
                         {x.source}
