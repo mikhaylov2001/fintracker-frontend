@@ -37,7 +37,14 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
+const surfaceSx = {
+  borderRadius: 4,
+  border: "1px solid rgba(15,23,42,0.06)",
+  backgroundColor: "rgba(255,255,255,0.92)",
+  boxShadow: "0 18px 45px rgba(15,23,42,0.08)",
+};
+
+const StatCard = ({ label, value, sub, accent = "#4F46E5", onClick }) => (
   <Card
     variant="outlined"
     onClick={onClick}
@@ -54,59 +61,51 @@ const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
         : undefined
     }
     sx={{
+      ...surfaceSx,
       height: "100%",
-      minHeight: 118,
-      borderRadius: 3,
+      minHeight: 116,
+      cursor: onClick ? "pointer" : "default",
+      transition: "transform 140ms ease, box-shadow 140ms ease",
       position: "relative",
       overflow: "hidden",
-      borderColor: "rgba(15,23,42,0.75)",
-      backgroundColor: "rgba(15,23,42,0.90)",
-      backdropFilter: "blur(12px)",
-      transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-      cursor: onClick ? "pointer" : "default",
       "&:before": {
         content: '""',
         position: "absolute",
-        top: 0,
         left: 0,
-        right: 0,
-        height: 2,
-        background: accent,
-        opacity: 0.9,
+        top: 0,
+        bottom: 0,
+        width: 4,
+        bgcolor: accent,
+        opacity: 0.95,
       },
       "&:hover": {
         transform: onClick ? "translateY(-2px)" : "none",
-        borderColor: onClick ? "rgba(248,250,252,0.22)" : "rgba(15,23,42,0.75)",
-        boxShadow: onClick ? "0 18px 50px rgba(0,0,0,0.35)" : "none",
+        boxShadow: onClick ? "0 22px 55px rgba(15,23,42,0.12)" : surfaceSx.boxShadow,
       },
     }}
   >
-    <CardContent sx={{ p: 2 }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-        <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: accent, opacity: 0.95 }} />
-        <Typography
-          variant="overline"
-          sx={{
-            color: "rgba(148,163,184,0.95)",
-            letterSpacing: 0.6,
-            lineHeight: 1.15,
-            minWidth: 0,
-            whiteSpace: "normal",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: { xs: 2, sm: 1 },
-            fontSize: { xs: 10.5, sm: 11.5 },
-          }}
-        >
-          {label}
-        </Typography>
-      </Stack>
+    <CardContent sx={{ p: 2.1 }}>
+      <Typography
+        variant="overline"
+        sx={{
+          color: "rgba(30,41,59,0.72)",
+          letterSpacing: 0.6,
+          lineHeight: 1.15,
+          display: "block",
+          fontWeight: 800,
+        }}
+      >
+        {label}
+      </Typography>
 
       <Typography
         variant="h5"
-        sx={{ mt: 0.75, fontWeight: 950, color: "rgba(248,250,252,0.96)", lineHeight: 1.05 }}
+        sx={{
+          mt: 0.75,
+          fontWeight: 950,
+          color: "rgba(15,23,42,0.92)",
+          lineHeight: 1.05,
+        }}
       >
         {value}
       </Typography>
@@ -115,13 +114,10 @@ const StatCard = ({ label, value, sub, accent = "#6366F1", onClick }) => (
         variant="caption"
         sx={{
           mt: 0.6,
-          color: "rgba(148,163,184,0.95)",
+          color: "rgba(30,41,59,0.70)",
           display: "block",
           lineHeight: 1.2,
           minHeight: { xs: 32, md: 18 },
-          whiteSpace: { xs: "normal", md: "nowrap" },
-          overflow: "hidden",
-          textOverflow: { xs: "clip", md: "ellipsis" },
         }}
       >
         {sub && String(sub).trim() ? sub : " "}
@@ -138,8 +134,7 @@ function SummaryRow({ label, value, color }) {
         gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
         gap: 1.25,
-        py: 1.1,
-        minWidth: 0,
+        py: 1.05,
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
@@ -147,16 +142,12 @@ function SummaryRow({ label, value, color }) {
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(148,163,184,0.98)",
-            fontWeight: 850,
+            color: "rgba(30,41,59,0.82)",
+            fontWeight: 900,
             minWidth: 0,
-            whiteSpace: "normal",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: 2,
-            lineHeight: 1.2,
+            whiteSpace: "nowrap",
           }}
         >
           {label}
@@ -167,7 +158,7 @@ function SummaryRow({ label, value, color }) {
         variant="body2"
         sx={{
           fontWeight: 950,
-          color: "rgba(248,250,252,0.96)",
+          color: "rgba(15,23,42,0.92)",
           whiteSpace: "nowrap",
           letterSpacing: -0.2,
         }}
@@ -193,23 +184,40 @@ export default function DashboardPage() {
   const month = now.getMonth() + 1;
 
   const fmtRub = useMemo(
-    () => new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }),
+    () =>
+      new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "RUB",
+        maximumFractionDigits: 0,
+      }),
     []
   );
 
   const fmtToday = useMemo(
-    () => new Intl.DateTimeFormat("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" }),
+    () =>
+      new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }),
     []
   );
   const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
 
   const fmtMonth = useMemo(
-    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
+    () =>
+      new Intl.DateTimeFormat("ru-RU", {
+        month: "long",
+        year: "numeric",
+      }),
     []
   );
   const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
 
-  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || "anon"}`, [userId]);
+  const kpiModeKey = useMemo(
+    () => `fintracker:kpiMode:${userId || "anon"}`,
+    [userId]
+  );
   const [kpiMode, setKpiMode] = useState("month");
 
   useEffect(() => {
@@ -243,7 +251,8 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        if (!userId) throw new Error("Нет user.id (проверь authUser в localStorage).");
+        if (!userId)
+          throw new Error("Нет user.id (проверь authUser в localStorage).");
 
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
@@ -261,7 +270,10 @@ export default function DashboardPage() {
                 const d = unwrap(raw);
                 if (
                   d &&
-                  (n(d.total_income) || n(d.total_expenses) || n(d.balance) || n(d.savings))
+                  (n(d.total_income) ||
+                    n(d.total_expenses) ||
+                    n(d.balance) ||
+                    n(d.savings))
                 ) {
                   rows.push({ ...d, year: ym.year, month: ym.month });
                 }
@@ -273,7 +285,8 @@ export default function DashboardPage() {
         await Promise.all(tasks);
         if (!cancelled) setHistory(rows);
       } catch (e) {
-        if (!cancelled) setError(e?.message || "Ошибка загрузки сводки/истории");
+        if (!cancelled)
+          setError(e?.message || "Ошибка загрузки сводки/истории");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -293,13 +306,24 @@ export default function DashboardPage() {
 
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
-    return history.filter((h) => h.year === year && ymNum(h.year, h.month) <= curNum);
+    return history.filter(
+      (h) => h.year === year && ymNum(h.year, h.month) <= curNum
+    );
   }, [history, year, month]);
 
-  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
-  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
+  const yearIncome = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
+    [yearMonths]
+  );
+  const yearExpenses = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
+    [yearMonths]
+  );
   const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
-  const yearSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
+  const yearSavings = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
+    [yearMonths]
+  );
 
   const yearSavingsRate = useMemo(() => {
     if (yearIncome <= 0) return 0;
@@ -308,7 +332,9 @@ export default function DashboardPage() {
   }, [yearIncome, yearBalance]);
 
   const isYear = kpiMode === "year";
-  const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
+  const periodLabel = isYear
+    ? `Показаны данные: ${year} год`
+    : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
@@ -319,36 +345,44 @@ export default function DashboardPage() {
   const displayName = user?.userName || user?.email || "пользователь";
 
   return (
-    <Box sx={{ width: "100%", px: { xs: 2, md: 3, lg: 4 }, color: "rgba(248,250,252,0.96)" }}>
+    <Box sx={{ width: "100%" }}>
       {/* HERO */}
       <Card
         variant="outlined"
         sx={{
+          ...surfaceSx,
           borderRadius: 5,
-          borderColor: "rgba(15,23,42,0.75)",
-          backgroundColor: "rgba(15,23,42,0.90)",
-          backdropFilter: "blur(18px)",
-          overflow: "hidden",
           mb: 2,
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-            sx={{ mb: 1.25 }}
-          >
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            pointerEvents: "none",
+            backgroundImage: `
+              radial-gradient(900px 420px at 8% 0%, ${alpha("#60A5FA", 0.22)} 0%, transparent 60%),
+              radial-gradient(900px 420px at 92% 0%, ${alpha("#A78BFA", 0.22)} 0%, transparent 60%)
+            `,
+          }}
+        />
+        <CardContent sx={{ p: { xs: 2.25, md: 3 }, position: "relative" }}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15 }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 950, lineHeight: 1.15, color: "rgba(15,23,42,0.92)" }}
+              >
                 Финансовая свобода
               </Typography>
 
-              <Typography variant="body2" sx={{ color: "rgba(148,163,184,0.98)", mt: 0.5 }}>
+              <Typography variant="body2" sx={{ color: "rgba(30,41,59,0.70)", mt: 0.5 }}>
                 Привет, {displayName} • Сегодня: {todayLabel}
               </Typography>
 
-              <Typography variant="body2" sx={{ color: "rgba(209,213,219,0.98)", mt: 0.5, fontWeight: 600 }}>
+              <Typography variant="body2" sx={{ color: "rgba(30,41,59,0.78)", mt: 0.5, fontWeight: 700 }}>
                 {periodLabel}
               </Typography>
             </Box>
@@ -361,15 +395,13 @@ export default function DashboardPage() {
             >
               <Chip
                 label={loading ? "Загрузка…" : "Актуально"}
-                variant="filled"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
                   borderRadius: 999,
-                  bgcolor: "rgba(15,23,42,0.9)",
-                  color: "rgba(248,250,252,0.92)",
-                  fontWeight: 800,
-                  border: "1px solid rgba(148,163,184,0.55)",
-                  backdropFilter: "blur(10px)",
+                  bgcolor: "rgba(255,255,255,0.92)",
+                  border: "1px solid rgba(15,23,42,0.08)",
+                  color: "rgba(15,23,42,0.80)",
+                  fontWeight: 850,
                 }}
               />
 
@@ -380,20 +412,20 @@ export default function DashboardPage() {
                 size="small"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
-                  bgcolor: "rgba(15,23,42,0.9)",
-                  border: "1px solid rgba(148,163,184,0.55)",
+                  bgcolor: "rgba(255,255,255,0.92)",
+                  border: "1px solid rgba(15,23,42,0.08)",
                   borderRadius: 999,
-                  backdropFilter: "blur(10px)",
                   "& .MuiToggleButton-root": {
                     border: 0,
                     px: 1.5,
                     flex: { xs: 1, sm: "unset" },
-                    color: "rgba(209,213,219,0.98)",
-                    fontWeight: 800,
+                    color: "rgba(30,41,59,0.75)",
+                    fontWeight: 900,
+                    textTransform: "none",
                   },
                   "& .MuiToggleButton-root.Mui-selected": {
-                    color: "#020617",
-                    backgroundColor: "rgba(248,250,252,0.96)",
+                    color: "white",
+                    backgroundColor: "#4F46E5",
                   },
                 }}
               >
@@ -404,20 +436,19 @@ export default function DashboardPage() {
           </Stack>
 
           {error ? (
-            <Card
-              variant="outlined"
+            <Box
               sx={{
-                borderRadius: 3,
-                borderColor: alpha("#EF4444", 0.7),
-                backgroundColor: "rgba(127,29,29,0.7)",
+                mt: 1.25,
+                p: 1.25,
+                borderRadius: 2.5,
+                border: `1px solid ${alpha("#EF4444", 0.35)}`,
+                bgcolor: alpha("#EF4444", 0.08),
+                color: "rgba(127,29,29,0.95)",
+                fontWeight: 700,
               }}
             >
-              <CardContent sx={{ py: 1.5 }}>
-                <Typography sx={{ color: "rgba(254,242,242,0.98)", fontWeight: 700 }} variant="body2">
-                  {error}
-                </Typography>
-              </CardContent>
-            </Card>
+              {error}
+            </Box>
           ) : null}
         </CardContent>
       </Card>
@@ -431,13 +462,13 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent="#6366F1" />
+        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent="#4F46E5" />
 
         <StatCard
           label="Доходы"
           value={fmtRub.format(displayIncome)}
           sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-          accent="#22C55E"
+          accent="#16A34A"
           onClick={() => navigate("/income")}
         />
 
@@ -453,67 +484,49 @@ export default function DashboardPage() {
           label="Норма сбережений"
           value={`${displayRate}%`}
           sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-          accent="#A78BFA"
+          accent="#7C3AED"
         />
       </Box>
 
       {/* DETAILS + HISTORY */}
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 5,
-          borderColor: "rgba(15,23,42,0.75)",
-          backgroundColor: "rgba(15,23,42,0.90)",
-          backdropFilter: "blur(18px)",
-          width: "100%",
-        }}
-      >
+      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 900 }}>
+            <Typography variant="h6" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
               Итоги операций за месяц
             </Typography>
 
-            <Typography
-              variant="caption"
-              sx={{
-                color: "rgba(148,163,184,0.98)",
-                fontWeight: 800,
-                textTransform: "capitalize",
-                whiteSpace: "nowrap",
-              }}
-            >
+            <Typography variant="caption" sx={{ color: "rgba(30,41,59,0.66)", fontWeight: 900, textTransform: "capitalize" }}>
               {monthTitle(year, month)}
             </Typography>
           </Stack>
 
-          <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.10)" }} />
+          <Divider sx={{ my: 1.5, borderColor: "rgba(15,23,42,0.06)" }} />
 
           <Box
             sx={{
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: 2.5,
-              bgcolor: "rgba(2,6,23,0.35)",
-              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(15,23,42,0.06)",
+              borderRadius: 3,
+              bgcolor: "rgba(255,255,255,0.70)",
               overflow: "hidden",
             }}
           >
-            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-              <SummaryRow label="Доходы" value={fmtRub.format(n(summary?.total_income))} color="#22C55E" />
+            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
+              <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color="#16A34A" />
             </Box>
-            <Divider sx={{ borderColor: "rgba(255,255,255,0.10)" }} />
-            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-              <SummaryRow label="Расходы" value={fmtRub.format(n(summary?.total_expenses))} color="#F97316" />
+            <Divider sx={{ borderColor: "rgba(15,23,42,0.06)" }} />
+            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
+              <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color="#F97316" />
             </Box>
-            <Divider sx={{ borderColor: "rgba(255,255,255,0.10)" }} />
-            <Box sx={{ px: { xs: 1.25, sm: 1.5 } }}>
-              <SummaryRow label="Сбережения" value={fmtRub.format(n(summary?.savings))} color="#A78BFA" />
+            <Divider sx={{ borderColor: "rgba(15,23,42,0.06)" }} />
+            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
+              <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color="#7C3AED" />
             </Box>
           </Box>
 
-          <Divider sx={{ my: 1.5, borderColor: "rgba(255,255,255,0.10)" }} />
+          <Divider sx={{ my: 1.5, borderColor: "rgba(15,23,42,0.06)" }} />
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: "rgba(148,163,184,0.98)" }}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: "rgba(30,41,59,0.60)" }}>
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
               История сохранена: {history.length} месяцев
             </Typography>
@@ -524,7 +537,7 @@ export default function DashboardPage() {
 
           <Box sx={{ mt: 1.25 }}>
             {historyDesc.length === 0 ? (
-              <Typography variant="body2" sx={{ color: "rgba(148,163,184,0.98)" }}>
+              <Typography variant="body2" sx={{ color: "rgba(30,41,59,0.65)" }}>
                 Пока нет сохранённых месяцев.
               </Typography>
             ) : (
@@ -533,8 +546,7 @@ export default function DashboardPage() {
                 const has = Number.isFinite(raw);
                 const v = has ? Math.round(raw) : null;
 
-                const pctColor =
-                  !has ? "rgba(148,163,184,0.98)" : v > 0 ? "#22C55E" : v < 0 ? "#EF4444" : "rgba(148,163,184,0.98)";
+                const pctColor = !has ? "rgba(30,41,59,0.65)" : v > 0 ? "#16A34A" : v < 0 ? "#DC2626" : "rgba(30,41,59,0.65)";
                 const pctText = has ? `(${v}%)` : "(—%)";
 
                 return (
@@ -543,20 +555,27 @@ export default function DashboardPage() {
                     disableGutters
                     elevation={0}
                     sx={{
-                      borderRadius: 2,
+                      borderRadius: 3,
                       mb: 1,
-                      border: "1px solid rgba(255,255,255,0.10)",
-                      bgcolor: "rgba(2,6,23,0.35)",
-                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(15,23,42,0.06)",
+                      backgroundColor: "rgba(255,255,255,0.86)",
+                      boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
                       "&:before": { display: "none" },
                     }}
                   >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: "rgba(148,163,184,0.98)" }} />}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
+                    <AccordionSummary
+                      expandIcon={<ExpandMoreIcon sx={{ color: "rgba(30,41,59,0.60)" }} />}
+                    >
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ width: "100%", gap: 1, minWidth: 0 }}
+                      >
                         <Typography
                           sx={{
-                            fontWeight: 900,
-                            color: "rgba(248,250,252,0.98)",
+                            fontWeight: 950,
+                            color: "rgba(15,23,42,0.90)",
                             textTransform: "capitalize",
                             minWidth: 0,
                             overflow: "hidden",
@@ -567,45 +586,45 @@ export default function DashboardPage() {
                           {monthTitle(h.year, h.month)}
                         </Typography>
 
-                        <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap", flex: "0 0 auto" }}>
+                        <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}>
                           {pctText}
                         </Typography>
                       </Stack>
                     </AccordionSummary>
 
                     <AccordionDetails sx={{ pt: 0 }}>
-                      <Stack spacing={0.75} sx={{ color: "rgba(209,213,219,0.98)" }}>
+                      <Stack spacing={0.75} sx={{ color: "rgba(30,41,59,0.78)" }}>
                         <Typography variant="body2">
                           Доходы:{" "}
-                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                          <Box component="span" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
                             {fmtRub.format(n(h.total_income))}
                           </Box>
                         </Typography>
 
                         <Typography variant="body2">
                           Расходы:{" "}
-                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                          <Box component="span" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
                             {fmtRub.format(n(h.total_expenses))}
                           </Box>
                         </Typography>
 
                         <Typography variant="body2">
                           Баланс:{" "}
-                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                          <Box component="span" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
                             {fmtRub.format(n(h.balance))}
                           </Box>
                         </Typography>
 
                         <Typography variant="body2">
                           Сбережения:{" "}
-                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                          <Box component="span" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
                             {fmtRub.format(n(h.savings))}
                           </Box>
                         </Typography>
 
                         <Typography variant="body2">
                           Норма сбережений:{" "}
-                          <Box component="span" sx={{ fontWeight: 900, color: "rgba(248,250,252,0.98)" }}>
+                          <Box component="span" sx={{ fontWeight: 950, color: "rgba(15,23,42,0.92)" }}>
                             {n(h.savings_rate_percent)}%
                           </Box>
                         </Typography>

@@ -4,6 +4,7 @@ import { Container } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useAuth } from "../contexts/AuthContext";
 import TopNavBar from "../components/TopNavBar";
+
 import AppBackground from "./AppBackground";
 
 export default function AppLayout() {
@@ -18,10 +19,11 @@ export default function AppLayout() {
   return (
     <AppBackground
       sx={{
-        bgcolor: "#0B1220",
+        bgcolor: "#F4F6FB",
         backgroundImage: `
-          radial-gradient(900px 450px at 12% 0%, ${alpha("#60A5FA", 0.16)} 0%, transparent 55%),
-          radial-gradient(900px 450px at 88% 0%, ${alpha("#A78BFA", 0.16)} 0%, transparent 55%)
+          radial-gradient(1100px 520px at 12% 0%, ${alpha("#60A5FA", 0.22)} 0%, transparent 55%),
+          radial-gradient(1100px 520px at 88% 0%, ${alpha("#A78BFA", 0.22)} 0%, transparent 55%),
+          linear-gradient(180deg, ${alpha("#FFFFFF", 0.85)} 0%, ${alpha("#F4F6FB", 1)} 55%, ${alpha("#EEF2FF", 0.75)} 100%)
         `,
       }}
     >
