@@ -85,7 +85,7 @@ export default function IncomePage() {
   const theme = useTheme();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm')); // ИСПОЛЬЗУЕМ ниже, чтобы ESLint не ругался
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -237,9 +237,8 @@ export default function IncomePage() {
 
   const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
 
-  // компактнее кнопки на телефоне => гарантированно влезают и видны
   const actionBtnPad = isMobile ? 0.45 : 0.6;
-  const actionColWidth = isMobile ? 92 : 120; // маленький запас под 2 кнопки
+  const actionColWidth = isMobile ? 92 : 120;
 
   return (
     <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh', p: { xs: 2, md: 3 } }}>
@@ -273,10 +272,7 @@ export default function IncomePage() {
               ←
             </Button>
 
-            <Chip
-              label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
-            />
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
 
             <Button
               variant="outlined"
@@ -305,10 +301,7 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}
-        >
+        <Card variant="outlined" sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}>
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -351,7 +344,7 @@ export default function IncomePage() {
                 sx={{
                   width: '100%',
                   tableLayout: 'fixed',
-                  '& .MuiTableCell-root': { borderBottom: 0 }, // без линий/рамок
+                  '& .MuiTableCell-root': { borderBottom: 0 },
 
                   '& th, & td': {
                     px: { xs: 1.25, sm: 2.5 },
@@ -362,28 +355,17 @@ export default function IncomePage() {
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
                   },
-                  '& th': {
-                    fontWeight: 900,
-                    color: '#0F172A',
-                    whiteSpace: 'nowrap',
-                    bgcolor: '#FFFFFF',
-                  },
+                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap', bgcolor: '#FFFFFF' },
                   '& td': { whiteSpace: 'normal' },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: 98, sm: 140 }, whiteSpace: 'nowrap' }}>
-                      Дата
-                    </TableCell>
+                    <TableCell sx={{ width: { xs: 98, sm: 140 }, whiteSpace: 'nowrap' }}>Дата</TableCell>
+                    <TableCell sx={{ width: { xs: 110, sm: 160 }, whiteSpace: 'nowrap' }}>Сумма</TableCell>
 
-                    <TableCell sx={{ width: { xs: 110, sm: 160 }, whiteSpace: 'nowrap' }}>
-                      Сумма
-                    </TableCell>
-
-                    <TableCell sx={{ width: `calc(100% - ${98 + 110}px - ${actionColWidth}px)` }}>
-                      Категория
-                    </TableCell>
+                    {/* Категория занимает всё оставшееся место */}
+                    <TableCell sx={{ width: 'auto' }}>Категория</TableCell>
 
                     <TableCell
                       align="right"
@@ -402,48 +384,49 @@ export default function IncomePage() {
                 <TableBody>
                   {items.map((x) => (
                     <TableRow key={x.id} hover>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {formatDateRu(x.date)}
-                      </TableCell>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateRu(x.date)}</TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
                       <TableCell>
-                        <Typography
-                          component="div"
-                          sx={{
-                            fontSize: { xs: 12, sm: 13 },
-                            fontWeight: 800,
-                            color: '#0F172A',
-                            lineHeight: 1.15,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: 2,
-                          }}
-                          title={x.category || ''}
-                        >
-                          {x.category}
-                        </Typography>
+                        <Box sx={{ overflow: 'hidden', minWidth: 0 }}>
+                          <Typography
+                            component="div"
+                            sx={{
+                              fontSize: { xs: 12, sm: 13 },
+                              fontWeight: 800,
+                              color: '#0F172A',
+                              lineHeight: 1.15,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              display: '-webkit-box',
+                              WebkitBoxOrient: 'vertical',
+                              WebkitLineClamp: 2,
+                              wordBreak: 'break-word',
+                            }}
+                            title={x.category || ''}
+                          >
+                            {x.category}
+                          </Typography>
 
-                        <Typography
-                          component="div"
-                          sx={{
-                            mt: 0.2,
-                            fontSize: 11,
-                            color: '#64748B',
-                            lineHeight: 1.15,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                          title={x.source || ''}
-                        >
-                          {x.source}
-                        </Typography>
+                          <Typography
+                            component="div"
+                            sx={{
+                              mt: 0.2,
+                              fontSize: 11,
+                              color: '#64748B',
+                              lineHeight: 1.15,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={x.source || ''}
+                          >
+                            {x.source}
+                          </Typography>
+                        </Box>
                       </TableCell>
 
                       <TableCell
