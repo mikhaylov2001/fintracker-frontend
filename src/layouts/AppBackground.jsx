@@ -62,7 +62,7 @@ export default function AppBackground({ children, sx }) {
         }}
       />
 
-      {/* контент поверх слоёв */}
+      {/* контент поверх фона */}
       <Box sx={{ position: "relative", zIndex: 1 }}>{children}</Box>
     </Box>
   );

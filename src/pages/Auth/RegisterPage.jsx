@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
+import AppBackground from "../../components/layout/AppBackground";
 
 const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -71,68 +72,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        position: "relative",
-        overflow: "hidden",
-        display: "grid",
-        placeItems: "center",
-        px: 2,
-        py: { xs: 3, md: 0 },
-        bgcolor: "#0B1220",
-        backgroundImage:
-          "radial-gradient(1200px 600px at 15% 10%, rgba(34,197,94,0.18), transparent 60%)," +
-          "radial-gradient(900px 500px at 85% 20%, rgba(99,102,241,0.22), transparent 55%)," +
-          "radial-gradient(800px 500px at 50% 90%, rgba(249,115,22,0.14), transparent 55%)," +
-          "linear-gradient(180deg, #0B1220 0%, #070B14 100%)",
-      }}
-    >
-      {/* паттерн-сетка */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          opacity: 0.22,
-          backgroundImage:
-            "linear-gradient(to right, rgba(148,163,184,0.22) 1px, transparent 1px)," +
-            "linear-gradient(to bottom, rgba(148,163,184,0.22) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-          mixBlendMode: "soft-light",
-        }}
-      />
-
-      {/* blurred-circles */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          "&:before, &:after": {
-            content: '""',
-            position: "absolute",
-            width: { xs: 240, sm: 320, md: 420 },
-            height: { xs: 240, sm: 320, md: 420 },
-            borderRadius: 999,
-            filter: "blur(38px)",
-            opacity: 0.75,
-          },
-          "&:before": {
-            left: { xs: -80, md: -120 },
-            top: { xs: -80, md: -120 },
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(34,197,94,0.55), rgba(34,197,94,0) 65%)",
-          },
-          "&:after": {
-            right: { xs: -90, md: -130 },
-            bottom: { xs: -90, md: -130 },
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(99,102,241,0.6), rgba(99,102,241,0) 65%)",
-          },
-        }}
-      />
-
+    <AppBackground sx={{ display: "grid", placeItems: "center", px: 2, py: { xs: 3, md: 0 } }}>
       <Box
         sx={{
           width: "100%",
@@ -141,8 +81,6 @@ export default function RegisterPage() {
           gridTemplateColumns: { xs: "1fr", md: "1.25fr 0.9fr" },
           gap: { xs: 2, md: 3 },
           alignItems: "stretch",
-          position: "relative",
-          zIndex: 1,
         }}
       >
         {/* Mobile hero */}
@@ -156,25 +94,10 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontWeight: 950,
-              fontSize: 22,
-              lineHeight: 1.15,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 950, fontSize: 22, lineHeight: 1.15 }}>
             FinTrackerPro
           </Typography>
-
-          <Typography
-            sx={{
-              mt: 0.8,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 13.5,
-              lineHeight: 1.35,
-            }}
-          >
+          <Typography sx={{ mt: 0.8, color: "rgba(255,255,255,0.72)", fontSize: 13.5, lineHeight: 1.35 }}>
             Создай аккаунт и начни вести финансы уже сегодня.
           </Typography>
         </Box>
@@ -192,31 +115,15 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
-              fontSize: 34,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 950, fontSize: 34, lineHeight: 1.1 }}>
             Создай аккаунт
           </Typography>
-
-          <Typography
-            sx={{
-              mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 15,
-              maxWidth: 420,
-            }}
-          >
-            После регистрации ты сможешь сохранять историю по месяцам и видеть норму
-            сбережений в динамике.
+          <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.72)", fontSize: 15, maxWidth: 420 }}>
+            Регистрация займёт минуту. Дальше — история по месяцам, баланс и норма сбережений.
           </Typography>
         </Box>
 
-        {/* Форма */}
+        {/* Form */}
         <Paper
           elevation={0}
           sx={{
@@ -228,13 +135,7 @@ export default function RegisterPage() {
             backdropFilter: "blur(10px)",
           }}
         >
-          <Typography
-            variant="h5"
-            component="h1"
-            gutterBottom
-            align="center"
-            sx={{ fontWeight: 950 }}
-          >
+          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
             Регистрация
           </Typography>
 
@@ -303,6 +204,6 @@ export default function RegisterPage() {
           </Typography>
         </Paper>
       </Box>
-    </Box>
+    </AppBackground>
   );
 }
