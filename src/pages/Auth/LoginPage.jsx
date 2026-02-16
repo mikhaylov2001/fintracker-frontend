@@ -73,8 +73,8 @@ export default function LoginPage() {
         display: "grid",
         placeItems: "center",
         px: 2,
+        py: { xs: 3, md: 0 },
         bgcolor: "#0B1220",
-        // базовый градиент
         backgroundImage:
           "radial-gradient(1200px 600px at 15% 10%, rgba(34,197,94,0.18), transparent 60%)," +
           "radial-gradient(900px 500px at 85% 20%, rgba(99,102,241,0.22), transparent 55%)," +
@@ -82,7 +82,7 @@ export default function LoginPage() {
           "linear-gradient(180deg, #0B1220 0%, #070B14 100%)",
       }}
     >
-      {/* декоративные "пятна" (blur circles) */}
+      {/* декоративные blurred-circles */}
       <Box
         sx={{
           position: "absolute",
@@ -91,8 +91,8 @@ export default function LoginPage() {
           "&:before, &:after": {
             content: '""',
             position: "absolute",
-            width: { xs: 260, sm: 340, md: 420 },
-            height: { xs: 260, sm: 340, md: 420 },
+            width: { xs: 240, sm: 320, md: 420 },
+            height: { xs: 240, sm: 320, md: 420 },
             borderRadius: 999,
             filter: "blur(38px)",
             opacity: 0.75,
@@ -124,7 +124,45 @@ export default function LoginPage() {
           zIndex: 1,
         }}
       >
-        {/* Левая "иллюстрация" / промо-блок */}
+        {/* Mobile hero (показываем только на xs/sm) */}
+        <Box
+          sx={{
+            display: { xs: "block", md: "none" },
+            borderRadius: 5,
+            p: 2.5,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <Typography sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 950, fontSize: 22, lineHeight: 1.15 }}>
+            FinTrackerPro
+          </Typography>
+
+          <Typography sx={{ mt: 0.8, color: "rgba(255,255,255,0.72)", fontSize: 13.5, lineHeight: 1.35 }}>
+            Доходы, расходы и норма сбережений — в одном месте.
+          </Typography>
+
+          <Box
+            sx={{
+              mt: 1.5,
+              borderRadius: 4,
+              p: 1.6,
+              border: "1px solid rgba(255,255,255,0.08)",
+              background:
+                "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(99,102,241,0.12) 55%, rgba(249,115,22,0.10) 100%)",
+            }}
+          >
+            <Typography sx={{ color: "rgba(255,255,255,0.82)", fontWeight: 850, fontSize: 13 }}>
+              Подсказка
+            </Typography>
+            <Typography sx={{ mt: 0.35, color: "rgba(255,255,255,0.68)", fontSize: 12.5 }}>
+              Вход по Google или по логину/паролю.
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* Desktop hero (только md+) */}
         <Box
           sx={{
             display: { xs: "none", md: "flex" },
@@ -164,7 +202,7 @@ export default function LoginPage() {
           </Box>
         </Box>
 
-        {/* Правая часть: форма */}
+        {/* Форма */}
         <Paper
           elevation={0}
           sx={{
@@ -177,7 +215,7 @@ export default function LoginPage() {
           }}
         >
           <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
-            Вход в FinTrackerPro
+            Вход
           </Typography>
 
           <Box component="form" onSubmit={handleSubmit} noValidate>
