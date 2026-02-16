@@ -18,7 +18,6 @@ import {
   TableRow,
   IconButton,
   Divider,
-  MenuItem,
   Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
