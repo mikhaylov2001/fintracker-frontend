@@ -11,15 +11,15 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Divider,
-  MenuItem,
-  Chip,
-  IconButton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableRow,
+  IconButton,
+  Divider,
+  MenuItem,
+  Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -47,13 +47,6 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
-const formatDateRu = (dateLike) => {
-  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
-  const [y, m, d] = s.split('-');
-  if (!y || !m || !d) return s;
-  return `${d}.${m}.${y}`;
-};
-
 const isProxySerialization500 = (msg) =>
   String(msg || '').includes('ByteBuddyInterceptor');
 
@@ -79,165 +72,6 @@ const ymFromDate = (yyyyMmDd) => {
   const [y, m] = s.split('-');
   return { year: Number(y), month: Number(m) };
 };
-
-function Actions({ onEdit, onDelete }) {
-  return (
-    <Stack direction="row" spacing={0.6} alignItems="center" sx={{ flexShrink: 0 }}>
-      <IconButton
-        onClick={onEdit}
-        size="small"
-        sx={{
-          p: 0.8,
-          bgcolor: 'rgba(15, 23, 42, 0.06)',
-          borderRadius: 2,
-          '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
-        }}
-      >
-        <EditOutlinedIcon fontSize="small" />
-      </IconButton>
-
-      <IconButton
-        onClick={onDelete}
-        size="small"
-        sx={{
-          p: 0.8,
-          bgcolor: 'rgba(239, 68, 68, 0.10)',
-          borderRadius: 2,
-          color: '#EF4444',
-          '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
-        }}
-      >
-        <DeleteOutlineIcon fontSize="small" />
-      </IconButton>
-    </Stack>
-  );
-}
-
-function MobileList({ items, fmtRub, onEdit, onDelete }) {
-  return (
-    <Stack spacing={1.2} sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
-      {items.map((x) => (
-        <Card
-          key={x.id}
-          variant="outlined"
-          sx={{
-            borderRadius: 3,
-            borderColor: '#E2E8F0',
-            bgcolor: '#FFFFFF',
-            boxShadow: 'none',
-          }}
-        >
-          <CardContent sx={{ py: 1.4, '&:last-child': { pb: 1.4 } }}>
-            <Stack direction="row" spacing={1.2} alignItems="flex-start">
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={1} alignItems="baseline" sx={{ flexWrap: 'wrap' }}>
-                  <Typography sx={{ fontWeight: 900, color: '#0F172A' }}>
-                    {fmtRub.format(Number(x.amount || 0))}
-                  </Typography>
-
-                  <Typography sx={{ color: '#64748B', fontSize: 12 }}>
-                    {formatDateRu(x.date)}
-                  </Typography>
-                </Stack>
-
-                <Typography
-                  sx={{
-                    mt: 0.6,
-                    fontWeight: 850,
-                    color: '#0F172A',
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {x.category}
-                </Typography>
-
-                <Typography
-                  sx={{
-                    mt: 0.25,
-                    color: '#64748B',
-                    fontSize: 12,
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {x.source}
-                </Typography>
-              </Box>
-
-              <Actions onEdit={() => onEdit(x)} onDelete={() => onDelete(x)} />
-            </Stack>
-          </CardContent>
-        </Card>
-      ))}
-    </Stack>
-  );
-}
-
-function DesktopTable({ items, fmtRub, onEdit, onDelete }) {
-  return (
-    <Box sx={{ width: '100%', overflowX: 'auto', pb: 1 }}>
-      <Table
-        size="small"
-        sx={{
-          width: '100%',
-          minWidth: 820,
-          '& .MuiTableCell-root': { borderBottom: 0 },
-          '& th, & td': {
-            px: 2.5,
-            py: 1.05,
-            fontSize: 13,
-            lineHeight: 1.2,
-            verticalAlign: 'top',
-          },
-          '& th': {
-            fontWeight: 900,
-            color: '#0F172A',
-            whiteSpace: 'nowrap',
-            bgcolor: '#FFFFFF',
-          },
-        }}
-      >
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ width: 140 }}>Дата</TableCell>
-            <TableCell sx={{ width: 170 }}>Сумма</TableCell>
-            <TableCell sx={{ width: 220 }}>Категория</TableCell>
-            <TableCell sx={{ width: 220 }}>Источник</TableCell>
-            <TableCell align="right" sx={{ width: 140 }} />
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {items.map((x) => (
-            <TableRow key={x.id} hover>
-              <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateRu(x.date)}</TableCell>
-
-              <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
-                {fmtRub.format(Number(x.amount || 0))}
-              </TableCell>
-
-              {/* На десктопе тоже всё видно: переносим строки, не режем */}
-              <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                {x.category}
-              </TableCell>
-
-              <TableCell sx={{ whiteSpace: 'normal', wordBreak: 'break-word', color: '#64748B' }}>
-                {x.source}
-              </TableCell>
-
-              <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                <Actions onEdit={() => onEdit(x)} onDelete={() => onDelete(x)} />
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
-  );
-}
 
 export default function IncomePage() {
   const toast = useToast();
@@ -281,7 +115,7 @@ export default function IncomePage() {
       setError('');
 
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-      const data = res.data;
+      const data = res.data; // axios
       setItems(data?.content ?? []);
     } catch (e) {
       const msg = e?.message || 'Ошибка загрузки доходов';
@@ -333,7 +167,8 @@ export default function IncomePage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
+      if (!Number.isFinite(amountNum) || amountNum < 0.01)
+        throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.source) throw new Error('Источник обязателен');
       if (!payload.date) throw new Error('Дата обязательна');
@@ -418,14 +253,30 @@ export default function IncomePage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))} sx={{ minWidth: 44, px: 1.2 }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
+            <Button
+              variant="outlined"
+              onClick={() => setYm((s) => addMonthsYM(s, -1))}
+              sx={{ minWidth: 44, px: 1.2 }}
+            >
               ←
             </Button>
 
-            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
+            <Chip
+              label={ymLabel(ym)}
+              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
+            />
 
-            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, +1))} sx={{ minWidth: 44, px: 1.2 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setYm((s) => addMonthsYM(s, +1))}
+              sx={{ minWidth: 44, px: 1.2 }}
+            >
               →
             </Button>
           </Stack>
@@ -448,7 +299,15 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Card variant="outlined" sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}>
+        <Card
+          variant="outlined"
+          sx={{
+            mb: 2,
+            borderRadius: 3,
+            borderColor: '#FECACA',
+            bgcolor: '#FFFFFF',
+          }}
+        >
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -463,20 +322,21 @@ export default function IncomePage() {
           borderRadius: 3,
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
-          overflow: 'hidden',
-          mx: { xs: -2, md: 0 },
-          width: { xs: 'calc(100% + 32px)', md: 'auto' },
         }}
       >
-        <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-          <Box sx={{ px: { xs: 2, md: 2.5 }, pt: { xs: 2, md: 2.25 } }}>
-            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
+        {/* Делаем “Список” визуально шире: уменьшаем внутренние поля,
+            а у таблицы добавляем свой мягкий padding */}
+        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
+              Список
+            </Typography>
           </Box>
 
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <Box sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+            <Box sx={{ px: { xs: 1, sm: 1 } }}>
               <EmptyState
                 title="Пока нет записей"
                 description="Добавь первую операцию — и тут появится список за выбранный месяц."
@@ -484,20 +344,150 @@ export default function IncomePage() {
                 onAction={openCreate}
               />
             </Box>
-          ) : isMobile ? (
-            <MobileList
-              items={items}
-              fmtRub={fmtRub}
-              onEdit={openEdit}
-              onDelete={remove}
-            />
           ) : (
-            <DesktopTable
-              items={items}
-              fmtRub={fmtRub}
-              onEdit={openEdit}
-              onDelete={remove}
-            />
+            <Box
+              sx={{
+                px: { xs: 0.5, sm: 1 }, // чуть “воздуха”, но таблица шире
+                overflowX: 'hidden',
+              }}
+            >
+              <Table
+                size="small"
+                sx={{
+                  width: '100%',
+                  minWidth: { sm: 720 }, // desktop only
+                  tableLayout: { xs: 'fixed', sm: 'auto' },
+
+                  '& th, & td': {
+                    px: { xs: 0.75, sm: 2 },
+                    py: { xs: 0.6, sm: 1 },
+                    fontSize: { xs: 12, sm: 13 },
+                    lineHeight: 1.15,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    verticalAlign: 'top',
+                  },
+                  '& th': {
+                    fontWeight: 900,
+                    color: '#0F172A',
+                    whiteSpace: 'nowrap',
+                    bgcolor: '#FFFFFF',
+                  },
+                  '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
+
+                  // чуть мягче линии (чтобы не выглядело “как на границах”)
+                  '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
+                }}
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                      Дата
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                      Сумма
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                      Категория
+                    </TableCell>
+
+                    <TableCell
+                      sx={{
+                        width: 200,
+                        display: { xs: 'none', sm: 'table-cell' },
+                      }}
+                    >
+                      Источник
+                    </TableCell>
+
+                    <TableCell
+                      align="right"
+                      sx={{
+                        width: { xs: '14%', sm: 120 },
+                        pr: { xs: 0.5, sm: 2 },
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Действия
+                      </Box>
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {items.map((x) => (
+                    <TableRow key={x.id} hover>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {isMobile
+                          ? normalizeDateOnly(x.date).slice(5) // MM-DD
+                          : normalizeDateOnly(x.date)}
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
+                        {fmtRub.format(Number(x.amount || 0))}
+                      </TableCell>
+
+                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                        <Typography
+                          component="div"
+                          sx={{
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: '#0F172A',
+                            lineHeight: 1.15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: { xs: 2, sm: 1 },
+                          }}
+                          title={x.category || ''}
+                        >
+                          {x.category}
+                        </Typography>
+
+                        {isMobile ? (
+                          <Typography
+                            component="div"
+                            sx={{
+                              mt: 0.2,
+                              fontSize: 11,
+                              color: '#64748B',
+                              lineHeight: 1.15,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={x.source || ''}
+                          >
+                            {x.source}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+
+                      <TableCell
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                        title={x.source || ''}
+                      >
+                        {x.source}
+                      </TableCell>
+
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                        <IconButton onClick={() => openEdit(x)} size="small">
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton onClick={() => remove(x)} size="small" color="error">
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
           )}
         </CardContent>
       </Card>
@@ -509,7 +499,9 @@ export default function IncomePage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
+        <DialogTitle>
+          {editing ? 'Редактировать доход' : 'Добавить доход'}
+        </DialogTitle>
 
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -526,9 +518,15 @@ export default function IncomePage() {
               freeSolo
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
-              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
-              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, category: newValue ?? '' }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, category: newInput }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Категория" fullWidth />
+              )}
             />
 
             <TextField
@@ -564,7 +562,12 @@ export default function IncomePage() {
             gap: 1,
           }}
         >
-          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
+          <Button
+            onClick={() => setOpen(false)}
+            variant="outlined"
+            disabled={saving}
+            fullWidth={fullScreen}
+          >
             Отмена
           </Button>
           <Button
@@ -572,7 +575,10 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ bgcolor: COLORS.income, '&:hover': { bgcolor: '#16A34A' } }}
+            sx={{
+              bgcolor: COLORS.income,
+              '&:hover': { bgcolor: '#16A34A' },
+            }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
