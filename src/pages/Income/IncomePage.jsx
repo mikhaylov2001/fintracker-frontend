@@ -21,7 +21,7 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -30,7 +30,6 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-// ВАЖНО: me-endpoints (убираем legacy userId)
 import {
   createIncome,
   deleteIncome,
@@ -77,7 +76,9 @@ const ymFromDate = (yyyyMmDd) => {
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
+
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -261,16 +262,23 @@ export default function IncomePage() {
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, -1))}
+              sx={{ minWidth: 44, px: 1.2 }}
             >
               ←
             </Button>
+
             <Chip
               label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                fontWeight: 800,
+              }}
             />
+
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, +1))}
+              sx={{ minWidth: 44, px: 1.2 }}
             >
               →
             </Button>
@@ -320,7 +328,9 @@ export default function IncomePage() {
         }}
       >
         <CardContent>
-          <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
+          <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
+            Список
+          </Typography>
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
@@ -332,27 +342,126 @@ export default function IncomePage() {
             />
           ) : (
             <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small" sx={{ minWidth: 650 }}>
+              <Table
+                size="small"
+                sx={{
+                  width: '100%',
+                  minWidth: { xs: 0, sm: 720 },
+                  tableLayout: { xs: 'fixed', sm: 'auto' },
+                  '& th, & td': {
+                    px: { xs: 0.75, sm: 2 },
+                    py: { xs: 0.6, sm: 1 },
+                    fontSize: { xs: 12, sm: 13 },
+                    lineHeight: 1.15,
+                    whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    verticalAlign: 'top',
+                  },
+                  '& th': { fontWeight: 900, color: '#0F172A' },
+                }}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableCell>Дата</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Категория</TableCell>
-                    <TableCell>Источник</TableCell>
-                    <TableCell align="right">Действия</TableCell>
+                    <TableCell sx={{ width: { xs: 76, sm: 140 } }}>
+                      Дата
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: 110, sm: 160 } }}>
+                      Сумма
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: 'auto', sm: 200 } }}>
+                      Категория
+                    </TableCell>
+
+                    {/* Скрываем на мобильном, показываем на десктопе */}
+                    <TableCell
+                      sx={{
+                        width: 200,
+                        display: { xs: 'none', sm: 'table-cell' },
+                      }}
+                    >
+                      Источник
+                    </TableCell>
+
+                    <TableCell
+                      align="right"
+                      sx={{ width: { xs: 74, sm: 120 }, pr: { xs: 0.5, sm: 2 } }}
+                    >
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Действия
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
 
                 <TableBody>
                   {items.map((x) => (
-                    <TableRow key={x.id}>
-                      <TableCell>{normalizeDateOnly(x.date)}</TableCell>
-                      <TableCell>
+                    <TableRow key={x.id} hover>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {isMobile
+                          ? normalizeDateOnly(x.date).slice(5) // MM-DD
+                          : normalizeDateOnly(x.date)}
+                      </TableCell>
+
+                      <TableCell
+                        sx={{
+                          fontWeight: 900,
+                          color: '#0F172A',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
-                      <TableCell>{x.category}</TableCell>
-                      <TableCell>{x.source}</TableCell>
-                      <TableCell align="right">
+
+                      {/* На мобилке добавим источник второй строкой мелко (чтобы не терялся) */}
+                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                        <Typography
+                          component="div"
+                          sx={{
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: '#0F172A',
+                            lineHeight: 1.15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: { xs: 2, sm: 1 },
+                          }}
+                          title={x.category || ''}
+                        >
+                          {x.category}
+                        </Typography>
+
+                        {isMobile ? (
+                          <Typography
+                            component="div"
+                            sx={{
+                              mt: 0.2,
+                              fontSize: 11,
+                              color: 'rgba(15, 23, 42, 0.55)',
+                              lineHeight: 1.15,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={x.source || ''}
+                          >
+                            {x.source}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+
+                      <TableCell
+                        title={x.source || ''}
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                      >
+                        {x.source}
+                      </TableCell>
+
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                         <IconButton onClick={() => openEdit(x)} size="small">
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
@@ -388,9 +497,7 @@ export default function IncomePage() {
             <TextField
               label="Сумма"
               value={form.amount}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, amount: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
               placeholder="50000.00"
               inputProps={{ inputMode: 'decimal' }}
               fullWidth
@@ -415,9 +522,7 @@ export default function IncomePage() {
               select
               label="Источник"
               value={form.source}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, source: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, source: e.target.value }))}
               fullWidth
             >
               {SOURCE_OPTIONS.map((s) => (
@@ -431,9 +536,7 @@ export default function IncomePage() {
               label="Дата"
               type="date"
               value={normalizeDateOnly(form.date)}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, date: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))}
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
