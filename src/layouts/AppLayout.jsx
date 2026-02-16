@@ -1,10 +1,9 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Box, Container } from "@mui/material";
+import { Container } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useAuth } from "../contexts/AuthContext";
 import TopNavBar from "../components/TopNavBar";
-
 import AppBackground from "./AppBackground";
 
 export default function AppLayout() {
