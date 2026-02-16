@@ -49,7 +49,6 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
-// Формат ДД.ММ.ГГГГ для отображения
 const formatDateRu = (dateLike) => {
   const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
   const [y, m, d] = s.split('-');
@@ -57,7 +56,6 @@ const formatDateRu = (dateLike) => {
   return `${d}.${m}.${y}`;
 };
 
-// Формат ДД.ММ для мобилки (короткий)
 const formatDateRuShort = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
   const [y, m, d] = s.split('-');
@@ -65,10 +63,8 @@ const formatDateRuShort = (dateLike) => {
   return `${d}.${m}`;
 };
 
-// Только цифры
 const digitsOnly = (s) => String(s || '').replace(/\D/g, '');
 
-// Автовставка точек при вводе: 16022026 -> 16.02.2026
 const formatRuDateTyping = (input) => {
   const d = digitsOnly(input).slice(0, 8);
   const p1 = d.slice(0, 2);
@@ -80,7 +76,6 @@ const formatRuDateTyping = (input) => {
   return out;
 };
 
-// Преобразование ДД.ММ.ГГГГ -> YYYY-MM-DD (только если полная)
 const ruToIsoStrict = (ru) => {
   const v = String(ru || '').trim();
   const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
@@ -88,6 +83,19 @@ const ruToIsoStrict = (ru) => {
   const [, dd, mm, yyyy] = m;
   return `${yyyy}-${mm}-${dd}`;
 };
+
+const isValidIsoDate = (iso) => {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const dt = new Date(y, mo - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+};
+
+const isProxySerialization500 = (msg) =>
+  String(msg || '').includes('ByteBuddyInterceptor');
 
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
@@ -101,9 +109,6 @@ const ymFromDate = (yyyyMmDd) => {
   const [y, m] = s.split('-');
   return { year: Number(y), month: Number(m) };
 };
-
-const isProxySerialization500 = (msg) =>
-  String(msg || '').includes('ByteBuddyInterceptor');
 
 export default function IncomePage() {
   const toast = useToast();
@@ -131,6 +136,7 @@ export default function IncomePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [dateErr, setDateErr] = useState('');
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -139,7 +145,7 @@ export default function IncomePage() {
     category: 'Работа',
     source: 'Зарплата',
     date: new Date().toISOString().slice(0, 10),
-    dateRu: '', // для отображения в поле ввода
+    dateRu: '',
   });
 
   const amountRef = useRef(null);
@@ -150,7 +156,7 @@ export default function IncomePage() {
       setError('');
 
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-      const data = res.data;
+      const data = res.data; // axios
       setItems(data?.content ?? []);
     } catch (e) {
       const msg = e?.message || 'Ошибка загрузки доходов';
@@ -168,6 +174,7 @@ export default function IncomePage() {
   const openCreate = () => {
     const iso = new Date().toISOString().slice(0, 10);
     setEditing(null);
+    setDateErr('');
     setForm({
       amount: '',
       category: 'Работа',
@@ -184,6 +191,7 @@ export default function IncomePage() {
   const openEdit = (income) => {
     const iso = normalizeDateOnly(income?.date);
     setEditing(income);
+    setDateErr('');
     setForm({
       amount: income?.amount ?? '',
       category: income?.category ?? 'Работа',
@@ -203,6 +211,8 @@ export default function IncomePage() {
     try {
       setSaving(true);
       setError('');
+
+      if (dateErr) throw new Error(dateErr);
 
       const payload = {
         amount: toAmountString(form.amount),
@@ -463,9 +473,7 @@ export default function IncomePage() {
                   {items.map((x) => (
                     <TableRow key={x.id} hover>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {isMobile
-                          ? formatDateRuShort(x.date)
-                          : formatDateRu(x.date)}
+                        {isMobile ? formatDateRuShort(x.date) : formatDateRu(x.date)}
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
@@ -570,15 +578,9 @@ export default function IncomePage() {
               disablePortal
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, category: newValue ?? '' }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
-              )}
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
             />
 
             <Autocomplete
@@ -586,15 +588,9 @@ export default function IncomePage() {
               disablePortal
               options={SOURCE_OPTIONS}
               value={form.source}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, source: newValue ?? '' }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, source: newInput }))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Источник" fullWidth />
-              )}
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, source: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, source: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Источник" fullWidth />}
             />
 
             <TextField
@@ -603,16 +599,26 @@ export default function IncomePage() {
               onChange={(e) => {
                 const ru = formatRuDateTyping(e.target.value);
                 const iso = ruToIsoStrict(ru);
+
+                let nextErr = '';
+                if (ru.length === 10) {
+                  if (!iso) nextErr = 'Неверный формат даты';
+                  else if (!isValidIsoDate(iso)) nextErr = 'Такой даты не существует';
+                }
+
+                setDateErr(nextErr);
+
                 setForm((s) => ({
                   ...s,
                   dateRu: ru,
-                  date: iso || s.date,
+                  date: iso && isValidIsoDate(iso) ? iso : s.date,
                 }));
               }}
               placeholder="16.02.2026"
               inputProps={{ inputMode: 'numeric' }}
               fullWidth
-              helperText="Введите цифры: ДДММГГГГ (точки добавятся сами)"
+              helperText={dateErr || 'Введите цифры: ДДММГГГГ (точки добавятся сами)'}
+              error={Boolean(dateErr)}
             />
           </Stack>
         </DialogContent>

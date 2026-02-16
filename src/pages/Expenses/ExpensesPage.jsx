@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Stack,
@@ -29,7 +29,6 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-// ВАЖНО: используем me-endpoints
 import {
   getMyExpensesByMonth,
   createExpense,
@@ -39,6 +38,15 @@ import {
 
 const COLORS = { expenses: '#F97316' };
 
+const CATEGORY_OPTIONS = [
+  'Продукты',
+  'Транспорт',
+  'Коммунальные услуги',
+  'Здоровье',
+  'Развлечения',
+  'Другое',
+];
+
 const toAmountString = (v) => String(v ?? '').trim().replace(',', '.');
 
 const normalizeDateOnly = (d) => {
@@ -47,14 +55,50 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
-const CATEGORY_OPTIONS = [
-  'Продукты',
-  'Транспорт',
-  'Дом',
-  'Развлечения',
-  'Здоровье',
-  'Другое',
-];
+const formatDateRu = (dateLike) => {
+  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return s;
+  return `${d}.${m}.${y}`;
+};
+
+const formatDateRuShort = (dateLike) => {
+  const s = normalizeDateOnly(dateLike);
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return s;
+  return `${d}.${m}`;
+};
+
+const digitsOnly = (s) => String(s || '').replace(/\D/g, '');
+
+const formatRuDateTyping = (input) => {
+  const d = digitsOnly(input).slice(0, 8);
+  const p1 = d.slice(0, 2);
+  const p2 = d.slice(2, 4);
+  const p3 = d.slice(4, 8);
+  let out = p1;
+  if (p2) out += '.' + p2;
+  if (p3) out += '.' + p3;
+  return out;
+};
+
+const ruToIsoStrict = (ru) => {
+  const v = String(ru || '').trim();
+  const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return '';
+  const [, dd, mm, yyyy] = m;
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const isValidIsoDate = (iso) => {
+  const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const dt = new Date(y, mo - 1, d);
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+};
 
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
@@ -69,10 +113,15 @@ const ymFromDate = (yyyyMmDd) => {
   return { year: Number(y), month: Number(m) };
 };
 
+const isProxySerialization500 = (msg) =>
+  String(msg || '').includes('ByteBuddyInterceptor');
+
 export default function ExpensesPage() {
   const toast = useToast();
   const theme = useTheme();
+
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -93,6 +142,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [dateErr, setDateErr] = useState('');
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -101,7 +151,10 @@ export default function ExpensesPage() {
     category: 'Продукты',
     description: '',
     date: new Date().toISOString().slice(0, 10),
+    dateRu: '',
   });
+
+  const amountRef = useRef(null);
 
   const load = useCallback(async () => {
     try {
@@ -125,31 +178,47 @@ export default function ExpensesPage() {
   }, [load]);
 
   const openCreate = () => {
+    const iso = new Date().toISOString().slice(0, 10);
     setEditing(null);
+    setDateErr('');
     setForm({
       amount: '',
       category: 'Продукты',
       description: '',
-      date: new Date().toISOString().slice(0, 10),
+      date: iso,
+      dateRu: formatDateRu(iso),
     });
     setOpen(true);
+    setTimeout(() => {
+      amountRef.current?.focus?.();
+    }, 150);
   };
 
   const openEdit = (expense) => {
+    const iso = normalizeDateOnly(expense?.date);
     setEditing(expense);
+    setDateErr('');
     setForm({
       amount: expense?.amount ?? '',
       category: expense?.category ?? 'Продукты',
       description: expense?.description ?? '',
-      date: normalizeDateOnly(expense?.date),
+      date: iso,
+      dateRu: formatDateRu(iso),
     });
     setOpen(true);
+    setTimeout(() => {
+      amountRef.current?.focus?.();
+    }, 150);
   };
 
   const save = async () => {
+    let attempted = false;
+
     try {
       setSaving(true);
       setError('');
+
+      if (dateErr) throw new Error(dateErr);
 
       const payload = {
         amount: toAmountString(form.amount),
@@ -163,6 +232,8 @@ export default function ExpensesPage() {
         throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.date) throw new Error('Дата обязательна');
+
+      attempted = true;
 
       if (editing?.id) {
         await updateExpense(editing.id, payload);
@@ -183,8 +254,22 @@ export default function ExpensesPage() {
       await load();
     } catch (e) {
       const msg = e?.message || 'Ошибка сохранения';
-      setError(msg);
-      toast.error(msg);
+
+      if (isProxySerialization500(msg) && attempted) {
+        setOpen(false);
+        toast.success(editing?.id ? 'Расход обновлён' : 'Расход добавлен');
+
+        const target = ymFromDate(form.date);
+        if (target.year !== ym.year || target.month !== ym.month) {
+          setYm(target);
+          return;
+        }
+
+        await load();
+      } else {
+        setError(msg);
+        toast.error(msg);
+      }
     } finally {
       setSaving(false);
     }
@@ -228,25 +313,21 @@ export default function ExpensesPage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, -1))}
+              sx={{ minWidth: 44, px: 1.2 }}
             >
               ←
             </Button>
-            <Chip
-              label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
-            />
+
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
+
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, +1))}
+              sx={{ minWidth: 44, px: 1.2 }}
             >
               →
             </Button>
@@ -295,48 +376,146 @@ export default function ExpensesPage() {
           bgcolor: '#FFFFFF',
         }}
       >
-        <CardContent>
-          <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
+        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
+              Список
+            </Typography>
+          </Box>
+
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <EmptyState
-              title="Пока нет записей"
-              description="Добавь первую операцию — и тут появится список за выбранный месяц."
-              actionLabel="Добавить"
-              onAction={openCreate}
-            />
+            <Box sx={{ px: { xs: 1, sm: 1 } }}>
+              <EmptyState
+                title="Пока нет записей"
+                description="Добавь первую операцию — и тут появится список за выбранный месяц."
+                actionLabel="Добавить"
+                onAction={openCreate}
+              />
+            </Box>
           ) : (
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small" sx={{ minWidth: 750 }}>
+            <Box sx={{ px: { xs: 0.5, sm: 1 }, overflowX: 'hidden' }}>
+              <Table
+                size="small"
+                sx={{
+                  width: '100%',
+                  minWidth: { sm: 720 },
+                  tableLayout: { xs: 'fixed', sm: 'auto' },
+
+                  '& th, & td': {
+                    px: { xs: 0.75, sm: 2 },
+                    py: { xs: 0.6, sm: 1 },
+                    fontSize: { xs: 12, sm: 13 },
+                    lineHeight: 1.15,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    verticalAlign: 'top',
+                  },
+                  '& th': {
+                    fontWeight: 900,
+                    color: '#0F172A',
+                    whiteSpace: 'nowrap',
+                    bgcolor: '#FFFFFF',
+                  },
+                  '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
+                  '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
+                }}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableCell>Дата</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Категория</TableCell>
-                    <TableCell>Описание</TableCell>
-                    <TableCell align="right">Действия</TableCell>
+                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                      Дата
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                      Сумма
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                      Категория
+                    </TableCell>
+
+                    <TableCell sx={{ width: 260, display: { xs: 'none', sm: 'table-cell' } }}>
+                      Описание
+                    </TableCell>
+
+                    <TableCell
+                      align="right"
+                      sx={{
+                        width: { xs: '14%', sm: 120 },
+                        pr: { xs: 0.5, sm: 2 },
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                        Действия
+                      </Box>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
 
                 <TableBody>
                   {items.map((x) => (
-                    <TableRow key={x.id}>
-                      <TableCell>{normalizeDateOnly(x.date)}</TableCell>
-                      <TableCell>
+                    <TableRow key={x.id} hover>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {isMobile ? formatDateRuShort(x.date) : formatDateRu(x.date)}
+                      </TableCell>
+
+                      <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
-                      <TableCell>{x.category}</TableCell>
-                      <TableCell>{x.description}</TableCell>
-                      <TableCell align="right">
+
+                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                        <Typography
+                          component="div"
+                          sx={{
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: '#0F172A',
+                            lineHeight: 1.15,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            display: '-webkit-box',
+                            WebkitBoxOrient: 'vertical',
+                            WebkitLineClamp: { xs: 2, sm: 1 },
+                          }}
+                          title={x.category || ''}
+                        >
+                          {x.category}
+                        </Typography>
+
+                        {isMobile ? (
+                          <Typography
+                            component="div"
+                            sx={{
+                              mt: 0.2,
+                              fontSize: 11,
+                              color: '#64748B',
+                              lineHeight: 1.15,
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                            title={x.description || ''}
+                          >
+                            {x.description}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+
+                      <TableCell
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                        title={x.description || ''}
+                      >
+                        {x.description}
+                      </TableCell>
+
+                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
                         <IconButton onClick={() => openEdit(x)} size="small">
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
-                        <IconButton
-                          onClick={() => remove(x)}
-                          size="small"
-                          color="error"
-                        >
+                        <IconButton onClick={() => remove(x)} size="small" color="error">
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
@@ -351,6 +530,7 @@ export default function ExpensesPage() {
 
       <Dialog
         fullScreen={fullScreen}
+        scroll="paper"
         open={open}
         onClose={() => (!saving ? setOpen(false) : null)}
         fullWidth
@@ -359,14 +539,21 @@ export default function ExpensesPage() {
         <DialogTitle>
           {editing ? 'Редактировать расход' : 'Добавить расход'}
         </DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
+
+        <DialogContent
+          sx={{
+            pt: 1,
+            maxHeight: fullScreen ? 'calc(100vh - 140px)' : 520,
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
               label="Сумма"
+              inputRef={amountRef}
               value={form.amount}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, amount: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
               placeholder="1500.00"
               inputProps={{ inputMode: 'decimal' }}
               fullWidth
@@ -374,37 +561,47 @@ export default function ExpensesPage() {
 
             <Autocomplete
               freeSolo
+              disablePortal
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, category: newValue ?? '' }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
-              )}
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
             />
 
             <TextField
               label="Описание"
               value={form.description}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, description: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
               fullWidth
             />
 
             <TextField
               label="Дата"
-              type="date"
-              value={normalizeDateOnly(form.date)}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, date: e.target.value }))
-              }
-              InputLabelProps={{ shrink: true }}
+              value={form.dateRu || ''}
+              onChange={(e) => {
+                const ru = formatRuDateTyping(e.target.value);
+                const iso = ruToIsoStrict(ru);
+
+                let nextErr = '';
+                if (ru.length === 10) {
+                  if (!iso) nextErr = 'Неверный формат даты';
+                  else if (!isValidIsoDate(iso)) nextErr = 'Такой даты не существует';
+                }
+
+                setDateErr(nextErr);
+
+                setForm((s) => ({
+                  ...s,
+                  dateRu: ru,
+                  date: iso && isValidIsoDate(iso) ? iso : s.date,
+                }));
+              }}
+              placeholder="16.02.2026"
+              inputProps={{ inputMode: 'numeric' }}
               fullWidth
+              helperText={dateErr || 'Введите цифры: ДДММГГГГ (точки добавятся сами)'}
+              error={Boolean(dateErr)}
             />
           </Stack>
         </DialogContent>
@@ -417,12 +614,7 @@ export default function ExpensesPage() {
             gap: 1,
           }}
         >
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            disabled={saving}
-            fullWidth={fullScreen}
-          >
+          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
             Отмена
           </Button>
           <Button
@@ -430,10 +622,7 @@ export default function ExpensesPage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{
-              bgcolor: COLORS.expenses,
-              '&:hover': { bgcolor: '#EA580C' },
-            }}
+            sx={{ bgcolor: COLORS.expenses, '&:hover': { bgcolor: '#EA580C' } }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
