@@ -15,6 +15,7 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
+import { useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { getMonthlySummary } from '../../api/summaryApi';
@@ -36,9 +37,22 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
+const StatCard = ({ label, value, sub, accent = '#6366F1', onClick }) => (
   <Card
     variant="outlined"
+    onClick={onClick}
+    role={onClick ? 'button' : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    onKeyDown={
+      onClick
+        ? (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onClick();
+            }
+          }
+        : undefined
+    }
     sx={{
       height: '100%',
       minHeight: 118,
@@ -50,6 +64,7 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
       backdropFilter: 'blur(10px)',
       transition:
         'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
+      cursor: onClick ? 'pointer' : 'default',
       '&:before': {
         content: '""',
         position: 'absolute',
@@ -61,9 +76,9 @@ const StatCard = ({ label, value, sub, accent = '#6366F1' }) => (
         opacity: 0.75,
       },
       '&:hover': {
-        transform: 'translateY(-2px)',
-        borderColor: 'rgba(15, 23, 42, 0.12)',
-        boxShadow: '0 18px 50px rgba(15, 23, 42, 0.1)',
+        transform: onClick ? 'translateY(-2px)' : 'none',
+        borderColor: onClick ? 'rgba(15, 23, 42, 0.12)' : 'rgba(15, 23, 42, 0.08)',
+        boxShadow: onClick ? '0 18px 50px rgba(15, 23, 42, 0.1)' : 'none',
       },
     }}
   >
@@ -187,6 +202,7 @@ function SummaryRow({ label, value, color }) {
 }
 
 export default function DashboardPage() {
+  const navigate = useNavigate(); // <-- добавили
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -485,9 +501,29 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent="#6366F1" />
-        <StatCard label="Доходы" value={fmtRub.format(displayIncome)} sub={`Расходы: ${fmtRub.format(displayExpenses)}`} accent="#22C55E" />
-        <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} sub=" " accent="#F97316" />
+        <StatCard
+          label="Баланс"
+          value={fmtRub.format(displayBalance)}
+          sub=" "
+          accent="#6366F1"
+        />
+
+        <StatCard
+          label="Доходы"
+          value={fmtRub.format(displayIncome)}
+          sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+          accent="#22C55E"
+          onClick={() => navigate('/income')}
+        />
+
+        <StatCard
+          label="Расходы"
+          value={fmtRub.format(displayExpenses)}
+          sub=" "
+          accent="#F97316"
+          onClick={() => navigate('/expenses')}
+        />
+
         <StatCard
           label="Норма сбережений"
           value={`${displayRate}%`}
