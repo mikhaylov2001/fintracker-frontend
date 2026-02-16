@@ -39,6 +39,9 @@ import {
 
 const COLORS = { income: '#22C55E' };
 
+const CATEGORY_OPTIONS = ['Работа', 'Подработка', 'Вклады', 'Инвестиции', 'Подарки', 'Другое'];
+const SOURCE_OPTIONS = ['Зарплата', 'Премия', 'Проценты', 'Дивиденды', 'Бизнес', 'Другое'];
+
 const toAmountString = (v) => String(v ?? '').trim().replace(',', '.');
 
 const normalizeDateOnly = (d) => {
@@ -47,18 +50,27 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
-const isProxySerialization500 = (msg) =>
-  String(msg || '').includes('ByteBuddyInterceptor');
+const formatDateRu = (dateLike) => {
+  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return s;
+  return `${d}.${m}.${y}`;
+};
 
-const CATEGORY_OPTIONS = ['Работа', 'Фриланс', 'Инвестиции', 'Подарки', 'Другое'];
-const SOURCE_OPTIONS = [
-  'Зарплата',
-  'Премия',
-  'Дивиденды',
-  'Проценты',
-  'Подработка',
-  'Другое',
-];
+const ruToIso = (ru) => {
+  const v = String(ru || '').trim();
+  if (!v) return '';
+  // ожидаем ДД.ММ.ГГГГ
+  const parts = v.split('.');
+  if (parts.length !== 3) return '';
+  const [dd, mm, yyyy] = parts;
+  if (!dd || !mm || !yyyy) return '';
+  const d = dd.padStart(2, '0');
+  const m = mm.padStart(2, '0');
+  const y = yyyy;
+  if (y.length !== 4) return '';
+  return `${y}-${m}-${d}`; // YYYY-MM-DD
+};
 
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
@@ -72,6 +84,9 @@ const ymFromDate = (yyyyMmDd) => {
   const [y, m] = s.split('-');
   return { year: Number(y), month: Number(m) };
 };
+
+const isProxySerialization500 = (msg) =>
+  String(msg || '').includes('ByteBuddyInterceptor');
 
 export default function IncomePage() {
   const toast = useToast();
@@ -106,7 +121,7 @@ export default function IncomePage() {
     amount: '',
     category: 'Работа',
     source: 'Зарплата',
-    date: new Date().toISOString().slice(0, 10),
+    date: new Date().toISOString().slice(0, 10), // храним ISO
   });
 
   const load = useCallback(async () => {
@@ -115,7 +130,7 @@ export default function IncomePage() {
       setError('');
 
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-      const data = res.data; // axios
+      const data = res.data;
       setItems(data?.content ?? []);
     } catch (e) {
       const msg = e?.message || 'Ошибка загрузки доходов';
@@ -167,8 +182,7 @@ export default function IncomePage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01)
-        throw new Error('Сумма должна быть больше 0');
+      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error('Сумма должна быть больше 0');
       if (!payload.category) throw new Error('Категория обязательна');
       if (!payload.source) throw new Error('Источник обязателен');
       if (!payload.date) throw new Error('Дата обязательна');
@@ -253,30 +267,14 @@ export default function IncomePage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            <Button
-              variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, -1))}
-              sx={{ minWidth: 44, px: 1.2 }}
-            >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))} sx={{ minWidth: 44, px: 1.2 }}>
               ←
             </Button>
 
-            <Chip
-              label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
-            />
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
 
-            <Button
-              variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, +1))}
-              sx={{ minWidth: 44, px: 1.2 }}
-            >
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, +1))} sx={{ minWidth: 44, px: 1.2 }}>
               →
             </Button>
           </Stack>
@@ -299,15 +297,7 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            mb: 2,
-            borderRadius: 3,
-            borderColor: '#FECACA',
-            bgcolor: '#FFFFFF',
-          }}
-        >
+        <Card variant="outlined" sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}>
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
               {error}
@@ -322,21 +312,19 @@ export default function IncomePage() {
           borderRadius: 3,
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
+          mx: { xs: -2, md: 0 },
+          width: { xs: 'calc(100% + 32px)', md: 'auto' },
         }}
       >
-        {/* Делаем “Список” визуально шире: уменьшаем внутренние поля,
-            а у таблицы добавляем свой мягкий padding */}
-        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-          <Box sx={{ px: { xs: 1, sm: 1 } }}>
-            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
-              Список
-            </Typography>
+        <CardContent sx={{ px: { xs: 1.25, sm: 2.5 }, py: { xs: 1.7, sm: 2.3 } }}>
+          <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
           </Box>
 
-          <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
+          <Divider sx={{ my: 1.6, borderColor: '#E2E8F0' }} />
 
           {!loading && items.length === 0 ? (
-            <Box sx={{ px: { xs: 1, sm: 1 } }}>
+            <Box sx={{ px: { xs: 0.5, sm: 0 } }}>
               <EmptyState
                 title="Пока нет записей"
                 description="Добавь первую операцию — и тут появится список за выбранный месяц."
@@ -345,24 +333,19 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box
-              sx={{
-                px: { xs: 0.5, sm: 1 }, // чуть “воздуха”, но таблица шире
-                overflowX: 'hidden',
-              }}
-            >
+            <Box sx={{ px: { xs: 0.25, sm: 0 }, overflowX: 'hidden' }}>
               <Table
                 size="small"
                 sx={{
                   width: '100%',
-                  minWidth: { sm: 720 }, // desktop only
+                  minWidth: { sm: 780 }, // расширили для читабельности
                   tableLayout: { xs: 'fixed', sm: 'auto' },
 
                   '& th, & td': {
-                    px: { xs: 0.75, sm: 2 },
-                    py: { xs: 0.6, sm: 1 },
-                    fontSize: { xs: 12, sm: 13 },
-                    lineHeight: 1.15,
+                    px: { xs: 1.1, sm: 2.6 },
+                    py: { xs: 0.85, sm: 1.15 },
+                    fontSize: { xs: 12.5, sm: 14 },
+                    lineHeight: 1.2,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
@@ -374,45 +357,43 @@ export default function IncomePage() {
                     bgcolor: '#FFFFFF',
                   },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
-
-                  // чуть мягче линии (чтобы не выглядело “как на границах”)
                   '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                    <TableCell
+                      align="center"
+                      sx={{
+                        width: { xs: '22%', sm: 150 },
+                        whiteSpace: 'nowrap',
+                        textAlign: 'center',
+                      }}
+                    >
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '28%', sm: 170 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                    <TableCell sx={{ width: { xs: '36%', sm: 260 } }}>
                       Категория
                     </TableCell>
 
-                    <TableCell
-                      sx={{
-                        width: 200,
-                        display: { xs: 'none', sm: 'table-cell' },
-                      }}
-                    >
+                    <TableCell sx={{ width: 240, display: { xs: 'none', sm: 'table-cell' } }}>
                       Источник
                     </TableCell>
 
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '14%', sm: 120 },
-                        pr: { xs: 0.5, sm: 2 },
+                        width: { xs: '14%', sm: 140 },
+                        pr: { xs: 0.9, sm: 2.6 },
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Действия
-                      </Box>
+                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>Действия</Box>
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -420,24 +401,22 @@ export default function IncomePage() {
                 <TableBody>
                   {items.map((x) => (
                     <TableRow key={x.id} hover>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {isMobile
-                          ? normalizeDateOnly(x.date).slice(5) // MM-DD
-                          : normalizeDateOnly(x.date)}
+                      <TableCell align="center" sx={{ whiteSpace: 'nowrap', textAlign: 'center' }}>
+                        {formatDateRu(x.date)}
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                      <TableCell sx={{ pr: { xs: 1, sm: 2.6 } }}>
                         <Typography
                           component="div"
                           sx={{
-                            fontSize: { xs: 12, sm: 13 },
+                            fontSize: { xs: 12.5, sm: 14 },
                             fontWeight: 800,
                             color: '#0F172A',
-                            lineHeight: 1.15,
+                            lineHeight: 1.2,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
@@ -453,8 +432,8 @@ export default function IncomePage() {
                           <Typography
                             component="div"
                             sx={{
-                              mt: 0.2,
-                              fontSize: 11,
+                              mt: 0.25,
+                              fontSize: 11.5,
                               color: '#64748B',
                               lineHeight: 1.15,
                               whiteSpace: 'nowrap',
@@ -468,18 +447,34 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      <TableCell
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
-                        title={x.source || ''}
-                      >
+                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} title={x.source || ''}>
                         {x.source}
                       </TableCell>
 
                       <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <IconButton onClick={() => openEdit(x)} size="small">
+                        <IconButton
+                          onClick={() => openEdit(x)}
+                          size="small"
+                          sx={{
+                            bgcolor: 'rgba(15, 23, 42, 0.06)',
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
+                          }}
+                        >
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
-                        <IconButton onClick={() => remove(x)} size="small" color="error">
+
+                        <IconButton
+                          onClick={() => remove(x)}
+                          size="small"
+                          sx={{
+                            ml: 0.5,
+                            bgcolor: 'rgba(239, 68, 68, 0.10)',
+                            borderRadius: 2,
+                            color: '#EF4444',
+                            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
+                          }}
+                        >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
@@ -499,9 +494,7 @@ export default function IncomePage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          {editing ? 'Редактировать доход' : 'Добавить доход'}
-        </DialogTitle>
+        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
 
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -518,38 +511,33 @@ export default function IncomePage() {
               freeSolo
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, category: newValue ?? '' }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
-              )}
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
             />
 
-            <TextField
-              select
-              label="Источник"
+            <Autocomplete
+              freeSolo
+              options={SOURCE_OPTIONS}
               value={form.source}
-              onChange={(e) => setForm((s) => ({ ...s, source: e.target.value }))}
-              fullWidth
-            >
-              {SOURCE_OPTIONS.map((s) => (
-                <MenuItem key={s} value={s}>
-                  {s}
-                </MenuItem>
-              ))}
-            </TextField>
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, source: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, source: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Источник" fullWidth />}
+            />
 
+            {/* Ручной ввод даты ДД.ММ.ГГГГ */}
             <TextField
               label="Дата"
-              type="date"
-              value={normalizeDateOnly(form.date)}
-              onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))}
-              InputLabelProps={{ shrink: true }}
+              value={formatDateRu(form.date)}
+              onChange={(e) => {
+                const iso = ruToIso(e.target.value);
+                // если пользователь ещё не дописал, просто не обновляем iso
+                if (iso) setForm((s) => ({ ...s, date: iso }));
+              }}
+              placeholder="16.02.2026"
+              inputProps={{ inputMode: 'numeric' }}
               fullWidth
+              helperText="Формат: ДД.ММ.ГГГГ"
             />
           </Stack>
         </DialogContent>
@@ -562,12 +550,7 @@ export default function IncomePage() {
             gap: 1,
           }}
         >
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            disabled={saving}
-            fullWidth={fullScreen}
-          >
+          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
             Отмена
           </Button>
           <Button
@@ -575,10 +558,7 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{
-              bgcolor: COLORS.income,
-              '&:hover': { bgcolor: '#16A34A' },
-            }}
+            sx={{ bgcolor: COLORS.income, '&:hover': { bgcolor: '#16A34A' } }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
