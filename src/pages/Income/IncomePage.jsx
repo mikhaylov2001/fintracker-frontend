@@ -85,6 +85,7 @@ export default function IncomePage() {
   const theme = useTheme();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -259,12 +260,7 @@ export default function IncomePage() {
           alignItems={{ xs: 'stretch', sm: 'center' }}
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <Stack direction="row" spacing={1} alignItems="center">
             <Button
               variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, -1))}
@@ -273,10 +269,7 @@ export default function IncomePage() {
               ←
             </Button>
 
-            <Chip
-              label={ymLabel(ym)}
-              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
-            />
+            <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
 
             <Button
               variant="outlined"
@@ -307,12 +300,7 @@ export default function IncomePage() {
       {error ? (
         <Card
           variant="outlined"
-          sx={{
-            mb: 2,
-            borderRadius: 3,
-            borderColor: '#FECACA',
-            bgcolor: '#FFFFFF',
-          }}
+          sx={{ mb: 2, borderRadius: 3, borderColor: '#FECACA', bgcolor: '#FFFFFF' }}
         >
           <CardContent sx={{ py: 1.5 }}>
             <Typography color="error" variant="body2">
@@ -335,9 +323,7 @@ export default function IncomePage() {
       >
         <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
           <Box sx={{ px: { xs: 2, md: 2.5 }, pt: { xs: 2, md: 2.25 } }}>
-            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
-              Список
-            </Typography>
+            <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>Список</Typography>
           </Box>
 
           <Divider sx={{ my: 1.5, borderColor: '#E2E8F0' }} />
@@ -358,9 +344,7 @@ export default function IncomePage() {
                 sx={{
                   width: '100%',
                   tableLayout: 'fixed',
-
-                  // без линий/рамок таблицы
-                  '& .MuiTableCell-root': { borderBottom: 0 }, // [web:1006]
+                  '& .MuiTableCell-root': { borderBottom: 0 }, // без линий [web:1006]
 
                   '& th, & td': {
                     px: { xs: 1.25, sm: 2.5 },
@@ -371,36 +355,32 @@ export default function IncomePage() {
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
                   },
-                  '& th': {
-                    fontWeight: 900,
-                    color: '#0F172A',
-                    whiteSpace: 'nowrap',
-                    bgcolor: '#FFFFFF',
-                  },
+                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap', bgcolor: '#FFFFFF' },
                   '& td': { whiteSpace: 'normal' },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: '30%', sm: '26%' }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: 98, sm: 140 }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '30%', sm: '26%' }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: 110, sm: 160 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '30%', sm: '36%' } }}>
+                    <TableCell sx={{ width: 'auto' }}>
                       Категория
                     </TableCell>
 
-                    {/* заголовок пустой (без точки), но ширина колонки есть */}
+                    {/* ВАЖНО: фиксируем ширину, чтобы 2 кнопки всегда влезали */}
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '10%', sm: '12%' },
+                        width: { xs: 88, sm: 120 },
                         pr: { xs: 1, sm: 2.5 },
                         color: 'transparent',
+                        userSelect: 'none',
                       }}
                     >
                       —
@@ -419,8 +399,7 @@ export default function IncomePage() {
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      {/* На всех устройствах: источник снизу внутри категории */}
-                      <TableCell sx={{ pr: { xs: 1, sm: 2.5 } }}>
+                      <TableCell>
                         <Typography
                           component="div"
                           sx={{
@@ -456,10 +435,12 @@ export default function IncomePage() {
                         </Typography>
                       </TableCell>
 
-                      {/* Редактирование видимо и работает везде */}
+                      {/* кнопки редактирования ВИДНЫ на всех устройствах */}
                       <TableCell
                         align="right"
                         sx={{
+                          width: { xs: 88, sm: 120 },
+                          pr: { xs: 1, sm: 2.5 },
                           whiteSpace: 'nowrap',
                           verticalAlign: 'middle',
                         }}
@@ -469,6 +450,7 @@ export default function IncomePage() {
                             onClick={() => openEdit(x)}
                             size="small"
                             sx={{
+                              p: 0.6,
                               bgcolor: 'rgba(15, 23, 42, 0.06)',
                               borderRadius: 2,
                               '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
@@ -481,6 +463,7 @@ export default function IncomePage() {
                             onClick={() => remove(x)}
                             size="small"
                             sx={{
+                              p: 0.6,
                               bgcolor: 'rgba(239, 68, 68, 0.10)',
                               borderRadius: 2,
                               color: '#EF4444',
@@ -507,9 +490,7 @@ export default function IncomePage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
-          {editing ? 'Редактировать доход' : 'Добавить доход'}
-        </DialogTitle>
+        <DialogTitle>{editing ? 'Редактировать доход' : 'Добавить доход'}</DialogTitle>
 
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -526,15 +507,9 @@ export default function IncomePage() {
               freeSolo
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, category: newValue ?? '' }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
-              renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
-              )}
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? '' }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
+              renderInput={(params) => <TextField {...params} label="Категория" fullWidth />}
             />
 
             <TextField
@@ -570,12 +545,7 @@ export default function IncomePage() {
             gap: 1,
           }}
         >
-          <Button
-            onClick={() => setOpen(false)}
-            variant="outlined"
-            disabled={saving}
-            fullWidth={fullScreen}
-          >
+          <Button onClick={() => setOpen(false)} variant="outlined" disabled={saving} fullWidth={fullScreen}>
             Отмена
           </Button>
           <Button
@@ -583,10 +553,7 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{
-              bgcolor: COLORS.income,
-              '&:hover': { bgcolor: '#16A34A' },
-            }}
+            sx={{ bgcolor: COLORS.income, '&:hover': { bgcolor: '#16A34A' } }}
           >
             {saving ? 'Сохранение…' : 'Сохранить'}
           </Button>
