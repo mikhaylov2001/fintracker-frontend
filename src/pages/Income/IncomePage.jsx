@@ -115,7 +115,7 @@ export default function IncomePage() {
       setError('');
 
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-      const data = res.data; // axios
+      const data = res.data;
       setItems(data?.content ?? []);
     } catch (e) {
       const msg = e?.message || 'Ошибка загрузки доходов';
@@ -316,7 +316,6 @@ export default function IncomePage() {
         </Card>
       ) : null}
 
-      {/* На мобилке растягиваем карточку списка на всю ширину экрана (edge-to-edge) */}
       <Card
         variant="outlined"
         sx={{
@@ -324,16 +323,11 @@ export default function IncomePage() {
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
           overflow: 'hidden',
-          mx: { xs: -2, md: 0 }, // компенсируем padding родителя (p:2) -> в край экрана
+          mx: { xs: -2, md: 0 },
           width: { xs: 'calc(100% + 32px)', md: 'auto' },
         }}
       >
-        <CardContent
-          sx={{
-            p: 0,
-            '&:last-child': { pb: 0 },
-          }}
-        >
+        <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
           <Box sx={{ px: { xs: 2, md: 2.5 }, pt: { xs: 2, md: 2.25 } }}>
             <Typography sx={{ fontWeight: 850, color: '#0F172A' }}>
               Список
@@ -352,7 +346,7 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box sx={{ width: '100%', overflowX: 'hidden' }}>
+            <Box sx={{ width: '100%', overflowX: 'hidden', pb: 1 }}>
               <Table
                 size="small"
                 sx={{
@@ -360,9 +354,12 @@ export default function IncomePage() {
                   minWidth: { sm: 720 },
                   tableLayout: { xs: 'fixed', sm: 'auto' },
 
+                  // УБРАЛИ “рамки/линии” таблицы
+                  [`& .MuiTableCell-root`]: { borderBottom: 0 }, // линии у ячеек [web:1006]
+
                   '& th, & td': {
                     px: { xs: 1.25, sm: 2.5 },
-                    py: { xs: 0.7, sm: 1.05 },
+                    py: { xs: 0.8, sm: 1.05 },
                     fontSize: { xs: 12, sm: 13 },
                     lineHeight: 1.15,
                     overflow: 'hidden',
@@ -376,7 +373,6 @@ export default function IncomePage() {
                     bgcolor: '#FFFFFF',
                   },
                   '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
-                  '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
                 }}
               >
                 <TableHead>
@@ -385,11 +381,11 @@ export default function IncomePage() {
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '26%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '40%', sm: 200 } }}>
+                    <TableCell sx={{ width: { xs: '44%', sm: 200 } }}>
                       Категория
                     </TableCell>
 
@@ -402,23 +398,31 @@ export default function IncomePage() {
                       Источник
                     </TableCell>
 
-                    {/* Показываем “Действия” и на мобилке */}
+                    {/* Заголовок убрали полностью */}
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '16%', sm: 140 },
+                        width: { xs: '10%', sm: 140 },
                         pr: { xs: 1, sm: 2.5 },
-                        whiteSpace: 'nowrap',
+                        color: 'transparent', // чтобы не было текста/обрезки "Де..."
+                        userSelect: 'none',
                       }}
                     >
-                      Действия
+                      .
                     </TableCell>
                   </TableRow>
                 </TableHead>
 
                 <TableBody>
                   {items.map((x) => (
-                    <TableRow key={x.id} hover>
+                    <TableRow
+                      key={x.id}
+                      hover
+                      sx={{
+                        // лёгкий “воздух” между строками, но без линий
+                        '& td': { py: { xs: 1.0, sm: 1.15 } },
+                      }}
+                    >
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
                         {isMobile ? normalizeDateOnly(x.date).slice(5) : normalizeDateOnly(x.date)}
                       </TableCell>
@@ -465,7 +469,10 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      <TableCell sx={{ display: { xs: 'none', sm: 'table-cell' } }} title={x.source || ''}>
+                      <TableCell
+                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                        title={x.source || ''}
+                      >
                         {x.source}
                       </TableCell>
 
@@ -478,14 +485,33 @@ export default function IncomePage() {
                       >
                         <Stack
                           direction="row"
-                          spacing={0.25}
+                          spacing={0.5}
                           justifyContent="flex-end"
                           alignItems="center"
                         >
-                          <IconButton onClick={() => openEdit(x)} size="small">
+                          {/* “Красивее” кнопка редактирования */}
+                          <IconButton
+                            onClick={() => openEdit(x)}
+                            size="small"
+                            sx={{
+                              bgcolor: 'rgba(15, 23, 42, 0.06)',
+                              borderRadius: 2,
+                              '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
+                            }}
+                          >
                             <EditOutlinedIcon fontSize="small" />
                           </IconButton>
-                          <IconButton onClick={() => remove(x)} size="small" color="error">
+
+                          <IconButton
+                            onClick={() => remove(x)}
+                            size="small"
+                            sx={{
+                              bgcolor: 'rgba(239, 68, 68, 0.10)',
+                              borderRadius: 2,
+                              color: '#EF4444',
+                              '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
+                            }}
+                          >
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
                         </Stack>
