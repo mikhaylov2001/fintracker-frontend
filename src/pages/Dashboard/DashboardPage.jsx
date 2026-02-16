@@ -37,25 +37,25 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-// более сдержанная деловая палитра
+// современная, но не кричащая палитра
 const colors = {
-  primary: "#1E3A8A", // тёмно-синий
-  success: "#15803D", // более глубокий зелёный
-  warning: "#B45309", // мягкий "бизнес" оранжевый
-  accent: "#0F766E",  // бирюзовый акцент
+  primary: "#4F46E5",
+  success: "#16A34A",
+  warning: "#F97316",
+  accent: "#0EA5E9",
   text: "rgba(15,23,42,0.96)",
-  muted: "rgba(55,65,81,0.78)",
-  border: "rgba(15,23,42,0.10)",
+  muted: "rgba(30,41,59,0.72)",
+  border: "rgba(15,23,42,0.06)",
 };
 
 const surfaceSx = {
   borderRadius: 4,
   border: `1px solid ${colors.border}`,
   backgroundColor: "rgba(255,255,255,0.96)",
-  boxShadow: "0 10px 26px rgba(15,23,42,0.06)",
+  boxShadow: "0 14px 32px rgba(15,23,42,0.08)",
 };
 
-// KPI-карточка кликабельна целиком, НО только она — нет глобального onClick выше
+// KPI-карточка: кликается целиком, но только если есть onClick
 const StatCard = ({ label, value, sub, accent = colors.primary, onClick }) => (
   <Card
     variant="outlined"
@@ -86,14 +86,28 @@ const StatCard = ({ label, value, sub, accent = colors.primary, onClick }) => (
         left: 0,
         top: 0,
         bottom: 0,
-        width: 3,
+        width: 4,
         bgcolor: accent,
-        opacity: 0.96,
+        opacity: 0.95,
+      },
+      "&:after": {
+        content: '""',
+        position: "absolute",
+        right: -40,
+        top: -60,
+        width: 160,
+        height: 160,
+        borderRadius: 999,
+        background: `radial-gradient(circle at 30% 30%, ${alpha(
+          accent,
+          0.18
+        )} 0%, transparent 65%)`,
+        pointerEvents: "none",
       },
       "&:hover": onClick
         ? {
-            transform: "translateY(-1px)",
-            boxShadow: "0 14px 30px rgba(15,23,42,0.10)",
+            transform: "translateY(-2px)",
+            boxShadow: "0 20px 40px rgba(15,23,42,0.12)",
             borderColor: alpha(accent, 0.4),
           }
         : {},
@@ -105,7 +119,7 @@ const StatCard = ({ label, value, sub, accent = colors.primary, onClick }) => (
         sx={{
           color: colors.muted,
           fontWeight: 900,
-          letterSpacing: 0.5,
+          letterSpacing: 0.55,
         }}
       >
         {label}
@@ -148,12 +162,17 @@ function SummaryRow({ label, value, color }) {
         py: 1,
       }}
     >
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ minWidth: 0 }}
+      >
         <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: color }} />
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(31,41,55,0.9)",
+            color: "rgba(30,41,59,0.9)",
             fontWeight: 900,
             minWidth: 0,
             overflow: "hidden",
@@ -383,7 +402,7 @@ export default function DashboardPage() {
               <Typography
                 variant="body2"
                 sx={{
-                  color: "rgba(31,41,55,0.9)",
+                  color: "rgba(30,41,59,0.85)",
                   mt: 0.5,
                   fontWeight: 700,
                 }}
@@ -403,9 +422,9 @@ export default function DashboardPage() {
                 sx={{
                   width: { xs: "100%", sm: "auto" },
                   borderRadius: 999,
-                  bgcolor: "rgba(249,250,251,0.96)",
+                  bgcolor: "rgba(255,255,255,0.96)",
                   border: `1px solid ${colors.border}`,
-                  color: "rgba(31,41,55,0.9)",
+                  color: "rgba(30,41,59,0.9)",
                   fontWeight: 850,
                 }}
               />
@@ -417,14 +436,14 @@ export default function DashboardPage() {
                 size="small"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
-                  bgcolor: "rgba(249,250,251,0.96)",
+                  bgcolor: "rgba(255,255,255,0.96)",
                   border: `1px solid ${colors.border}`,
                   borderRadius: 999,
                   "& .MuiToggleButton-root": {
                     border: 0,
                     px: 1.5,
                     flex: { xs: 1, sm: "unset" },
-                    color: "rgba(55,65,81,0.9)",
+                    color: "rgba(30,41,59,0.8)",
                     fontWeight: 900,
                     textTransform: "none",
                   },
@@ -446,7 +465,7 @@ export default function DashboardPage() {
                 mt: 1.25,
                 p: 1.25,
                 borderRadius: 2.5,
-                border: `1px solid ${alpha("#DC2626", 0.3)}`,
+                border: `1px solid ${alpha("#EF4444", 0.28)}`,
                 bgcolor: alpha("#FEE2E2", 0.9),
                 color: "rgba(127,29,29,0.95)",
                 fontWeight: 700,
@@ -535,7 +554,7 @@ export default function DashboardPage() {
             sx={{
               border: `1px solid ${colors.border}`,
               borderRadius: 3,
-              bgcolor: "rgba(249,250,251,0.96)",
+              bgcolor: "rgba(255,255,255,0.96)",
               overflow: "hidden",
             }}
           >
@@ -653,7 +672,7 @@ export default function DashboardPage() {
                     <AccordionDetails sx={{ pt: 0 }}>
                       <Stack
                         spacing={0.75}
-                        sx={{ color: "rgba(55,65,81,0.9)" }}
+                        sx={{ color: "rgba(30,41,59,0.85)" }}
                       >
                         <Typography variant="body2">
                           Доходы:{" "}
