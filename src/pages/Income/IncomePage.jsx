@@ -47,6 +47,13 @@ const normalizeDateOnly = (d) => {
   return s.includes('T') ? s.slice(0, 10) : s;
 };
 
+const formatDateRu = (dateLike) => {
+  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
+  const [y, m, d] = s.split('-');
+  if (!y || !m || !d) return s;
+  return `${d}.${m}.${y}`;
+};
+
 const isProxySerialization500 = (msg) =>
   String(msg || '').includes('ByteBuddyInterceptor');
 
@@ -78,7 +85,6 @@ export default function IncomePage() {
   const theme = useTheme();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -351,15 +357,14 @@ export default function IncomePage() {
                 size="small"
                 sx={{
                   width: '100%',
-                  minWidth: { sm: 720 },
-                  tableLayout: { xs: 'fixed', sm: 'auto' },
+                  tableLayout: 'fixed',
 
-                  // УБРАЛИ “рамки/линии” таблицы
-                  [`& .MuiTableCell-root`]: { borderBottom: 0 }, // линии у ячеек [web:1006]
+                  // без линий/рамок таблицы
+                  '& .MuiTableCell-root': { borderBottom: 0 }, // [web:1006]
 
                   '& th, & td': {
                     px: { xs: 1.25, sm: 2.5 },
-                    py: { xs: 0.8, sm: 1.05 },
+                    py: { xs: 0.9, sm: 1.05 },
                     fontSize: { xs: 12, sm: 13 },
                     lineHeight: 1.15,
                     overflow: 'hidden',
@@ -372,65 +377,49 @@ export default function IncomePage() {
                     whiteSpace: 'nowrap',
                     bgcolor: '#FFFFFF',
                   },
-                  '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
+                  '& td': { whiteSpace: 'normal' },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: '18%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '30%', sm: '26%' }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '30%', sm: '26%' }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '44%', sm: 200 } }}>
+                    <TableCell sx={{ width: { xs: '30%', sm: '36%' } }}>
                       Категория
                     </TableCell>
 
-                    <TableCell
-                      sx={{
-                        width: 200,
-                        display: { xs: 'none', sm: 'table-cell' },
-                      }}
-                    >
-                      Источник
-                    </TableCell>
-
-                    {/* Заголовок убрали полностью */}
+                    {/* заголовок пустой (без точки), но ширина колонки есть */}
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '10%', sm: 140 },
+                        width: { xs: '10%', sm: '12%' },
                         pr: { xs: 1, sm: 2.5 },
-                        color: 'transparent', // чтобы не было текста/обрезки "Де..."
-                        userSelect: 'none',
+                        color: 'transparent',
                       }}
                     >
-                      .
+                      —
                     </TableCell>
                   </TableRow>
                 </TableHead>
 
                 <TableBody>
                   {items.map((x) => (
-                    <TableRow
-                      key={x.id}
-                      hover
-                      sx={{
-                        // лёгкий “воздух” между строками, но без линий
-                        '& td': { py: { xs: 1.0, sm: 1.15 } },
-                      }}
-                    >
+                    <TableRow key={x.id} hover>
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {isMobile ? normalizeDateOnly(x.date).slice(5) : normalizeDateOnly(x.date)}
+                        {formatDateRu(x.date)}
                       </TableCell>
 
                       <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
+                      {/* На всех устройствах: источник снизу внутри категории */}
                       <TableCell sx={{ pr: { xs: 1, sm: 2.5 } }}>
                         <Typography
                           component="div"
@@ -443,39 +432,31 @@ export default function IncomePage() {
                             textOverflow: 'ellipsis',
                             display: '-webkit-box',
                             WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: { xs: 2, sm: 1 },
+                            WebkitLineClamp: 2,
                           }}
                           title={x.category || ''}
                         >
                           {x.category}
                         </Typography>
 
-                        {isMobile ? (
-                          <Typography
-                            component="div"
-                            sx={{
-                              mt: 0.2,
-                              fontSize: 11,
-                              color: '#64748B',
-                              lineHeight: 1.15,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                            title={x.source || ''}
-                          >
-                            {x.source}
-                          </Typography>
-                        ) : null}
+                        <Typography
+                          component="div"
+                          sx={{
+                            mt: 0.2,
+                            fontSize: 11,
+                            color: '#64748B',
+                            lineHeight: 1.15,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          title={x.source || ''}
+                        >
+                          {x.source}
+                        </Typography>
                       </TableCell>
 
-                      <TableCell
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
-                        title={x.source || ''}
-                      >
-                        {x.source}
-                      </TableCell>
-
+                      {/* Редактирование видимо и работает везде */}
                       <TableCell
                         align="right"
                         sx={{
@@ -483,13 +464,7 @@ export default function IncomePage() {
                           verticalAlign: 'middle',
                         }}
                       >
-                        <Stack
-                          direction="row"
-                          spacing={0.5}
-                          justifyContent="flex-end"
-                          alignItems="center"
-                        >
-                          {/* “Красивее” кнопка редактирования */}
+                        <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
                           <IconButton
                             onClick={() => openEdit(x)}
                             size="small"
