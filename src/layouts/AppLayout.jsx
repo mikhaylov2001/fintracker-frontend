@@ -19,11 +19,12 @@ export default function AppLayout() {
   return (
     <AppBackground
       sx={{
-        bgcolor: "#F4F6FB",
+        bgcolor: "#F6F8FF",
         backgroundImage: `
-          radial-gradient(1100px 520px at 12% 0%, ${alpha("#60A5FA", 0.22)} 0%, transparent 55%),
-          radial-gradient(1100px 520px at 88% 0%, ${alpha("#A78BFA", 0.22)} 0%, transparent 55%),
-          linear-gradient(180deg, ${alpha("#FFFFFF", 0.85)} 0%, ${alpha("#F4F6FB", 1)} 55%, ${alpha("#EEF2FF", 0.75)} 100%)
+          radial-gradient(1100px 520px at 10% 0%, ${alpha("#60A5FA", 0.20)} 0%, transparent 60%),
+          radial-gradient(1100px 520px at 90% 0%, ${alpha("#A78BFA", 0.18)} 0%, transparent 60%),
+          radial-gradient(900px 520px at 50% 110%, ${alpha("#22C55E", 0.08)} 0%, transparent 55%),
+          linear-gradient(180deg, #FFFFFF 0%, #F6F8FF 55%, #EEF2FF 100%)
         `,
       }}
     >

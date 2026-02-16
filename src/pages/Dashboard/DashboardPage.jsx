@@ -40,8 +40,8 @@ const addMonthsYM = ({ year, month }, delta) => {
 const surfaceSx = {
   borderRadius: 4,
   border: "1px solid rgba(15,23,42,0.06)",
-  backgroundColor: "rgba(255,255,255,0.92)",
-  boxShadow: "0 18px 45px rgba(15,23,42,0.08)",
+  backgroundColor: "rgba(255,255,255,0.95)",
+  boxShadow: "0 16px 40px rgba(15,23,42,0.08)",
 };
 
 const StatCard = ({ label, value, sub, accent = "#4F46E5", onClick }) => (
@@ -80,7 +80,9 @@ const StatCard = ({ label, value, sub, accent = "#4F46E5", onClick }) => (
       },
       "&:hover": {
         transform: onClick ? "translateY(-2px)" : "none",
-        boxShadow: onClick ? "0 22px 55px rgba(15,23,42,0.12)" : surfaceSx.boxShadow,
+        boxShadow: onClick
+          ? "0 22px 55px rgba(15,23,42,0.12)"
+          : "0 16px 40px rgba(15,23,42,0.08)",
       },
     }}
   >
@@ -319,7 +321,10 @@ export default function DashboardPage() {
     () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
     [yearMonths]
   );
-  const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+  const yearBalance = useMemo(
+    () => yearIncome - yearExpenses,
+    [yearIncome, yearExpenses]
+  );
   const yearSavings = useMemo(
     () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
     [yearMonths]
@@ -363,8 +368,8 @@ export default function DashboardPage() {
             inset: 0,
             pointerEvents: "none",
             backgroundImage: `
-              radial-gradient(900px 420px at 8% 0%, ${alpha("#60A5FA", 0.22)} 0%, transparent 60%),
-              radial-gradient(900px 420px at 92% 0%, ${alpha("#A78BFA", 0.22)} 0%, transparent 60%)
+              radial-gradient(900px 420px at 8% 0%, ${alpha("#60A5FA", 0.20)} 0%, transparent 60%),
+              radial-gradient(900px 420px at 92% 0%, ${alpha("#A78BFA", 0.16)} 0%, transparent 60%)
             `,
           }}
         />
@@ -496,7 +501,10 @@ export default function DashboardPage() {
               Итоги операций за месяц
             </Typography>
 
-            <Typography variant="caption" sx={{ color: "rgba(30,41,59,0.66)", fontWeight: 900, textTransform: "capitalize" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(30,41,59,0.66)", fontWeight: 900, textTransform: "capitalize" }}
+            >
               {monthTitle(year, month)}
             </Typography>
           </Stack>
@@ -507,7 +515,7 @@ export default function DashboardPage() {
             sx={{
               border: "1px solid rgba(15,23,42,0.06)",
               borderRadius: 3,
-              bgcolor: "rgba(255,255,255,0.70)",
+              bgcolor: "rgba(255,255,255,0.72)",
               overflow: "hidden",
             }}
           >
@@ -526,7 +534,11 @@ export default function DashboardPage() {
 
           <Divider sx={{ my: 1.5, borderColor: "rgba(15,23,42,0.06)" }} />
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: "rgba(30,41,59,0.60)" }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 0.25, sm: 1.25 }}
+            sx={{ color: "rgba(30,41,59,0.60)" }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
               История сохранена: {history.length} месяцев
             </Typography>
@@ -546,7 +558,8 @@ export default function DashboardPage() {
                 const has = Number.isFinite(raw);
                 const v = has ? Math.round(raw) : null;
 
-                const pctColor = !has ? "rgba(30,41,59,0.65)" : v > 0 ? "#16A34A" : v < 0 ? "#DC2626" : "rgba(30,41,59,0.65)";
+                const pctColor =
+                  !has ? "rgba(30,41,59,0.65)" : v > 0 ? "#16A34A" : v < 0 ? "#DC2626" : "rgba(30,41,59,0.65)";
                 const pctText = has ? `(${v}%)` : "(—%)";
 
                 return (
@@ -558,7 +571,7 @@ export default function DashboardPage() {
                       borderRadius: 3,
                       mb: 1,
                       border: "1px solid rgba(15,23,42,0.06)",
-                      backgroundColor: "rgba(255,255,255,0.86)",
+                      backgroundColor: "rgba(255,255,255,0.90)",
                       boxShadow: "0 10px 28px rgba(15,23,42,0.06)",
                       "&:before": { display: "none" },
                     }}
@@ -586,7 +599,10 @@ export default function DashboardPage() {
                           {monthTitle(h.year, h.month)}
                         </Typography>
 
-                        <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}>
+                        <Typography
+                          variant="caption"
+                          sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}
+                        >
                           {pctText}
                         </Typography>
                       </Stack>
