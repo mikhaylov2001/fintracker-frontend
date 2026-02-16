@@ -202,7 +202,7 @@ function SummaryRow({ label, value, color }) {
 }
 
 export default function DashboardPage() {
-  const navigate = useNavigate(); // <-- добавили
+  const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -605,71 +605,108 @@ export default function DashboardPage() {
                 Пока нет сохранённых месяцев.
               </Typography>
             ) : (
-              historyDesc.map((h) => (
-                <Accordion
-                  key={`${h.year}-${h.month}`}
-                  disableGutters
-                  elevation={0}
-                  sx={{
-                    borderRadius: 2,
-                    mb: 1,
-                    border: '1px solid rgba(15, 23, 42, 0.08)',
-                    bgcolor: 'transparent',
-                    '&:before': { display: 'none' },
-                  }}
-                >
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Typography
-                      sx={{
-                        fontWeight: 800,
-                        color: '#0F172A',
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {monthTitle(h.year, h.month)}
-                    </Typography>
-                  </AccordionSummary>
+              historyDesc.map((h) => {
+                const raw = Number(h?.savings_rate_percent);
+                const has = Number.isFinite(raw);
+                const v = has ? Math.round(raw) : null;
 
-                  <AccordionDetails sx={{ pt: 0 }}>
-                    <Stack spacing={0.75}>
-                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                        Доходы:{' '}
-                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          {fmtRub.format(n(h.total_income))}
-                        </Box>
-                      </Typography>
+                const pctColor =
+                  !has ? 'rgba(15, 23, 42, 0.45)' :
+                  v > 0 ? '#22C55E' :
+                  v < 0 ? '#EF4444' :
+                  'rgba(15, 23, 42, 0.45)';
 
-                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                        Расходы:{' '}
-                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          {fmtRub.format(n(h.total_expenses))}
-                        </Box>
-                      </Typography>
+                const pctText = has ? `(${v}%)` : '(—%)';
 
-                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                        Баланс:{' '}
-                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          {fmtRub.format(n(h.balance))}
-                        </Box>
-                      </Typography>
+                return (
+                  <Accordion
+                    key={`${h.year}-${h.month}`}
+                    disableGutters
+                    elevation={0}
+                    sx={{
+                      borderRadius: 2,
+                      mb: 1,
+                      border: '1px solid rgba(15, 23, 42, 0.08)',
+                      bgcolor: 'transparent',
+                      '&:before': { display: 'none' },
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        justifyContent="space-between"
+                        sx={{ width: '100%', gap: 1, minWidth: 0 }}
+                      >
+                        <Typography
+                          sx={{
+                            fontWeight: 800,
+                            color: '#0F172A',
+                            textTransform: 'capitalize',
+                            minWidth: 0,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {monthTitle(h.year, h.month)}
+                        </Typography>
 
-                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                        Сбережения:{' '}
-                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          {fmtRub.format(n(h.savings))}
-                        </Box>
-                      </Typography>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 950,
+                            color: pctColor,
+                            whiteSpace: 'nowrap',
+                            flex: '0 0 auto',
+                          }}
+                        >
+                          {pctText}
+                        </Typography>
+                      </Stack>
+                    </AccordionSummary>
 
-                      <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
-                        Норма сбережений:{' '}
-                        <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
-                          {n(h.savings_rate_percent)}%
-                        </Box>
-                      </Typography>
-                    </Stack>
-                  </AccordionDetails>
-                </Accordion>
-              ))
+                    <AccordionDetails sx={{ pt: 0 }}>
+                      <Stack spacing={0.75}>
+                        <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          Доходы:{' '}
+                          <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {fmtRub.format(n(h.total_income))}
+                          </Box>
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          Расходы:{' '}
+                          <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {fmtRub.format(n(h.total_expenses))}
+                          </Box>
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          Баланс:{' '}
+                          <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {fmtRub.format(n(h.balance))}
+                          </Box>
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          Сбережения:{' '}
+                          <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {fmtRub.format(n(h.savings))}
+                          </Box>
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ color: 'rgba(15, 23, 42, 0.75)' }}>
+                          Норма сбережений:{' '}
+                          <Box component="span" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                            {n(h.savings_rate_percent)}%
+                          </Box>
+                        </Typography>
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                );
+              })
             )}
           </Box>
         </CardContent>
