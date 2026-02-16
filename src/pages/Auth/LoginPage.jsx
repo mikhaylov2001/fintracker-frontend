@@ -82,7 +82,22 @@ export default function LoginPage() {
           "linear-gradient(180deg, #0B1220 0%, #070B14 100%)",
       }}
     >
-      {/* декоративные blurred-circles */}
+      {/* тонкий паттерн-сетка поверх градиента */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          pointerEvents: "none",
+          opacity: 0.22,
+          backgroundImage:
+            "linear-gradient(to right, rgba(148,163,184,0.22) 1px, transparent 1px)," +
+            "linear-gradient(to bottom, rgba(148,163,184,0.22) 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+          mixBlendMode: "soft-light",
+        }}
+      />
+
+      {/* blurred-circles */}
       <Box
         sx={{
           position: "absolute",
@@ -124,7 +139,7 @@ export default function LoginPage() {
           zIndex: 1,
         }}
       >
-        {/* Mobile hero (показываем только на xs/sm) */}
+        {/* Mobile hero */}
         <Box
           sx={{
             display: { xs: "block", md: "none" },
@@ -135,11 +150,25 @@ export default function LoginPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 950, fontSize: 22, lineHeight: 1.15 }}>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.92)",
+              fontWeight: 950,
+              fontSize: 22,
+              lineHeight: 1.15,
+            }}
+          >
             FinTrackerPro
           </Typography>
 
-          <Typography sx={{ mt: 0.8, color: "rgba(255,255,255,0.72)", fontSize: 13.5, lineHeight: 1.35 }}>
+          <Typography
+            sx={{
+              mt: 0.8,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 13.5,
+              lineHeight: 1.35,
+            }}
+          >
             Доходы, расходы и норма сбережений — в одном месте.
           </Typography>
 
@@ -153,16 +182,20 @@ export default function LoginPage() {
                 "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(99,102,241,0.12) 55%, rgba(249,115,22,0.10) 100%)",
             }}
           >
-            <Typography sx={{ color: "rgba(255,255,255,0.82)", fontWeight: 850, fontSize: 13 }}>
+            <Typography
+              sx={{ color: "rgba(255,255,255,0.82)", fontWeight: 850, fontSize: 13 }}
+            >
               Подсказка
             </Typography>
-            <Typography sx={{ mt: 0.35, color: "rgba(255,255,255,0.68)", fontSize: 12.5 }}>
+            <Typography
+              sx={{ mt: 0.35, color: "rgba(255,255,255,0.68)", fontSize: 12.5 }}
+            >
               Вход по Google или по логину/паролю.
             </Typography>
           </Box>
         </Box>
 
-        {/* Desktop hero (только md+) */}
+        {/* Desktop hero */}
         <Box
           sx={{
             display: { xs: "none", md: "flex" },
@@ -175,12 +208,27 @@ export default function LoginPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 950, fontSize: 34, lineHeight: 1.1 }}>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.9)",
+              fontWeight: 950,
+              fontSize: 34,
+              lineHeight: 1.1,
+            }}
+          >
             FinTrackerPro
           </Typography>
 
-          <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.72)", fontSize: 15, maxWidth: 420 }}>
-            Доходы, расходы и норма сбережений — в одном месте. Отслеживай динамику по месяцам и держи финансы под контролем.
+          <Typography
+            sx={{
+              mt: 1.25,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 15,
+              maxWidth: 420,
+            }}
+          >
+            Доходы, расходы и норма сбережений — в одном месте. Отслеживай
+            динамику по месяцам и держи финансы под контролем.
           </Typography>
 
           <Box
@@ -193,10 +241,14 @@ export default function LoginPage() {
                 "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(99,102,241,0.12) 55%, rgba(249,115,22,0.10) 100%)",
             }}
           >
-            <Typography sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 850 }}>
+            <Typography
+              sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 850 }}
+            >
               Подсказка
             </Typography>
-            <Typography sx={{ mt: 0.5, color: "rgba(255,255,255,0.7)", fontSize: 13 }}>
+            <Typography
+              sx={{ mt: 0.5, color: "rgba(255,255,255,0.7)", fontSize: 13 }}
+            >
               Можно войти через Google или по логину/паролю.
             </Typography>
           </Box>
@@ -214,7 +266,13 @@ export default function LoginPage() {
             backdropFilter: "blur(10px)",
           }}
         >
-          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
+          <Typography
+            variant="h5"
+            component="h1"
+            gutterBottom
+            align="center"
+            sx={{ fontWeight: 950 }}
+          >
             Вход
           </Typography>
 
@@ -264,7 +322,11 @@ export default function LoginPage() {
 
           <Typography variant="body2" align="center">
             Нет аккаунта?{" "}
-            <Link component="button" type="button" onClick={() => navigate("/register")}>
+            <Link
+              component="button"
+              type="button"
+              onClick={() => navigate("/register")}
+            >
               Зарегистрироваться
             </Link>
           </Typography>
