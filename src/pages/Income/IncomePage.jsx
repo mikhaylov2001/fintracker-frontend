@@ -21,7 +21,7 @@ import {
   MenuItem,
   Chip,
 } from '@mui/material';
-import { useTheme, alpha } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -363,19 +363,11 @@ export default function IncomePage() {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: 76, sm: 140 } }}>
-                      Дата
-                    </TableCell>
+                    <TableCell sx={{ width: { xs: 76, sm: 140 } }}>Дата</TableCell>
+                    <TableCell sx={{ width: { xs: 110, sm: 160 } }}>Сумма</TableCell>
+                    <TableCell sx={{ width: { xs: 'auto', sm: 200 } }}>Категория</TableCell>
 
-                    <TableCell sx={{ width: { xs: 110, sm: 160 } }}>
-                      Сумма
-                    </TableCell>
-
-                    <TableCell sx={{ width: { xs: 'auto', sm: 200 } }}>
-                      Категория
-                    </TableCell>
-
-                    {/* Скрываем на мобильном, показываем на десктопе */}
+                    {/* Desktop-only колонка */}
                     <TableCell
                       sx={{
                         width: 200,
@@ -387,7 +379,10 @@ export default function IncomePage() {
 
                     <TableCell
                       align="right"
-                      sx={{ width: { xs: 74, sm: 120 }, pr: { xs: 0.5, sm: 2 } }}
+                      sx={{
+                        width: { xs: 74, sm: 120 },
+                        pr: { xs: 0.5, sm: 2 },
+                      }}
                     >
                       <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
                         Действия
@@ -415,7 +410,7 @@ export default function IncomePage() {
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      {/* На мобилке добавим источник второй строкой мелко (чтобы не терялся) */}
+                      {/* На мобилке показываем источник второй строкой */}
                       <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
                         <Typography
                           component="div"
@@ -454,6 +449,7 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
+                      {/* Desktop-only ячейка источника */}
                       <TableCell
                         title={x.source || ''}
                         sx={{ display: { xs: 'none', sm: 'table-cell' } }}
@@ -465,11 +461,7 @@ export default function IncomePage() {
                         <IconButton onClick={() => openEdit(x)} size="small">
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
-                        <IconButton
-                          onClick={() => remove(x)}
-                          size="small"
-                          color="error"
-                        >
+                        <IconButton onClick={() => remove(x)} size="small" color="error">
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </TableCell>
@@ -492,6 +484,7 @@ export default function IncomePage() {
         <DialogTitle>
           {editing ? 'Редактировать доход' : 'Добавить доход'}
         </DialogTitle>
+
         <DialogContent sx={{ pt: 1 }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
