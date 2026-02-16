@@ -269,10 +269,7 @@ export default function IncomePage() {
 
             <Chip
               label={ymLabel(ym)}
-              sx={{
-                width: { xs: '100%', sm: 'auto' },
-                fontWeight: 800,
-              }}
+              sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }}
             />
 
             <Button
@@ -341,31 +338,41 @@ export default function IncomePage() {
               onAction={openCreate}
             />
           ) : (
-            <Box sx={{ overflowX: 'auto' }}>
+            <Box sx={{ overflowX: 'hidden' }}>
               <Table
                 size="small"
                 sx={{
                   width: '100%',
-                  minWidth: { xs: 0, sm: 720 },
+                  minWidth: { sm: 720 }, // desktop only
                   tableLayout: { xs: 'fixed', sm: 'auto' },
+
                   '& th, & td': {
                     px: { xs: 0.75, sm: 2 },
                     py: { xs: 0.6, sm: 1 },
                     fontSize: { xs: 12, sm: 13 },
                     lineHeight: 1.15,
-                    whiteSpace: { xs: 'normal', sm: 'nowrap' },
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     verticalAlign: 'top',
                   },
-                  '& th': { fontWeight: 900, color: '#0F172A' },
+                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' },
+                  '& td': { whiteSpace: { xs: 'normal', sm: 'nowrap' } },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: 76, sm: 140 } }}>Дата</TableCell>
-                    <TableCell sx={{ width: { xs: 110, sm: 160 } }}>Сумма</TableCell>
-                    <TableCell sx={{ width: { xs: 'auto', sm: 200 } }}>Категория</TableCell>
+                    {/* xs: проценты => влезает на любых телефонах */}
+                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                      Дата
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                      Сумма
+                    </TableCell>
+
+                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                      Категория
+                    </TableCell>
 
                     {/* Desktop-only колонка */}
                     <TableCell
@@ -380,8 +387,9 @@ export default function IncomePage() {
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: 74, sm: 120 },
+                        width: { xs: '14%', sm: 120 },
                         pr: { xs: 0.5, sm: 2 },
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
@@ -400,17 +408,10 @@ export default function IncomePage() {
                           : normalizeDateOnly(x.date)}
                       </TableCell>
 
-                      <TableCell
-                        sx={{
-                          fontWeight: 900,
-                          color: '#0F172A',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                      <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
                         {fmtRub.format(Number(x.amount || 0))}
                       </TableCell>
 
-                      {/* На мобилке показываем источник второй строкой */}
                       <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
                         <Typography
                           component="div"
@@ -430,13 +431,14 @@ export default function IncomePage() {
                           {x.category}
                         </Typography>
 
+                        {/* На мобилке источник второй строкой (стиль прежний/нейтральный) */}
                         {isMobile ? (
                           <Typography
                             component="div"
                             sx={{
                               mt: 0.2,
                               fontSize: 11,
-                              color: 'rgba(15, 23, 42, 0.55)',
+                              color: '#64748B',
                               lineHeight: 1.15,
                               whiteSpace: 'nowrap',
                               overflow: 'hidden',
@@ -449,10 +451,11 @@ export default function IncomePage() {
                         ) : null}
                       </TableCell>
 
-                      {/* Desktop-only ячейка источника */}
                       <TableCell
+                        sx={{
+                          display: { xs: 'none', sm: 'table-cell' },
+                        }}
                         title={x.source || ''}
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
                       >
                         {x.source}
                       </TableCell>
