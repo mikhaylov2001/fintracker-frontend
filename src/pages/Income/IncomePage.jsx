@@ -11,15 +11,10 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  IconButton,
   Divider,
   MenuItem,
   Chip,
+  IconButton,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -83,9 +78,7 @@ const ymFromDate = (yyyyMmDd) => {
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
-
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [ym, setYm] = useState(() => {
     const d = new Date();
@@ -237,9 +230,6 @@ export default function IncomePage() {
 
   const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
 
-  const actionBtnPad = isMobile ? 0.45 : 0.6;
-  const actionColWidth = isMobile ? 92 : 120;
-
   return (
     <Box sx={{ bgcolor: '#F8FAFC', minHeight: '100vh', p: { xs: 2, md: 3 } }}>
       <Stack
@@ -264,21 +254,13 @@ export default function IncomePage() {
           sx={{ width: { xs: '100%', sm: 'auto' } }}
         >
           <Stack direction="row" spacing={1} alignItems="center">
-            <Button
-              variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, -1))}
-              sx={{ minWidth: 44, px: 1.2 }}
-            >
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, -1))} sx={{ minWidth: 44, px: 1.2 }}>
               ←
             </Button>
 
             <Chip label={ymLabel(ym)} sx={{ width: { xs: '100%', sm: 'auto' }, fontWeight: 800 }} />
 
-            <Button
-              variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, +1))}
-              sx={{ minWidth: 44, px: 1.2 }}
-            >
+            <Button variant="outlined" onClick={() => setYm((s) => addMonthsYM(s, +1))} sx={{ minWidth: 44, px: 1.2 }}>
               →
             </Button>
           </Stack>
@@ -338,142 +320,91 @@ export default function IncomePage() {
               />
             </Box>
           ) : (
-            <Box sx={{ width: '100%', overflowX: 'hidden', pb: 1 }}>
-              <Table
-                size="small"
-                sx={{
-                  width: '100%',
-                  tableLayout: 'fixed',
-                  '& .MuiTableCell-root': { borderBottom: 0 },
-
-                  '& th, & td': {
-                    px: { xs: 1.25, sm: 2.5 },
-                    py: { xs: 0.9, sm: 1.05 },
-                    fontSize: { xs: 12, sm: 13 },
-                    lineHeight: 1.15,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    verticalAlign: 'top',
-                  },
-                  '& th': { fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap', bgcolor: '#FFFFFF' },
-                  '& td': { whiteSpace: 'normal' },
-                }}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ width: { xs: 98, sm: 140 }, whiteSpace: 'nowrap' }}>Дата</TableCell>
-                    <TableCell sx={{ width: { xs: 110, sm: 160 }, whiteSpace: 'nowrap' }}>Сумма</TableCell>
-
-                    {/* Категория занимает всё оставшееся место */}
-                    <TableCell sx={{ width: 'auto' }}>Категория</TableCell>
-
-                    <TableCell
-                      align="right"
-                      sx={{
-                        width: actionColWidth,
-                        pr: { xs: 1, sm: 2.5 },
-                        color: 'transparent',
-                        userSelect: 'none',
-                      }}
-                    >
-                      —
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {items.map((x) => (
-                    <TableRow key={x.id} hover>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDateRu(x.date)}</TableCell>
-
-                      <TableCell sx={{ fontWeight: 900, color: '#0F172A', whiteSpace: 'nowrap' }}>
-                        {fmtRub.format(Number(x.amount || 0))}
-                      </TableCell>
-
-                      <TableCell>
-                        <Box sx={{ overflow: 'hidden', minWidth: 0 }}>
-                          <Typography
-                            component="div"
-                            sx={{
-                              fontSize: { xs: 12, sm: 13 },
-                              fontWeight: 800,
-                              color: '#0F172A',
-                              lineHeight: 1.15,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              display: '-webkit-box',
-                              WebkitBoxOrient: 'vertical',
-                              WebkitLineClamp: 2,
-                              wordBreak: 'break-word',
-                            }}
-                            title={x.category || ''}
-                          >
-                            {x.category}
+            <Stack spacing={1.2} sx={{ px: { xs: 2, md: 2.5 }, pb: 2 }}>
+              {items.map((x) => (
+                <Card
+                  key={x.id}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 3,
+                    borderColor: '#E2E8F0',
+                    bgcolor: '#FFFFFF',
+                    boxShadow: 'none',
+                  }}
+                >
+                  <CardContent sx={{ py: 1.4, '&:last-child': { pb: 1.4 } }}>
+                    <Stack direction="row" spacing={1.2} alignItems="flex-start">
+                      <Box sx={{ flex: 1, minWidth: 0 }}>
+                        <Stack direction="row" spacing={1} alignItems="baseline" sx={{ flexWrap: 'wrap' }}>
+                          <Typography sx={{ fontWeight: 900, color: '#0F172A' }}>
+                            {fmtRub.format(Number(x.amount || 0))}
                           </Typography>
 
-                          <Typography
-                            component="div"
-                            sx={{
-                              mt: 0.2,
-                              fontSize: 11,
-                              color: '#64748B',
-                              lineHeight: 1.15,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                            title={x.source || ''}
-                          >
-                            {x.source}
+                          <Typography sx={{ color: '#64748B', fontSize: 12 }}>
+                            {formatDateRu(x.date)}
                           </Typography>
-                        </Box>
-                      </TableCell>
-
-                      <TableCell
-                        align="right"
-                        sx={{
-                          width: actionColWidth,
-                          pr: { xs: 1, sm: 2.5 },
-                          whiteSpace: 'nowrap',
-                          verticalAlign: 'middle',
-                          overflow: 'visible',
-                          textOverflow: 'clip',
-                        }}
-                      >
-                        <Stack direction="row" spacing={0.5} justifyContent="flex-end" alignItems="center">
-                          <IconButton
-                            onClick={() => openEdit(x)}
-                            size="small"
-                            sx={{
-                              p: actionBtnPad,
-                              bgcolor: 'rgba(15, 23, 42, 0.06)',
-                              borderRadius: 2,
-                              '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
-                            }}
-                          >
-                            <EditOutlinedIcon fontSize="small" />
-                          </IconButton>
-
-                          <IconButton
-                            onClick={() => remove(x)}
-                            size="small"
-                            sx={{
-                              p: actionBtnPad,
-                              bgcolor: 'rgba(239, 68, 68, 0.10)',
-                              borderRadius: 2,
-                              color: '#EF4444',
-                              '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
-                            }}
-                          >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
                         </Stack>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+
+                        <Typography
+                          sx={{
+                            mt: 0.6,
+                            fontWeight: 850,
+                            color: '#0F172A',
+                            lineHeight: 1.2,
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {x.category}
+                        </Typography>
+
+                        <Typography
+                          sx={{
+                            mt: 0.25,
+                            color: '#64748B',
+                            fontSize: 12,
+                            lineHeight: 1.2,
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                          }}
+                        >
+                          {x.source}
+                        </Typography>
+                      </Box>
+
+                      <Stack direction="row" spacing={0.6} alignItems="center" sx={{ flexShrink: 0 }}>
+                        <IconButton
+                          onClick={() => openEdit(x)}
+                          size="small"
+                          sx={{
+                            p: 0.8,
+                            bgcolor: 'rgba(15, 23, 42, 0.06)',
+                            borderRadius: 2,
+                            '&:hover': { bgcolor: 'rgba(15, 23, 42, 0.10)' },
+                          }}
+                        >
+                          <EditOutlinedIcon fontSize="small" />
+                        </IconButton>
+
+                        <IconButton
+                          onClick={() => remove(x)}
+                          size="small"
+                          sx={{
+                            p: 0.8,
+                            bgcolor: 'rgba(239, 68, 68, 0.10)',
+                            borderRadius: 2,
+                            color: '#EF4444',
+                            '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.16)' },
+                          }}
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
           )}
         </CardContent>
       </Card>
