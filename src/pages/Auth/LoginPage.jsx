@@ -82,7 +82,7 @@ export default function LoginPage() {
           "linear-gradient(180deg, #0B1220 0%, #070B14 100%)",
       }}
     >
-      {/* тонкий паттерн-сетка поверх градиента */}
+      {/* паттерн-сетка */}
       <Box
         sx={{
           position: "absolute",
@@ -171,28 +171,6 @@ export default function LoginPage() {
           >
             Доходы, расходы и норма сбережений — в одном месте.
           </Typography>
-
-          <Box
-            sx={{
-              mt: 1.5,
-              borderRadius: 4,
-              p: 1.6,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background:
-                "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(99,102,241,0.12) 55%, rgba(249,115,22,0.10) 100%)",
-            }}
-          >
-            <Typography
-              sx={{ color: "rgba(255,255,255,0.82)", fontWeight: 850, fontSize: 13 }}
-            >
-              Подсказка
-            </Typography>
-            <Typography
-              sx={{ mt: 0.35, color: "rgba(255,255,255,0.68)", fontSize: 12.5 }}
-            >
-              Вход по Google или по логину/паролю.
-            </Typography>
-          </Box>
         </Box>
 
         {/* Desktop hero */}
@@ -230,28 +208,6 @@ export default function LoginPage() {
             Доходы, расходы и норма сбережений — в одном месте. Отслеживай
             динамику по месяцам и держи финансы под контролем.
           </Typography>
-
-          <Box
-            sx={{
-              mt: 3,
-              borderRadius: 4,
-              p: 2.25,
-              border: "1px solid rgba(255,255,255,0.08)",
-              background:
-                "linear-gradient(135deg, rgba(34,197,94,0.12) 0%, rgba(99,102,241,0.12) 55%, rgba(249,115,22,0.10) 100%)",
-            }}
-          >
-            <Typography
-              sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 850 }}
-            >
-              Подсказка
-            </Typography>
-            <Typography
-              sx={{ mt: 0.5, color: "rgba(255,255,255,0.7)", fontSize: 13 }}
-            >
-              Можно войти через Google или по логину/паролю.
-            </Typography>
-          </Box>
         </Box>
 
         {/* Форма */}
