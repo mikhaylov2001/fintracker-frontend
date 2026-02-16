@@ -316,6 +316,7 @@ export default function IncomePage() {
         </Card>
       ) : null}
 
+      {/* На мобилке растягиваем карточку списка на всю ширину экрана (edge-to-edge) */}
       <Card
         variant="outlined"
         sx={{
@@ -323,6 +324,8 @@ export default function IncomePage() {
           borderColor: '#E2E8F0',
           bgcolor: '#FFFFFF',
           overflow: 'hidden',
+          mx: { xs: -2, md: 0 }, // компенсируем padding родителя (p:2) -> в край экрана
+          width: { xs: 'calc(100% + 32px)', md: 'auto' },
         }}
       >
         <CardContent
@@ -378,15 +381,15 @@ export default function IncomePage() {
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '18%', sm: 140 }, whiteSpace: 'nowrap' }}>
                       Дата
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                    <TableCell sx={{ width: { xs: '26%', sm: 160 }, whiteSpace: 'nowrap' }}>
                       Сумма
                     </TableCell>
 
-                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                    <TableCell sx={{ width: { xs: '40%', sm: 200 } }}>
                       Категория
                     </TableCell>
 
@@ -399,17 +402,16 @@ export default function IncomePage() {
                       Источник
                     </TableCell>
 
+                    {/* Показываем “Действия” и на мобилке */}
                     <TableCell
                       align="right"
                       sx={{
-                        width: { xs: '14%', sm: 120 },
+                        width: { xs: '16%', sm: 140 },
                         pr: { xs: 1, sm: 2.5 },
                         whiteSpace: 'nowrap',
                       }}
                     >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Действия
-                      </Box>
+                      Действия
                     </TableCell>
                   </TableRow>
                 </TableHead>
@@ -467,7 +469,6 @@ export default function IncomePage() {
                         {x.source}
                       </TableCell>
 
-                      {/* ВАЖНО: выравнивание иконок по центру строки */}
                       <TableCell
                         align="right"
                         sx={{
@@ -477,7 +478,7 @@ export default function IncomePage() {
                       >
                         <Stack
                           direction="row"
-                          spacing={0.5}
+                          spacing={0.25}
                           justifyContent="flex-end"
                           alignItems="center"
                         >
