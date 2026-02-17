@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import {
   Typography,
   Box,
@@ -21,16 +21,18 @@ import {
   ChartsItemTooltipContent,
 } from '@mui/x-charts/ChartsTooltip';
 
+import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
+import ArrowCircleUpOutlinedIcon from '@mui/icons-material/ArrowCircleUpOutlined';
+import ArrowCircleDownOutlinedIcon from '@mui/icons-material/ArrowCircleDownOutlined';
+import PercentOutlinedIcon from '@mui/icons-material/PercentOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+
 import { useAuth } from '../../contexts/AuthContext';
 import { getMonthlySummary } from '../../api/summaryApi';
 import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 
-import {
-  bankingColors as colors,
-  surfaceSx,
-  pillSx,
-} from '../../styles/bankingTokens';
+import { bankingColors as colors, surfaceSx, pillSx } from '../../styles/bankingTokens';
 
 const COLORS = {
   income: colors.primary,
@@ -67,10 +69,7 @@ const unwrapList = (raw) => {
   return [];
 };
 
-const fmtMonthLong = new Intl.DateTimeFormat('ru-RU', {
-  month: 'long',
-  year: 'numeric',
-});
+const fmtMonthLong = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric' });
 const fmtMonthShort = new Intl.DateTimeFormat('ru-RU', { month: 'short' });
 
 const monthTitleRu = (y, m) => fmtMonthLong.format(new Date(y, m - 1, 1));
@@ -94,89 +93,121 @@ const withHeadroom = (maxVal) => {
 };
 /* ------------------------------------------------------ */
 
-const StatCard = ({ label, value, sub, accent = COLORS.balance }) => (
-  <Card
-    variant="outlined"
-    sx={{
-      ...surfaceSx,
-      height: '100%',
-      minHeight: { xs: 96, sm: 104, md: 116 },
-      position: 'relative',
-      overflow: 'hidden',
-      borderColor: alpha(accent, 0.34),
-      '&:before': {
-        content: '""',
-        position: 'absolute',
-        inset: 0,
-        background: `linear-gradient(135deg, ${alpha(accent, 0.16)} 0%, transparent 62%)`,
-        pointerEvents: 'none',
-      },
-    }}
-  >
-    <CardContent sx={{ p: { xs: 1.5, md: 2 }, position: 'relative', zIndex: 1 }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: 999,
-            bgcolor: accent,
-            opacity: 0.9,
-            flex: '0 0 auto',
-          }}
-        />
+const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        onClick();
+      }
+    },
+    [onClick]
+  );
+
+  return (
+    <Card
+      variant="outlined"
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      sx={{
+        ...surfaceSx,
+        height: '100%',
+        minHeight: { xs: 96, sm: 104, md: 116 },
+        cursor: onClick ? 'pointer' : 'default',
+        position: 'relative',
+        overflow: 'hidden',
+        transition: 'transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease',
+        borderColor: alpha(accent, 0.34),
+        '&:before': {
+          content: '""',
+          position: 'absolute',
+          inset: 0,
+          background: `linear-gradient(135deg, ${alpha(accent, 0.20)} 0%, transparent 62%)`,
+          pointerEvents: 'none',
+        },
+        '@media (hover: hover) and (pointer: fine)': onClick
+          ? {
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 22px 70px rgba(0,0,0,0.58)',
+                borderColor: alpha(accent, 0.58),
+              },
+            }
+          : {},
+      }}
+    >
+      <CardContent sx={{ p: { xs: 1.5, md: 2 }, position: 'relative', zIndex: 1 }}>
+        <Stack direction="row" spacing={1.1} alignItems="center">
+          <Box
+            sx={{
+              width: { xs: 30, md: 34 },
+              height: { xs: 30, md: 34 },
+              borderRadius: 2.5,
+              display: 'grid',
+              placeItems: 'center',
+              bgcolor: alpha(accent, 0.14),
+              border: `1px solid ${alpha(accent, 0.28)}`,
+              flex: '0 0 auto',
+            }}
+          >
+            {icon
+              ? React.cloneElement(icon, {
+                  sx: { fontSize: { xs: 17, md: 18 }, color: alpha(accent, 0.98) },
+                })
+              : null}
+          </Box>
+
+          <Typography
+            variant="overline"
+            sx={{
+              color: colors.muted,
+              fontWeight: 950,
+              letterSpacing: 0.55,
+              lineHeight: 1.1,
+              minWidth: 0,
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: { xs: 2, sm: 1 },
+              overflow: 'hidden',
+            }}
+          >
+            {label}
+          </Typography>
+        </Stack>
+
         <Typography
-          variant="overline"
+          variant="h5"
           sx={{
-            color: colors.muted,
-            letterSpacing: 0.6,
-            lineHeight: 1.15,
-            minWidth: 0,
-            whiteSpace: 'normal',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            display: '-webkit-box',
-            WebkitBoxOrient: 'vertical',
-            WebkitLineClamp: { xs: 2, sm: 1 },
-            fontSize: { xs: 10.5, sm: 11.5 },
+            mt: { xs: 0.7, md: 0.9 },
             fontWeight: 950,
+            color: colors.text,
+            lineHeight: 1.05,
+            letterSpacing: -0.25,
+            fontSize: { xs: '1.15rem', sm: '1.22rem', md: '1.35rem' },
           }}
         >
-          {label}
+          {value}
         </Typography>
-      </Stack>
 
-      <Typography
-        variant="h5"
-        sx={{
-          mt: { xs: 0.7, md: 0.9 },
-          fontWeight: 950,
-          color: colors.text,
-          lineHeight: 1.05,
-          letterSpacing: -0.25,
-          fontSize: { xs: '1.15rem', sm: '1.22rem', md: '1.35rem' },
-        }}
-      >
-        {value}
-      </Typography>
-
-      <Typography
-        variant="caption"
-        sx={{
-          mt: 0.5,
-          color: colors.muted,
-          display: { xs: 'none', md: 'block' },
-          lineHeight: 1.2,
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-        }}
-      >
-        {sub && String(sub).trim() ? sub : ' '}
-      </Typography>
-    </CardContent>
-  </Card>
-);
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 0.5,
+            color: colors.muted,
+            display: { xs: 'none', md: 'block' },
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {sub && String(sub).trim() ? sub : '\u00A0'}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+});
 
 function BalanceAreaGradient({ id = 'balanceGradient', color = COLORS.balance }) {
   const { top, height } = useDrawingArea();
@@ -459,10 +490,12 @@ export default function AnalyticsPage() {
     </Box>
   );
 
+  // 2 большие карточки: без границы
   const panelSx = {
     ...surfaceSx,
-    border: 'none',
+    border: '0 !important',
     boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+    borderRadius: 22,
     overflow: 'hidden',
   };
 
@@ -474,63 +507,169 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 2 }} alignItems={{ sm: 'center' }}>
-        <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15, color: colors.text, letterSpacing: -0.25 }}>
-            Аналитика
-          </Typography>
-          <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5, fontWeight: 650 }}>
-            {periodLabel}
-          </Typography>
-        </Box>
+      {/* Premium header */}
+      <Card
+        elevation={0}
+        sx={{
+          ...surfaceSx,
+          border: '0 !important',
+          borderRadius: 24,
+          boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
+          overflow: 'hidden',
+          mb: 2,
+          position: 'relative',
+        }}
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: 'none',
+            background: `
+              radial-gradient(900px 220px at 10% 0%, ${alpha(COLORS.balance, 0.28)} 0%, transparent 55%),
+              radial-gradient(700px 240px at 95% 10%, ${alpha(colors.primary, 0.18)} 0%, transparent 60%),
+              linear-gradient(180deg, ${alpha('#FFFFFF', 0.04)} 0%, transparent 100%)
+            `,
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            height: 2,
+            background: `linear-gradient(90deg, ${COLORS.balance}, ${colors.primary}, ${COLORS.expenses})`,
+            opacity: 0.85,
+          }}
+        />
 
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          spacing={1}
-          alignItems={{ sm: 'center' }}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
-        >
-          <Chip
-            label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
-            sx={{
-              ...pillSx,
-              width: { xs: '100%', sm: 'auto' },
-              bgcolor: error ? alpha(COLORS.expenses, 0.12) : alpha(COLORS.balance, 0.12),
-              color: error ? COLORS.expenses : COLORS.balance,
-              borderColor: 'transparent',
-            }}
-          />
-
-          <ToggleButtonGroup
-            value={mode}
-            exclusive
-            onChange={(_e, next) => next && setMode(next)}
-            size="small"
-            sx={{
-              width: { xs: '100%', sm: 'auto' },
-              bgcolor: alpha(colors.card2, 0.72),
-              border: `1px solid ${colors.border2}`,
-              borderRadius: 999,
-              '& .MuiToggleButton-root': {
-                border: 0,
-                px: 1.5,
-                flex: { xs: 1, sm: 'unset' },
-                color: alpha(colors.text, 0.78),
-                fontWeight: 900,
-                textTransform: 'none',
-              },
-              '& .MuiToggleButton-root.Mui-selected': {
-                color: '#05140C',
-                backgroundColor: colors.primary,
-              },
-            }}
+        <CardContent sx={{ p: { xs: 2, md: 2.75 }, position: 'relative', zIndex: 1 }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={{ xs: 1.25, sm: 1 }}
+            alignItems={{ sm: 'center' }}
           >
-            <ToggleButton value="month">Месяц</ToggleButton>
-            <ToggleButton value="year">Год</ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
-      </Stack>
+            <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexGrow: 1, minWidth: 0 }}>
+              <Box
+                sx={{
+                  width: { xs: 38, md: 44 },
+                  height: { xs: 38, md: 44 },
+                  borderRadius: 3,
+                  display: 'grid',
+                  placeItems: 'center',
+                  bgcolor: alpha(COLORS.balance, 0.14),
+                  border: `1px solid ${alpha(COLORS.balance, 0.28)}`,
+                  boxShadow: `0 18px 55px ${alpha(COLORS.balance, 0.18)}`,
+                  flex: '0 0 auto',
+                }}
+              >
+                <CalendarMonthOutlinedIcon sx={{ fontSize: { xs: 20, md: 22 }, color: alpha('#FFFFFF', 0.92) }} />
+              </Box>
 
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 980,
+                    color: colors.text,
+                    letterSpacing: -0.35,
+                    lineHeight: 1.05,
+                    fontSize: { xs: '1.35rem', sm: '1.55rem', md: '1.8rem' },
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  Аналитика
+                </Typography>
+
+                <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.55, minWidth: 0 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: colors.muted,
+                      fontWeight: 700,
+                      minWidth: 0,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {periodLabel}
+                  </Typography>
+
+                  <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: alpha('#FFFFFF', 0.18), flex: '0 0 auto' }} />
+
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: alpha('#FFFFFF', 0.62),
+                      fontWeight: 800,
+                      letterSpacing: 0.5,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Cashflow • Категории • KPI
+                  </Typography>
+                </Stack>
+              </Box>
+            </Stack>
+
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1}
+              alignItems={{ sm: 'center' }}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+            >
+              <Chip
+                label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
+                sx={{
+                  ...pillSx,
+                  width: { xs: '100%', sm: 'auto' },
+                  bgcolor: error ? alpha(COLORS.expenses, 0.14) : alpha(colors.primary, 0.14),
+                  color: error ? COLORS.expenses : colors.primary,
+                  borderColor: 'transparent',
+                  fontWeight: 900,
+                }}
+              />
+
+              <ToggleButtonGroup
+                value={mode}
+                exclusive
+                onChange={(_e, next) => next && setMode(next)}
+                size="small"
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  bgcolor: alpha(colors.card2, 0.70),
+                  border: `1px solid ${colors.border2}`,
+                  borderRadius: 999,
+                  p: 0.25,
+                  '& .MuiToggleButton-root': {
+                    border: 0,
+                    px: 1.6,
+                    flex: { xs: 1, sm: 'unset' },
+                    color: alpha(colors.text, 0.78),
+                    fontWeight: 950,
+                    textTransform: 'none',
+                    borderRadius: 999,
+                  },
+                  '& .MuiToggleButton-root.Mui-selected': {
+                    color: '#05140C',
+                    backgroundColor: colors.primary,
+                    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
+                  },
+                }}
+              >
+                <ToggleButton value="month">Месяц</ToggleButton>
+                <ToggleButton value="year">Год</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Stack>
+        </CardContent>
+      </Card>
+
+      {/* KPI */}
       <Box
         sx={{
           display: 'grid',
@@ -539,18 +678,38 @@ export default function AnalyticsPage() {
           mb: 2,
         }}
       >
-        <StatCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} />
-        <StatCard label="Доходы" value={fmtRub.format(kpiIncome)} sub=" " accent={COLORS.income} />
-        <StatCard label="Расходы" value={fmtRub.format(kpiExpenses)} sub=" " accent={COLORS.expenses} />
-        <StatCard
+        <KpiCard
+          label="Баланс"
+          value={fmtRub.format(kpiBalance)}
+          sub=" "
+          accent={COLORS.balance}
+          icon={<AccountBalanceWalletOutlinedIcon />}
+        />
+        <KpiCard
+          label="Доходы"
+          value={fmtRub.format(kpiIncome)}
+          sub=" "
+          accent={COLORS.income}
+          icon={<ArrowCircleUpOutlinedIcon />}
+        />
+        <KpiCard
+          label="Расходы"
+          value={fmtRub.format(kpiExpenses)}
+          sub=" "
+          accent={COLORS.expenses}
+          icon={<ArrowCircleDownOutlinedIcon />}
+        />
+        <KpiCard
           label="Норма сбережений"
           value={`${kpiRate}%`}
           sub={`Сбережения: ${fmtRub.format(kpiSavings)}`}
           accent={COLORS.rate}
+          icon={<PercentOutlinedIcon />}
         />
       </Box>
 
-      <Card sx={{ ...panelSx, mb: 2 }}>
+      {/* Cashflow — без границы */}
+      <Card elevation={0} sx={{ ...panelSx, mb: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}>
             Cashflow за 12 месяцев
@@ -648,7 +807,8 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      <Card sx={panelSx}>
+      {/* Топ категорий — без границы */}
+      <Card elevation={0} sx={panelSx}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
