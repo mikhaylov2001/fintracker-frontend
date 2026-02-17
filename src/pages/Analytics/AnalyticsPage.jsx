@@ -31,12 +31,7 @@ import { getMonthlySummary } from '../../api/summaryApi';
 import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 
-import {
-  bankingColors as colors,
-  surfaceOutlinedSx,
-  surfaceSx,
-  pillSx,
-} from '../../styles/bankingTokens';
+import { bankingColors as colors, surfaceOutlinedSx } from '../../styles/bankingTokens';
 
 const COLORS = {
   income: colors.primary,
@@ -96,50 +91,7 @@ const withHeadroom = (maxVal) => {
 };
 /* ------------------------------------------------------ */
 
-/* ===== Borderless tokens for this page ===== */
-const surfaceNoBorderSx = {
-  borderRadius: 18,
-  border: '0 !important',
-  backgroundColor: alpha(colors.card, 0.92),
-  boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
-};
-
-const pillNoBorderSx = {
-  borderRadius: 999,
-  bgcolor: alpha(colors.card2, 0.72),
-  border: '0 !important',
-  color: colors.text,
-  fontWeight: 850,
-};
-
-const toggleGroupNoBorderSx = {
-  width: { xs: '100%', sm: 'auto' },
-  bgcolor: alpha(colors.card2, 0.70),
-  border: 0,
-  borderRadius: 999,
-  p: 0.25,
-  boxShadow: '0 14px 42px rgba(0,0,0,0.35)',
-  '& .MuiToggleButtonGroup-grouped': {
-    border: '0 !important',
-  },
-  '& .MuiToggleButton-root': {
-    border: 0,
-    px: 1.6,
-    flex: { xs: 1, sm: 'unset' },
-    color: alpha(colors.text, 0.78),
-    fontWeight: 950,
-    textTransform: 'none',
-    borderRadius: 999,
-  },
-  '& .MuiToggleButton-root.Mui-selected': {
-    color: '#05140C',
-    backgroundColor: colors.primary,
-    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
-  },
-};
-/* ========================================= */
-
-/* KPI card — ЕДИНСТВЕННОЕ место, где рамка остаётся */
+/* KPI card — с рамкой (surfaceOutlinedSx) */
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -159,7 +111,7 @@ const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
       sx={{
-        ...surfaceOutlinedSx, // <-- с рамкой
+        ...surfaceOutlinedSx,
         height: '100%',
         minHeight: { xs: 96, sm: 104, md: 116 },
         cursor: onClick ? 'pointer' : 'default',
@@ -545,12 +497,13 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Premium header — БЕЗ границ */}
+      {/* Premium header — без рамки (локальный стиль) */}
       <Card
         elevation={0}
         sx={{
-          ...surfaceNoBorderSx,
           borderRadius: 24,
+          border: 0,
+          backgroundColor: alpha(colors.card, 0.92),
           boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
           overflow: 'hidden',
           mb: 2,
@@ -643,11 +596,12 @@ export default function AnalyticsPage() {
                 label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
                 variant="filled"
                 sx={{
-                  ...pillNoBorderSx,
-                  width: { xs: '100%', sm: 'auto' },
+                  borderRadius: 999,
+                  border: 0,
                   bgcolor: error ? alpha(COLORS.expenses, 0.14) : alpha(colors.primary, 0.14),
                   color: error ? COLORS.expenses : colors.primary,
                   fontWeight: 900,
+                  width: { xs: '100%', sm: 'auto' },
                 }}
               />
 
@@ -656,7 +610,29 @@ export default function AnalyticsPage() {
                 exclusive
                 onChange={(_e, next) => next && setMode(next)}
                 size="small"
-                sx={toggleGroupNoBorderSx}
+                sx={{
+                  width: { xs: '100%', sm: 'auto' },
+                  bgcolor: alpha(colors.card2, 0.70),
+                  border: 0,
+                  borderRadius: 999,
+                  p: 0.25,
+                  boxShadow: '0 14px 42px rgba(0,0,0,0.35)',
+                  '& .MuiToggleButtonGroup-grouped': { border: '0 !important' },
+                  '& .MuiToggleButton-root': {
+                    border: 0,
+                    px: 1.6,
+                    flex: { xs: 1, sm: 'unset' },
+                    color: alpha(colors.text, 0.78),
+                    fontWeight: 950,
+                    textTransform: 'none',
+                    borderRadius: 999,
+                  },
+                  '& .MuiToggleButton-root.Mui-selected': {
+                    color: '#05140C',
+                    backgroundColor: colors.primary,
+                    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
+                  },
+                }}
               >
                 <ToggleButton value="month">Месяц</ToggleButton>
                 <ToggleButton value="year">Год</ToggleButton>
@@ -666,7 +642,7 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* KPI — С РАМКАМИ */}
+      {/* KPI */}
       <Box
         sx={{
           display: 'grid',
@@ -681,8 +657,17 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — БЕЗ границ */}
-      <Card elevation={0} sx={{ ...surfaceNoBorderSx, borderRadius: 22, mb: 2 }}>
+      {/* Cashflow */}
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 22,
+          border: 0,
+          backgroundColor: alpha(colors.card, 0.92),
+          boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+          mb: 2,
+        }}
+      >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}>
             Cashflow за 12 месяцев
@@ -786,8 +771,16 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Топ категорий — БЕЗ границ */}
-      <Card elevation={0} sx={{ ...surfaceNoBorderSx, borderRadius: 22 }}>
+      {/* Топ категорий */}
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 22,
+          border: 0,
+          backgroundColor: alpha(colors.card, 0.92),
+          boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+        }}
+      >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
@@ -798,7 +791,8 @@ export default function AnalyticsPage() {
               label={catsLoading ? 'Считаю…' : mode === 'year' ? `${year} год` : monthTitleRu(year, month)}
               variant="filled"
               sx={{
-                ...pillNoBorderSx,
+                borderRadius: 999,
+                border: 0,
                 color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
                 bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.12),
                 fontWeight: 900,

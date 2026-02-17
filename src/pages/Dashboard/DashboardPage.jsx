@@ -22,9 +22,9 @@ import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../
 import {
   bankingColors as colors,
   surfaceOutlinedSx,
-  surfaceSx,
   pillSx,
 } from '../../styles/bankingTokens';
+
 
 /* helpers */
 const n = (v) => {
