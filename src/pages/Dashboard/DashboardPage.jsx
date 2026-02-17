@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import {
   Typography,
   Box,
@@ -7,6 +7,7 @@ import {
   Chip,
   Stack,
   Divider,
+  Skeleton,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
@@ -20,6 +21,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { getMonthlySummary } from "../../api/summaryApi";
 
+/* ───────── helpers ───────── */
+
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -32,12 +35,14 @@ const unwrap = (raw) => {
 };
 
 const ymNum = (y, m) => y * 12 + (m - 1);
+
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-// dark glass / neon palette
+/* ───────── design tokens ───────── */
+
 const colors = {
   bg0: "#060A14",
   bg1: "#071022",
@@ -47,7 +52,6 @@ const colors = {
   border2: "rgba(255,255,255,0.12)",
   text: "rgba(255,255,255,0.92)",
   muted: "rgba(255,255,255,0.62)",
-
   primary: "#7C5CFF",
   success: "#2FE7A1",
   warning: "#FF8A3D",
@@ -63,106 +67,107 @@ const surfaceSx = {
   boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
 };
 
-const StatCard = ({ label, value, sub, accent = colors.primary, onClick }) => (
-  <Card
-    variant="outlined"
-    onClick={onClick}
-    role={onClick ? "button" : undefined}
-    tabIndex={onClick ? 0 : undefined}
-    onKeyDown={
-      onClick
-        ? (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              onClick();
+/* ───────── StatCard (memoized) ───────── */
+
+const StatCard = memo(function StatCard({
+  label,
+  value,
+  sub,
+  accent = colors.primary,
+  onClick,
+}) {
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (onClick && (e.key === "Enter" || e.key === " ")) {
+        e.preventDefault();
+        onClick();
+      }
+    },
+    [onClick]
+  );
+
+  return (
+    <Card
+      variant="outlined"
+      onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={onClick ? handleKeyDown : undefined}
+      sx={{
+        ...surfaceSx,
+        height: "100%",
+        minHeight: 112,
+        cursor: onClick ? "pointer" : "default",
+        position: "relative",
+        overflow: "hidden",
+        transition:
+          "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
+        borderColor: alpha(accent, 0.22),
+        "&:before": {
+          content: '""',
+          position: "absolute",
+          left: 14,
+          right: 14,
+          top: 10,
+          height: 3,
+          borderRadius: 999,
+          background: `linear-gradient(90deg, transparent 0%, ${alpha(
+            accent,
+            0.95
+          )} 30%, ${alpha(accent, 0.55)} 70%, transparent 100%)`,
+          opacity: 0.95,
+          pointerEvents: "none",
+        },
+        "&:after": {
+          content: '""',
+          position: "absolute",
+          right: -70,
+          top: -80,
+          width: 220,
+          height: 220,
+          borderRadius: 999,
+          background: `radial-gradient(circle at 30% 30%, ${alpha(
+            accent,
+            0.18
+          )} 0%, transparent 60%)`,
+          pointerEvents: "none",
+        },
+        "&:hover": onClick
+          ? {
+              transform: "translateY(-2px)",
+              boxShadow: "0 26px 70px rgba(0,0,0,0.62)",
+              borderColor: alpha(accent, 0.45),
             }
-          }
-        : undefined
-    }
-    sx={{
-      ...surfaceSx,
-      height: "100%",
-      minHeight: 112,
-      cursor: onClick ? "pointer" : "default",
-      position: "relative",
-      overflow: "hidden",
-      transition:
-        "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-      borderColor: alpha(accent, 0.22),
+          : {},
+      }}
+    >
+      <CardContent sx={{ p: 2 }}>
+        <Typography
+          variant="overline"
+          sx={{ color: colors.muted, fontWeight: 900, letterSpacing: 0.55 }}
+        >
+          {label}
+        </Typography>
+        <Typography
+          variant="h5"
+          sx={{ mt: 0.6, fontWeight: 950, color: colors.text, lineHeight: 1.05 }}
+        >
+          {value}
+        </Typography>
+        <Typography
+          variant="caption"
+          sx={{ mt: 0.5, color: colors.muted, display: "block" }}
+        >
+          {sub && String(sub).trim() ? sub : "\u00A0"}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
+});
 
-      // top neon line
-      "&:before": {
-        content: '""',
-        position: "absolute",
-        left: 14,
-        right: 14,
-        top: 10,
-        height: 3,
-        borderRadius: 999,
-        background: `linear-gradient(90deg, transparent 0%, ${alpha(
-          accent,
-          0.95
-        )} 30%, ${alpha(accent, 0.55)} 70%, transparent 100%)`,
-        opacity: 0.95,
-        pointerEvents: "none",
-      },
+/* ───────── SummaryRow (memoized) ───────── */
 
-      // inner glow
-      "&:after": {
-        content: '""',
-        position: "absolute",
-        right: -70,
-        top: -80,
-        width: 220,
-        height: 220,
-        borderRadius: 999,
-        background: `radial-gradient(circle at 30% 30%, ${alpha(
-          accent,
-          0.18
-        )} 0%, transparent 60%)`,
-        pointerEvents: "none",
-      },
-
-      "&:hover": onClick
-        ? {
-            transform: "translateY(-2px)",
-            boxShadow: "0 26px 70px rgba(0,0,0,0.62)",
-            borderColor: alpha(accent, 0.45),
-          }
-        : {},
-    }}
-  >
-    <CardContent sx={{ p: 2 }}>
-      <Typography
-        variant="overline"
-        sx={{ color: colors.muted, fontWeight: 900, letterSpacing: 0.55 }}
-      >
-        {label}
-      </Typography>
-
-      <Typography
-        variant="h5"
-        sx={{
-          mt: 0.6,
-          fontWeight: 950,
-          color: colors.text,
-          lineHeight: 1.05,
-        }}
-      >
-        {value}
-      </Typography>
-
-      <Typography
-        variant="caption"
-        sx={{ mt: 0.5, color: colors.muted, display: "block" }}
-      >
-        {sub && String(sub).trim() ? sub : " "}
-      </Typography>
-    </CardContent>
-  </Card>
-);
-
-function SummaryRow({ label, value, color }) {
+const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   return (
     <Box
       sx={{
@@ -189,7 +194,6 @@ function SummaryRow({ label, value, color }) {
           {label}
         </Typography>
       </Stack>
-
       <Typography
         variant="body2"
         sx={{
@@ -203,7 +207,153 @@ function SummaryRow({ label, value, color }) {
       </Typography>
     </Box>
   );
+});
+
+/* ───────── HistoryAccordion (memoized) ───────── */
+
+const accordionSx = {
+  borderRadius: 4,
+  mb: 1,
+  border: `1px solid ${colors.border}`,
+  backgroundColor: colors.card2,
+  boxShadow: "0 14px 40px rgba(0,0,0,0.35)",
+  backdropFilter: "blur(14px)",
+  WebkitBackdropFilter: "blur(14px)",
+  "&:before": { display: "none" },
+};
+
+const HistoryAccordion = memo(function HistoryAccordion({
+  h,
+  monthTitle,
+  fmtRub,
+}) {
+  const raw = Number(h?.savings_rate_percent);
+  const has = Number.isFinite(raw);
+  const v = has ? Math.round(raw) : null;
+
+  const pctColor = !has
+    ? colors.muted
+    : v > 0
+    ? colors.success
+    : v < 0
+    ? "#FF4D4D"
+    : colors.muted;
+
+  const pctText = has ? `(${v}%)` : "(—%)";
+
+  return (
+    <Accordion disableGutters elevation={0} sx={accordionSx}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ width: "100%", gap: 1, minWidth: 0 }}
+        >
+          <Typography
+            sx={{
+              fontWeight: 950,
+              color: colors.text,
+              textTransform: "capitalize",
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {monthTitle(h.year, h.month)}
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}
+          >
+            {pctText}
+          </Typography>
+        </Stack>
+      </AccordionSummary>
+
+      <AccordionDetails sx={{ pt: 0 }}>
+        <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.82) }}>
+          <Typography variant="body2">
+            Доходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_income))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Расходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_expenses))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Баланс:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.balance))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Сбережения:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.savings))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Норма сбережений:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {n(h.savings_rate_percent)}%
+            </Box>
+          </Typography>
+        </Stack>
+      </AccordionDetails>
+    </Accordion>
+  );
+});
+
+/* ───────── Skeleton Loader ───────── */
+
+function DashboardSkeleton() {
+  return (
+    <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
+      <Skeleton
+        variant="rounded"
+        height={120}
+        sx={{ borderRadius: 6, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }}
+      />
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "repeat(2, 1fr)",
+            md: "repeat(4, 1fr)",
+          },
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        {[0, 1, 2, 3].map((i) => (
+          <Skeleton
+            key={i}
+            variant="rounded"
+            height={112}
+            sx={{ borderRadius: 5, bgcolor: "rgba(255,255,255,0.04)" }}
+          />
+        ))}
+      </Box>
+      <Skeleton
+        variant="rounded"
+        height={300}
+        sx={{ borderRadius: 6, bgcolor: "rgba(255,255,255,0.04)" }}
+      />
+    </Box>
+  );
 }
+
+/* ═══════════════════════════════════════════
+   DashboardPage — main component
+   ═══════════════════════════════════════════ */
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -215,9 +365,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
+
+  /* ── formatters (stable refs) ── */
 
   const fmtRub = useMemo(
     () =>
@@ -238,30 +390,35 @@ export default function DashboardPage() {
       }),
     []
   );
-  const todayLabel = useMemo(() => fmtToday.format(new Date()), [fmtToday]);
+
+  const todayLabel = useMemo(() => fmtToday.format(now), [fmtToday, now]);
 
   const fmtMonth = useMemo(
     () =>
-      new Intl.DateTimeFormat("ru-RU", {
-        month: "long",
-        year: "numeric",
-      }),
+      new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
     []
   );
-  const monthTitle = (y, m) => fmtMonth.format(new Date(y, m - 1, 1));
+
+  const monthTitle = useCallback(
+    (y, m) => fmtMonth.format(new Date(y, m - 1, 1)),
+    [fmtMonth]
+  );
+
+  /* ── KPI mode (month / year) with localStorage ── */
 
   const kpiModeKey = useMemo(
     () => `fintracker:kpiMode:${userId || "anon"}`,
     [userId]
   );
-  const [kpiMode, setKpiMode] = useState("month");
 
-  useEffect(() => {
+  const [kpiMode, setKpiMode] = useState(() => {
     try {
       const v = window.localStorage.getItem(kpiModeKey);
-      if (v === "month" || v === "year") setKpiMode(v);
-    } catch {}
-  }, [kpiModeKey]);
+      return v === "month" || v === "year" ? v : "month";
+    } catch {
+      return "month";
+    }
+  });
 
   useEffect(() => {
     try {
@@ -269,15 +426,18 @@ export default function DashboardPage() {
     } catch {}
   }, [kpiModeKey, kpiMode]);
 
-  const onKpiModeChange = (_e, next) => {
-    if (!next) return;
-    setKpiMode(next);
-  };
+  const onKpiModeChange = useCallback((_e, next) => {
+    if (next) setKpiMode(next);
+  }, []);
+
+  /* ── sorted history (descending) ── */
 
   const historyDesc = useMemo(
     () => [...history].sort((a, b) => b.year - a.year || b.month - a.month),
     [history]
   );
+
+  /* ── data fetching ── */
 
   useEffect(() => {
     let cancelled = false;
@@ -287,42 +447,39 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        if (!userId)
+        if (!userId) {
           throw new Error("Нет user.id (проверь authUser в localStorage).");
+        }
 
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
         if (!cancelled) setSummary(cur);
 
         const baseYM = { year, month };
-        const tasks = [];
         const rows = [];
 
-        for (let i = 0; i < 12; i++) {
+        const tasks = Array.from({ length: 12 }, (_, i) => {
           const ym = addMonthsYM(baseYM, -i);
-          tasks.push(
-            getMonthlySummary(userId, ym.year, ym.month)
-              .then((raw) => {
-                const d = unwrap(raw);
-                if (
-                  d &&
-                  (n(d.total_income) ||
-                    n(d.total_expenses) ||
-                    n(d.balance) ||
-                    n(d.savings))
-                ) {
-                  rows.push({ ...d, year: ym.year, month: ym.month });
-                }
-              })
-              .catch(() => {})
-          );
-        }
+          return getMonthlySummary(userId, ym.year, ym.month)
+            .then((raw) => {
+              const d = unwrap(raw);
+              if (
+                d &&
+                (n(d.total_income) ||
+                  n(d.total_expenses) ||
+                  n(d.balance) ||
+                  n(d.savings))
+              ) {
+                rows.push({ ...d, year: ym.year, month: ym.month });
+              }
+            })
+            .catch(() => {});
+        });
 
         await Promise.all(tasks);
         if (!cancelled) setHistory(rows);
       } catch (e) {
-        if (!cancelled)
-          setError(e?.message || "Ошибка загрузки сводки/истории");
+        if (!cancelled) setError(e?.message || "Ошибка загрузки сводки/истории");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -333,6 +490,8 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [userId, year, month]);
+
+  /* ── derived KPI values ── */
 
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
@@ -355,7 +514,7 @@ export default function DashboardPage() {
     () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
     [yearMonths]
   );
-  const yearBalance = useMemo(() => yearIncome - yearExpenses, [yearIncome, yearExpenses]);
+  const yearBalance = yearIncome - yearExpenses;
   const yearSavings = useMemo(
     () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
     [yearMonths]
@@ -380,6 +539,17 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || "пользователь";
 
+  /* ── navigation callbacks (stable refs) ── */
+
+  const goIncome = useCallback(() => navigate("/income"), [navigate]);
+  const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
+
+  /* ── loading state ── */
+
+  if (loading) return <DashboardSkeleton />;
+
+  /* ── render ── */
+
   return (
     <Box
       sx={{
@@ -395,7 +565,7 @@ export default function DashboardPage() {
         `,
       }}
     >
-      {/* HERO */}
+      {/* ══════ HERO ══════ */}
       <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 6, mb: 2 }}>
         <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
           <Stack
@@ -404,15 +574,19 @@ export default function DashboardPage() {
             alignItems={{ sm: "center" }}
           >
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15, color: colors.text }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 950, lineHeight: 1.15, color: colors.text }}
+              >
                 Финансовая свобода
               </Typography>
-
               <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5 }}>
                 Привет, {displayName} • Сегодня: {todayLabel}
               </Typography>
-
-              <Typography variant="body2" sx={{ color: alpha(colors.text, 0.78), mt: 0.5, fontWeight: 700 }}>
+              <Typography
+                variant="body2"
+                sx={{ color: alpha(colors.text, 0.78), mt: 0.5, fontWeight: 700 }}
+              >
                 {periodLabel}
               </Typography>
             </Box>
@@ -434,7 +608,6 @@ export default function DashboardPage() {
                   fontWeight: 850,
                 }}
               />
-
               <ToggleButtonGroup
                 value={kpiMode}
                 exclusive
@@ -465,8 +638,9 @@ export default function DashboardPage() {
             </Stack>
           </Stack>
 
-          {error ? (
+          {error && (
             <Box
+              role="alert"
               sx={{
                 mt: 1.25,
                 p: 1.25,
@@ -479,11 +653,11 @@ export default function DashboardPage() {
             >
               {error}
             </Box>
-          ) : null}
+          )}
         </CardContent>
       </Card>
 
-      {/* KPI */}
+      {/* ══════ KPI CARDS ══════ */}
       <Box
         sx={{
           display: "grid",
@@ -495,24 +669,24 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} sub=" " accent={colors.primary} />
-
+        <StatCard
+          label="Баланс"
+          value={fmtRub.format(displayBalance)}
+          accent={colors.primary}
+        />
         <StatCard
           label="Доходы"
           value={fmtRub.format(displayIncome)}
           sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
           accent={colors.success}
-          onClick={() => navigate("/income")}
+          onClick={goIncome}
         />
-
         <StatCard
           label="Расходы"
           value={fmtRub.format(displayExpenses)}
-          sub=" "
           accent={colors.warning}
-          onClick={() => navigate("/expenses")}
+          onClick={goExpenses}
         />
-
         <StatCard
           label="Норма сбережений"
           value={`${displayRate}%`}
@@ -521,17 +695,25 @@ export default function DashboardPage() {
         />
       </Box>
 
-      {/* DETAILS + HISTORY */}
+      {/* ══════ DETAILS + HISTORY ══════ */}
       <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 6 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
+          <Stack
+            direction="row"
+            alignItems="baseline"
+            justifyContent="space-between"
+            sx={{ mb: 0.5 }}
+          >
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text }}>
               Итоги операций за месяц
             </Typography>
-
             <Typography
               variant="caption"
-              sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}
+              sx={{
+                color: colors.muted,
+                fontWeight: 900,
+                textTransform: "capitalize",
+              }}
             >
               {monthTitle(year, month)}
             </Typography>
@@ -550,21 +732,37 @@ export default function DashboardPage() {
             }}
           >
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.success} />
+              <SummaryRow
+                label="Доходы"
+                value={fmtRub.format(incomeMonth)}
+                color={colors.success}
+              />
             </Box>
             <Divider sx={{ borderColor: colors.border }} />
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
+              <SummaryRow
+                label="Расходы"
+                value={fmtRub.format(expenseMonth)}
+                color={colors.warning}
+              />
             </Box>
             <Divider sx={{ borderColor: colors.border }} />
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
+              <SummaryRow
+                label="Сбережения"
+                value={fmtRub.format(savingsMonth)}
+                color={colors.accent}
+              />
             </Box>
           </Box>
 
           <Divider sx={{ my: 1.5, borderColor: colors.border }} />
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: colors.muted }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 0.25, sm: 1.25 }}
+            sx={{ color: colors.muted }}
+          >
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
               История сохранена: {history.length} месяцев
             </Typography>
@@ -579,98 +777,14 @@ export default function DashboardPage() {
                 Пока нет сохранённых месяцев.
               </Typography>
             ) : (
-              historyDesc.map((h) => {
-                const raw = Number(h?.savings_rate_percent);
-                const has = Number.isFinite(raw);
-                const v = has ? Math.round(raw) : null;
-
-                const pctColor = !has ? colors.muted : v > 0 ? colors.success : v < 0 ? "#FF4D4D" : colors.muted;
-                const pctText = has ? `(${v}%)` : "(—%)";
-
-                return (
-                  <Accordion
-                    key={`${h.year}-${h.month}`}
-                    disableGutters
-                    elevation={0}
-                    sx={{
-                      borderRadius: 4,
-                      mb: 1,
-                      border: `1px solid ${colors.border}`,
-                      backgroundColor: colors.card2,
-                      boxShadow: "0 14px 40px rgba(0,0,0,0.35)",
-                      backdropFilter: "blur(14px)",
-                      WebkitBackdropFilter: "blur(14px)",
-                      "&:before": { display: "none" },
-                    }}
-                  >
-                    <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        justifyContent="space-between"
-                        sx={{ width: "100%", gap: 1, minWidth: 0 }}
-                      >
-                        <Typography
-                          sx={{
-                            fontWeight: 950,
-                            color: colors.text,
-                            textTransform: "capitalize",
-                            minWidth: 0,
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {monthTitle(h.year, h.month)}
-                        </Typography>
-
-                        <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}>
-                          {pctText}
-                        </Typography>
-                      </Stack>
-                    </AccordionSummary>
-
-                    <AccordionDetails sx={{ pt: 0 }}>
-                      <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.82) }}>
-                        <Typography variant="body2">
-                          Доходы:{" "}
-                          <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-                            {fmtRub.format(n(h.total_income))}
-                          </Box>
-                        </Typography>
-
-                        <Typography variant="body2">
-                          Расходы:{" "}
-                          <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-                            {fmtRub.format(n(h.total_expenses))}
-                          </Box>
-                        </Typography>
-
-                        <Typography variant="body2">
-                          Баланс:{" "}
-                          <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-                            {fmtRub.format(n(h.balance))}
-                          </Box>
-                        </Typography>
-
-                        <Typography variant="body2">
-                          Сбережения:{" "}
-                          <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-                            {fmtRub.format(n(h.savings))}
-                          </Box>
-                        </Typography>
-
-                        <Typography variant="body2">
-                          Норма сбережений:{" "}
-                          <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-                            {n(h.savings_rate_percent)}%
-                          </Box>
-                        </Typography>
-                      </Stack>
-                    </AccordionDetails>
-                  </Accordion>
-                );
-              })
+              historyDesc.map((h) => (
+                <HistoryAccordion
+                  key={`${h.year}-${h.month}`}
+                  h={h}
+                  monthTitle={monthTitle}
+                  fmtRub={fmtRub}
+                />
+              ))
             )}
           </Box>
         </CardContent>
