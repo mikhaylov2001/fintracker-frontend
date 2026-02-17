@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Box,
@@ -139,34 +139,36 @@ export default function AppLayout() {
     </Box>
   );
 
-  // --- глушим почти горизонтальные свайпы внутри приложения ---
-  const handleTouchStart = useCallback((e) => {
-    const t = e.touches[0];
-    handleTouchStart._x = t.clientX;
-    handleTouchStart._y = t.clientY;
-  }, []);
+  // ref для координат свайпа
+  const touchRef = useRef({ x: null, y: null });
 
-  const handleTouchMove = useCallback((e) => {
+  const handleTouchStart = useCallback((e) => {
     if (e.touches.length !== 1) return;
     const t = e.touches[0];
-    const sx = handleTouchStart._x;
-    const sy = handleTouchStart._y;
-    if (sx == null || sy == null) return;
-
-    const dx = Math.abs(t.clientX - sx);
-    const dy = Math.abs(t.clientY - sy);
-
-    // если жест преимущественно горизонтальный — не даём ему гулять внутри app
-    if (dx > dy && dx > 8) {
-      e.preventDefault();
-    }
+    touchRef.current = { x: t.clientX, y: t.clientY };
   }, []);
+
+  const handleTouchMove = useCallback(
+    (e) => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      const { x, y } = touchRef.current || {};
+      if (x == null || y == null) return;
+
+      const dx = Math.abs(t.clientX - x);
+      const dy = Math.abs(t.clientY - y);
+
+      // если жест преимущественно горизонтальный — гасим внутри app
+      if (dx > dy && dx > 8) {
+        e.preventDefault();
+      }
+    },
+    [touchRef]
+  );
 
   const handleTouchEnd = useCallback(() => {
-    handleTouchStart._x = null;
-    handleTouchStart._y = null;
+    touchRef.current = { x: null, y: null };
   }, []);
-  // ------------------------------------------------------------
 
   return (
     <AppBackground>
