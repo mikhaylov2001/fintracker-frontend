@@ -1,79 +1,44 @@
-// src/theme.js
-import { createTheme, alpha, responsiveFontSizes } from '@mui/material/styles';
-
-export function buildTheme(mode = 'light') {
+export function buildTheme(mode = 'dark') {  // ← default 'dark'!
   const isDark = mode === 'dark';
 
-  let t = createTheme({
+  const theme = createTheme({
     palette: {
       mode,
       background: {
-        default: isDark ? '#0B1220' : '#F5F7FF',
-        paper: isDark ? alpha('#111827', 0.85) : alpha('#FFFFFF', 0.86),
+        default: isDark ? '#060A14' : '#F5F7FF',  // ← Тёмный fallback
+        paper: isDark ? 'rgba(10,16,32,0.45)' : 'rgba(255,255,255,0.9)',  // Glass!
       },
-      text: {
-        primary: isDark ? '#E5E7EB' : '#0F172A',
-        secondary: isDark ? alpha('#E5E7EB', 0.70) : alpha('#0F172A', 0.65),
-      },
-      divider: isDark ? alpha('#E5E7EB', 0.10) : alpha('#0F172A', 0.10),
+      // ... остальное
     },
-
-    shape: { borderRadius: 12 },
-
-    typography: {
-      fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
-    },
-
     components: {
-      MuiToolbar: { defaultProps: { variant: 'dense' } },
-
-      MuiButton: {
-        defaultProps: { disableElevation: true, size: 'small' },
-        styleOverrides: { root: { borderRadius: 999, textTransform: 'none', paddingLeft: 14, paddingRight: 14 } },
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            background: isDark ? `
+              radial-gradient(1100px 550px at 12% 8%, rgba(124,92,255,0.12) 0%, transparent 62%),
+              radial-gradient(900px 500px at 88% 15%, rgba(47,231,161,0.1) 0%, transparent 60%),
+              radial-gradient(800px 500px at 50% 95%, rgba(109,168,255,0.08) 0%, transparent 58%),
+              linear-gradient(180deg, #071022 0%, #060A14 100%)
+            ` : '#F5F7FF',
+            backgroundAttachment: 'fixed',
+          },
+          html: {
+            WebkitFontSmoothing: 'antialiased',
+          },
+        },
       },
-
-      MuiIconButton: { defaultProps: { size: 'small' } },
-
-      MuiTextField: {
-        defaultProps: { size: 'small', margin: 'dense', variant: 'outlined', fullWidth: true },
-      },
-      MuiFormControl: { defaultProps: { size: 'small', margin: 'dense' } },
-
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 16,
-            borderColor: isDark ? alpha('#E5E7EB', 0.10) : 'rgba(15, 23, 42, 0.08)',
-            backgroundColor: isDark ? alpha('#111827', 0.70) : alpha('#FFFFFF', 0.86),
-            backdropFilter: 'blur(10px)',
+            backgroundColor: 'transparent !important',  // ← Не перетирать sx!
+            backdropFilter: 'blur(20px) saturate(180%) !important',
+            border: 'none !important',
           },
         },
       },
-
-      MuiCardContent: {
-        styleOverrides: {
-          root: { padding: 16, '&:last-child': { paddingBottom: 16 } },
-        },
-      },
-
-      MuiTable: { defaultProps: { size: 'small' } },
-
-      MuiTableCell: {
-        styleOverrides: {
-          root: { paddingTop: 10, paddingBottom: 10, borderColor: isDark ? alpha('#E5E7EB', 0.10) : undefined },
-          head: {
-            fontWeight: 800,
-            backgroundColor: isDark ? alpha('#E5E7EB', 0.05) : alpha('#0F172A', 0.03),
-          },
-        },
-      },
-
-      MuiDivider: {
-        styleOverrides: { root: { marginTop: 12, marginBottom: 12, borderColor: isDark ? alpha('#E5E7EB', 0.10) : alpha('#0F172A', 0.10) } },
-      },
+      // ... твои остальные overrides
     },
   });
 
-  t = responsiveFontSizes(t);
-  return t;
+  return responsiveFontSizes(theme);
 }
