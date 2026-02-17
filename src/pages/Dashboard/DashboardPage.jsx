@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
-import { Typography, Box, Card, CardContent, Chip, Stack, Skeleton } from "@mui/material";
+import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -22,7 +22,7 @@ import {
   bankingColors as colors,
   surfaceOutlinedSx,
   pillSx,
-} from '../../styles/bankingTokens';
+} from "../../styles/bankingTokens";
 
 /* helpers */
 const n = (v) => {
@@ -64,7 +64,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colors.primary, onClick }) {
+const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
@@ -76,8 +76,8 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
   );
 
   return (
-    <Card
-      variant="outlined"
+    <Box
+      component="div"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -90,13 +90,15 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        border: `1px solid ${alpha(accent, 0.34)}`,
         borderColor: alpha(accent, 0.34),
+        display: "flex",
+        flexDirection: "column",
+        p: { xs: 1.5, md: 2 },
         "&:before": {
           content: '""',
           position: "absolute",
           inset: 0,
-          background: `linear-gradient(135deg, ${alpha(accent, 0.18)} 0%, transparent 62%)`,
+          background: `linear-gradient(135deg, ${alpha(accent, 0.20)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
         "@media (hover: hover) and (pointer: fine)": onClick
@@ -110,61 +112,76 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           : {},
       }}
     >
-      <CardContent sx={{ p: { xs: 1.5, md: 2 }, position: "relative", zIndex: 1 }}>
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Box
-            sx={{
-              width: { xs: 30, md: 34 },
-              height: { xs: 30, md: 34 },
-              borderRadius: 2.5,
-              display: "grid",
-              placeItems: "center",
-              bgcolor: alpha(accent, 0.14),
-              border: `1px solid ${alpha(accent, 0.28)}`,
-              flex: "0 0 auto",
-            }}
-          >
-            {icon
-              ? React.cloneElement(icon, {
-                  sx: { fontSize: { xs: 17, md: 18 }, color: alpha(accent, 0.98) },
-                })
-              : null}
-          </Box>
-
-          <Typography
-            variant="overline"
-            sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55, lineHeight: 1.05 }}
-          >
-            {label}
-          </Typography>
-        </Stack>
-
-        <Typography
-          variant="h5"
+      <Stack direction="row" spacing={1.1} alignItems="center" sx={{ position: "relative", zIndex: 1 }}>
+        <Box
           sx={{
-            mt: { xs: 0.7, md: 0.9 },
-            fontWeight: 950,
-            color: colors.text,
-            lineHeight: 1.05,
-            letterSpacing: -0.25,
-            fontSize: { xs: "1.15rem", sm: "1.22rem", md: "1.35rem" },
+            width: { xs: 30, md: 34 },
+            height: { xs: 30, md: 34 },
+            borderRadius: 2.5,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: alpha(accent, 0.14),
+            border: `1px solid ${alpha(accent, 0.28)}`,
+            flex: "0 0 auto",
           }}
         >
-          {value}
-        </Typography>
+          {icon
+            ? React.cloneElement(icon, {
+                sx: { fontSize: { xs: 17, md: 18 }, color: alpha(accent, 0.98) },
+              })
+            : null}
+        </Box>
 
         <Typography
-          variant="caption"
+          variant="overline"
           sx={{
-            mt: 0.5,
             color: colors.muted,
-            display: { xs: "none", md: "block" },
+            fontWeight: 950,
+            letterSpacing: 0.55,
+            lineHeight: 1.1,
+            minWidth: 0,
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            WebkitLineClamp: { xs: 2, sm: 1 },
+            overflow: "hidden",
           }}
         >
-          {sub && String(sub).trim() ? sub : "\u00A0"}
+          {label}
         </Typography>
-      </CardContent>
-    </Card>
+      </Stack>
+
+      <Typography
+        variant="h5"
+        sx={{
+          mt: { xs: 0.7, md: 0.9 },
+          fontWeight: 950,
+          color: colors.text,
+          lineHeight: 1.05,
+          letterSpacing: -0.25,
+          fontSize: { xs: "1.15rem", sm: "1.22rem", md: "1.35rem" },
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {value}
+      </Typography>
+
+      <Typography
+        variant="caption"
+        sx={{
+          mt: 0.5,
+          color: colors.muted,
+          display: { xs: "none", md: "block" },
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        {sub && String(sub).trim() ? sub : "\u00A0"}
+      </Typography>
+    </Box>
   );
 });
 
@@ -534,7 +551,12 @@ export default function DashboardPage() {
             ) : null}
           </Box>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ width: { xs: "100%", md: "auto" } }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            alignItems={{ sm: "center" }}
+            sx={{ width: { xs: "100%", md: "auto" } }}
+          >
             <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.18) }} />
 
             <Chip
@@ -579,17 +601,23 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI */}
+      {/* KPI – стиль как в AnalyticsPage */}
       <Box
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
-          gap: { xs: 1.25, sm: 1.5, md: 2 },
+          gap: { xs: 1.5, sm: 1.75, md: 2 },
           mb: 2,
         }}
       >
-        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} accent={colors.primary} icon={<AccountBalanceWalletOutlinedIcon />} />
-        <StatCard
+        <KpiCard
+          label="Баланс"
+          value={fmtRub.format(displayBalance)}
+          sub=" "
+          accent={colors.primary}
+          icon={<AccountBalanceWalletOutlinedIcon />}
+        />
+        <KpiCard
           label="Доходы"
           value={fmtRub.format(displayIncome)}
           sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
@@ -597,14 +625,15 @@ export default function DashboardPage() {
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
-        <StatCard
+        <KpiCard
           label="Расходы"
           value={fmtRub.format(displayExpenses)}
+          sub=" "
           accent={colors.warning}
           onClick={goExpenses}
           icon={<ArrowCircleDownOutlinedIcon />}
         />
-        <StatCard
+        <KpiCard
           label="Норма сбережений"
           value={`${displayRate}%`}
           sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
@@ -623,7 +652,11 @@ export default function DashboardPage() {
           <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
         </Stack>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ mt: 2, color: colors.muted }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={{ xs: 0.25, sm: 1.25 }}
+          sx={{ mt: 2, color: colors.muted }}
+        >
           <Typography variant="caption" sx={{ fontWeight: 800 }}>
             История сохранена: {historyDesc.length} месяцев
           </Typography>
