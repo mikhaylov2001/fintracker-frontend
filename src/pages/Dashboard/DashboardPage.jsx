@@ -41,30 +41,29 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/* ───────── design tokens ───────── */
+/* ───────── slate banking tokens ───────── */
 
 const colors = {
-  bg0: "#060A14",
-  bg1: "#071022",
-  card: "rgba(10, 16, 32, 0.62)",
-  card2: "rgba(10, 16, 32, 0.72)",
+  bg0: "#0F172A",
+  bg1: "#111C33",
+  card: alpha("#111B30", 0.86),
+  card2: alpha("#0F1A2D", 0.88),
   border: "rgba(255,255,255,0.08)",
   border2: "rgba(255,255,255,0.12)",
   text: "rgba(255,255,255,0.92)",
-  muted: "rgba(255,255,255,0.62)",
-  primary: "#7C5CFF",
-  success: "#2FE7A1",
-  warning: "#FF8A3D",
-  accent: "#6DA8FF",
+  muted: "rgba(255,255,255,0.66)",
+  primary: "#4F7DFF",
+  success: "#2DD4BF",
+  warning: "#F59E0B",
+  accent: "#60A5FA",
+  danger: "#FF5A6A",
 };
 
 const surfaceSx = {
-  borderRadius: 5,
+  borderRadius: 4,
   border: `1px solid ${colors.border}`,
   backgroundColor: colors.card,
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
-  boxShadow: "0 22px 60px rgba(0,0,0,0.55)",
+  boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
 };
 
 /* ───────── StatCard (memoized) ───────── */
@@ -103,40 +102,23 @@ const StatCard = memo(function StatCard({
         transition:
           "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
         borderColor: alpha(accent, 0.22),
+
+        // аккуратная акцентная линия слева (банковский паттерн)
         "&:before": {
           content: '""',
           position: "absolute",
-          left: 14,
-          right: 14,
-          top: 10,
-          height: 3,
-          borderRadius: 999,
-          background: `linear-gradient(90deg, transparent 0%, ${alpha(
-            accent,
-            0.95
-          )} 30%, ${alpha(accent, 0.55)} 70%, transparent 100%)`,
-          opacity: 0.95,
-          pointerEvents: "none",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 3,
+          backgroundColor: alpha(accent, 0.9),
         },
-        "&:after": {
-          content: '""',
-          position: "absolute",
-          right: -70,
-          top: -80,
-          width: 220,
-          height: 220,
-          borderRadius: 999,
-          background: `radial-gradient(circle at 30% 30%, ${alpha(
-            accent,
-            0.18
-          )} 0%, transparent 60%)`,
-          pointerEvents: "none",
-        },
+
         "&:hover": onClick
           ? {
-              transform: "translateY(-2px)",
-              boxShadow: "0 26px 70px rgba(0,0,0,0.62)",
-              borderColor: alpha(accent, 0.45),
+              transform: "translateY(-1px)",
+              boxShadow: "0 22px 60px rgba(0,0,0,0.42)",
+              borderColor: alpha(accent, 0.42),
             }
           : {},
       }}
@@ -194,6 +176,7 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
           {label}
         </Typography>
       </Stack>
+
       <Typography
         variant="body2"
         sx={{
@@ -212,13 +195,11 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
 /* ───────── HistoryAccordion (memoized) ───────── */
 
 const accordionSx = {
-  borderRadius: 4,
+  borderRadius: 3,
   mb: 1,
   border: `1px solid ${colors.border}`,
   backgroundColor: colors.card2,
-  boxShadow: "0 14px 40px rgba(0,0,0,0.35)",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
+  boxShadow: "0 14px 40px rgba(0,0,0,0.28)",
   "&:before": { display: "none" },
 };
 
@@ -236,13 +217,18 @@ const HistoryAccordion = memo(function HistoryAccordion({
     : v > 0
     ? colors.success
     : v < 0
-    ? "#FF4D4D"
+    ? colors.danger
     : colors.muted;
 
   const pctText = has ? `(${v}%)` : "(—%)";
 
   return (
-    <Accordion disableGutters elevation={0} sx={accordionSx}>
+    <Accordion
+      disableGutters
+      elevation={0}
+      sx={accordionSx}
+      TransitionProps={{ unmountOnExit: true }} // разгружает DOM на длинной истории
+    >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
       >
@@ -303,7 +289,7 @@ const HistoryAccordion = memo(function HistoryAccordion({
           <Typography variant="body2">
             Норма сбережений:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {n(h.savings_rate_percent)}%
+              {has ? `${v}%` : "—%"}
             </Box>
           </Typography>
         </Stack>
@@ -320,7 +306,7 @@ function DashboardSkeleton() {
       <Skeleton
         variant="rounded"
         height={120}
-        sx={{ borderRadius: 6, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }}
+        sx={{ borderRadius: 4, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }}
       />
       <Box
         sx={{
@@ -338,14 +324,14 @@ function DashboardSkeleton() {
             key={i}
             variant="rounded"
             height={112}
-            sx={{ borderRadius: 5, bgcolor: "rgba(255,255,255,0.04)" }}
+            sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }}
           />
         ))}
       </Box>
       <Skeleton
         variant="rounded"
-        height={300}
-        sx={{ borderRadius: 6, bgcolor: "rgba(255,255,255,0.04)" }}
+        height={320}
+        sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }}
       />
     </Box>
   );
@@ -364,10 +350,6 @@ export default function DashboardPage() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const now = useMemo(() => new Date(), []);
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
 
   /* ── formatters (stable refs) ── */
 
@@ -391,11 +373,8 @@ export default function DashboardPage() {
     []
   );
 
-  const todayLabel = useMemo(() => fmtToday.format(now), [fmtToday, now]);
-
   const fmtMonth = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
+    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
     []
   );
 
@@ -404,7 +383,7 @@ export default function DashboardPage() {
     [fmtMonth]
   );
 
-  /* ── KPI mode (month / year) with localStorage ── */
+  /* ── KPI mode (month/year) with localStorage ── */
 
   const kpiModeKey = useMemo(
     () => `fintracker:kpiMode:${userId || "anon"}`,
@@ -420,6 +399,14 @@ export default function DashboardPage() {
     }
   });
 
+  // если ключ поменялся (другой userId) — перечитать сохранённое
+  useEffect(() => {
+    try {
+      const v = window.localStorage.getItem(kpiModeKey);
+      if (v === "month" || v === "year") setKpiMode(v);
+    } catch {}
+  }, [kpiModeKey]);
+
   useEffect(() => {
     try {
       window.localStorage.setItem(kpiModeKey, kpiMode);
@@ -430,14 +417,22 @@ export default function DashboardPage() {
     if (next) setKpiMode(next);
   }, []);
 
-  /* ── sorted history (descending) ── */
-
-  const historyDesc = useMemo(
-    () => [...history].sort((a, b) => b.year - a.year || b.month - a.month),
-    [history]
-  );
-
   /* ── data fetching ── */
+
+  const [period, setPeriod] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1, todayLabel: "" };
+  });
+
+  useEffect(() => {
+    // обновляем todayLabel каждый раз при монтировании (и потенциально можно обновлять по таймеру)
+    const now = new Date();
+    setPeriod({ year: now.getFullYear(), month: now.getMonth() + 1, todayLabel: fmtToday.format(now) });
+  }, [fmtToday]);
+
+  const year = period.year;
+  const month = period.month;
+  const todayLabel = period.todayLabel || fmtToday.format(new Date());
 
   useEffect(() => {
     let cancelled = false;
@@ -447,18 +442,19 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        if (!userId) {
-          throw new Error("Нет user.id (проверь authUser в localStorage).");
-        }
+        if (!userId) throw new Error("Нет user.id (проверь authUser в localStorage).");
 
+        const baseYM = { year, month };
+
+        // грузим текущий месяц один раз
         const rawCur = await getMonthlySummary(userId, year, month);
         const cur = unwrap(rawCur);
         if (!cancelled) setSummary(cur);
 
-        const baseYM = { year, month };
+        // история за 12 месяцев назад, без дубля текущего месяца (i=1..11)
         const rows = [];
-
-        const tasks = Array.from({ length: 12 }, (_, i) => {
+        const tasks = Array.from({ length: 11 }, (_, idx) => {
+          const i = idx + 1;
           const ym = addMonthsYM(baseYM, -i);
           return getMonthlySummary(userId, ym.year, ym.month)
             .then((raw) => {
@@ -477,6 +473,18 @@ export default function DashboardPage() {
         });
 
         await Promise.all(tasks);
+
+        // добавляем текущий месяц в историю, если он не пустой (или если нужен для годовых KPI)
+        if (
+          cur &&
+          (n(cur.total_income) ||
+            n(cur.total_expenses) ||
+            n(cur.balance) ||
+            n(cur.savings))
+        ) {
+          rows.push({ ...cur, year, month });
+        }
+
         if (!cancelled) setHistory(rows);
       } catch (e) {
         if (!cancelled) setError(e?.message || "Ошибка загрузки сводки/истории");
@@ -490,6 +498,13 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [userId, year, month]);
+
+  /* ── sorted history (descending) ── */
+
+  const historyDesc = useMemo(
+    () => [...history].sort((a, b) => b.year - a.year || b.month - a.month),
+    [history]
+  );
 
   /* ── derived KPI values ── */
 
@@ -514,7 +529,9 @@ export default function DashboardPage() {
     () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
     [yearMonths]
   );
+
   const yearBalance = yearIncome - yearExpenses;
+
   const yearSavings = useMemo(
     () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
     [yearMonths]
@@ -539,7 +556,7 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || "пользователь";
 
-  /* ── navigation callbacks (stable refs) ── */
+  /* ── navigation callbacks ── */
 
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
@@ -555,19 +572,19 @@ export default function DashboardPage() {
       sx={{
         width: "100%",
         color: colors.text,
-        borderRadius: 6,
+        borderRadius: 5,
         p: { xs: 1, sm: 1.5, md: 2 },
         background: `
-          radial-gradient(900px 520px at 12% 10%, ${alpha(colors.success, 0.14)} 0%, transparent 55%),
-          radial-gradient(900px 520px at 88% 18%, ${alpha(colors.primary, 0.16)} 0%, transparent 55%),
-          radial-gradient(900px 520px at 65% 90%, ${alpha(colors.accent, 0.12)} 0%, transparent 55%),
+          radial-gradient(900px 520px at 16% 10%, ${alpha(colors.primary, 0.14)} 0%, transparent 55%),
+          radial-gradient(900px 520px at 86% 18%, ${alpha(colors.accent, 0.10)} 0%, transparent 55%),
+          radial-gradient(900px 520px at 55% 92%, ${alpha(colors.success, 0.08)} 0%, transparent 55%),
           linear-gradient(180deg, ${colors.bg1} 0%, ${colors.bg0} 100%)
         `,
       }}
     >
-      {/* ══════ HERO ══════ */}
-      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 6, mb: 2 }}>
-        <CardContent sx={{ p: { xs: 2.25, md: 3 } }}>
+      {/* HERO */}
+      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5, mb: 2 }}>
+        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
@@ -585,7 +602,11 @@ export default function DashboardPage() {
               </Typography>
               <Typography
                 variant="body2"
-                sx={{ color: alpha(colors.text, 0.78), mt: 0.5, fontWeight: 700 }}
+                sx={{
+                  color: alpha(colors.text, 0.78),
+                  mt: 0.5,
+                  fontWeight: 700,
+                }}
               >
                 {periodLabel}
               </Typography>
@@ -602,12 +623,13 @@ export default function DashboardPage() {
                 sx={{
                   width: { xs: "100%", sm: "auto" },
                   borderRadius: 999,
-                  bgcolor: alpha("#0B1226", 0.55),
+                  bgcolor: alpha("#0B1226", 0.38),
                   border: `1px solid ${colors.border}`,
                   color: colors.text,
                   fontWeight: 850,
                 }}
               />
+
               <ToggleButtonGroup
                 value={kpiMode}
                 exclusive
@@ -615,7 +637,7 @@ export default function DashboardPage() {
                 size="small"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
-                  bgcolor: alpha("#0B1226", 0.55),
+                  bgcolor: alpha("#0B1226", 0.38),
                   border: `1px solid ${colors.border}`,
                   borderRadius: 999,
                   "& .MuiToggleButton-root": {
@@ -628,7 +650,7 @@ export default function DashboardPage() {
                   },
                   "& .MuiToggleButton-root.Mui-selected": {
                     color: colors.text,
-                    backgroundColor: alpha(colors.primary, 0.85),
+                    backgroundColor: alpha(colors.primary, 0.62),
                   },
                 }}
               >
@@ -645,8 +667,8 @@ export default function DashboardPage() {
                 mt: 1.25,
                 p: 1.25,
                 borderRadius: 2.5,
-                border: `1px solid ${alpha("#EF4444", 0.28)}`,
-                bgcolor: alpha("#7F1D1D", 0.25),
+                border: `1px solid ${alpha(colors.danger, 0.28)}`,
+                bgcolor: alpha("#7F1D1D", 0.20),
                 color: alpha("#FEE2E2", 0.95),
                 fontWeight: 700,
               }}
@@ -657,7 +679,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* ══════ KPI CARDS ══════ */}
+      {/* KPI */}
       <Box
         sx={{
           display: "grid",
@@ -695,9 +717,9 @@ export default function DashboardPage() {
         />
       </Box>
 
-      {/* ══════ DETAILS + HISTORY ══════ */}
-      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 6 }}>
-        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
+      {/* DETAILS + HISTORY */}
+      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5 }}>
+        <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
           <Stack
             direction="row"
             alignItems="baseline"
@@ -724,11 +746,9 @@ export default function DashboardPage() {
           <Box
             sx={{
               border: `1px solid ${colors.border}`,
-              borderRadius: 4,
+              borderRadius: 3,
               bgcolor: colors.card2,
               overflow: "hidden",
-              backdropFilter: "blur(14px)",
-              WebkitBackdropFilter: "blur(14px)",
             }}
           >
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>

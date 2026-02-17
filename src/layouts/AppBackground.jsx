@@ -1,62 +1,42 @@
 import React from "react";
 import { Box } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 export default function AppBackground({ children, sx }) {
+  const bg0 = "#0F172A";
+  const bg1 = "#111C33";
+  const primary = "#4F7DFF";
+  const accent = "#60A5FA";
+  const success = "#2DD4BF";
+
   return (
     <Box
       sx={{
         minHeight: "100vh",
         position: "relative",
         overflow: "hidden",
-        bgcolor: "#0A0E1A",
-        backgroundImage:
-          "radial-gradient(1100px 550px at 12% 8%, rgba(124,92,255,0.18), transparent 62%)," +
-          "radial-gradient(900px 500px at 88% 15%, rgba(47,231,161,0.14), transparent 60%)," +
-          "radial-gradient(800px 500px at 50% 95%, rgba(109,168,255,0.10), transparent 58%)," +
-          "linear-gradient(180deg, #0A0E1A 0%, #060A14 100%)",
+        bgcolor: bg0,
+        backgroundImage: `
+          radial-gradient(900px 520px at 15% 12%, ${alpha(primary, 0.14)} 0%, transparent 55%),
+          radial-gradient(900px 520px at 85% 18%, ${alpha(accent, 0.10)} 0%, transparent 55%),
+          radial-gradient(900px 520px at 55% 90%, ${alpha(success, 0.08)} 0%, transparent 55%),
+          linear-gradient(180deg, ${bg1} 0%, ${bg0} 100%)
+        `,
         ...sx,
       }}
     >
+      {/* лёгкая сетка */}
       <Box
         sx={{
           position: "absolute",
           inset: 0,
           pointerEvents: "none",
-          opacity: 0.15,
+          opacity: 0.06,
           backgroundImage:
-            "linear-gradient(to right, rgba(148,163,184,0.16) 1px, transparent 1px)," +
-            "linear-gradient(to bottom, rgba(148,163,184,0.16) 1px, transparent 1px)",
-          backgroundSize: "42px 42px",
+            "linear-gradient(to right, rgba(148,163,184,0.22) 1px, transparent 1px)," +
+            "linear-gradient(to bottom, rgba(148,163,184,0.22) 1px, transparent 1px)",
+          backgroundSize: "56px 56px",
           mixBlendMode: "soft-light",
-        }}
-      />
-
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          pointerEvents: "none",
-          "&:before, &:after": {
-            content: '""',
-            position: "absolute",
-            width: { xs: 240, sm: 320, md: 420 },
-            height: { xs: 240, sm: 320, md: 420 },
-            borderRadius: 999,
-            filter: "blur(40px)",
-            opacity: 0.72,
-          },
-          "&:before": {
-            left: { xs: -80, md: -120 },
-            top: { xs: -80, md: -120 },
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(124,92,255,0.45), rgba(124,92,255,0) 68%)",
-          },
-          "&:after": {
-            right: { xs: -90, md: -130 },
-            bottom: { xs: -90, md: -130 },
-            background:
-              "radial-gradient(circle at 30% 30%, rgba(47,231,161,0.40), rgba(47,231,161,0) 68%)",
-          },
         }}
       />
 
