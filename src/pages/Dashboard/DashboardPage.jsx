@@ -1,4 +1,3 @@
-// src/pages/Dashboard/DashboardPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { Typography, Box, Card, CardContent, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -24,7 +23,6 @@ import {
   surfaceOutlinedSx,
   pillSx,
 } from '../../styles/bankingTokens';
-
 
 /* helpers */
 const n = (v) => {
@@ -79,7 +77,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
 
   return (
     <Card
-      variant="outlined" // KPI: границы оставляем
+      variant="outlined"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -87,15 +85,13 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
       sx={{
         ...surfaceOutlinedSx,
         height: "100%",
-        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобиле, чтобы влезли 2×2
+        minHeight: { xs: 96, sm: 104, md: 116 },
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-
         border: `1px solid ${alpha(accent, 0.34)}`,
         borderColor: alpha(accent, 0.34),
-
         "&:before": {
           content: '""',
           position: "absolute",
@@ -103,7 +99,6 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           background: `linear-gradient(135deg, ${alpha(accent, 0.18)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
-
         "@media (hover: hover) and (pointer: fine)": onClick
           ? {
               "&:hover": {
@@ -163,7 +158,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           sx={{
             mt: 0.5,
             color: colors.muted,
-            display: { xs: "none", md: "block" }, // на мобиле скрываем sub, чтобы карточки не раздувались
+            display: { xs: "none", md: "block" },
           }}
         >
           {sub && String(sub).trim() ? sub : "\u00A0"}
@@ -215,8 +210,8 @@ const accordionSx = {
   borderRadius: 16,
   mb: 1,
   border: "none",
-  boxShadow: "0 10px 26px rgba(0,0,0,0.42)",
-  backgroundColor: alpha(colors.card2, 0.86),
+  boxShadow: "none",
+  backgroundColor: "transparent",
   "&:before": { display: "none" },
 };
 
@@ -234,7 +229,12 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
         sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
       >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ width: "100%", gap: 1, minWidth: 0 }}
+        >
           <Typography
             sx={{
               fontWeight: 950,
@@ -491,7 +491,7 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ width: "100%", color: colors.text }}>
-      {/* TOP: как “Итоги месяца” — без рамок/теней/градиента/оттенков */}
+      {/* TOP */}
       <Box
         sx={{
           mb: 2,
@@ -579,7 +579,7 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI: mobile 2×2, desktop 4 в ряд */}
+      {/* KPI */}
       <Box
         sx={{
           display: "grid",
@@ -589,12 +589,31 @@ export default function DashboardPage() {
         }}
       >
         <StatCard label="Баланс" value={fmtRub.format(displayBalance)} accent={colors.primary} icon={<AccountBalanceWalletOutlinedIcon />} />
-        <StatCard label="Доходы" value={fmtRub.format(displayIncome)} sub={`Расходы: ${fmtRub.format(displayExpenses)}`} accent={colors.primary} onClick={goIncome} icon={<ArrowCircleUpOutlinedIcon />} />
-        <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} accent={colors.warning} onClick={goExpenses} icon={<ArrowCircleDownOutlinedIcon />} />
-        <StatCard label="Норма сбережений" value={`${displayRate}%`} sub={`Сбережения: ${fmtRub.format(displaySavings)}`} accent={colors.primary} icon={<PercentOutlinedIcon />} />
+        <StatCard
+          label="Доходы"
+          value={fmtRub.format(displayIncome)}
+          sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+          accent={colors.primary}
+          onClick={goIncome}
+          icon={<ArrowCircleUpOutlinedIcon />}
+        />
+        <StatCard
+          label="Расходы"
+          value={fmtRub.format(displayExpenses)}
+          accent={colors.warning}
+          onClick={goExpenses}
+          icon={<ArrowCircleDownOutlinedIcon />}
+        />
+        <StatCard
+          label="Норма сбережений"
+          value={`${displayRate}%`}
+          sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+          accent={colors.primary}
+          icon={<PercentOutlinedIcon />}
+        />
       </Box>
 
-      {/* MAIN: без границ/рамок */}
+      {/* MAIN */}
       <Box>
         <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
@@ -619,7 +638,9 @@ export default function DashboardPage() {
               Пока нет сохранённых месяцев.
             </Typography>
           ) : (
-            historyDesc.map((h) => <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />)
+            historyDesc.map((h) => (
+              <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />
+            ))
           )}
         </Box>
       </Box>
