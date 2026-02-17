@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { Container } from "@mui/material";
+import { Box } from "@mui/material";  // ← Заменил Container на Box
 import { useAuth } from "../contexts/AuthContext";
 import TopNavBar from "../components/TopNavBar";
 
@@ -22,9 +22,17 @@ export default function AppLayout() {
         userLabel={user?.userName || user?.email || "Пользователь"}
         userName={user?.userName}
       />
-      <Container maxWidth="lg" sx={{ py: 3 }}>
+      {/* Box вместо Container — нет белого фона! */}
+      <Box
+        sx={{
+          width: "100%",
+          minHeight: "calc(100vh - 64px)", // минус высота навбара
+          py: 3,
+          px: { xs: 1, sm: 2, md: 3 }, // отступы вместо Container gutters
+        }}
+      >
         <Outlet />
-      </Container>
+      </Box>
     </AppBackground>
   );
 }
