@@ -1,9 +1,10 @@
+// src/components/KpiCard.jsx
 import React, { useCallback, memo } from "react";
 import { Box, Stack, Typography } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { bankingColors as colors, surfaceOutlinedSx } from "../styles/bankingTokens";
 
-const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
+const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent = colors.primary, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
@@ -22,14 +23,14 @@ const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
       sx={{
-        ...surfaceOutlinedSx,
+        ...surfaceOutlinedSx,              // тут фон карточки + тень + базовая рамка
         height: "100%",
         minHeight: { xs: 96, sm: 104, md: 116 },
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        borderColor: alpha(accent, 0.34),
+        borderColor: alpha(accent, 0.34), // перекрашиваем рамку под accent
         display: "flex",
         flexDirection: "column",
         p: { xs: 1.5, md: 2 },
