@@ -497,7 +497,7 @@ export default function AnalyticsPage() {
       {/* Header — без “карточки”, просто текст, без границ */}
       <Box
         sx={{
-          mb: { xs: 2.5, md: 3 },
+          mb: { xs: 3, md: 3 },
           position: 'relative',
           px: 0,
           pt: { xs: 1, md: 1.5 },
@@ -649,8 +649,8 @@ export default function AnalyticsPage() {
         sx={{
           display: 'grid',
           gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
-          gap: { xs: 1.25, sm: 1.5, md: 2 },
-          mb: { xs: 3, md: 2.5 },
+          gap: { xs: 1.5, sm: 1.75, md: 2 },
+          mb: { xs: 5, md: 3 },
         }}
       >
         <KpiCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} icon={<AccountBalanceWalletOutlinedIcon />} />
@@ -660,8 +660,8 @@ export default function AnalyticsPage() {
       </Box>
 
       {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
-      <Box sx={{ mb: { xs: 3, md: 2.5 } }}>
-        <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.25 }}>
+      <Box sx={{ mb: { xs: 5, md: 3 } }}>
+        <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.5 }}>
           Cashflow за 12 месяцев
         </Typography>
 
@@ -693,13 +693,14 @@ export default function AnalyticsPage() {
           />
         </Box>
 
-        <Box sx={{ mt: { xs: 5, md: 4.5 } }}>
+        {/* Подпись "Баланс" опущена чуть ниже */}
+        <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
           <Stack
             direction="row"
             spacing={1}
             alignItems="center"
             justifyContent="center"
-            sx={{ mb: { xs: 1.75, md: 1.25 } }}
+            sx={{ mb: { xs: 2, md: 1.5 } }}
           >
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
             <Typography
@@ -772,9 +773,9 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — без Card, с отступом на мобиле */}
-      <Box sx={{ mt: { xs: 3, md: 2 }, mb: { xs: 1, md: 0 } }}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.25 }}>
+      {/* Топ категорий — чуть ниже, горизонтальный бар‑чарт от левого края */}
+      <Box sx={{ mt: { xs: 6, md: 3.5 }, mb: { xs: 2.5, md: 0 } }}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.75 }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
             {topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов'}
           </Typography>
@@ -800,7 +801,7 @@ export default function AnalyticsPage() {
           scrollButtons="auto"
           sx={{
             minHeight: 40,
-            mb: { xs: 1.75, md: 1.25 },
+            mb: { xs: 2, md: 1.5 },
             '& .MuiTab-root': {
               minHeight: 40,
               color: alpha(colors.text, 0.70),
@@ -824,7 +825,7 @@ export default function AnalyticsPage() {
             Нет данных по категориям за выбранный период.
           </Typography>
         ) : (
-          <Box sx={{ width: '100%', height: { xs: 260, md: 280 }, minWidth: 0 }}>
+          <Box sx={{ width: '100%', height: { xs: 280, md: 280 }, minWidth: 0 }}>
             <BarChart
               height={280}
               layout="horizontal"
@@ -832,11 +833,15 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 78,
+                  width: 70, // меньше, чтобы категории начинались ближе к краю
                   tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
                 },
               ]}
-              xAxis={[{ tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) } }]}
+              xAxis={[
+                {
+                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                },
+              ]}
               series={[
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.amount),
@@ -845,7 +850,7 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 12, right: 16, top: 10, bottom: 28 }}
+              margin={{ left: 4, right: 12, top: 10, bottom: 28 }} // почти без отступа слева
               sx={{
                 '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
                 '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
