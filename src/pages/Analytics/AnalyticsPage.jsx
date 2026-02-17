@@ -83,8 +83,9 @@ const niceStep = (maxVal) => {
   return 100_000;
 };
 
+/** +25% запаса вверх для шкалы */
 const withHeadroom = (maxVal) => {
-  const raw = maxVal + Math.max(10_000, maxVal * 0.15);
+  const raw = maxVal + maxVal * 0.25; // +25%
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
 };
@@ -279,7 +280,6 @@ function BalancePinnedTooltip(props) {
   );
 }
 
-/* Явная легенда для Cashflow (пункт 4) */
 const CashflowLegend = memo(function CashflowLegend() {
   return (
     <Stack
@@ -291,14 +291,13 @@ const CashflowLegend = memo(function CashflowLegend() {
     >
       <Stack direction="row" spacing={0.9} alignItems="center">
         <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.income }} />
-        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12, letterSpacing: 0.2 }}>
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>
           Доходы
         </Typography>
       </Stack>
-
       <Stack direction="row" spacing={0.9} alignItems="center">
         <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.expenses }} />
-        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12, letterSpacing: 0.2 }}>
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>
           Расходы
         </Typography>
       </Stack>
@@ -331,7 +330,6 @@ export default function AnalyticsPage() {
     []
   );
 
-  /* для подписей по Y (пункт 2) */
   const fmtAxis = useMemo(
     () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
     []
@@ -700,7 +698,6 @@ export default function AnalyticsPage() {
           Cashflow за 12 месяцев
         </Typography>
 
-        {/* Легенда (пункт 4) */}
         <CashflowLegend />
 
         <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
@@ -712,19 +709,21 @@ export default function AnalyticsPage() {
                 data: cashflowRows.map((r) => r.label),
                 scaleType: 'band',
                 tickSpacing: 14,
-                // (пункт 1) месяцы белым
                 tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 categoryGapRatio: 0.28,
                 barGapRatio: 0.12,
               },
             ]}
-            // (пункт 2) цифры по Y
             yAxis={[
               {
                 min: 0,
                 tickNumber: 6,
                 valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
                 tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
+                domainLimit: (_minVal, maxVal) => {
+                  const max = withHeadroom(Number(maxVal || 0));
+                  return { min: 0, max };
+                },
               },
             ]}
             series={[
@@ -732,12 +731,12 @@ export default function AnalyticsPage() {
               { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
             ]}
             grid={{ horizontal: true }}
-            margin={{ left: 70, right: 16, top: 10, bottom: 50 }}
+            margin={{ left: 70, right: 16, top: 18, bottom: 50 }}
             sx={{
-              '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
-              '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+              '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
+              '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
               '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
-              '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
+              '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
             }}
           />
         </Box>
@@ -774,7 +773,6 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.label),
                   scaleType: 'point',
                   tickSpacing: 18,
-                  // (пункт 1) месяцы белым
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
@@ -786,7 +784,6 @@ export default function AnalyticsPage() {
                     const max = withHeadroom(Number(maxVal || 0));
                     return { min: 0, max };
                   },
-                  // (пункт 2) цифры по Y
                   valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
@@ -796,7 +793,6 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.balance),
                   label: 'Баланс',
                   color: COLORS.balance,
-                  // (пункт 3) линия строго через точки
                   curve: 'linear',
                   area: true,
                   showMark: true,
@@ -806,10 +802,10 @@ export default function AnalyticsPage() {
               grid={{ horizontal: true }}
               margin={{ left: 70, right: 16, top: 14, bottom: 28 }}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
-                '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+                '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
+                '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
                 '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
+                '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
                 '& .MuiLineElement-root': { strokeWidth: 3 },
                 '& .MuiMarkElement-root': {
                   r: 4,
@@ -907,10 +903,10 @@ export default function AnalyticsPage() {
               grid={{ vertical: true }}
               margin={{ left: 8, right: 12, top: 10, bottom: 28 }}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
-                '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+                '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
+                '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
                 '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
+                '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
                 '.MuiChartsLegend-root': { display: 'none' },
               }}
             />
