@@ -1,3 +1,4 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -64,7 +65,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-// KPI-стиль как в AnalyticsPage
+// KPI в точности как в AnalyticsPage (Box + surfaceOutlinedSx + градиент)
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -558,7 +559,14 @@ export default function DashboardPage() {
             alignItems={{ sm: "center" }}
             sx={{ width: { xs: "100%", md: "auto" } }}
           >
-            <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.18) }} />
+            <Chip
+              label="Актуально"
+              sx={{
+                ...pillSx,
+                width: { xs: "100%", sm: "auto" },
+                borderColor: alpha(colors.primary, 0.18),
+              }}
+            />
 
             <Chip
               icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.primary, 0.98) }} />}
@@ -602,7 +610,7 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI – KpiCard как в AnalyticsPage */}
+      {/* KPI – KpiCard как в аналитике */}
       <Box
         sx={{
           display: "grid",
