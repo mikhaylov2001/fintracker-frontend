@@ -82,7 +82,6 @@ export default function AppLayout() {
 
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* отступ под TopNavBar */}
       <Toolbar />
 
       <Box sx={{ px: 2, pb: 1 }}>
@@ -112,34 +111,30 @@ export default function AppLayout() {
                 borderRadius: 3,
                 mb: 0.75,
                 py: { xs: 1.15, sm: 1 },
-                color: alpha(bankingColors.text, 0.86),
+                color: alpha(bankingColors.text, 0.88),
 
                 "& .MuiListItemIcon-root": {
                   minWidth: 38,
-                  color: alpha(bankingColors.text, 0.68),
+                  color: alpha(bankingColors.text, 0.65),
                 },
 
                 "&.Mui-selected": {
-                  bgcolor: alpha(bankingColors.primary, 0.12),
+                  bgcolor: alpha(bankingColors.primary, 0.14),
                   color: bankingColors.text,
+                  border: `1px solid ${alpha(bankingColors.primary, 0.22)}`,
                 },
                 "&.Mui-selected .MuiListItemIcon-root": {
                   color: bankingColors.primary,
                 },
 
-                "&:hover": {
-                  bgcolor: alpha("#0F172A", 0.04),
-                },
+                "&:hover": { bgcolor: "rgba(15,23,42,0.04)" },
               }}
             >
               <ListItemIcon>{it.icon}</ListItemIcon>
               <ListItemText
                 primary={it.label}
                 primaryTypographyProps={{
-                  sx: {
-                    fontWeight: 850,
-                    fontSize: { xs: 15, sm: 14 },
-                  },
+                  sx: { fontWeight: 850, fontSize: { xs: 15, sm: 14 } },
                 }}
               />
             </ListItemButton>
@@ -170,12 +165,7 @@ export default function AppLayout() {
   return (
     <AppBackground>
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
-        {/* Sidebar */}
-        <Box
-          component="nav"
-          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
-        >
-          {/* Mobile */}
+        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           <Drawer
             variant="temporary"
             anchor="left"
@@ -193,7 +183,6 @@ export default function AppLayout() {
             {drawerContent}
           </Drawer>
 
-          {/* Desktop wide */}
           <Drawer
             variant="permanent"
             open
@@ -210,10 +199,8 @@ export default function AppLayout() {
           </Drawer>
         </Box>
 
-        {/* Main */}
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          {/* В TopNavBar уже скрыты пункты и “выйти” на десктопе */}
-          <TopNavBar onMenuClick={openMobile} hideDesktopActions />
+          <TopNavBar onMenuClick={openMobile} />
 
           <Box
             sx={{

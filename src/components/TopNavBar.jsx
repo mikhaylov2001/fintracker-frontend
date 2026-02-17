@@ -1,20 +1,11 @@
 import React from "react";
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  IconButton,
-  Tooltip,
-} from "@mui/material";
+import { AppBar, Toolbar, Typography, IconButton, Tooltip } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
 
-export default function TopNavBar({
-  onMenuClick,
-  hideDesktopActions = true, // <- новое: по умолчанию скрываем кнопки/имя/выйти
-}) {
+export default function TopNavBar({ onMenuClick }) {
   const navigate = useNavigate();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
@@ -27,8 +18,8 @@ export default function TopNavBar({
         zIndex: (t) => t.zIndex.drawer + 1,
         borderBottom: "1px solid",
         borderColor: theme.palette.divider,
-        backgroundColor: alpha(theme.palette.background.paper, 0.86),
-        color: theme.palette.text.primary,
+        backgroundColor: alpha("#FFFFFF", 0.86),
+        color: "rgba(15,23,42,0.92)",
         backdropFilter: "blur(10px)",
       }}
     >
@@ -43,13 +34,18 @@ export default function TopNavBar({
 
         <Typography
           onClick={() => navigate("/")}
-          sx={{ flexGrow: 1, fontWeight: 950, cursor: "pointer", userSelect: "none" }}
+          sx={{
+            flexGrow: 1,
+            fontWeight: 950,
+            cursor: "pointer",
+            userSelect: "none",
+            letterSpacing: -0.2,
+          }}
         >
           FinTrackerPro
         </Typography>
 
-        {/* на десктопе намеренно ничего не показываем */}
-        {isDesktop && hideDesktopActions ? null : null}
+        {/* намеренно пусто */}
       </Toolbar>
     </AppBar>
   );

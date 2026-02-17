@@ -1,26 +1,26 @@
 import { alpha } from "@mui/material/styles";
 
 export const bankingColors = {
-  // Fresh light background
-  bg0: "#F4F7F6",
-  bg1: "#ECF7F0",
+  // Fresh light, but not pale
+  bg0: "#EEF3F0",
+  bg1: "#E3F2EA",
 
   // Surfaces
-  card: alpha("#FFFFFF", 0.94),
-  card2: alpha("#FFFFFF", 0.86),
+  card: "#FFFFFF",
+  card2: "#FFFFFF",
 
-  border: "rgba(15,23,42,0.08)",
-  border2: "rgba(15,23,42,0.12)",
+  border: "rgba(15,23,42,0.12)",
+  border2: "rgba(15,23,42,0.18)",
 
   text: "rgba(15,23,42,0.92)",
-  muted: "rgba(15,23,42,0.62)",
+  muted: "rgba(15,23,42,0.66)",
 
-  // “Green bank” accents
-  primary: "#21A038",
-  success: "#21A038",
+  // Green bank accents
+  primary: "#1F9A3B",
+  success: "#1F9A3B",
   warning: "#F59E0B",
-  accent: "#22C55E",  // вторичный зелёный (светлее)
-  info: "#38BDF8",
+  accent: "#22C55E",
+  info: "#0EA5E9",
   danger: "#EF4444",
 };
 
@@ -30,7 +30,7 @@ export const pageBackgroundSx = {
   overflow: "hidden",
   bgcolor: bankingColors.bg0,
   backgroundImage: `
-    radial-gradient(900px 520px at 18% 12%, ${alpha(bankingColors.primary, 0.14)} 0%, transparent 55%),
+    radial-gradient(900px 520px at 18% 12%, ${alpha(bankingColors.primary, 0.18)} 0%, transparent 55%),
     radial-gradient(900px 520px at 85% 18%, ${alpha(bankingColors.info, 0.10)} 0%, transparent 55%),
     linear-gradient(180deg, ${bankingColors.bg1} 0%, ${bankingColors.bg0} 100%)
   `,
@@ -51,12 +51,12 @@ export const surfaceSx = {
   borderRadius: 18,
   border: `1px solid ${bankingColors.border}`,
   backgroundColor: bankingColors.card,
-  boxShadow: "0 10px 28px rgba(15,23,42,0.10)",
+  boxShadow: "0 14px 38px rgba(15,23,42,0.14)",
 };
 
 export const pillSx = {
   borderRadius: 999,
-  bgcolor: alpha("#FFFFFF", 0.78),
+  bgcolor: "rgba(255,255,255,0.92)",
   border: `1px solid ${bankingColors.border}`,
   color: bankingColors.text,
   fontWeight: 850,
