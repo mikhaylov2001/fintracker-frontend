@@ -30,7 +30,6 @@ import { getMonthlySummary } from "../../api/summaryApi";
 import { bankingColors as colors, surfaceSx, pillSx } from "../../styles/bankingTokens";
 
 /* ───────── helpers ───────── */
-
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -49,27 +48,16 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/* ───────── tiny UI bits ───────── */
+/* ───────── UI bits ───────── */
 
 const SectionTitle = memo(function SectionTitle({ title, right }) {
   return (
-    <Stack
-      direction="row"
-      alignItems="baseline"
-      justifyContent="space-between"
-      sx={{ mb: 1 }}
-    >
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}
-      >
+    <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 1 }}>
+      <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}>
         {title}
       </Typography>
       {right ? (
-        <Typography
-          variant="caption"
-          sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}
-        >
+        <Typography variant="caption" sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}>
           {right}
         </Typography>
       ) : null}
@@ -110,13 +98,13 @@ const StatCard = memo(function StatCard({
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        borderColor: alpha(accent, 0.28),
+        borderColor: alpha(accent, 0.22),
 
         "&:before": {
           content: '""',
           position: "absolute",
           inset: 0,
-          background: `linear-gradient(135deg, ${alpha(accent, 0.10)} 0%, transparent 55%)`,
+          background: `linear-gradient(135deg, ${alpha(accent, 0.12)} 0%, transparent 60%)`,
           pointerEvents: "none",
         },
 
@@ -124,7 +112,7 @@ const StatCard = memo(function StatCard({
           ? {
               transform: "translateY(-1px)",
               boxShadow: "0 14px 34px rgba(15,23,42,0.14)",
-              borderColor: alpha(accent, 0.46),
+              borderColor: alpha(accent, 0.40),
             }
           : {},
       }}
@@ -139,7 +127,7 @@ const StatCard = memo(function StatCard({
               display: "grid",
               placeItems: "center",
               bgcolor: alpha(accent, 0.10),
-              border: `1px solid ${alpha(accent, 0.22)}`,
+              border: `1px solid ${alpha(accent, 0.20)}`,
               flex: "0 0 auto",
             }}
           >
@@ -150,23 +138,14 @@ const StatCard = memo(function StatCard({
               : null}
           </Box>
 
-          <Typography
-            variant="overline"
-            sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55 }}
-          >
+          <Typography variant="overline" sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55 }}>
             {label}
           </Typography>
         </Stack>
 
         <Typography
           variant="h5"
-          sx={{
-            mt: 0.9,
-            fontWeight: 950,
-            color: colors.text,
-            lineHeight: 1.05,
-            letterSpacing: -0.25,
-          }}
+          sx={{ mt: 0.9, fontWeight: 950, color: colors.text, lineHeight: 1.05, letterSpacing: -0.25 }}
         >
           {value}
         </Typography>
@@ -208,10 +187,7 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         </Typography>
       </Stack>
 
-      <Typography
-        variant="body2"
-        sx={{ fontWeight: 950, color: colors.text, whiteSpace: "nowrap" }}
-      >
+      <Typography variant="body2" sx={{ fontWeight: 950, color: colors.text, whiteSpace: "nowrap" }}>
         {value}
       </Typography>
     </Box>
@@ -467,9 +443,16 @@ export default function DashboardPage() {
         variant="outlined"
         sx={{
           ...surfaceSx,
-          borderRadius: 5,
+          borderRadius: 6,
           mb: 2,
-          backgroundImage: `linear-gradient(135deg, ${alpha(colors.primary, 0.10)} 0%, transparent 55%)`,
+          borderColor: alpha(colors.primary, 0.18),
+          backgroundImage: `
+            linear-gradient(135deg,
+              ${alpha(colors.primary, 0.18)} 0%,
+              ${alpha(colors.accent, 0.10)} 40%,
+              transparent 70%
+            )
+          `,
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -509,14 +492,22 @@ export default function DashboardPage() {
               alignItems={{ sm: "center" }}
               sx={{ width: { xs: "100%", md: "auto" } }}
             >
-              <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" } }} />
+              <Chip
+                label="Актуально"
+                sx={{
+                  ...pillSx,
+                  width: { xs: "100%", sm: "auto" },
+                  borderColor: alpha(colors.primary, 0.18),
+                }}
+              />
 
               <Chip
-                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.text, 0.85) }} />}
+                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.primary, 0.95) }} />}
                 label={isYear ? "Режим: Год" : "Режим: Месяц"}
                 sx={{
                   ...pillSx,
                   width: { xs: "100%", sm: "auto" },
+                  borderColor: alpha(colors.primary, 0.18),
                   "& .MuiChip-icon": { ml: 1, mr: -0.25 },
                 }}
               />
@@ -528,20 +519,20 @@ export default function DashboardPage() {
                 size="small"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
-                  bgcolor: alpha("#FFFFFF", 0.60),
-                  border: `1px solid ${colors.border}`,
+                  bgcolor: alpha("#FFFFFF", 0.78),
+                  border: `1px solid ${alpha(colors.primary, 0.18)}`,
                   borderRadius: 999,
                   "& .MuiToggleButton-root": {
                     border: 0,
                     px: 1.5,
                     flex: { xs: 1, sm: "unset" },
-                    color: alpha(colors.text, 0.78),
+                    color: alpha(colors.text, 0.72),
                     fontWeight: 900,
                     textTransform: "none",
                   },
                   "& .MuiToggleButton-root.Mui-selected": {
-                    color: colors.text,
-                    backgroundColor: alpha(colors.primary, 0.20),
+                    color: "#FFFFFF",
+                    backgroundColor: colors.primary,
                   },
                 }}
               >
@@ -572,7 +563,7 @@ export default function DashboardPage() {
           label="Доходы"
           value={fmtRub.format(displayIncome)}
           sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-          accent={colors.success}
+          accent={colors.primary}
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
@@ -587,18 +578,18 @@ export default function DashboardPage() {
           label="Норма сбережений"
           value={`${displayRate}%`}
           sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-          accent={colors.accent}
+          accent={colors.primary}
           icon={<PercentOutlinedIcon />}
         />
       </Box>
 
       {/* MONTH SUMMARY + HISTORY */}
-      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5 }}>
+      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 6 }}>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
-          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 4, overflow: "hidden", bgcolor: colors.card2 }}>
-            <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.success} />
+          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 5, overflow: "hidden", bgcolor: colors.card2 }}>
+            <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
             <Divider sx={{ borderColor: colors.border }} />
             <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
             <Divider sx={{ borderColor: colors.border }} />
