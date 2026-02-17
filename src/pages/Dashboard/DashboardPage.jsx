@@ -81,12 +81,15 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
       sx={{
         ...surfaceSx,
         height: "100%",
-        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобиле
+        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобилке
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        borderColor: alpha(accent, 0.34),
+
+        // гарантируем границу KPI независимо от surfaceSx
+        border: `1px solid ${alpha(accent, 0.34)}`,
+
         "&:before": {
           content: '""',
           position: "absolute",
@@ -94,6 +97,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           background: `linear-gradient(135deg, ${alpha(accent, 0.18)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
+
         "@media (hover: hover) and (pointer: fine)": onClick
           ? {
               "&:hover": {
@@ -158,7 +162,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           sx={{
             mt: 0.5,
             color: colors.muted,
-            display: { xs: "none", md: "block" }, // на мобиле убираем подстроку — иначе распухает
+            display: { xs: "none", md: "block" }, // на мобилке не показываем sub
           }}
         >
           {sub && String(sub).trim() ? sub : "\u00A0"}
@@ -225,9 +229,22 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
   return (
     <Accordion disableGutters elevation={0} sx={accordionSx} TransitionProps={{ unmountOnExit: true }}>
-      <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />} sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}>
+      <AccordionSummary
+        expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
+        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
+      >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
-          <Typography sx={{ fontWeight: 950, color: colors.text, textTransform: "capitalize", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <Typography
+            sx={{
+              fontWeight: 950,
+              color: colors.text,
+              textTransform: "capitalize",
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
             {monthTitle(h.year, h.month)}
           </Typography>
           <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}>
@@ -238,11 +255,36 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
       <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
-          <Typography variant="body2">Доходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_income))}</Box></Typography>
-          <Typography variant="body2">Расходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_expenses))}</Box></Typography>
-          <Typography variant="body2">Баланс: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.balance))}</Box></Typography>
-          <Typography variant="body2">Сбережения: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.savings))}</Box></Typography>
-          <Typography variant="body2">Норма сбережений: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{has ? `${v}%` : "—%"}</Box></Typography>
+          <Typography variant="body2">
+            Доходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_income))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Расходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_expenses))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Баланс:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.balance))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Сбережения:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.savings))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Норма сбережений:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {has ? `${v}%` : "—%"}
+            </Box>
+          </Typography>
         </Stack>
       </AccordionDetails>
     </Accordion>
@@ -452,7 +494,7 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ width: "100%", color: colors.text }}>
-      {/* HERO: границу убрали полностью */}
+      {/* HERO: без границы (как итоги месяца) */}
       <Card
         elevation={0}
         sx={{
@@ -460,6 +502,7 @@ export default function DashboardPage() {
           borderRadius: 22,
           mb: 2,
           border: "none",
+          outline: "none",
           boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
           backgroundImage: `
             linear-gradient(135deg,
@@ -547,7 +590,7 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* KPI: mobile 2x2, desktop 4x1 */}
+      {/* KPI: mobile 2x2, desktop 4 в ряд */}
       <Box
         sx={{
           display: "grid",
@@ -562,8 +605,8 @@ export default function DashboardPage() {
         <StatCard label="Норма сбережений" value={`${displayRate}%`} sub={`Сбережения: ${fmtRub.format(displaySavings)}`} accent={colors.primary} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* MAIN: без границ */}
-      <Box sx={{ border: "none" }}>
+      {/* MAIN (без границ) */}
+      <Box>
         <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
         <Stack spacing={1}>
