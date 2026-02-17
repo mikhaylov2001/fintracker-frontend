@@ -139,17 +139,46 @@ export default function AppLayout() {
     </Box>
   );
 
+  // --- глушим почти горизонтальные свайпы внутри приложения ---
+  const handleTouchStart = useCallback((e) => {
+    const t = e.touches[0];
+    handleTouchStart._x = t.clientX;
+    handleTouchStart._y = t.clientY;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const sx = handleTouchStart._x;
+    const sy = handleTouchStart._y;
+    if (sx == null || sy == null) return;
+
+    const dx = Math.abs(t.clientX - sx);
+    const dy = Math.abs(t.clientY - sy);
+
+    // если жест преимущественно горизонтальный — не даём ему гулять внутри app
+    if (dx > dy && dx > 8) {
+      e.preventDefault();
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    handleTouchStart._x = null;
+    handleTouchStart._y = null;
+  }, []);
+  // ------------------------------------------------------------
+
   return (
     <AppBackground>
       <Box
         sx={{
           display: "flex",
           minHeight: "100vh",
-
-          // блокируем горизонтальный свайп/скролл между страницами
           overflowX: "hidden",
-          touchAction: "pan-y",
         }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
       >
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           <Drawer
@@ -194,10 +223,7 @@ export default function AppLayout() {
               minHeight: "calc(100vh - 64px)",
               py: 2.25,
               px: { xs: 1, sm: 2, md: 3 },
-
-              // на всякий случай дублируем и на контент
               overflowX: "hidden",
-              touchAction: "pan-y",
             }}
           >
             <Outlet />
