@@ -1,4 +1,3 @@
-// src/index.js
 import React, { useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider } from '@mui/material/styles';
@@ -6,11 +5,12 @@ import CssBaseline from '@mui/material/CssBaseline';
 
 import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
-import { ColorModeProvider } from './contexts/ColorModeContext'; // ← useColorMode убран!
+import { ColorModeProvider, useColorMode } from './contexts/ColorModeContext';
 import { buildTheme } from './theme';
 
 function Root() {
-  const theme = useMemo(() => buildTheme(), []); // без mode
+  const { mode } = useColorMode();
+  const theme = useMemo(() => buildTheme(mode), [mode]);
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
