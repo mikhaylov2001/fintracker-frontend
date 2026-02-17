@@ -1,7 +1,7 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, IconButton, Tooltip } from "@mui/material";
-import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
 import MenuIcon from "@mui/icons-material/Menu";
 import { useNavigate } from "react-router-dom";
 
@@ -16,11 +16,9 @@ export default function TopNavBar({ onMenuClick }) {
       elevation={0}
       sx={{
         zIndex: (t) => t.zIndex.drawer + 1,
-        borderBottom: "1px solid",
-        borderColor: theme.palette.divider,
-        backgroundColor: alpha("#FFFFFF", 0.86),
-        color: "rgba(15,23,42,0.92)",
-        backdropFilter: "blur(10px)",
+        bgcolor: "#FFFFFF",
+        color: "#0F172A",
+        borderBottom: "1px solid rgba(15,23,42,0.12)",
       }}
     >
       <Toolbar sx={{ minHeight: 64, gap: 1 }}>
@@ -45,7 +43,7 @@ export default function TopNavBar({ onMenuClick }) {
           FinTrackerPro
         </Typography>
 
-        {/* намеренно пусто */}
+        {/* намеренно пусто: без “Дашборд/Доходы/Расходы/Имя/Выйти” */}
       </Toolbar>
     </AppBar>
   );

@@ -41,30 +41,10 @@ export default function AppLayout() {
 
   const navItems = useMemo(
     () => [
-      {
-        label: "Дашборд",
-        icon: <DashboardIcon />,
-        to: dashTo,
-        match: (p) => p.startsWith("/u/"),
-      },
-      {
-        label: "Доходы",
-        icon: <PaidIcon />,
-        to: "/income",
-        match: (p) => p.startsWith("/income"),
-      },
-      {
-        label: "Расходы",
-        icon: <ReceiptLongIcon />,
-        to: "/expenses",
-        match: (p) => p.startsWith("/expenses"),
-      },
-      {
-        label: "Аналитика",
-        icon: <QueryStatsIcon />,
-        to: "/analytics",
-        match: (p) => p.startsWith("/analytics"),
-      },
+      { label: "Дашборд", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") },
+      { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
+      { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
+      { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },
     ],
     [dashTo]
   );
@@ -75,9 +55,8 @@ export default function AppLayout() {
   };
 
   const drawerPaperSx = {
-    bgcolor: alpha("#FFFFFF", 0.92),
+    bgcolor: "#FFFFFF",
     borderRight: `1px solid ${bankingColors.border2}`,
-    backdropFilter: "blur(10px)",
   };
 
   const drawerContent = (
@@ -85,12 +64,8 @@ export default function AppLayout() {
       <Toolbar />
 
       <Box sx={{ px: 2, pb: 1 }}>
-        <Typography sx={{ fontWeight: 950, color: bankingColors.text }}>
-          Меню
-        </Typography>
-        <Typography variant="caption" sx={{ color: bankingColors.muted }}>
-          {userLabel}
-        </Typography>
+        <Typography sx={{ fontWeight: 950, color: bankingColors.text }}>Меню</Typography>
+        <Typography variant="caption" sx={{ color: bankingColors.muted }}>{userLabel}</Typography>
       </Box>
 
       <Divider sx={{ borderColor: bankingColors.border2 }} />
@@ -111,17 +86,16 @@ export default function AppLayout() {
                 borderRadius: 3,
                 mb: 0.75,
                 py: { xs: 1.15, sm: 1 },
-                color: alpha(bankingColors.text, 0.88),
+                color: alpha(bankingColors.text, 0.90),
 
                 "& .MuiListItemIcon-root": {
                   minWidth: 38,
-                  color: alpha(bankingColors.text, 0.65),
+                  color: alpha(bankingColors.text, 0.66),
                 },
 
                 "&.Mui-selected": {
-                  bgcolor: alpha(bankingColors.primary, 0.14),
-                  color: bankingColors.text,
-                  border: `1px solid ${alpha(bankingColors.primary, 0.22)}`,
+                  bgcolor: alpha(bankingColors.primary, 0.16),
+                  border: `1px solid ${alpha(bankingColors.primary, 0.28)}`,
                 },
                 "&.Mui-selected .MuiListItemIcon-root": {
                   color: bankingColors.primary,
@@ -151,9 +125,9 @@ export default function AppLayout() {
             justifyContent: "flex-start",
             borderRadius: 3,
             color: bankingColors.text,
-            bgcolor: alpha(bankingColors.primary, 0.08),
+            bgcolor: alpha(bankingColors.primary, 0.10),
             border: `1px solid ${bankingColors.border2}`,
-            "&:hover": { bgcolor: alpha(bankingColors.primary, 0.12) },
+            "&:hover": { bgcolor: alpha(bankingColors.primary, 0.14) },
           }}
         >
           Выйти
