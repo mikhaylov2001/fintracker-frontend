@@ -38,6 +38,8 @@ const COLORS = {
   rate: '#A78BFA',
 };
 
+const WHITE = '#FFFFFF';
+
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -277,6 +279,33 @@ function BalancePinnedTooltip(props) {
   );
 }
 
+/* Явная легенда для Cashflow (пункт 4) */
+const CashflowLegend = memo(function CashflowLegend() {
+  return (
+    <Stack
+      direction="row"
+      spacing={2}
+      alignItems="center"
+      justifyContent="center"
+      sx={{ mt: 0.25, mb: 1.0 }}
+    >
+      <Stack direction="row" spacing={0.9} alignItems="center">
+        <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.income }} />
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12, letterSpacing: 0.2 }}>
+          Доходы
+        </Typography>
+      </Stack>
+
+      <Stack direction="row" spacing={0.9} alignItems="center">
+        <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.expenses }} />
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12, letterSpacing: 0.2 }}>
+          Расходы
+        </Typography>
+      </Stack>
+    </Stack>
+  );
+});
+
 export default function AnalyticsPage() {
   const { user } = useAuth();
   const userId = user?.id;
@@ -299,6 +328,12 @@ export default function AnalyticsPage() {
         currency: 'RUB',
         maximumFractionDigits: 0,
       }),
+    []
+  );
+
+  /* для подписей по Y (пункт 2) */
+  const fmtAxis = useMemo(
+    () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
     []
   );
 
@@ -387,7 +422,10 @@ export default function AnalyticsPage() {
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
   const ytdSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
-  const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
+  const ytdRate = useMemo(
+    () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
+    [ytdIncome, ytdBalance]
+  );
 
   const currentMonthSummary = useMemo(
     () => history.find((h) => h.year === year && h.month === month) || null,
@@ -658,21 +696,35 @@ export default function AnalyticsPage() {
 
       {/* Cashflow */}
       <Box sx={{ mb: { xs: 5, md: 3 } }}>
-        <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 0.75 }}>
           Cashflow за 12 месяцев
         </Typography>
+
+        {/* Легенда (пункт 4) */}
+        <CashflowLegend />
 
         <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
           <BarChart
             height={340}
+            hideLegend
             xAxis={[
               {
                 data: cashflowRows.map((r) => r.label),
                 scaleType: 'band',
                 tickSpacing: 14,
-                tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                // (пункт 1) месяцы белым
+                tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 categoryGapRatio: 0.28,
                 barGapRatio: 0.12,
+              },
+            ]}
+            // (пункт 2) цифры по Y
+            yAxis={[
+              {
+                min: 0,
+                tickNumber: 6,
+                valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
               },
             ]}
             series={[
@@ -680,15 +732,12 @@ export default function AnalyticsPage() {
               { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
             ]}
             grid={{ horizontal: true }}
-            margin={{ left: 52, right: 16, top: 10, bottom: 50 }}
+            margin={{ left: 70, right: 16, top: 10, bottom: 50 }}
             sx={{
-              '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-              '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-              '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
-              '.MuiChartsLegend-root': {
-                justifyContent: 'center',
-                '& .MuiTypography-root': { color: '#FFFFFF', fontSize: 12, fontWeight: 700 },
-              },
+              '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
+              '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+              '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+              '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
             }}
           />
         </Box>
@@ -706,7 +755,7 @@ export default function AnalyticsPage() {
               variant="caption"
               sx={{
                 fontWeight: 900,
-                color: alpha('#FFFFFF', 0.62),
+                color: WHITE,
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
                 fontSize: 11,
@@ -725,7 +774,8 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.label),
                   scaleType: 'point',
                   tickSpacing: 18,
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  // (пункт 1) месяцы белым
+                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               yAxis={[
@@ -736,6 +786,9 @@ export default function AnalyticsPage() {
                     const max = withHeadroom(Number(maxVal || 0));
                     return { min: 0, max };
                   },
+                  // (пункт 2) цифры по Y
+                  valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               series={[
@@ -743,18 +796,20 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.balance),
                   label: 'Баланс',
                   color: COLORS.balance,
-                  curve: 'natural',
+                  // (пункт 3) линия строго через точки
+                  curve: 'linear',
                   area: true,
                   showMark: true,
                 },
               ]}
               slots={{ tooltip: BalancePinnedTooltip }}
               grid={{ horizontal: true }}
-              margin={{ left: 52, right: 16, top: 14, bottom: 28 }}
+              margin={{ left: 70, right: 16, top: 14, bottom: 28 }}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
+                '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
+                '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+                '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
                 '& .MuiLineElement-root': { strokeWidth: 3 },
                 '& .MuiMarkElement-root': {
                   r: 4,
@@ -832,13 +887,14 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 70,
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  width: 90,
+                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               xAxis={[
                 {
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               series={[
@@ -849,12 +905,13 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 4, right: 12, top: 10, bottom: 28 }}
+              margin={{ left: 8, right: 12, top: 10, bottom: 28 }}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
-                '.MuiChartsLegend-root': { justifyContent: 'center' },
+                '& .MuiChartsAxis-line': { stroke: alpha(WHITE, 0.16) },
+                '& .MuiChartsAxis-tick': { stroke: alpha(WHITE, 0.12) },
+                '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: alpha(WHITE, 0.06) },
+                '.MuiChartsLegend-root': { display: 'none' },
               }}
             />
           </Box>
