@@ -3,8 +3,6 @@ import {
   Box,
   Stack,
   Typography,
-  Card,
-  CardContent,
   Button,
   Dialog,
   DialogTitle,
@@ -17,7 +15,6 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  Divider,
   Chip,
 } from '@mui/material';
 import { useTheme, alpha } from '@mui/material/styles';
@@ -51,7 +48,7 @@ const normalizeDateOnly = (d) => {
 };
 
 const formatDateRu = (dateLike) => {
-  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
+  const s = normalizeDateOnly(dateLike);
   const [y, m, d] = s.split('-');
   if (!y || !m || !d) return s;
   return `${d}.${m}.${y}`;
@@ -296,7 +293,7 @@ export default function IncomePage() {
         width: '100%',
       }}
     >
-      {/* Header */}
+      {/* Header на фоне */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
@@ -393,212 +390,174 @@ export default function IncomePage() {
         </Stack>
       </Stack>
 
-      {/* Error card */}
+      {/* Ошибка просто текстом на фоне */}
       {error ? (
-        <Card
-          variant="outlined"
-          sx={{
-            mb: 2,
-            borderRadius: 3,
-            borderColor: alpha(colors.danger || '#F97373', 0.5),
-            bgcolor: alpha('#0F172A', 0.95),
-          }}
+        <Typography
+          variant="body2"
+          sx={{ mb: 2, color: colors.danger || '#F97373', fontWeight: 600 }}
         >
-          <CardContent sx={{ py: 1.5 }}>
-            <Typography color="error" variant="body2">
-              {error}
-            </Typography>
-          </CardContent>
-        </Card>
+          {error}
+        </Typography>
       ) : null}
 
-      {/* List card – центр не заужен, просто панель */}
-      <Card
-        variant="outlined"
-        sx={{
-          borderRadius: 3,
-          borderColor: colors.border,
-          bgcolor: colors.card,
-          boxShadow: '0 18px 50px rgba(0,0,0,0.6)',
-        }}
-      >
-        <CardContent sx={{ px: { xs: 1, sm: 2 }, py: { xs: 1.5, sm: 2 } }}>
-          <Box sx={{ px: { xs: 1, sm: 1 } }}>
-            <Typography
-              sx={{
-                fontWeight: 880,
+      {/* Таблица прямо на фоне */}
+      {!loading && items.length === 0 ? (
+        <EmptyState
+          title="Пока нет записей"
+          description="Добавь первую операцию — и тут появится список за выбранный месяц."
+          actionLabel="Добавить"
+          onAction={openCreate}
+        />
+      ) : (
+        <Box
+          sx={{
+            px: { xs: 0, sm: 0 },
+            overflowX: 'auto',
+          }}
+        >
+          <Table
+            size="small"
+            sx={{
+              width: '100%',
+              minWidth: { sm: 720 },
+              tableLayout: { xs: 'fixed', sm: 'auto' },
+              '& th, & td': {
+                px: { xs: 0.75, sm: 2 },
+                py: { xs: 0.6, sm: 1 },
+                fontSize: { xs: 12, sm: 13 },
+                lineHeight: 1.15,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                verticalAlign: 'top',
+                borderBottomColor: alpha('#FFFFFF', 0.06),
+              },
+              '& th': {
+                fontWeight: 900,
                 color: colors.text,
-                fontSize: 14,
-                letterSpacing: 0.3,
-              }}
-            >
-              Список
-            </Typography>
-          </Box>
-
-          <Divider sx={{ my: 1.5, borderColor: colors.border }} />
-
-          {!loading && items.length === 0 ? (
-            <Box sx={{ px: { xs: 1, sm: 1 } }}>
-              <EmptyState
-                title="Пока нет записей"
-                description="Добавь первую операцию — и тут появится список за выбранный месяц."
-                actionLabel="Добавить"
-                onAction={openCreate}
-              />
-            </Box>
-          ) : (
-            <Box
-              sx={{
-                px: { xs: 0.5, sm: 1 },
-                overflowX: 'hidden',
-              }}
-            >
-              <Table
-                size="small"
-                sx={{
-                  width: '100%',
-                  minWidth: { sm: 720 },
-                  tableLayout: { xs: 'fixed', sm: 'auto' },
-                  '& th, & td': {
-                    px: { xs: 0.75, sm: 2 },
-                    py: { xs: 0.6, sm: 1 },
-                    fontSize: { xs: 12, sm: 13 },
-                    lineHeight: 1.15,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    verticalAlign: 'top',
-                    borderBottomColor: alpha('#FFFFFF', 0.06),
-                  },
-                  '& th': {
-                    fontWeight: 900,
-                    color: colors.text,
+                whiteSpace: 'nowrap',
+                bgcolor: alpha(colors.card2, 0.7),
+              },
+              '& td': {
+                whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                color: colors.muted,
+              },
+              '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
+                  Дата
+                </TableCell>
+                <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
+                  Сумма
+                </TableCell>
+                <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
+                  Категория
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: 200,
+                    display: { xs: 'none', sm: 'table-cell' },
+                  }}
+                >
+                  Источник
+                </TableCell>
+                <TableCell
+                  align="right"
+                  sx={{
+                    width: { xs: '14%', sm: 120 },
+                    pr: { xs: 0.5, sm: 2 },
                     whiteSpace: 'nowrap',
-                    bgcolor: colors.card2,
-                  },
-                  '& td': {
-                    whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                    color: colors.muted,
-                  },
-                  '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
-                }}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ width: { xs: '20%', sm: 140 }, whiteSpace: 'nowrap' }}>
-                      Дата
-                    </TableCell>
-                    <TableCell sx={{ width: { xs: '28%', sm: 160 }, whiteSpace: 'nowrap' }}>
-                      Сумма
-                    </TableCell>
-                    <TableCell sx={{ width: { xs: '38%', sm: 200 } }}>
-                      Категория
-                    </TableCell>
-                    <TableCell
-                      sx={{
-                        width: 200,
-                        display: { xs: 'none', sm: 'table-cell' },
-                      }}
-                    >
-                      Источник
-                    </TableCell>
-                    <TableCell
-                      align="right"
-                      sx={{
-                        width: { xs: '14%', sm: 120 },
-                        pr: { xs: 0.5, sm: 2 },
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                        Действия
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
+                  }}
+                >
+                  <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                    Действия
+                  </Box>
+                </TableCell>
+              </TableRow>
+            </TableHead>
 
-                <TableBody>
-                  {items.map((x) => (
-                    <TableRow key={x.id} hover>
-                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        {isMobile ? formatDateRuShort(x.date) : formatDateRu(x.date)}
-                      </TableCell>
+            <TableBody>
+              {items.map((x) => (
+                <TableRow key={x.id} hover>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {isMobile ? formatDateRuShort(x.date) : formatDateRu(x.date)}
+                  </TableCell>
 
-                      <TableCell
+                  <TableCell
+                    sx={{
+                      fontWeight: 900,
+                      color: colors.text,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {fmtRub.format(Number(x.amount || 0))}
+                  </TableCell>
+
+                  <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                    <Typography
+                      component="div"
+                      sx={{
+                        fontSize: { xs: 12, sm: 13 },
+                        fontWeight: 800,
+                        color: colors.text,
+                        lineHeight: 1.15,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        display: '-webkit-box',
+                        WebkitBoxOrient: 'vertical',
+                        WebkitLineClamp: { xs: 2, sm: 1 },
+                      }}
+                      title={x.category || ''}
+                    >
+                      {x.category}
+                    </Typography>
+
+                    {isMobile ? (
+                      <Typography
+                        component="div"
                         sx={{
-                          fontWeight: 900,
-                          color: colors.text,
+                          mt: 0.2,
+                          fontSize: 11,
+                          color: colors.muted,
+                          lineHeight: 1.15,
                           whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
                         }}
-                      >
-                        {fmtRub.format(Number(x.amount || 0))}
-                      </TableCell>
-
-                      <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
-                        <Typography
-                          component="div"
-                          sx={{
-                            fontSize: { xs: 12, sm: 13 },
-                            fontWeight: 800,
-                            color: colors.text,
-                            lineHeight: 1.15,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            display: '-webkit-box',
-                            WebkitBoxOrient: 'vertical',
-                            WebkitLineClamp: { xs: 2, sm: 1 },
-                          }}
-                          title={x.category || ''}
-                        >
-                          {x.category}
-                        </Typography>
-
-                        {isMobile ? (
-                          <Typography
-                            component="div"
-                            sx={{
-                              mt: 0.2,
-                              fontSize: 11,
-                              color: colors.muted,
-                              lineHeight: 1.15,
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                            title={x.source || ''}
-                          >
-                            {x.source}
-                          </Typography>
-                        ) : null}
-                      </TableCell>
-
-                      <TableCell
-                        sx={{ display: { xs: 'none', sm: 'table-cell' } }}
                         title={x.source || ''}
                       >
                         {x.source}
-                      </TableCell>
+                      </Typography>
+                    ) : null}
+                  </TableCell>
 
-                      <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                        <IconButton onClick={() => openEdit(x)} size="small" sx={{ color: colors.muted }}>
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton onClick={() => remove(x)} size="small" color="error">
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-          )}
-        </CardContent>
-      </Card>
+                  <TableCell
+                    sx={{ display: { xs: 'none', sm: 'table-cell' } }}
+                    title={x.source || ''}
+                  >
+                    {x.source}
+                  </TableCell>
 
-      {/* Dialog */}
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                    <IconButton onClick={() => openEdit(x)} size="small" sx={{ color: colors.muted }}>
+                      <EditOutlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton onClick={() => remove(x)} size="small" color="error">
+                      <DeleteOutlineIcon fontSize="small" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Box>
+      )}
+
+      {/* Диалог */}
       <Dialog
-       	fullScreen={fullScreen}
+        fullScreen={fullScreen}
         scroll="paper"
         open={open}
         onClose={() => (!saving ? setOpen(false) : null)}
