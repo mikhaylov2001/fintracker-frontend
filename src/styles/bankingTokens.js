@@ -1,24 +1,19 @@
 import { alpha } from "@mui/material/styles";
 
 export const bankingColors = {
-  // Background (neutral)
-  bg0: "#0B1220",     // deep slate
+  bg0: "#0B1220",
   bg1: "#0A1726",
 
-  // Surfaces (layered)
   card: "#101B2E",
   card2: "#0E1A2A",
 
-  // Lines
   border: "rgba(255,255,255,0.10)",
   border2: "rgba(255,255,255,0.16)",
 
-  // Text
-  text: "rgba(241,245,249,0.96)",    // slate-50
+  text: "rgba(241,245,249,0.96)",
   muted: "rgba(241,245,249,0.70)",
 
-  // Accent (keep green but only for highlights)
-  primary: "#22C55E",  // vivid, but used sparingly
+  primary: "#22C55E",
   accent: "#34D399",
   info: "#38BDF8",
   warning: "#FBBF24",
@@ -51,17 +46,31 @@ export const gridOverlaySx = {
   mixBlendMode: "soft-light",
 };
 
+/** Базовая поверхность — БЕЗ границы */
 export const surfaceSx = {
   borderRadius: 18,
-  border: `1px solid ${bankingColors.border}`,
+  border: "0",
   backgroundColor: alpha(bankingColors.card, 0.92),
   boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
 };
 
+/** Вариант с рамкой (используем ТОЛЬКО для KPI) */
+export const surfaceOutlinedSx = {
+  ...surfaceSx,
+  border: `1px solid ${bankingColors.border}`,
+};
+
+/** Пилюля — БЕЗ границы */
 export const pillSx = {
   borderRadius: 999,
   bgcolor: alpha(bankingColors.card2, 0.72),
-  border: `1px solid ${bankingColors.border2}`,
+  border: "0",
   color: bankingColors.text,
   fontWeight: 850,
+};
+
+/** Пилюля с рамкой (если вдруг понадобится) */
+export const pillOutlinedSx = {
+  ...pillSx,
+  border: `1px solid ${bankingColors.border2}`,
 };

@@ -31,7 +31,12 @@ import { getMonthlySummary } from '../../api/summaryApi';
 import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 
-import { bankingColors as colors, surfaceSx } from '../../styles/bankingTokens';
+import {
+  bankingColors as colors,
+  surfaceOutlinedSx,
+  surfaceSx,
+  pillSx,
+} from '../../styles/bankingTokens';
 
 const COLORS = {
   income: colors.primary,
@@ -154,7 +159,7 @@ const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
       sx={{
-        ...surfaceSx, // <-- с рамкой
+        ...surfaceOutlinedSx, // <-- с рамкой
         height: '100%',
         minHeight: { xs: 96, sm: 104, md: 116 },
         cursor: onClick ? 'pointer' : 'default',

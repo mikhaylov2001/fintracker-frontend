@@ -19,7 +19,12 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import { useAuth } from "../../contexts/AuthContext";
 import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../../api/summaryApi";
 
-import { bankingColors as colors, surfaceSx, pillSx } from "../../styles/bankingTokens";
+import {
+  bankingColors as colors,
+  surfaceOutlinedSx,
+  surfaceSx,
+  pillSx,
+} from '../../styles/bankingTokens';
 
 /* helpers */
 const n = (v) => {
@@ -80,7 +85,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
       sx={{
-        ...surfaceSx,
+        ...surfaceOutlinedSx,
         height: "100%",
         minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобиле, чтобы влезли 2×2
         cursor: onClick ? "pointer" : "default",
