@@ -660,7 +660,7 @@ export default function AnalyticsPage() {
       </Box>
 
       {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
-      <Box sx={{ mb: { xs: 3, md: 2.5 } }}>
+      <Box sx={{ mb: { xs: 4, md: 5 } }}>
         <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.25 }}>
           Cashflow за 12 месяцев
         </Typography>
