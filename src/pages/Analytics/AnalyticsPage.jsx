@@ -659,15 +659,17 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow блок с более ярким фоном */}
+      {/* Cashflow — табличка‑панель */}
       <Box
         sx={{
           mb: { xs: 5, md: 3 },
-          borderRadius: 3,
-          p: { xs: 1.5, md: 2 },
-          bgcolor: alpha(colors.card2, 0.94),
-          backgroundImage: `linear-gradient(135deg, ${alpha(COLORS.income, 0.10)} 0%, transparent 40%), linear-gradient(225deg, ${alpha(COLORS.expenses, 0.12)} 0%, transparent 45%)`,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
+          borderRadius: 20,
+          p: { xs: 1.75, md: 2.25 },
+          bgcolor: alpha('#020617', 0.96),
+          backgroundImage: `radial-gradient(circle at 0% 0%, ${alpha(COLORS.income, 0.18)} 0%, transparent 55%),
+                            radial-gradient(circle at 100% 0%, ${alpha(COLORS.expenses, 0.18)} 0%, transparent 55%)`,
+          border: `1px solid ${alpha('#FFFFFF', 0.06)}`,
+          boxShadow: '0 24px 70px rgba(0,0,0,0.65)',
         }}
       >
         <Typography
@@ -676,10 +678,24 @@ export default function AnalyticsPage() {
             fontWeight: 950,
             color: colors.text,
             letterSpacing: -0.2,
-            mb: 1.5,
+            mb: 1,
           }}
         >
           Cashflow за 12 месяцев
+        </Typography>
+
+        <Typography
+          variant="caption"
+          sx={{
+            display: 'block',
+            mb: 2,
+            color: alpha('#FFFFFF', 0.6),
+            textTransform: 'uppercase',
+            letterSpacing: 0.6,
+            fontWeight: 700,
+          }}
+        >
+          Доходы, расходы и баланс по месяцам
         </Typography>
 
         <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
@@ -710,7 +726,6 @@ export default function AnalyticsPage() {
           />
         </Box>
 
-        {/* Подпись "Баланс" опущена чуть ниже */}
         <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
           <Stack
             direction="row"
@@ -790,16 +805,18 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — отдельный яркий блок, бар‑чарт слева */}
+      {/* Топ категорий — табличка‑панель */}
       <Box
         sx={{
           mt: { xs: 6, md: 3.5 },
           mb: { xs: 2.5, md: 0 },
-          borderRadius: 3,
-          p: { xs: 1.5, md: 2 },
-          bgcolor: alpha(colors.card2, 0.96),
-          backgroundImage: `linear-gradient(135deg, ${alpha(COLORS.expenses, 0.12)} 0%, transparent 45%), linear-gradient(225deg, ${alpha(COLORS.income, 0.10)} 0%, transparent 50%)`,
-          boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
+          borderRadius: 20,
+          p: { xs: 1.75, md: 2.25 },
+          bgcolor: alpha('#020617', 0.96),
+          backgroundImage: `radial-gradient(circle at 0% 0%, ${alpha(COLORS.expenses, 0.20)} 0%, transparent 55%),
+                            radial-gradient(circle at 100% 0%, ${alpha(COLORS.income, 0.16)} 0%, transparent 55%)`,
+          border: `1px solid ${alpha('#FFFFFF', 0.06)}`,
+          boxShadow: '0 24px 70px rgba(0,0,0,0.65)',
         }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.75 }}>
@@ -831,12 +848,17 @@ export default function AnalyticsPage() {
             mb: { xs: 2, md: 1.5 },
             '& .MuiTab-root': {
               minHeight: 40,
-              color: alpha(colors.text, 0.75),
+              color: alpha(colors.text, 0.65),
               textTransform: 'none',
               fontWeight: 900,
+              fontSize: 13,
             },
             '& .MuiTab-root.Mui-selected': { color: colors.text },
-            '& .MuiTabs-indicator': { backgroundColor: COLORS.balance, height: 3, borderRadius: 999 },
+            '& .MuiTabs-indicator': {
+              backgroundColor: COLORS.balance,
+              height: 3,
+              borderRadius: 999,
+            },
           }}
         >
           <Tab label="Расходы" value="expenses" />
@@ -860,7 +882,7 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 90, // отдельная колонка под подписи слева
+                  width: 90,
                   tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.90) },
                 },
               ]}
@@ -877,7 +899,7 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 0, right: 12, top: 10, bottom: 28 }} // бары максимально прижаты к левой оси
+              margin={{ left: 0, right: 12, top: 10, bottom: 28 }}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.18) },
                 '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.82), fontSize: 11 },
