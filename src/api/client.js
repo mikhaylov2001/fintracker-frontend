@@ -1,29 +1,33 @@
-// src/api/client.js
-
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
+
+const normalizeToken = (t) => {
+  if (!t) return null;
+  const s = String(t).trim();
+  if (!s) return null;
+  return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
+};
 
 const readToken = () => {
   for (const k of TOKEN_KEYS) {
     const v = localStorage.getItem(k);
-    if (v) return v;
+    const t = normalizeToken(v);
+    if (t) return t;
   }
   return null;
 };
 
 const writeToken = (token) => {
-  if (!token) return;
-  localStorage.setItem("authToken", token);
+  const t = normalizeToken(token);
+  if (!t) return;
+  localStorage.setItem("authToken", t);
 };
 
-// Можно задать REACT_APP_API_BASE_URL (например https://xxx.up.railway.app) для локалки/другого хоста
 const rawBase = (process.env.REACT_APP_API_BASE_URL || "").trim();
 
-// На Vercel всегда ходим через same-origin (/api/...), чтобы работали rewrites и не было CORS
 const isVercelHost = () => {
   if (typeof window === "undefined") return false;
   const h = String(window.location.hostname || "").toLowerCase();
-  // fintrackerpro.vercel.app и любые *.vercel.app
-  return h === "vercel.app" || h.endsWith(".vercel.app");
+  return h.endsWith(".vercel.app") || h === "vercel.app";
 };
 
 const API_BASE = isVercelHost() ? "" : rawBase;
@@ -72,7 +76,7 @@ async function refreshToken() {
       data?.access_token_value;
 
     if (newAccess) writeToken(newAccess);
-    return newAccess || null;
+    return normalizeToken(newAccess) || null;
   })();
 
   try {
