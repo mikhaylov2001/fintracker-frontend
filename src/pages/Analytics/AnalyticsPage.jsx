@@ -660,7 +660,7 @@ export default function AnalyticsPage() {
       </Box>
 
       {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
-      <Box sx={{ mb: { xs: 4, md: 5 } }}>
+      <Box sx={{ mb: { xs: 3, md: 2.5 } }}>
         <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.25 }}>
           Cashflow за 12 месяцев
         </Typography>
@@ -693,7 +693,7 @@ export default function AnalyticsPage() {
           />
         </Box>
 
-        <Box sx={{ mt: { xs: 3.5, md: 4.5 } }}>
+        <Box sx={{ mt: { xs: 3.5, md: 6 } }}>
           <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: 1.25 }}>
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
             <Typography
