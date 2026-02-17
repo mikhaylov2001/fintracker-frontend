@@ -316,7 +316,7 @@ export default function ExpensesPage() {
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             <Button
-              variant="outlined'
+              variant="outlined"
               onClick={() => setYm((s) => addMonthsYM(s, -1))}
               sx={{ minWidth: 44, px: 1.2 }}
             >
@@ -428,7 +428,7 @@ export default function ExpensesPage() {
                   Описание
                 </TableCell>
                 <TableCell
-                  align="right'
+                  align="right"
                   sx={{
                     width: { xs: '14%', sm: 120 },
                     pr: { xs: 0.5, sm: 2 },
