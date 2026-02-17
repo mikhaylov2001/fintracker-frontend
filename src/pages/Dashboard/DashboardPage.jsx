@@ -1,13 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
-import {
-  Typography,
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Stack,
-  Skeleton,
-} from "@mui/material";
+import { Typography, Box, Card, CardContent, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -24,11 +16,7 @@ import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
-import {
-  getMyMonthlySummary,
-  getMyMonthlySummaries,
-  getMyUsedMonths,
-} from "../../api/summaryApi";
+import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../../api/summaryApi";
 
 import { bankingColors as colors, surfaceSx, pillSx } from "../../styles/bankingTokens";
 
@@ -64,10 +52,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
         {title}
       </Typography>
       {right ? (
-        <Typography
-          variant="caption"
-          sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}
-        >
+        <Typography variant="caption" sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}>
           {right}
         </Typography>
       ) : null}
@@ -75,15 +60,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-const StatCard = memo(function StatCard({
-  label,
-  value,
-  sub,
-  icon,
-  accent = colors.primary,
-  onClick,
-  compact = false,
-}) {
+const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colors.primary, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
@@ -104,7 +81,7 @@ const StatCard = memo(function StatCard({
       sx={{
         ...surfaceSx,
         height: "100%",
-        minHeight: compact ? 92 : 116,
+        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобиле
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
@@ -117,8 +94,6 @@ const StatCard = memo(function StatCard({
           background: `linear-gradient(135deg, ${alpha(accent, 0.18)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
-
-        // hover только там, где реально есть hover (desktop/ноуты)
         "@media (hover: hover) and (pointer: fine)": onClick
           ? {
               "&:hover": {
@@ -130,12 +105,12 @@ const StatCard = memo(function StatCard({
           : {},
       }}
     >
-      <CardContent sx={{ p: compact ? 1.5 : 2, position: "relative", zIndex: 1 }}>
-        <Stack direction="row" spacing={1.1} alignItems="center">
+      <CardContent sx={{ p: { xs: 1.5, md: 2 }, position: "relative", zIndex: 1 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
           <Box
             sx={{
-              width: compact ? 30 : 34,
-              height: compact ? 30 : 34,
+              width: { xs: 30, md: 34 },
+              height: { xs: 30, md: 34 },
               borderRadius: 2.5,
               display: "grid",
               placeItems: "center",
@@ -146,7 +121,7 @@ const StatCard = memo(function StatCard({
           >
             {icon
               ? React.cloneElement(icon, {
-                  sx: { fontSize: compact ? 17 : 18, color: alpha(accent, 0.98) },
+                  sx: { fontSize: { xs: 17, md: 18 }, color: alpha(accent, 0.98) },
                 })
               : null}
           </Box>
@@ -157,7 +132,7 @@ const StatCard = memo(function StatCard({
               color: colors.muted,
               fontWeight: 950,
               letterSpacing: 0.55,
-              lineHeight: 1.1,
+              lineHeight: 1.05,
             }}
           >
             {label}
@@ -167,28 +142,32 @@ const StatCard = memo(function StatCard({
         <Typography
           variant="h5"
           sx={{
-            mt: 0.8,
+            mt: { xs: 0.7, md: 0.9 },
             fontWeight: 950,
             color: colors.text,
             lineHeight: 1.05,
             letterSpacing: -0.25,
-            fontSize: compact ? "1.22rem" : undefined,
+            fontSize: { xs: "1.15rem", sm: "1.22rem", md: "1.35rem" },
           }}
         >
           {value}
         </Typography>
 
-        {!compact ? (
-          <Typography variant="caption" sx={{ mt: 0.6, color: colors.muted, display: "block" }}>
-            {sub && String(sub).trim() ? sub : "\u00A0"}
-          </Typography>
-        ) : null}
+        <Typography
+          variant="caption"
+          sx={{
+            mt: 0.5,
+            color: colors.muted,
+            display: { xs: "none", md: "block" }, // на мобиле убираем подстроку — иначе распухает
+          }}
+        >
+          {sub && String(sub).trim() ? sub : "\u00A0"}
+        </Typography>
       </CardContent>
     </Card>
   );
 });
 
-// “табличные” строки без линий/бордеров
 const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   return (
     <Box
@@ -227,7 +206,6 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   );
 });
 
-// история без границ
 const accordionSx = {
   borderRadius: 16,
   mb: 1,
@@ -247,10 +225,7 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
   return (
     <Accordion disableGutters elevation={0} sx={accordionSx} TransitionProps={{ unmountOnExit: true }}>
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
-      >
+      <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />} sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 950, color: colors.text, textTransform: "capitalize", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {monthTitle(h.year, h.month)}
@@ -263,36 +238,11 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
       <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
-          <Typography variant="body2">
-            Доходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_income))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Расходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_expenses))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Баланс:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.balance))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Сбережения:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.savings))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Норма сбережений:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {has ? `${v}%` : "—%"}
-            </Box>
-          </Typography>
+          <Typography variant="body2">Доходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_income))}</Box></Typography>
+          <Typography variant="body2">Расходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_expenses))}</Box></Typography>
+          <Typography variant="body2">Баланс: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.balance))}</Box></Typography>
+          <Typography variant="body2">Сбережения: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.savings))}</Box></Typography>
+          <Typography variant="body2">Норма сбережений: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{has ? `${v}%` : "—%"}</Box></Typography>
         </Stack>
       </AccordionDetails>
     </Accordion>
@@ -303,14 +253,7 @@ function DashboardSkeleton() {
   return (
     <Box sx={{ p: { xs: 1, sm: 2 } }}>
       <Skeleton variant="rounded" height={128} sx={{ borderRadius: 4, mb: 2, bgcolor: alpha("#FFFFFF", 0.06) }} />
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
-          gap: 2,
-          mb: 2,
-        }}
-      >
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2, mb: 2 }}>
         {[0, 1, 2, 3].map((i) => (
           <Skeleton key={i} variant="rounded" height={116} sx={{ borderRadius: 4, bgcolor: alpha("#FFFFFF", 0.06) }} />
         ))}
@@ -354,7 +297,6 @@ export default function DashboardPage() {
 
   const monthTitle = useCallback((y, m) => fmtMonth.format(new Date(y, m - 1, 1)), [fmtMonth]);
 
-  // current period
   const [period, setPeriod] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
@@ -367,7 +309,6 @@ export default function DashboardPage() {
   const month = period.month;
   const todayLabel = fmtToday.format(new Date());
 
-  // KPI mode
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || "anon"}`, [user?.id]);
   const [kpiMode, setKpiMode] = useState(() => {
     try {
@@ -384,7 +325,6 @@ export default function DashboardPage() {
   }, [kpiModeKey, kpiMode]);
   const onKpiModeChange = useCallback((_e, next) => next && setKpiMode(next), []);
 
-  // DB-backed history
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
@@ -416,7 +356,6 @@ export default function DashboardPage() {
           map.set(ymKey(y, m), item);
         }
 
-        // если каких-то used months нет в monthly/all — догружаем точечно
         const missing = used.filter(({ year: y, month: m }) => !map.has(ymKey(y, m)));
         for (const part of chunk(missing, 6)) {
           const res = await Promise.all(
@@ -432,7 +371,6 @@ export default function DashboardPage() {
           }
         }
 
-        // текущий месяц — на всякий
         const curKey = ymKey(year, month);
         if (!map.has(curKey)) {
           const rawCur = await getMyMonthlySummary(year, month).catch(() => null);
@@ -474,19 +412,14 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  const curSummary = useMemo(
-    () => summariesMap.get(ymKey(year, month)) || null,
-    [summariesMap, year, month]
-  );
+  const curSummary = useMemo(() => summariesMap.get(ymKey(year, month)) || null, [summariesMap, year, month]);
 
-  // current month totals
   const incomeMonth = n(curSummary?.total_income);
   const expenseMonth = n(curSummary?.total_expenses);
   const balanceMonth = n(curSummary?.balance);
   const savingsMonth = n(curSummary?.savings);
   const savingsRateMonth = n(curSummary?.savings_rate_percent);
 
-  // year totals from history
   const yearMonths = useMemo(() => {
     const cur = ymNum(year, month);
     return historyDesc.filter((h) => h.year === year && ymNum(h.year, h.month) <= cur);
@@ -519,18 +452,15 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ width: "100%", color: colors.text }}>
-      {/* HERO: без рамки на мобиле */}
+      {/* HERO: границу убрали полностью */}
       <Card
-        variant="outlined"
+        elevation={0}
         sx={{
           ...surfaceSx,
           borderRadius: 22,
           mb: 2,
-          border: {
-            xs: "none",
-            sm: "none",
-            md: `1px solid ${alpha(colors.primary, 0.22)}`,
-          },
+          border: "none",
+          boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
           backgroundImage: `
             linear-gradient(135deg,
               ${alpha(colors.primary, 0.14)} 0%,
@@ -571,16 +501,8 @@ export default function DashboardPage() {
               ) : null}
             </Box>
 
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              alignItems={{ sm: "center" }}
-              sx={{ width: { xs: "100%", md: "auto" } }}
-            >
-              <Chip
-                label="Актуально"
-                sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.18) }}
-              />
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ width: { xs: "100%", md: "auto" } }}>
+              <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.18) }} />
 
               <Chip
                 icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.primary, 0.98) }} />}
@@ -625,109 +547,52 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* KPI: mobile = горизонтальная лента, desktop = grid */}
+      {/* KPI: mobile 2x2, desktop 4x1 */}
       <Box
         sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+          gap: { xs: 1.25, sm: 1.5, md: 2 },
           mb: 2,
-          display: { xs: "flex", md: "grid" },
-          gridTemplateColumns: { md: "repeat(4, minmax(0, 1fr))" },
-          gap: 2,
-
-          overflowX: { xs: "auto", md: "visible" },
-          pb: { xs: 1, md: 0 },
-
-          scrollSnapType: { xs: "x mandatory", md: "none" },
-          WebkitOverflowScrolling: "touch",
-          "&::-webkit-scrollbar": { display: "none" },
         }}
       >
-        {[
-          {
-            label: "Баланс",
-            value: fmtRub.format(displayBalance),
-            accent: colors.primary,
-            icon: <AccountBalanceWalletOutlinedIcon />,
-            onClick: undefined,
-          },
-          {
-            label: "Доходы",
-            value: fmtRub.format(displayIncome),
-            sub: `Расходы: ${fmtRub.format(displayExpenses)}`,
-            accent: colors.primary,
-            icon: <ArrowCircleUpOutlinedIcon />,
-            onClick: goIncome,
-          },
-          {
-            label: "Расходы",
-            value: fmtRub.format(displayExpenses),
-            accent: colors.warning,
-            icon: <ArrowCircleDownOutlinedIcon />,
-            onClick: goExpenses,
-          },
-          {
-            label: "Норма сбережений",
-            value: `${displayRate}%`,
-            sub: `Сбережения: ${fmtRub.format(displaySavings)}`,
-            accent: colors.primary,
-            icon: <PercentOutlinedIcon />,
-            onClick: undefined,
-          },
-        ].map((k, idx) => (
-          <Box
-            key={idx}
-            sx={{
-              flex: { xs: "0 0 auto", md: "unset" },
-              minWidth: { xs: 260, sm: 300, md: "auto" },
-              width: { md: "100%" },
-              scrollSnapAlign: { xs: "start", md: "none" },
-            }}
-          >
-            <StatCard
-              label={k.label}
-              value={k.value}
-              sub={k.sub}
-              accent={k.accent}
-              icon={k.icon}
-              onClick={k.onClick}
-              compact={true /* компакт на ленте; на desktop всё равно будет нормально */}
-            />
-          </Box>
-        ))}
+        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} accent={colors.primary} icon={<AccountBalanceWalletOutlinedIcon />} />
+        <StatCard label="Доходы" value={fmtRub.format(displayIncome)} sub={`Расходы: ${fmtRub.format(displayExpenses)}`} accent={colors.primary} onClick={goIncome} icon={<ArrowCircleUpOutlinedIcon />} />
+        <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} accent={colors.warning} onClick={goExpenses} icon={<ArrowCircleDownOutlinedIcon />} />
+        <StatCard label="Норма сбережений" value={`${displayRate}%`} sub={`Сбережения: ${fmtRub.format(displaySavings)}`} accent={colors.primary} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* MAIN (без границ вообще) */}
-      <Card elevation={0} sx={{ border: "none", bgcolor: "transparent", boxShadow: "none" }}>
-        <CardContent sx={{ p: 0 }}>
-          <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
+      {/* MAIN: без границ */}
+      <Box sx={{ border: "none" }}>
+        <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
-          <Stack spacing={1}>
-            <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
-            <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
-            <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
-          </Stack>
+        <Stack spacing={1}>
+          <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
+          <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
+          <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
+        </Stack>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ mt: 2, color: colors.muted }}>
-            <Typography variant="caption" sx={{ fontWeight: 800 }}>
-              История сохранена: {historyDesc.length} месяцев
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ mt: 2, color: colors.muted }}>
+          <Typography variant="caption" sx={{ fontWeight: 800 }}>
+            История сохранена: {historyDesc.length} месяцев
+          </Typography>
+          <Typography variant="caption" sx={{ fontWeight: 800 }}>
+            Обновлено: {todayLabel}
+          </Typography>
+        </Stack>
+
+        <Box sx={{ mt: 1.25 }}>
+          {historyDesc.length === 0 ? (
+            <Typography variant="body2" sx={{ color: colors.muted }}>
+              Пока нет сохранённых месяцев.
             </Typography>
-            <Typography variant="caption" sx={{ fontWeight: 800 }}>
-              Обновлено: {todayLabel}
-            </Typography>
-          </Stack>
-
-          <Box sx={{ mt: 1.25 }}>
-            {historyDesc.length === 0 ? (
-              <Typography variant="body2" sx={{ color: colors.muted }}>
-                Пока нет сохранённых месяцев.
-              </Typography>
-            ) : (
-              historyDesc.map((h) => (
-                <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />
-              ))
-            )}
-          </Box>
-        </CardContent>
-      </Card>
+          ) : (
+            historyDesc.map((h) => (
+              <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />
+            ))
+          )}
+        </Box>
+      </Box>
     </Box>
   );
 }
