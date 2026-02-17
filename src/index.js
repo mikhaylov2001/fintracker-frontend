@@ -9,8 +9,7 @@ import { ColorModeProvider, useColorMode } from './contexts/ColorModeContext';
 import { buildTheme } from './theme';
 
 function Root() {
-  const { mode } = useColorMode();
-  const theme = useMemo(() => buildTheme(mode), [mode]);
+  const theme = useMemo(() => buildTheme(), []); // больше не зависит от mode
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
