@@ -31,30 +31,13 @@ import { getMonthlySummary } from '../../api/summaryApi';
 import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 
-import { bankingColors as colors, surfaceSx, pillSx } from '../../styles/bankingTokens';
+import { bankingColors as colors, surfaceSx } from '../../styles/bankingTokens';
 
 const COLORS = {
   income: colors.primary,
   expenses: colors.warning,
   balance: '#6366F1',
   rate: '#A78BFA',
-};
-
-const surfaceArr = Array.isArray(surfaceSx) ? surfaceSx : [surfaceSx];
-
-// Глобальный "киллер" границ (для всех блоков, кроме KPI)
-const NO_BORDER = {
-  border: '0 !important',
-  borderColor: 'transparent !important',
-  outline: '0 !important',
-  boxShadow: 'none', // если "граница" на самом деле тень-ободок
-  '&.MuiPaper-root': {
-    border: '0 !important',
-    borderColor: 'transparent !important',
-    outline: '0 !important',
-  },
-  '&:before': { display: 'none !important' },
-  '&:after': { display: 'none !important' },
 };
 
 const n = (v) => {
@@ -101,7 +84,6 @@ const niceStep = (maxVal) => {
   return 100_000;
 };
 
-// headroom: +15% but at least +10k
 const withHeadroom = (maxVal) => {
   const raw = maxVal + Math.max(10_000, maxVal * 0.15);
   const step = niceStep(raw);
@@ -109,7 +91,50 @@ const withHeadroom = (maxVal) => {
 };
 /* ------------------------------------------------------ */
 
-/* KPI card — ЕДИНСТВЕННОЕ место, где границы оставляем */
+/* ===== Borderless tokens for this page ===== */
+const surfaceNoBorderSx = {
+  borderRadius: 18,
+  border: '0 !important',
+  backgroundColor: alpha(colors.card, 0.92),
+  boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+};
+
+const pillNoBorderSx = {
+  borderRadius: 999,
+  bgcolor: alpha(colors.card2, 0.72),
+  border: '0 !important',
+  color: colors.text,
+  fontWeight: 850,
+};
+
+const toggleGroupNoBorderSx = {
+  width: { xs: '100%', sm: 'auto' },
+  bgcolor: alpha(colors.card2, 0.70),
+  border: 0,
+  borderRadius: 999,
+  p: 0.25,
+  boxShadow: '0 14px 42px rgba(0,0,0,0.35)',
+  '& .MuiToggleButtonGroup-grouped': {
+    border: '0 !important',
+  },
+  '& .MuiToggleButton-root': {
+    border: 0,
+    px: 1.6,
+    flex: { xs: 1, sm: 'unset' },
+    color: alpha(colors.text, 0.78),
+    fontWeight: 950,
+    textTransform: 'none',
+    borderRadius: 999,
+  },
+  '& .MuiToggleButton-root.Mui-selected': {
+    color: '#05140C',
+    backgroundColor: colors.primary,
+    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
+  },
+};
+/* ========================================= */
+
+/* KPI card — ЕДИНСТВЕННОЕ место, где рамка остаётся */
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -129,7 +154,7 @@ const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={onClick ? handleKeyDown : undefined}
       sx={{
-        ...surfaceSx,
+        ...surfaceSx, // <-- с рамкой
         height: '100%',
         minHeight: { xs: 96, sm: 104, md: 116 },
         cursor: onClick ? 'pointer' : 'default',
@@ -507,20 +532,6 @@ export default function AnalyticsPage() {
     </Box>
   );
 
-  const premiumCardSx = {
-    borderRadius: 24,
-    boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
-    overflow: 'hidden',
-    position: 'relative',
-    mb: 2,
-  };
-
-  const panelSx = {
-    borderRadius: 22,
-    boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
-    overflow: 'hidden',
-  };
-
   const axisSx = {
     '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
     '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
@@ -529,14 +540,17 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Premium header — БЕЗ ГРАНИЦ */}
+      {/* Premium header — БЕЗ границ */}
       <Card
         elevation={0}
-        sx={[
-          ...surfaceArr,
-          NO_BORDER,
-          premiumCardSx,
-        ]}
+        sx={{
+          ...surfaceNoBorderSx,
+          borderRadius: 24,
+          boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
+          overflow: 'hidden',
+          mb: 2,
+          position: 'relative',
+        }}
       >
         <Box
           sx={{
@@ -624,11 +638,10 @@ export default function AnalyticsPage() {
                 label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
                 variant="filled"
                 sx={{
-                  ...pillSx,
+                  ...pillNoBorderSx,
                   width: { xs: '100%', sm: 'auto' },
                   bgcolor: error ? alpha(COLORS.expenses, 0.14) : alpha(colors.primary, 0.14),
                   color: error ? COLORS.expenses : colors.primary,
-                  border: 0,
                   fontWeight: 900,
                 }}
               />
@@ -638,29 +651,7 @@ export default function AnalyticsPage() {
                 exclusive
                 onChange={(_e, next) => next && setMode(next)}
                 size="small"
-                sx={{
-                  width: { xs: '100%', sm: 'auto' },
-                  bgcolor: alpha(colors.card2, 0.70),
-                  border: 0,
-                  borderRadius: 999,
-                  p: 0.25,
-                  boxShadow: '0 14px 42px rgba(0,0,0,0.35)',
-                  '& .MuiToggleButtonGroup-grouped': { border: '0 !important' },
-                  '& .MuiToggleButton-root': {
-                    border: 0,
-                    px: 1.6,
-                    flex: { xs: 1, sm: 'unset' },
-                    color: alpha(colors.text, 0.78),
-                    fontWeight: 950,
-                    textTransform: 'none',
-                    borderRadius: 999,
-                  },
-                  '& .MuiToggleButton-root.Mui-selected': {
-                    color: '#05140C',
-                    backgroundColor: colors.primary,
-                    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
-                  },
-                }}
+                sx={toggleGroupNoBorderSx}
               >
                 <ToggleButton value="month">Месяц</ToggleButton>
                 <ToggleButton value="year">Год</ToggleButton>
@@ -670,7 +661,7 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* KPI — границы остаются */}
+      {/* KPI — С РАМКАМИ */}
       <Box
         sx={{
           display: 'grid',
@@ -685,15 +676,8 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — БЕЗ ГРАНИЦ */}
-      <Card
-        elevation={0}
-        sx={[
-          ...surfaceArr,
-          NO_BORDER,
-          { ...panelSx, mb: 2 },
-        ]}
-      >
+      {/* Cashflow — БЕЗ границ */}
+      <Card elevation={0} sx={{ ...surfaceNoBorderSx, borderRadius: 22, mb: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}>
             Cashflow за 12 месяцев
@@ -797,15 +781,8 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Топ категорий — БЕЗ ГРАНИЦ */}
-      <Card
-        elevation={0}
-        sx={[
-          ...surfaceArr,
-          NO_BORDER,
-          panelSx,
-        ]}
-      >
+      {/* Топ категорий — БЕЗ границ */}
+      <Card elevation={0} sx={{ ...surfaceNoBorderSx, borderRadius: 22 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
@@ -816,8 +793,7 @@ export default function AnalyticsPage() {
               label={catsLoading ? 'Считаю…' : mode === 'year' ? `${year} год` : monthTitleRu(year, month)}
               variant="filled"
               sx={{
-                ...pillSx,
-                border: 0,
+                ...pillNoBorderSx,
                 color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
                 bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.12),
                 fontWeight: 900,
