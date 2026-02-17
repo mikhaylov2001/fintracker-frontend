@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
   Stack,
@@ -39,9 +32,8 @@ import {
   getMyIncomesByMonth,
   updateIncome,
 } from '../../api/incomeApi';
-import { bankingColors as colors } from '../../styles/bankingTokens';
 
-const COLORS = { income: colors.primary };
+const COLORS = { income: '#22C55E' };
 
 const CATEGORY_OPTIONS = ['Работа', 'Подработка', 'Вклады', 'Инвестиции', 'Подарки', 'Другое'];
 const SOURCE_OPTIONS = ['Зарплата', 'Премия', 'Проценты', 'Дивиденды', 'Бизнес', 'Другое'];
@@ -108,12 +100,6 @@ const addMonthsYM = ({ year, month }, delta) => {
 };
 
 const ymLabel = ({ year, month }) => `${String(month).padStart(2, '0')}.${year}`;
-
-const ymFromDate = (yyyyMmDd) => {
-  const s = normalizeDateOnly(yyyyMmDd);
-  const [y, m] = s.split('-');
-  return { year: Number(y), month: Number(m) };
-};
 
 export default function IncomePage() {
   const toast = useToast();
@@ -243,14 +229,7 @@ export default function IncomePage() {
         toast.success('Доход добавлен');
       }
 
-      const target = ymFromDate(payload.date);
       setOpen(false);
-
-      if (target.year !== ym.year || target.month !== ym.month) {
-        setYm(target);
-        return;
-      }
-
       await load();
     } catch (e) {
       const msg = e?.message || 'Ошибка сохранения';
@@ -258,12 +237,6 @@ export default function IncomePage() {
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? 'Доход обновлён' : 'Доход добавлен');
-
-        const target = ymFromDate(form.date);
-        if (target.year !== ym.year || target.month !== ym.month) {
-          setYm(target);
-          return;
-        }
 
         await load();
       } else {
@@ -294,7 +267,7 @@ export default function IncomePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#F8FAFC', // светлый общий фон
+        bgcolor: '#F8FAFC',
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: '100%',
@@ -391,6 +364,7 @@ export default function IncomePage() {
         </Stack>
       </Stack>
 
+      {/* Error */}
       {error ? (
         <Typography
           variant="body2"
@@ -400,6 +374,7 @@ export default function IncomePage() {
         </Typography>
       ) : null}
 
+      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -419,7 +394,7 @@ export default function IncomePage() {
               width: '100%',
               minWidth: { sm: 720 },
               tableLayout: { xs: 'fixed', sm: 'auto' },
-              bgcolor: '#FFFFFF', // белый фон таблицы
+              bgcolor: '#FFFFFF',
               '& th, & td': {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 0.6, sm: 1 },
@@ -434,7 +409,7 @@ export default function IncomePage() {
                 fontWeight: 900,
                 color: '#0F172A',
                 whiteSpace: 'nowrap',
-                bgcolor: '#F8FAFC', // светлый хедер
+                bgcolor: '#F8FAFC',
               },
               '& td': {
                 whiteSpace: { xs: 'normal', sm: 'nowrap' },
@@ -554,6 +529,7 @@ export default function IncomePage() {
         </Box>
       )}
 
+      {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"

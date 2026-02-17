@@ -240,14 +240,7 @@ export default function ExpensesPage() {
         toast.success('Расход добавлен');
       }
 
-      const target = ymFromDate(payload.date);
       setOpen(false);
-
-      if (target.year !== ym.year || target.month !== ym.month) {
-        setYm(target);
-        return;
-      }
-
       await load();
     } catch (e) {
       const msg = e?.message || 'Ошибка сохранения';
@@ -255,12 +248,6 @@ export default function ExpensesPage() {
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? 'Расход обновлён' : 'Расход добавлен');
-
-        const target = ymFromDate(form.date);
-        if (target.year !== ym.year || target.month !== ym.month) {
-          setYm(target);
-          return;
-        }
 
         await load();
       } else {
@@ -387,7 +374,7 @@ export default function ExpensesPage() {
         </Typography>
       ) : null}
 
-      {/* Table on white background */}
+      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
