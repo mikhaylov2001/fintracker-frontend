@@ -494,16 +494,18 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Header без Card, без границ */}
+      {/* Header — без “карточки”, просто текст, без границ */}
       <Box
         sx={{
-          mb: 2,
+          mb: { xs: 2.5, md: 3 },
           position: 'relative',
-          p: { xs: 2, md: 2.75 },
-          borderRadius: 24,
-          backgroundColor: alpha(colors.card, 0.92),
-          boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
-          overflow: 'hidden',
+          px: 0,
+          pt: { xs: 1, md: 1.5 },
+          pb: { xs: 1.5, md: 2 },
+          borderRadius: 0,
+          border: 0,
+          boxShadow: 'none',
+          backgroundColor: 'transparent',
         }}
       >
         <Box
@@ -511,11 +513,7 @@ export default function AnalyticsPage() {
             position: 'absolute',
             inset: 0,
             pointerEvents: 'none',
-            background: `
-              radial-gradient(900px 220px at 10% 0%, ${alpha(COLORS.balance, 0.28)} 0%, transparent 55%),
-              radial-gradient(700px 240px at 95% 10%, ${alpha(colors.primary, 0.18)} 0%, transparent 60%),
-              linear-gradient(180deg, ${alpha('#FFFFFF', 0.04)} 0%, transparent 100%)
-            `,
+            background: 'none',
           }}
         />
 
@@ -535,7 +533,7 @@ export default function AnalyticsPage() {
                 placeItems: 'center',
                 bgcolor: alpha(COLORS.balance, 0.14),
                 border: 0,
-                boxShadow: `0 18px 55px ${alpha(COLORS.balance, 0.18)}`,
+                boxShadow: 'none',
                 flex: '0 0 auto',
               }}
             >
@@ -652,7 +650,7 @@ export default function AnalyticsPage() {
           display: 'grid',
           gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
           gap: { xs: 1.25, sm: 1.5, md: 2 },
-          mb: 2,
+          mb: { xs: 3, md: 2.5 },
         }}
       >
         <KpiCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} icon={<AccountBalanceWalletOutlinedIcon />} />
@@ -661,8 +659,8 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — без Card */}
-      <Box sx={{ mb: 2 }}>
+      {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
+      <Box sx={{ mb: { xs: 3, md: 2.5 } }}>
         <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.25 }}>
           Cashflow за 12 месяцев
         </Typography>
@@ -768,8 +766,8 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — без Card */}
-      <Box>
+      {/* Топ категорий — без Card, с отступом на мобиле */}
+      <Box sx={{ mt: { xs: 3, md: 2 }, mb: { xs: 1, md: 0 } }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.25 }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
             {topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов'}
@@ -796,7 +794,7 @@ export default function AnalyticsPage() {
           scrollButtons="auto"
           sx={{
             minHeight: 40,
-            mb: 1.25,
+            mb: { xs: 1.75, md: 1.25 },
             '& .MuiTab-root': {
               minHeight: 40,
               color: alpha(colors.text, 0.70),
