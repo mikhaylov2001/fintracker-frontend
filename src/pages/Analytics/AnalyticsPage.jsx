@@ -693,8 +693,14 @@ export default function AnalyticsPage() {
           />
         </Box>
 
-        <Box sx={{ mt: { xs: 3.5, md: 6 } }}>
-          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: 1.25 }}>
+        <Box sx={{ mt: { xs: 5, md: 4.5 } }}>
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            justifyContent="center"
+            sx={{ mb: { xs: 1.75, md: 1.25 } }}
+          >
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
             <Typography
               variant="caption"
