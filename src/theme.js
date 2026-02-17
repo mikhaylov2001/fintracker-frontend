@@ -1,14 +1,24 @@
-export function buildTheme(mode = 'dark') {  // ← default 'dark'!
+import { createTheme, alpha, responsiveFontSizes } from '@mui/material/styles';  // ← Импорты на месте!
+
+export function buildTheme(mode = 'dark') {  // default 'dark'!
   const isDark = mode === 'dark';
 
-  const theme = createTheme({
+  let t = createTheme({
     palette: {
       mode,
       background: {
-        default: isDark ? '#060A14' : '#F5F7FF',  // ← Тёмный fallback
-        paper: isDark ? 'rgba(10,16,32,0.45)' : 'rgba(255,255,255,0.9)',  // Glass!
+        default: isDark ? '#060A14' : '#F5F7FF',
+        paper: isDark ? 'rgba(10,16,32,0.45)' : 'rgba(255,255,255,0.9)',
       },
-      // ... остальное
+      text: {
+        primary: isDark ? '#E5E7EB' : '#0F172A',
+        secondary: isDark ? alpha('#E5E7EB', 0.70) : alpha('#0F172A', 0.65),
+      },
+      divider: isDark ? alpha('#E5E7EB', 0.10) : alpha('#0F172A', 0.10),
+    },
+    shape: { borderRadius: 12 },
+    typography: {
+      fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
     },
     components: {
       MuiCssBaseline: {
@@ -21,24 +31,12 @@ export function buildTheme(mode = 'dark') {  // ← default 'dark'!
               linear-gradient(180deg, #071022 0%, #060A14 100%)
             ` : '#F5F7FF',
             backgroundAttachment: 'fixed',
-          },
-          html: {
             WebkitFontSmoothing: 'antialiased',
+            MozOsxFontSmoothing: 'grayscale',
           },
         },
       },
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            backgroundColor: 'transparent !important',  // ← Не перетирать sx!
-            backdropFilter: 'blur(20px) saturate(180%) !important',
-            border: 'none !important',
-          },
-        },
-      },
-      // ... твои остальные overrides
-    },
-  });
-
-  return responsiveFontSizes(theme);
-}
+      MuiToolbar: { defaultProps: { variant: 'dense' } },
+      MuiButton: {
+        defaultProps: { disableElevation: true, size: 'small' },
+        style
