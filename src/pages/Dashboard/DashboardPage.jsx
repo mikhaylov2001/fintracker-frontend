@@ -64,6 +64,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
+// KPI-стиль как в AnalyticsPage
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -601,7 +602,7 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI – стиль как в AnalyticsPage */}
+      {/* KPI – KpiCard как в AnalyticsPage */}
       <Box
         sx={{
           display: "grid",
