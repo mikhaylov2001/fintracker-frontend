@@ -12,8 +12,10 @@ import {
   Typography,
   Button,
 } from "@mui/material";
-import { alpha, useTheme } from "@mui/material/styles";
-import useMediaQuery from "@mui/material/useMediaQuery";
+import { alpha } from "@mui/material/styles";
+import { useAuth } from "../contexts/AuthContext";
+import TopNavBar from "../components/TopNavBar";
+import AppBackground from "./AppBackground";
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import PaidIcon from "@mui/icons-material/Paid";
@@ -21,16 +23,11 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
 import LogoutIcon from "@mui/icons-material/Logout";
 
-import { useAuth } from "../contexts/AuthContext";
-import TopNavBar from "../components/TopNavBar";
-import AppBackground from "./AppBackground";
+import { bankingColors } from "../styles/bankingTokens";
 
 const drawerWidth = 272;
 
 export default function AppLayout() {
-  const theme = useTheme();
-  const isMdUp = useMediaQuery(theme.breakpoints.up("md"));
-
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -57,34 +54,24 @@ export default function AppLayout() {
     navigate("/login");
   };
 
-  const colors = {
-    drawerBg: alpha("#111B30", 0.95),
-    border: alpha("#FFFFFF", 0.10),
-    text: "rgba(255,255,255,0.92)",
-    muted: "rgba(255,255,255,0.66)",
-    primary: "#4F7DFF",
-  };
-
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* отступ под TopNavBar (clipped drawer) */}
       <Toolbar />
 
       <Box sx={{ px: 2, pb: 1 }}>
-        <Typography sx={{ fontWeight: 950, color: colors.text }}>
+        <Typography sx={{ fontWeight: 950, color: bankingColors.text }}>
           Меню
         </Typography>
-        <Typography variant="caption" sx={{ color: colors.muted }}>
+        <Typography variant="caption" sx={{ color: bankingColors.muted }}>
           {userLabel}
         </Typography>
       </Box>
 
-      <Divider sx={{ borderColor: colors.border }} />
+      <Divider sx={{ borderColor: bankingColors.border2 }} />
 
       <List sx={{ p: 1.25, flex: 1 }}>
         {navItems.map((it) => {
           const selected = it.match(location.pathname);
-
           return (
             <ListItemButton
               key={it.label}
@@ -97,16 +84,16 @@ export default function AppLayout() {
                 borderRadius: 3,
                 mb: 0.75,
                 py: { xs: 1.25, sm: 1 },
-                color: alpha(colors.text, 0.82),
+                color: alpha(bankingColors.text, 0.82),
                 "& .MuiListItemIcon-root": {
                   minWidth: 38,
-                  color: alpha(colors.text, 0.74),
+                  color: alpha(bankingColors.text, 0.74),
                 },
                 "&.Mui-selected": {
-                  bgcolor: alpha(colors.primary, 0.18),
-                  color: colors.text,
+                  bgcolor: alpha(bankingColors.primary, 0.18),
+                  color: bankingColors.text,
                 },
-                "&.Mui-selected .MuiListItemIcon-root": { color: colors.text },
+                "&.Mui-selected .MuiListItemIcon-root": { color: bankingColors.text },
                 "&:hover": { bgcolor: alpha("#FFFFFF", 0.06) },
               }}
             >
@@ -130,9 +117,9 @@ export default function AppLayout() {
           sx={{
             justifyContent: "flex-start",
             borderRadius: 3,
-            color: colors.text,
+            color: bankingColors.text,
             bgcolor: alpha("#FFFFFF", 0.06),
-            border: `1px solid ${colors.border}`,
+            border: `1px solid ${bankingColors.border2}`,
             "&:hover": { bgcolor: alpha("#FFFFFF", 0.10) },
           }}
         >
@@ -147,18 +134,18 @@ export default function AppLayout() {
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         {/* Sidebar */}
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
-          {/* Mobile drawer */}
+          {/* Mobile */}
           <Drawer
             variant="temporary"
             anchor="left"
-            open={!isMdUp && mobileOpen}
+            open={mobileOpen}
             onClose={closeMobile}
             ModalProps={{ keepMounted: true }}
             PaperProps={{
               sx: {
                 width: { xs: "88vw", sm: 320 },
-                bgcolor: colors.drawerBg,
-                borderRight: `1px solid ${colors.border}`,
+                bgcolor: alpha("#111B30", 0.98),
+                borderRight: `1px solid ${bankingColors.border2}`,
               },
             }}
             sx={{ display: { xs: "block", md: "none" } }}
@@ -166,7 +153,7 @@ export default function AppLayout() {
             {drawerContent}
           </Drawer>
 
-          {/* Desktop drawer (wide) */}
+          {/* Desktop wide */}
           <Drawer
             variant="permanent"
             open
@@ -175,8 +162,8 @@ export default function AppLayout() {
               "& .MuiDrawer-paper": {
                 width: drawerWidth,
                 boxSizing: "border-box",
-                bgcolor: colors.drawerBg,
-                borderRight: `1px solid ${colors.border}`,
+                bgcolor: alpha("#111B30", 0.95),
+                borderRight: `1px solid ${bankingColors.border2}`,
               },
             }}
           >

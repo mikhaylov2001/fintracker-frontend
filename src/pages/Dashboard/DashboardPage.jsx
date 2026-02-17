@@ -27,6 +27,8 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import { useAuth } from "../../contexts/AuthContext";
 import { getMonthlySummary } from "../../api/summaryApi";
 
+import { bankingColors as colors, surfaceSx, pillSx } from "../../styles/bankingTokens";
+
 /* ───────── helpers ───────── */
 
 const n = (v) => {
@@ -47,30 +49,64 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/* ───────── slate banking tokens ───────── */
+/* ───────── MiniSparkline (decor) ───────── */
 
-const colors = {
-  bg0: "#0F172A",
-  bg1: "#111C33",
-  card: alpha("#111B30", 0.86),
-  card2: alpha("#0F1A2D", 0.88),
-  border: "rgba(255,255,255,0.08)",
-  border2: "rgba(255,255,255,0.12)",
-  text: "rgba(255,255,255,0.92)",
-  muted: "rgba(255,255,255,0.66)",
-  primary: "#4F7DFF",
-  success: "#2DD4BF",
-  warning: "#F59E0B",
-  accent: "#60A5FA",
-  danger: "#FF5A6A",
-};
+const MiniSparkline = memo(function MiniSparkline({ data, accent }) {
+  const w = 140;
+  const h = 44;
 
-const surfaceSx = {
-  borderRadius: 4,
-  border: `1px solid ${colors.border}`,
-  backgroundColor: colors.card,
-  boxShadow: "0 18px 50px rgba(0,0,0,0.35)",
-};
+  const points = useMemo(() => {
+    const arr = (data || []).map((x) => Number(x)).filter((x) => Number.isFinite(x));
+    if (arr.length < 2) return "";
+
+    const min = Math.min(...arr);
+    const max = Math.max(...arr);
+    const span = Math.max(1e-6, max - min);
+
+    return arr
+      .map((v, i) => {
+        const x = (i / (arr.length - 1)) * (w - 2) + 1;
+        const y = (1 - (v - min) / span) * (h - 2) + 1;
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  }, [data]);
+
+  return (
+    <Box
+      component="svg"
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      sx={{
+        position: "absolute",
+        right: 10,
+        top: 10,
+        width: 160,
+        height: 52,
+        opacity: 0.28,
+        pointerEvents: "none",
+      }}
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke={alpha(accent, 0.80)}
+        strokeWidth="2"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      {/* лёгкое свечение (очень мягко) */}
+      <polyline
+        points={points}
+        fill="none"
+        stroke={alpha(accent, 0.20)}
+        strokeWidth="6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </Box>
+  );
+});
 
 /* ───────── StatCard (memoized) ───────── */
 
@@ -79,6 +115,7 @@ const StatCard = memo(function StatCard({
   value,
   sub,
   icon,
+  spark,
   accent = colors.primary,
   onClick,
 }) {
@@ -129,12 +166,14 @@ const StatCard = memo(function StatCard({
           : {},
       }}
     >
+      {spark ? <MiniSparkline data={spark} accent={accent} /> : null}
+
       <CardContent sx={{ p: 2 }}>
         <Stack direction="row" spacing={1.1} alignItems="center">
           <Box
             sx={{
-              width: 34,
-              height: 34,
+              width: { xs: 32, sm: 34 },
+              height: { xs: 32, sm: 34 },
               borderRadius: 2.25,
               display: "grid",
               placeItems: "center",
@@ -175,7 +214,7 @@ const StatCard = memo(function StatCard({
           variant="caption"
           sx={{
             mt: 0.5,
-            color: colors.muted,
+            color: alpha(colors.muted, 0.92),
             display: "block",
             fontSize: { xs: "0.78rem", sm: "0.75rem" },
           }}
@@ -239,15 +278,11 @@ const accordionSx = {
   mb: 1,
   border: `1px solid ${colors.border}`,
   backgroundColor: colors.card2,
-  boxShadow: "0 14px 40px rgba(0,0,0,0.28)",
+  boxShadow: "0 10px 28px rgba(0,0,0,0.22)",
   "&:before": { display: "none" },
 };
 
-const HistoryAccordion = memo(function HistoryAccordion({
-  h,
-  monthTitle,
-  fmtRub,
-}) {
+const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub }) {
   const raw = Number(h?.savings_rate_percent);
   const has = Number.isFinite(raw);
   const v = has ? Math.round(raw) : null;
@@ -263,15 +298,10 @@ const HistoryAccordion = memo(function HistoryAccordion({
   const pctText = has ? `(${v}%)` : "(—%)";
 
   return (
-    <Accordion
-      disableGutters
-      elevation={0}
-      sx={accordionSx}
-      TransitionProps={{ unmountOnExit: true }}
-    >
+    <Accordion disableGutters elevation={0} sx={accordionSx} TransitionProps={{ unmountOnExit: true }}>
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{ minHeight: 54 }}
+        sx={{ px: 1.5, "& .MuiAccordionSummary-content": { my: 1 } }}
       >
         <Stack
           direction="row"
@@ -292,10 +322,7 @@ const HistoryAccordion = memo(function HistoryAccordion({
           >
             {monthTitle(h.year, h.month)}
           </Typography>
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}
-          >
+          <Typography variant="caption" sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}>
             {pctText}
           </Typography>
         </Stack>
@@ -344,36 +371,20 @@ const HistoryAccordion = memo(function HistoryAccordion({
 function DashboardSkeleton() {
   return (
     <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-      <Skeleton
-        variant="rounded"
-        height={120}
-        sx={{ borderRadius: 4, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }}
-      />
+      <Skeleton variant="rounded" height={120} sx={{ borderRadius: 4, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }} />
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, 1fr)",
-            md: "repeat(4, 1fr)",
-          },
+          gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
           gap: 2,
           mb: 2,
         }}
       >
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton
-            key={i}
-            variant="rounded"
-            height={112}
-            sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }}
-          />
+          <Skeleton key={i} variant="rounded" height={112} sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }} />
         ))}
       </Box>
-      <Skeleton
-        variant="rounded"
-        height={320}
-        sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }}
-      />
+      <Skeleton variant="rounded" height={320} sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }} />
     </Box>
   );
 }
@@ -391,8 +402,6 @@ export default function DashboardPage() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  /* ── formatters (stable refs) ── */
 
   const fmtRub = useMemo(
     () =>
@@ -419,17 +428,9 @@ export default function DashboardPage() {
     []
   );
 
-  const monthTitle = useCallback(
-    (y, m) => fmtMonth.format(new Date(y, m - 1, 1)),
-    [fmtMonth]
-  );
+  const monthTitle = useCallback((y, m) => fmtMonth.format(new Date(y, m - 1, 1)), [fmtMonth]);
 
-  /* ── KPI mode (month/year) with localStorage ── */
-
-  const kpiModeKey = useMemo(
-    () => `fintracker:kpiMode:${userId || "anon"}`,
-    [userId]
-  );
+  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${userId || "anon"}`, [userId]);
 
   const [kpiMode, setKpiMode] = useState(() => {
     try {
@@ -457,8 +458,6 @@ export default function DashboardPage() {
     if (next) setKpiMode(next);
   }, []);
 
-  /* ── period (date) ── */
-
   const [period, setPeriod] = useState(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1, todayLabel: "" };
@@ -477,8 +476,6 @@ export default function DashboardPage() {
   const month = period.month;
   const todayLabel = period.todayLabel || fmtToday.format(new Date());
 
-  /* ── data fetching ── */
-
   useEffect(() => {
     let cancelled = false;
 
@@ -496,21 +493,13 @@ export default function DashboardPage() {
         if (!cancelled) setSummary(cur);
 
         const rows = [];
-
-        // 11 месяцев назад (без дубля текущего)
         const tasks = Array.from({ length: 11 }, (_, idx) => {
           const i = idx + 1;
           const ym = addMonthsYM(baseYM, -i);
           return getMonthlySummary(userId, ym.year, ym.month)
             .then((raw) => {
               const d = unwrap(raw);
-              if (
-                d &&
-                (n(d.total_income) ||
-                  n(d.total_expenses) ||
-                  n(d.balance) ||
-                  n(d.savings))
-              ) {
+              if (d && (n(d.total_income) || n(d.total_expenses) || n(d.balance) || n(d.savings))) {
                 rows.push({ ...d, year: ym.year, month: ym.month });
               }
             })
@@ -519,14 +508,7 @@ export default function DashboardPage() {
 
         await Promise.all(tasks);
 
-        // добавим текущий месяц в историю, если он не пустой
-        if (
-          cur &&
-          (n(cur.total_income) ||
-            n(cur.total_expenses) ||
-            n(cur.balance) ||
-            n(cur.savings))
-        ) {
+        if (cur && (n(cur.total_income) || n(cur.total_expenses) || n(cur.balance) || n(cur.savings))) {
           rows.push({ ...cur, year, month });
         }
 
@@ -544,14 +526,7 @@ export default function DashboardPage() {
     };
   }, [userId, year, month]);
 
-  /* ── sorted history (descending) ── */
-
-  const historyDesc = useMemo(
-    () => [...history].sort((a, b) => b.year - a.year || b.month - a.month),
-    [history]
-  );
-
-  /* ── derived KPI values ── */
+  const historyDesc = useMemo(() => [...history].sort((a, b) => b.year - a.year || b.month - a.month), [history]);
 
   const incomeMonth = n(summary?.total_income);
   const expenseMonth = n(summary?.total_expenses);
@@ -561,27 +536,13 @@ export default function DashboardPage() {
 
   const yearMonths = useMemo(() => {
     const curNum = ymNum(year, month);
-    return history.filter(
-      (h) => h.year === year && ymNum(h.year, h.month) <= curNum
-    );
+    return history.filter((h) => h.year === year && ymNum(h.year, h.month) <= curNum);
   }, [history, year, month]);
 
-  const yearIncome = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
-    [yearMonths]
-  );
-
-  const yearExpenses = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
-    [yearMonths]
-  );
-
+  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
+  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const yearBalance = yearIncome - yearExpenses;
-
-  const yearSavings = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
-    [yearMonths]
-  );
+  const yearSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
 
   const yearSavingsRate = useMemo(() => {
     if (yearIncome <= 0) return 0;
@@ -590,9 +551,7 @@ export default function DashboardPage() {
   }, [yearIncome, yearBalance]);
 
   const isYear = kpiMode === "year";
-  const periodLabel = isYear
-    ? `Показаны данные: ${year} год`
-    : `Показаны данные: ${monthTitle(year, month)}`;
+  const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
@@ -602,65 +561,29 @@ export default function DashboardPage() {
 
   const displayName = user?.userName || user?.email || "пользователь";
 
-  /* ── navigation callbacks ── */
-
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
 
-  /* ── loading state ── */
+  const sparkBalance = [5, 6, 5, 7, 6, 8, 7, 9];
+  const sparkIncome = [3, 4, 5, 6, 6, 7, 8, 9];
+  const sparkExpenses = [8, 7, 7, 6, 6, 5, 5, 4];
+  const sparkRate = [4, 5, 6, 6, 7, 7, 8, 8];
 
   if (loading) return <DashboardSkeleton />;
 
-  /* ── render ── */
-
   return (
-    <Box
-      sx={{
-        width: "100%",
-        color: colors.text,
-        borderRadius: 5,
-        p: { xs: 1, sm: 1.5, md: 2 },
-        background: `
-          radial-gradient(900px 520px at 16% 10%, ${alpha(colors.primary, 0.14)} 0%, transparent 55%),
-          radial-gradient(900px 520px at 86% 18%, ${alpha(colors.accent, 0.10)} 0%, transparent 55%),
-          radial-gradient(900px 520px at 55% 92%, ${alpha(colors.success, 0.08)} 0%, transparent 55%),
-          linear-gradient(180deg, ${colors.bg1} 0%, ${colors.bg0} 100%)
-        `,
-      }}
-    >
-      {/* HERO */}
+    <Box sx={{ width: "100%", color: colors.text, borderRadius: 5, p: { xs: 1, sm: 1.5, md: 2 } }}>
       <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5, mb: 2 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-          >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
             <Box sx={{ flexGrow: 1 }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 950,
-                  lineHeight: 1.15,
-                  color: colors.text,
-                  fontSize: { xs: "1.25rem", sm: "1.5rem" },
-                }}
-              >
+              <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15, color: colors.text, fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
                 Финансовая свобода
               </Typography>
-
               <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5 }}>
                 Привет, {displayName} • Сегодня: {todayLabel}
               </Typography>
-
-              <Typography
-                variant="body2"
-                sx={{
-                  color: alpha(colors.text, 0.78),
-                  mt: 0.5,
-                  fontWeight: 700,
-                }}
-              >
+              <Typography variant="body2" sx={{ color: alpha(colors.text, 0.78), mt: 0.5, fontWeight: 700 }}>
                 {periodLabel}
               </Typography>
             </Box>
@@ -671,32 +594,24 @@ export default function DashboardPage() {
               alignItems={{ sm: "center" }}
               sx={{ width: { xs: "100%", sm: "auto" } }}
             >
+              <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" } }} />
+
               <Chip
-                label={loading ? "Загрузка…" : "Актуально"}
+                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.text, 0.9) }} />}
+                label={isYear ? "Режим: Год" : "Режим: Месяц"}
                 sx={{
+                  ...pillSx,
                   width: { xs: "100%", sm: "auto" },
-                  borderRadius: 999,
-                  bgcolor: alpha("#0B1226", 0.38),
-                  border: `1px solid ${colors.border}`,
-                  color: colors.text,
-                  fontWeight: 850,
+                  "& .MuiChip-icon": { ml: 1, mr: -0.25 },
                 }}
               />
 
               <Chip
-                icon={
-                  <CalendarMonthOutlinedIcon
-                    sx={{ color: alpha(colors.text, 0.9) }}
-                  />
-                }
-                label={isYear ? "Режим: Год" : "Режим: Месяц"}
+                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.text, 0.9) }} />}
+                label={isYear ? `${year}` : monthTitle(year, month)}
                 sx={{
+                  ...pillSx,
                   width: { xs: "100%", sm: "auto" },
-                  borderRadius: 999,
-                  bgcolor: alpha("#0B1226", 0.38),
-                  border: `1px solid ${colors.border}`,
-                  color: colors.text,
-                  fontWeight: 850,
                   "& .MuiChip-icon": { ml: 1, mr: -0.25 },
                 }}
               />
@@ -750,14 +665,10 @@ export default function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* KPI */}
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(4, minmax(0, 1fr))",
-          },
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
           gap: 2,
           mb: 2,
         }}
@@ -767,8 +678,8 @@ export default function DashboardPage() {
           value={fmtRub.format(displayBalance)}
           accent={colors.primary}
           icon={<AccountBalanceWalletOutlinedIcon />}
+          spark={sparkBalance}
         />
-
         <StatCard
           label="Доходы"
           value={fmtRub.format(displayIncome)}
@@ -776,91 +687,56 @@ export default function DashboardPage() {
           accent={colors.success}
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
+          spark={sparkIncome}
         />
-
         <StatCard
           label="Расходы"
           value={fmtRub.format(displayExpenses)}
           accent={colors.warning}
           onClick={goExpenses}
           icon={<ArrowCircleDownOutlinedIcon />}
+          spark={sparkExpenses}
         />
-
         <StatCard
           label="Норма сбережений"
           value={`${displayRate}%`}
           sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
           accent={colors.accent}
           icon={<PercentOutlinedIcon />}
+          spark={sparkRate}
         />
       </Box>
 
-      {/* DETAILS + HISTORY */}
       <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5 }}>
         <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-          <Stack
-            direction="row"
-            alignItems="baseline"
-            justifyContent="space-between"
-            sx={{ mb: 0.5 }}
-          >
+          <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text }}>
               Итоги операций за месяц
             </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                color: colors.muted,
-                fontWeight: 900,
-                textTransform: "capitalize",
-              }}
-            >
+            <Typography variant="caption" sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}>
               {monthTitle(year, month)}
             </Typography>
           </Stack>
 
           <Divider sx={{ my: 1.5, borderColor: colors.border }} />
 
-          <Box
-            sx={{
-              border: `1px solid ${colors.border}`,
-              borderRadius: 3,
-              bgcolor: colors.card2,
-              overflow: "hidden",
-            }}
-          >
+          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 3, bgcolor: colors.card2, overflow: "hidden" }}>
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow
-                label="Доходы"
-                value={fmtRub.format(incomeMonth)}
-                color={colors.success}
-              />
+              <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.success} />
             </Box>
             <Divider sx={{ borderColor: colors.border }} />
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow
-                label="Расходы"
-                value={fmtRub.format(expenseMonth)}
-                color={colors.warning}
-              />
+              <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
             </Box>
             <Divider sx={{ borderColor: colors.border }} />
             <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow
-                label="Сбережения"
-                value={fmtRub.format(savingsMonth)}
-                color={colors.accent}
-              />
+              <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
             </Box>
           </Box>
 
           <Divider sx={{ my: 1.5, borderColor: colors.border }} />
 
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={{ xs: 0.25, sm: 1.25 }}
-            sx={{ color: colors.muted }}
-          >
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: colors.muted }}>
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
               История сохранена: {history.length} месяцев
             </Typography>
@@ -876,12 +752,7 @@ export default function DashboardPage() {
               </Typography>
             ) : (
               historyDesc.map((h) => (
-                <HistoryAccordion
-                  key={`${h.year}-${h.month}`}
-                  h={h}
-                  monthTitle={monthTitle}
-                  fmtRub={fmtRub}
-                />
+                <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />
               ))
             )}
           </Box>
