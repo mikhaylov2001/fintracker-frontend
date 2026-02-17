@@ -494,7 +494,7 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Header — без “карточки”, просто текст, без границ */}
+      {/* Header — просто текст, без карточки */}
       <Box
         sx={{
           mb: { xs: 3, md: 3 },
@@ -659,9 +659,26 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
-      <Box sx={{ mb: { xs: 5, md: 3 } }}>
-        <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.5 }}>
+      {/* Cashflow блок с более ярким фоном */}
+      <Box
+        sx={{
+          mb: { xs: 5, md: 3 },
+          borderRadius: 3,
+          p: { xs: 1.5, md: 2 },
+          bgcolor: alpha(colors.card2, 0.94),
+          backgroundImage: `linear-gradient(135deg, ${alpha(COLORS.income, 0.10)} 0%, transparent 40%), linear-gradient(225deg, ${alpha(COLORS.expenses, 0.12)} 0%, transparent 45%)`,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: 950,
+            color: colors.text,
+            letterSpacing: -0.2,
+            mb: 1.5,
+          }}
+        >
           Cashflow за 12 месяцев
         </Typography>
 
@@ -673,7 +690,7 @@ export default function AnalyticsPage() {
                 data: cashflowRows.map((r) => r.label),
                 scaleType: 'band',
                 tickSpacing: 14,
-                tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.82) },
                 categoryGapRatio: 0.28,
                 barGapRatio: 0.12,
               },
@@ -685,9 +702,9 @@ export default function AnalyticsPage() {
             grid={{ horizontal: true }}
             margin={{ left: 52, right: 16, top: 10, bottom: 50 }}
             sx={{
-              '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-              '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-              '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
+              '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.18) },
+              '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.82), fontSize: 11 },
+              '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.10) },
               '.MuiChartsLegend-root': { justifyContent: 'center' },
             }}
           />
@@ -707,7 +724,7 @@ export default function AnalyticsPage() {
               variant="caption"
               sx={{
                 fontWeight: 900,
-                color: alpha('#FFFFFF', 0.62),
+                color: alpha('#FFFFFF', 0.82),
                 letterSpacing: 0.8,
                 textTransform: 'uppercase',
                 fontSize: 11,
@@ -726,7 +743,7 @@ export default function AnalyticsPage() {
                   data: cashflowRows.map((r) => r.label),
                   scaleType: 'point',
                   tickSpacing: 18,
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.82) },
                 },
               ]}
               yAxis={[
@@ -753,9 +770,9 @@ export default function AnalyticsPage() {
               grid={{ horizontal: true }}
               margin={{ left: 52, right: 16, top: 14, bottom: 28 }}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
+                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.18) },
+                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.82), fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.10) },
                 '& .MuiLineElement-root': { strokeWidth: 3 },
                 '& .MuiMarkElement-root': {
                   r: 4,
@@ -773,8 +790,18 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — чуть ниже, горизонтальный бар‑чарт от левого края */}
-      <Box sx={{ mt: { xs: 6, md: 3.5 }, mb: { xs: 2.5, md: 0 } }}>
+      {/* Топ категорий — отдельный яркий блок, бар‑чарт слева */}
+      <Box
+        sx={{
+          mt: { xs: 6, md: 3.5 },
+          mb: { xs: 2.5, md: 0 },
+          borderRadius: 3,
+          p: { xs: 1.5, md: 2 },
+          bgcolor: alpha(colors.card2, 0.96),
+          backgroundImage: `linear-gradient(135deg, ${alpha(COLORS.expenses, 0.12)} 0%, transparent 45%), linear-gradient(225deg, ${alpha(COLORS.income, 0.10)} 0%, transparent 50%)`,
+          boxShadow: '0 20px 60px rgba(0,0,0,0.55)',
+        }}
+      >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.75 }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
             {topTab === 'expenses' ? 'Топ категорий расходов' : 'Топ категорий доходов'}
@@ -787,7 +814,7 @@ export default function AnalyticsPage() {
               borderRadius: 999,
               border: 0,
               color: topTab === 'expenses' ? COLORS.expenses : COLORS.income,
-              bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.12),
+              bgcolor: alpha(topTab === 'expenses' ? COLORS.expenses : COLORS.income, 0.20),
               fontWeight: 900,
             }}
           />
@@ -804,7 +831,7 @@ export default function AnalyticsPage() {
             mb: { xs: 2, md: 1.5 },
             '& .MuiTab-root': {
               minHeight: 40,
-              color: alpha(colors.text, 0.70),
+              color: alpha(colors.text, 0.75),
               textTransform: 'none',
               fontWeight: 900,
             },
@@ -833,13 +860,13 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 70, // меньше, чтобы категории начинались ближе к краю
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  width: 90, // отдельная колонка под подписи слева
+                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.90) },
                 },
               ]}
               xAxis={[
                 {
-                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
+                  tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.82) },
                 },
               ]}
               series={[
@@ -850,11 +877,11 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 4, right: 12, top: 10, bottom: 28 }} // почти без отступа слева
+              margin={{ left: 0, right: 12, top: 10, bottom: 28 }} // бары максимально прижаты к левой оси
               sx={{
-                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
-                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
-                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
+                '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.18) },
+                '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.82), fontSize: 11 },
+                '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.10) },
                 '.MuiChartsLegend-root': { justifyContent: 'center' },
               }}
             />
