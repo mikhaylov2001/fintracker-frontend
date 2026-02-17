@@ -41,10 +41,30 @@ export default function AppLayout() {
 
   const navItems = useMemo(
     () => [
-      { label: "Дашборд", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") },
-      { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
-      { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
-      { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },
+      {
+        label: "Дашборд",
+        icon: <DashboardIcon />,
+        to: dashTo,
+        match: (p) => p.startsWith("/u/"),
+      },
+      {
+        label: "Доходы",
+        icon: <PaidIcon />,
+        to: "/income",
+        match: (p) => p.startsWith("/income"),
+      },
+      {
+        label: "Расходы",
+        icon: <ReceiptLongIcon />,
+        to: "/expenses",
+        match: (p) => p.startsWith("/expenses"),
+      },
+      {
+        label: "Аналитика",
+        icon: <QueryStatsIcon />,
+        to: "/analytics",
+        match: (p) => p.startsWith("/analytics"),
+      },
     ],
     [dashTo]
   );
@@ -54,8 +74,15 @@ export default function AppLayout() {
     navigate("/login");
   };
 
+  const drawerPaperSx = {
+    bgcolor: alpha("#FFFFFF", 0.92),
+    borderRight: `1px solid ${bankingColors.border2}`,
+    backdropFilter: "blur(10px)",
+  };
+
   const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      {/* отступ под TopNavBar */}
       <Toolbar />
 
       <Box sx={{ px: 2, pb: 1 }}>
@@ -72,6 +99,7 @@ export default function AppLayout() {
       <List sx={{ p: 1.25, flex: 1 }}>
         {navItems.map((it) => {
           const selected = it.match(location.pathname);
+
           return (
             <ListItemButton
               key={it.label}
@@ -83,25 +111,35 @@ export default function AppLayout() {
               sx={{
                 borderRadius: 3,
                 mb: 0.75,
-                py: { xs: 1.25, sm: 1 },
-                color: alpha(bankingColors.text, 0.82),
+                py: { xs: 1.15, sm: 1 },
+                color: alpha(bankingColors.text, 0.86),
+
                 "& .MuiListItemIcon-root": {
                   minWidth: 38,
-                  color: alpha(bankingColors.text, 0.74),
+                  color: alpha(bankingColors.text, 0.68),
                 },
+
                 "&.Mui-selected": {
-                  bgcolor: alpha(bankingColors.primary, 0.18),
+                  bgcolor: alpha(bankingColors.primary, 0.12),
                   color: bankingColors.text,
                 },
-                "&.Mui-selected .MuiListItemIcon-root": { color: bankingColors.text },
-                "&:hover": { bgcolor: alpha("#FFFFFF", 0.06) },
+                "&.Mui-selected .MuiListItemIcon-root": {
+                  color: bankingColors.primary,
+                },
+
+                "&:hover": {
+                  bgcolor: alpha("#0F172A", 0.04),
+                },
               }}
             >
               <ListItemIcon>{it.icon}</ListItemIcon>
               <ListItemText
                 primary={it.label}
                 primaryTypographyProps={{
-                  sx: { fontWeight: 850, fontSize: { xs: 15.5, sm: 14 } },
+                  sx: {
+                    fontWeight: 850,
+                    fontSize: { xs: 15, sm: 14 },
+                  },
                 }}
               />
             </ListItemButton>
@@ -118,9 +156,9 @@ export default function AppLayout() {
             justifyContent: "flex-start",
             borderRadius: 3,
             color: bankingColors.text,
-            bgcolor: alpha("#FFFFFF", 0.06),
+            bgcolor: alpha(bankingColors.primary, 0.08),
             border: `1px solid ${bankingColors.border2}`,
-            "&:hover": { bgcolor: alpha("#FFFFFF", 0.10) },
+            "&:hover": { bgcolor: alpha(bankingColors.primary, 0.12) },
           }}
         >
           Выйти
@@ -133,7 +171,10 @@ export default function AppLayout() {
     <AppBackground>
       <Box sx={{ display: "flex", minHeight: "100vh" }}>
         {/* Sidebar */}
-        <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
           {/* Mobile */}
           <Drawer
             variant="temporary"
@@ -144,8 +185,7 @@ export default function AppLayout() {
             PaperProps={{
               sx: {
                 width: { xs: "88vw", sm: 320 },
-                bgcolor: alpha("#111B30", 0.98),
-                borderRight: `1px solid ${bankingColors.border2}`,
+                ...drawerPaperSx,
               },
             }}
             sx={{ display: { xs: "block", md: "none" } }}
@@ -162,8 +202,7 @@ export default function AppLayout() {
               "& .MuiDrawer-paper": {
                 width: drawerWidth,
                 boxSizing: "border-box",
-                bgcolor: alpha("#111B30", 0.95),
-                borderRight: `1px solid ${bankingColors.border2}`,
+                ...drawerPaperSx,
               },
             }}
           >
@@ -173,12 +212,8 @@ export default function AppLayout() {
 
         {/* Main */}
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <TopNavBar
-            onLogout={handleLogout}
-            userLabel={userLabel}
-            userName={user?.userName}
-            onMenuClick={openMobile}
-          />
+          {/* В TopNavBar уже скрыты пункты и “выйти” на десктопе */}
+          <TopNavBar onMenuClick={openMobile} hideDesktopActions />
 
           <Box
             sx={{

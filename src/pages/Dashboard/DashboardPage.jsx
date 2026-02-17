@@ -49,7 +49,33 @@ const addMonthsYM = ({ year, month }, delta) => {
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-/* ───────── StatCard (as раньше, но с icon) ───────── */
+/* ───────── tiny UI bits ───────── */
+
+const SectionTitle = memo(function SectionTitle({ title, right }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="baseline"
+      justifyContent="space-between"
+      sx={{ mb: 1 }}
+    >
+      <Typography
+        variant="h6"
+        sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}
+      >
+        {title}
+      </Typography>
+      {right ? (
+        <Typography
+          variant="caption"
+          sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}
+        >
+          {right}
+        </Typography>
+      ) : null}
+    </Stack>
+  );
+});
 
 const StatCard = memo(function StatCard({
   label,
@@ -79,43 +105,40 @@ const StatCard = memo(function StatCard({
       sx={{
         ...surfaceSx,
         height: "100%",
-        minHeight: 112,
+        minHeight: 116,
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
-        transition:
-          "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        borderColor: alpha(accent, 0.22),
+        transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
+        borderColor: alpha(accent, 0.28),
 
         "&:before": {
           content: '""',
           position: "absolute",
-          left: 0,
-          top: 0,
-          bottom: 0,
-          width: 3,
-          backgroundColor: alpha(accent, 0.9),
+          inset: 0,
+          background: `linear-gradient(135deg, ${alpha(accent, 0.10)} 0%, transparent 55%)`,
+          pointerEvents: "none",
         },
 
         "&:hover": onClick
           ? {
               transform: "translateY(-1px)",
-              boxShadow: "0 18px 46px rgba(0,0,0,0.36)",
-              borderColor: alpha(accent, 0.42),
+              boxShadow: "0 14px 34px rgba(15,23,42,0.14)",
+              borderColor: alpha(accent, 0.46),
             }
           : {},
       }}
     >
-      <CardContent sx={{ p: 2 }}>
+      <CardContent sx={{ p: 2, position: "relative", zIndex: 1 }}>
         <Stack direction="row" spacing={1.1} alignItems="center">
           <Box
             sx={{
               width: 34,
               height: 34,
-              borderRadius: 2.25,
+              borderRadius: 2.5,
               display: "grid",
               placeItems: "center",
-              bgcolor: alpha(accent, 0.12),
+              bgcolor: alpha(accent, 0.10),
               border: `1px solid ${alpha(accent, 0.22)}`,
               flex: "0 0 auto",
             }}
@@ -129,7 +152,7 @@ const StatCard = memo(function StatCard({
 
           <Typography
             variant="overline"
-            sx={{ color: colors.muted, fontWeight: 900, letterSpacing: 0.55 }}
+            sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55 }}
           >
             {label}
           </Typography>
@@ -137,23 +160,24 @@ const StatCard = memo(function StatCard({
 
         <Typography
           variant="h5"
-          sx={{ mt: 0.8, fontWeight: 950, color: colors.text, lineHeight: 1.05 }}
+          sx={{
+            mt: 0.9,
+            fontWeight: 950,
+            color: colors.text,
+            lineHeight: 1.05,
+            letterSpacing: -0.25,
+          }}
         >
           {value}
         </Typography>
 
-        <Typography
-          variant="caption"
-          sx={{ mt: 0.5, color: colors.muted, display: "block" }}
-        >
+        <Typography variant="caption" sx={{ mt: 0.6, color: colors.muted, display: "block" }}>
           {sub && String(sub).trim() ? sub : "\u00A0"}
         </Typography>
       </CardContent>
     </Card>
   );
 });
-
-/* ───────── SummaryRow (memoized) ───────── */
 
 const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   return (
@@ -162,8 +186,9 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         display: "grid",
         gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
-        gap: 1.25,
-        py: 1,
+        gap: 1.5,
+        py: 1.25,
+        px: { xs: 1.5, sm: 2 },
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
@@ -171,7 +196,7 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         <Typography
           variant="body2"
           sx={{
-            color: alpha(colors.text, 0.9),
+            color: alpha(colors.text, 0.92),
             fontWeight: 900,
             minWidth: 0,
             overflow: "hidden",
@@ -185,12 +210,7 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
 
       <Typography
         variant="body2"
-        sx={{
-          fontWeight: 950,
-          color: colors.text,
-          whiteSpace: "nowrap",
-          letterSpacing: -0.15,
-        }}
+        sx={{ fontWeight: 950, color: colors.text, whiteSpace: "nowrap" }}
       >
         {value}
       </Typography>
@@ -198,14 +218,12 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   );
 });
 
-/* ───────── HistoryAccordion ───────── */
-
 const accordionSx = {
-  borderRadius: 3,
+  borderRadius: 4,
   mb: 1,
   border: `1px solid ${colors.border}`,
   backgroundColor: colors.card2,
-  boxShadow: "0 10px 28px rgba(0,0,0,0.22)",
+  boxShadow: "0 10px 24px rgba(15,23,42,0.08)",
   "&:before": { display: "none" },
 };
 
@@ -228,7 +246,7 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
     <Accordion disableGutters elevation={0} sx={accordionSx} TransitionProps={{ unmountOnExit: true }}>
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{ px: 1.5, "& .MuiAccordionSummary-content": { my: 1 } }}
+        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
       >
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: "100%", gap: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 950, color: colors.text, textTransform: "capitalize", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -240,8 +258,8 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
         </Stack>
       </AccordionSummary>
 
-      <AccordionDetails sx={{ pt: 0 }}>
-        <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.82) }}>
+      <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
+        <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
           <Typography variant="body2">Доходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_income))}</Box></Typography>
           <Typography variant="body2">Расходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_expenses))}</Box></Typography>
           <Typography variant="body2">Баланс: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.balance))}</Box></Typography>
@@ -253,18 +271,16 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
   );
 });
 
-/* ───────── Skeleton Loader ───────── */
-
 function DashboardSkeleton() {
   return (
-    <Box sx={{ p: { xs: 1, sm: 1.5, md: 2 } }}>
-      <Skeleton variant="rounded" height={120} sx={{ borderRadius: 4, mb: 2, bgcolor: "rgba(255,255,255,0.04)" }} />
+    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+      <Skeleton variant="rounded" height={128} sx={{ borderRadius: 4, mb: 2, bgcolor: "rgba(15,23,42,0.06)" }} />
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, 1fr)", md: "repeat(4, 1fr)" }, gap: 2, mb: 2 }}>
         {[0, 1, 2, 3].map((i) => (
-          <Skeleton key={i} variant="rounded" height={112} sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }} />
+          <Skeleton key={i} variant="rounded" height={116} sx={{ borderRadius: 4, bgcolor: "rgba(15,23,42,0.06)" }} />
         ))}
       </Box>
-      <Skeleton variant="rounded" height={320} sx={{ borderRadius: 4, bgcolor: "rgba(255,255,255,0.04)" }} />
+      <Skeleton variant="rounded" height={340} sx={{ borderRadius: 4, bgcolor: "rgba(15,23,42,0.06)" }} />
     </Box>
   );
 }
@@ -445,13 +461,22 @@ export default function DashboardPage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <Box sx={{ width: "100%", color: colors.text, borderRadius: 5, p: { xs: 1, sm: 1.5, md: 2 } }}>
-      <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5, mb: 2 }}>
-        <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+    <Box sx={{ width: "100%", color: colors.text }}>
+      {/* HERO */}
+      <Card
+        variant="outlined"
+        sx={{
+          ...surfaceSx,
+          borderRadius: 5,
+          mb: 2,
+          backgroundImage: `linear-gradient(135deg, ${alpha(colors.primary, 0.10)} 0%, transparent 55%)`,
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="h5" sx={{ fontWeight: 950, lineHeight: 1.15, color: colors.text, fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
-                Финансовая свобода
+              <Typography variant="h5" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.25 }}>
+                Дашборд
               </Typography>
               <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5 }}>
                 Привет, {displayName} • Сегодня: {todayLabel}
@@ -459,15 +484,41 @@ export default function DashboardPage() {
               <Typography variant="body2" sx={{ color: alpha(colors.text, 0.78), mt: 0.5, fontWeight: 700 }}>
                 {periodLabel}
               </Typography>
+
+              {error ? (
+                <Box
+                  role="alert"
+                  sx={{
+                    mt: 1.25,
+                    p: 1.25,
+                    borderRadius: 3,
+                    border: `1px solid ${alpha(colors.danger, 0.22)}`,
+                    bgcolor: alpha(colors.danger, 0.08),
+                    color: colors.text,
+                    fontWeight: 750,
+                  }}
+                >
+                  {error}
+                </Box>
+              ) : null}
             </Box>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ width: { xs: "100%", sm: "auto" } }}>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              alignItems={{ sm: "center" }}
+              sx={{ width: { xs: "100%", md: "auto" } }}
+            >
               <Chip label="Актуально" sx={{ ...pillSx, width: { xs: "100%", sm: "auto" } }} />
 
               <Chip
-                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.text, 0.9) }} />}
+                icon={<CalendarMonthOutlinedIcon sx={{ color: alpha(colors.text, 0.85) }} />}
                 label={isYear ? "Режим: Год" : "Режим: Месяц"}
-                sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, "& .MuiChip-icon": { ml: 1, mr: -0.25 } }}
+                sx={{
+                  ...pillSx,
+                  width: { xs: "100%", sm: "auto" },
+                  "& .MuiChip-icon": { ml: 1, mr: -0.25 },
+                }}
               />
 
               <ToggleButtonGroup
@@ -477,7 +528,7 @@ export default function DashboardPage() {
                 size="small"
                 sx={{
                   width: { xs: "100%", sm: "auto" },
-                  bgcolor: alpha("#0B1226", 0.30),
+                  bgcolor: alpha("#FFFFFF", 0.60),
                   border: `1px solid ${colors.border}`,
                   borderRadius: 999,
                   "& .MuiToggleButton-root": {
@@ -490,7 +541,7 @@ export default function DashboardPage() {
                   },
                   "& .MuiToggleButton-root.Mui-selected": {
                     color: colors.text,
-                    backgroundColor: alpha(colors.primary, 0.62),
+                    backgroundColor: alpha(colors.primary, 0.20),
                   },
                 }}
               >
@@ -499,61 +550,62 @@ export default function DashboardPage() {
               </ToggleButtonGroup>
             </Stack>
           </Stack>
-
-          {error && (
-            <Box
-              role="alert"
-              sx={{
-                mt: 1.25,
-                p: 1.25,
-                borderRadius: 2.5,
-                border: `1px solid ${alpha(colors.danger, 0.28)}`,
-                bgcolor: alpha("#7F1D1D", 0.18),
-                color: alpha("#FEE2E2", 0.95),
-                fontWeight: 700,
-              }}
-            >
-              {error}
-            </Box>
-          )}
         </CardContent>
       </Card>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" }, gap: 2, mb: 2 }}>
-        <StatCard label="Баланс" value={fmtRub.format(displayBalance)} accent={colors.primary} icon={<AccountBalanceWalletOutlinedIcon />} />
-        <StatCard label="Доходы" value={fmtRub.format(displayIncome)} sub={`Расходы: ${fmtRub.format(displayExpenses)}`} accent={colors.success} onClick={goIncome} icon={<ArrowCircleUpOutlinedIcon />} />
-        <StatCard label="Расходы" value={fmtRub.format(displayExpenses)} accent={colors.warning} onClick={goExpenses} icon={<ArrowCircleDownOutlinedIcon />} />
-        <StatCard label="Норма сбережений" value={`${displayRate}%`} sub={`Сбережения: ${fmtRub.format(displaySavings)}`} accent={colors.accent} icon={<PercentOutlinedIcon />} />
+      {/* KPI */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(4, minmax(0, 1fr))" },
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <StatCard
+          label="Баланс"
+          value={fmtRub.format(displayBalance)}
+          accent={colors.primary}
+          icon={<AccountBalanceWalletOutlinedIcon />}
+        />
+        <StatCard
+          label="Доходы"
+          value={fmtRub.format(displayIncome)}
+          sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+          accent={colors.success}
+          onClick={goIncome}
+          icon={<ArrowCircleUpOutlinedIcon />}
+        />
+        <StatCard
+          label="Расходы"
+          value={fmtRub.format(displayExpenses)}
+          accent={colors.warning}
+          onClick={goExpenses}
+          icon={<ArrowCircleDownOutlinedIcon />}
+        />
+        <StatCard
+          label="Норма сбережений"
+          value={`${displayRate}%`}
+          sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+          accent={colors.accent}
+          icon={<PercentOutlinedIcon />}
+        />
       </Box>
 
+      {/* MONTH SUMMARY + HISTORY */}
       <Card variant="outlined" sx={{ ...surfaceSx, borderRadius: 5 }}>
-        <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ mb: 0.5 }}>
-            <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text }}>
-              Итоги операций за месяц
-            </Typography>
-            <Typography variant="caption" sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}>
-              {monthTitle(year, month)}
-            </Typography>
-          </Stack>
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
-          <Divider sx={{ my: 1.5, borderColor: colors.border }} />
-
-          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 3, bgcolor: colors.card2, overflow: "hidden" }}>
-            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.success} />
-            </Box>
+          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 4, overflow: "hidden", bgcolor: colors.card2 }}>
+            <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.success} />
             <Divider sx={{ borderColor: colors.border }} />
-            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
-            </Box>
+            <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
             <Divider sx={{ borderColor: colors.border }} />
-            <Box sx={{ px: { xs: 1.25, sm: 1.75 } }}>
-              <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
-            </Box>
+            <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
           </Box>
 
-          <Divider sx={{ my: 1.5, borderColor: colors.border }} />
+          <Divider sx={{ my: 2, borderColor: colors.border }} />
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: colors.muted }}>
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
