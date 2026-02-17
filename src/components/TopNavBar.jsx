@@ -18,9 +18,9 @@ export default function TopNavBar({ onMenuClick }) {
       sx={{
         zIndex: (t) => t.zIndex.drawer + 1,
         borderBottom: `1px solid ${colors.border}`,
-        backgroundColor: alpha(colors.card, 0.86),
+        backgroundColor: alpha(colors.card, 0.68),
         color: colors.text,
-        backdropFilter: "blur(10px)",
+        backdropFilter: "blur(12px)",
       }}
     >
       <Toolbar sx={{ minHeight: 64, gap: 1 }}>
@@ -44,8 +44,6 @@ export default function TopNavBar({ onMenuClick }) {
         >
           FinTrackerPro
         </Typography>
-
-        {/* пусто намеренно */}
       </Toolbar>
     </AppBar>
   );

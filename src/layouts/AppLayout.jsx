@@ -97,14 +97,14 @@ export default function AppLayout() {
                 },
 
                 "&.Mui-selected": {
-                  bgcolor: alpha(bankingColors.primary, 0.22),
-                  border: `1px solid ${alpha(bankingColors.primary, 0.32)}`,
+                  bgcolor: alpha("#FFFFFF", 0.06),
+                  border: `1px solid ${alpha("#FFFFFF", 0.12)}`,
                 },
                 "&.Mui-selected .MuiListItemIcon-root": {
                   color: bankingColors.primary,
                 },
 
-                "&:hover": { bgcolor: alpha("#FFFFFF", 0.06) },
+                "&:hover": { bgcolor: alpha("#FFFFFF", 0.05) },
               }}
             >
               <ListItemIcon>{it.icon}</ListItemIcon>

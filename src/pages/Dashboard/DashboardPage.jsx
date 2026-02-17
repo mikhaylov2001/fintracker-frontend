@@ -26,9 +26,9 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 
 import { useAuth } from "../../contexts/AuthContext";
 import {
+  getMyMonthlySummary,
   getMyMonthlySummaries,
   getMyUsedMonths,
-  getMyMonthlySummary,
 } from "../../api/summaryApi";
 
 import { bankingColors as colors, surfaceSx, pillSx } from "../../styles/bankingTokens";
@@ -41,46 +41,21 @@ const n = (v) => {
 const unwrap = (raw) => (raw?.data && typeof raw.data === "object" ? raw.data : raw);
 
 const ymKey = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
-const ymNum = (y, m) => y * 12 + (m - 1);
-
-const normalizeUsedMonths = (payload) => {
-  const data = unwrap(payload);
-  if (!Array.isArray(data)) return [];
-
-  // supported:
-  // ["2026-02", "2026-01"] OR [{year:2026,month:2}, ...] OR [{y:2026,m:2}, ...]
-  const out = [];
-
-  for (const item of data) {
-    if (typeof item === "string") {
-      const m = item.trim().match(/^(\d{4})-(\d{1,2})$/);
-      if (m) out.push({ year: Number(m[1]), month: Number(m[2]) });
-      continue;
-    }
-    if (item && typeof item === "object") {
-      const y = Number(item.year ?? item.y);
-      const mo = Number(item.month ?? item.m);
-      if (Number.isFinite(y) && Number.isFinite(mo)) out.push({ year: y, month: mo });
-    }
-  }
-
-  // sort desc, unique
-  const map = new Map(out.map((x) => [ymKey(x.year, x.month), x]));
-  return Array.from(map.values()).sort((a, b) => b.year - a.year || b.month - a.month);
+const parseYm = (s) => {
+  const m = String(s || "").trim().match(/^(\d{4})-(\d{1,2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12) return null;
+  return { year, month };
 };
 
-const normalizeMonthlySummaries = (payload) => {
-  const data = unwrap(payload);
-  if (!Array.isArray(data)) return [];
-  // expected each item has year/month and totals
-  return data
-    .filter((x) => x && typeof x === "object")
-    .map((x) => ({
-      ...x,
-      year: Number(x.year),
-      month: Number(x.month),
-    }))
-    .filter((x) => Number.isFinite(x.year) && Number.isFinite(x.month));
+const ymNum = (y, m) => y * 12 + (m - 1);
+
+const chunk = (arr, size) => {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 };
 
 /* UI */
@@ -91,7 +66,10 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
         {title}
       </Typography>
       {right ? (
-        <Typography variant="caption" sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}>
+        <Typography
+          variant="caption"
+          sx={{ color: colors.muted, fontWeight: 900, textTransform: "capitalize" }}
+        >
           {right}
         </Typography>
       ) : null}
@@ -99,7 +77,14 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colors.primary, onClick }) {
+const StatCard = memo(function StatCard({
+  label,
+  value,
+  sub,
+  icon,
+  accent = colors.primary,
+  onClick,
+}) {
   const handleKeyDown = useCallback(
     (e) => {
       if (onClick && (e.key === "Enter" || e.key === " ")) {
@@ -130,7 +115,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           content: '""',
           position: "absolute",
           inset: 0,
-          background: `linear-gradient(135deg, ${alpha(accent, 0.22)} 0%, transparent 62%)`,
+          background: `linear-gradient(135deg, ${alpha(accent, 0.20)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
         "&:hover": onClick
@@ -163,14 +148,23 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
               : null}
           </Box>
 
-          <Typography variant="overline" sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55 }}>
+          <Typography
+            variant="overline"
+            sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55 }}
+          >
             {label}
           </Typography>
         </Stack>
 
         <Typography
           variant="h5"
-          sx={{ mt: 0.9, fontWeight: 950, color: colors.text, lineHeight: 1.05, letterSpacing: -0.25 }}
+          sx={{
+            mt: 0.9,
+            fontWeight: 950,
+            color: colors.text,
+            lineHeight: 1.05,
+            letterSpacing: -0.25,
+          }}
         >
           {value}
         </Typography>
@@ -183,6 +177,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
   );
 });
 
+// “табличные” строки без бордеров/Divider
 const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   return (
     <Box
@@ -191,8 +186,10 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         gridTemplateColumns: "minmax(0, 1fr) auto",
         alignItems: "center",
         gap: 1.5,
-        py: 1.25,
+        py: 1.15,
         px: { xs: 1.5, sm: 2 },
+        borderRadius: 14,
+        bgcolor: alpha("#FFFFFF", 0.04), // мягкая подложка вместо линий
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
@@ -219,11 +216,12 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
   );
 });
 
+// история без обводок (border: none)
 const accordionSx = {
-  borderRadius: 4,
+  borderRadius: 16,
   mb: 1,
-  border: `1px solid ${colors.border}`,
-  backgroundColor: alpha(colors.card2, 0.94),
+  border: "none",
+  backgroundColor: alpha(colors.card2, 0.86),
   boxShadow: "0 10px 26px rgba(0,0,0,0.42)",
   "&:before": { display: "none" },
 };
@@ -233,14 +231,7 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
   const has = Number.isFinite(raw);
   const v = has ? Math.round(raw) : null;
 
-  const pctColor = !has
-    ? colors.muted
-    : v > 0
-    ? colors.success
-    : v < 0
-    ? colors.danger
-    : colors.muted;
-
+  const pctColor = !has ? colors.muted : v > 0 ? colors.success : v < 0 ? colors.danger : colors.muted;
   const pctText = has ? `(${v}%)` : "(—%)";
 
   return (
@@ -261,11 +252,36 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
       <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
-          <Typography variant="body2">Доходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_income))}</Box></Typography>
-          <Typography variant="body2">Расходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_expenses))}</Box></Typography>
-          <Typography variant="body2">Баланс: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.balance))}</Box></Typography>
-          <Typography variant="body2">Сбережения: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.savings))}</Box></Typography>
-          <Typography variant="body2">Норма сбережений: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{has ? `${v}%` : "—%"}</Box></Typography>
+          <Typography variant="body2">
+            Доходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_income))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Расходы:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.total_expenses))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Баланс:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.balance))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Сбережения:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {fmtRub.format(n(h.savings))}
+            </Box>
+          </Typography>
+          <Typography variant="body2">
+            Норма сбережений:{" "}
+            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
+              {has ? `${v}%` : "—%"}
+            </Box>
+          </Typography>
         </Stack>
       </AccordionDetails>
     </Accordion>
@@ -292,12 +308,6 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // used months from DB (authoritative)
-  const [usedMonths, setUsedMonths] = useState([]);
-
-  // summaries map (year-month -> summary)
-  const [summariesMap, setSummariesMap] = useState(() => new Map());
 
   const fmtRub = useMemo(
     () =>
@@ -326,6 +336,19 @@ export default function DashboardPage() {
 
   const monthTitle = useCallback((y, m) => fmtMonth.format(new Date(y, m - 1, 1)), [fmtMonth]);
 
+  // current period
+  const [period, setPeriod] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  useEffect(() => {
+    const now = new Date();
+    setPeriod({ year: now.getFullYear(), month: now.getMonth() + 1 });
+  }, []);
+  const year = period.year;
+  const month = period.month;
+  const todayLabel = fmtToday.format(new Date());
+
   // KPI mode
   const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || "anon"}`, [user?.id]);
   const [kpiMode, setKpiMode] = useState(() => {
@@ -341,24 +364,12 @@ export default function DashboardPage() {
       window.localStorage.setItem(kpiModeKey, kpiMode);
     } catch {}
   }, [kpiModeKey, kpiMode]);
+  const onKpiModeChange = useCallback((_e, next) => next && setKpiMode(next), []);
 
-  const onKpiModeChange = useCallback((_e, next) => {
-    if (next) setKpiMode(next);
-  }, []);
+  // DB-backed history
+  const [usedMonths, setUsedMonths] = useState([]); // [{year, month}]
+  const [summariesMap, setSummariesMap] = useState(() => new Map()); // key -> dto
 
-  // current period (today)
-  const [period, setPeriod] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1 };
-  });
-  useEffect(() => {
-    const now = new Date();
-    setPeriod({ year: now.getFullYear(), month: now.getMonth() + 1 });
-  }, []);
-
-  const year = period.year;
-  const month = period.month;
-  const todayLabel = fmtToday.format(new Date());
   const displayName = user?.userName || user?.email || "пользователь";
 
   useEffect(() => {
@@ -369,27 +380,53 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        // 1) months from DB
-        const [rawMonths, rawAll] = await Promise.all([
-          getMyUsedMonths(),
-          getMyMonthlySummaries(),
-        ]);
+        const [rawMonths, rawAll] = await Promise.all([getMyUsedMonths(), getMyMonthlySummaries()]);
 
-        const months = normalizeUsedMonths(rawMonths);
-        const all = normalizeMonthlySummaries(rawAll);
+        const monthsStr = unwrap(rawMonths);
+        const used = Array.isArray(monthsStr)
+          ? monthsStr.map(parseYm).filter(Boolean)
+          : [];
 
-        const map = new Map(all.map((s) => [ymKey(s.year, s.month), s]));
+        used.sort((a, b) => b.year - a.year || b.month - a.month);
 
-        // 2) ensure current month exists in map (на случай, если /monthly/all кешируется и не успел обновиться)
+        const all = unwrap(rawAll);
+        const list = Array.isArray(all) ? all : [];
+
+        const map = new Map();
+        for (const item of list) {
+          if (!item || typeof item !== "object") continue;
+          const y = Number(item.year);
+          const m = Number(item.month);
+          if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
+          map.set(ymKey(y, m), item);
+        }
+
+        // если каких-то used months нет в monthly/all — догружаем точечно
+        const missing = used.filter(({ year: y, month: m }) => !map.has(ymKey(y, m)));
+        for (const part of chunk(missing, 6)) {
+          const res = await Promise.all(
+            part.map(({ year: y, month: m }) =>
+              getMyMonthlySummary(y, m)
+                .then((r) => ({ y, m, dto: unwrap(r) }))
+                .catch(() => null)
+            )
+          );
+          for (const x of res) {
+            if (!x || !x.dto || typeof x.dto !== "object") continue;
+            map.set(ymKey(x.y, x.m), { ...x.dto, year: x.y, month: x.m });
+          }
+        }
+
+        // текущий месяц — на всякий
         const curKey = ymKey(year, month);
         if (!map.has(curKey)) {
           const rawCur = await getMyMonthlySummary(year, month).catch(() => null);
-          const cur = rawCur ? unwrap(rawCur) : null;
-          if (cur && typeof cur === "object") map.set(curKey, { ...cur, year, month });
+          const dto = rawCur ? unwrap(rawCur) : null;
+          if (dto && typeof dto === "object") map.set(curKey, { ...dto, year, month });
         }
 
         if (!cancelled) {
-          setUsedMonths(months);
+          setUsedMonths(used);
           setSummariesMap(map);
         }
       } catch (e) {
@@ -406,7 +443,6 @@ export default function DashboardPage() {
   }, [year, month]);
 
   const historyDesc = useMemo(() => {
-    // History строго по usedMonths (как в БД), а значения подтягиваем из map
     return usedMonths.map(({ year: y, month: m }) => {
       const k = ymKey(y, m);
       return (
@@ -423,17 +459,22 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  const curSummary = useMemo(() => summariesMap.get(ymKey(year, month)) || null, [summariesMap, year, month]);
+  const curSummary = useMemo(
+    () => summariesMap.get(ymKey(year, month)) || null,
+    [summariesMap, year, month]
+  );
 
+  // current month totals
   const incomeMonth = n(curSummary?.total_income);
   const expenseMonth = n(curSummary?.total_expenses);
   const balanceMonth = n(curSummary?.balance);
   const savingsMonth = n(curSummary?.savings);
   const savingsRateMonth = n(curSummary?.savings_rate_percent);
 
+  // year totals from history (months that exist in DB)
   const yearMonths = useMemo(() => {
-    const curNum = ymNum(year, month);
-    return historyDesc.filter((h) => h.year === year && ymNum(h.year, h.month) <= curNum);
+    const cur = ymNum(year, month);
+    return historyDesc.filter((h) => h.year === year && ymNum(h.year, h.month) <= cur);
   }, [historyDesc, year, month]);
 
   const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
@@ -470,12 +511,12 @@ export default function DashboardPage() {
           ...surfaceSx,
           borderRadius: 22,
           mb: 2,
-          borderColor: alpha(colors.primary, 0.26),
+          borderColor: alpha(colors.primary, 0.22),
           backgroundImage: `
             linear-gradient(135deg,
-              ${alpha(colors.primary, 0.22)} 0%,
-              ${alpha(colors.accent, 0.14)} 38%,
-              transparent 72%
+              ${alpha(colors.primary, 0.14)} 0%,
+              ${alpha(colors.info || colors.primary, 0.08)} 42%,
+              ${alpha("#A78BFA", 0.06)} 100%
             )
           `,
         }}
@@ -514,7 +555,7 @@ export default function DashboardPage() {
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ width: { xs: "100%", md: "auto" } }}>
               <Chip
                 label="Актуально"
-                sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.22) }}
+                sx={{ ...pillSx, width: { xs: "100%", sm: "auto" }, borderColor: alpha(colors.primary, 0.18) }}
               />
 
               <Chip
@@ -523,7 +564,7 @@ export default function DashboardPage() {
                 sx={{
                   ...pillSx,
                   width: { xs: "100%", sm: "auto" },
-                  borderColor: alpha(colors.primary, 0.22),
+                  borderColor: alpha(colors.primary, 0.18),
                   "& .MuiChip-icon": { ml: 1, mr: -0.25 },
                 }}
               />
@@ -580,15 +621,16 @@ export default function DashboardPage() {
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
-          <Box sx={{ border: `1px solid ${colors.border}`, borderRadius: 18, overflow: "hidden", bgcolor: alpha(colors.card2, 0.92) }}>
-            <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
-            <Divider sx={{ borderColor: colors.border }} />
-            <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
-            <Divider sx={{ borderColor: colors.border }} />
-            <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
+          {/* “таблица” без рамок и линий */}
+          <Box sx={{ border: "none", borderRadius: 18, overflow: "hidden", bgcolor: "transparent" }}>
+            <Stack spacing={1}>
+              <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
+              <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
+              <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
+            </Stack>
           </Box>
 
-          <Divider sx={{ my: 2, borderColor: colors.border }} />
+          <Divider sx={{ my: 2, borderColor: alpha("#FFFFFF", 0.08) }} />
 
           <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0.25, sm: 1.25 }} sx={{ color: colors.muted }}>
             <Typography variant="caption" sx={{ fontWeight: 800 }}>
