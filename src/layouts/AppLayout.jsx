@@ -141,7 +141,16 @@ export default function AppLayout() {
 
   return (
     <AppBackground>
-      <Box sx={{ display: "flex", minHeight: "100vh" }}>
+      <Box
+        sx={{
+          display: "flex",
+          minHeight: "100vh",
+
+          // блокируем горизонтальный свайп/скролл между страницами
+          overflowX: "hidden",
+          touchAction: "pan-y",
+        }}
+      >
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           <Drawer
             variant="temporary"
@@ -185,6 +194,10 @@ export default function AppLayout() {
               minHeight: "calc(100vh - 64px)",
               py: 2.25,
               px: { xs: 1, sm: 2, md: 3 },
+
+              // на всякий случай дублируем и на контент
+              overflowX: "hidden",
+              touchAction: "pan-y",
             }}
           >
             <Outlet />
