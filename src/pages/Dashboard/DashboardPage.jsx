@@ -1,3 +1,4 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
