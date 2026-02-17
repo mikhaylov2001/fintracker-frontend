@@ -72,7 +72,6 @@ const fmtMonthShort = new Intl.DateTimeFormat('ru-RU', { month: 'short' });
 const monthTitleRu = (y, m) => fmtMonthLong.format(new Date(y, m - 1, 1));
 const monthShortRu = (y, m) => fmtMonthShort.format(new Date(y, m - 1, 1));
 
-/* ---------- Dynamic Y-axis helpers (balance) ---------- */
 const roundUpToStep = (value, step) => Math.ceil(value / step) * step;
 
 const niceStep = (maxVal) => {
@@ -87,9 +86,7 @@ const withHeadroom = (maxVal) => {
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
 };
-/* ------------------------------------------------------ */
 
-/* KPI card — единственное место с рамкой */
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -494,7 +491,7 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Header — без “карточки”, просто текст, без границ */}
+      {/* Header */}
       <Box
         sx={{
           mb: { xs: 3, md: 3 },
@@ -659,7 +656,7 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — без Card, с увеличенным отступом на мобиле */}
+      {/* Cashflow */}
       <Box sx={{ mb: { xs: 5, md: 3 } }}>
         <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 1.5 }}>
           Cashflow за 12 месяцев
@@ -688,12 +685,14 @@ export default function AnalyticsPage() {
               '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
               '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
               '& .MuiChartsGrid-line': { stroke: alpha('#FFFFFF', 0.06) },
-              '.MuiChartsLegend-root': { justifyContent: 'center' },
+              '.MuiChartsLegend-root': {
+                justifyContent: 'center',
+                '& .MuiTypography-root': { color: '#FFFFFF', fontSize: 12, fontWeight: 700 },
+              },
             }}
           />
         </Box>
 
-        {/* Подпись "Баланс" опущена чуть ниже */}
         <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
           <Stack
             direction="row"
@@ -773,7 +772,7 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — чуть ниже, горизонтальный бар‑чарт от левого края */}
+      {/* Топ категорий */}
       <Box sx={{ mt: { xs: 6, md: 3.5 }, mb: { xs: 2.5, md: 0 } }}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.75 }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
@@ -833,7 +832,7 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 70, // меньше, чтобы категории начинались ближе к краю
+                  width: 70,
                   tickLabelStyle: { fontSize: 11, fill: alpha('#FFFFFF', 0.62) },
                 },
               ]}
@@ -850,7 +849,7 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 4, right: 12, top: 10, bottom: 28 }} // почти без отступа слева
+              margin={{ left: 4, right: 12, top: 10, bottom: 28 }}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: alpha('#FFFFFF', 0.14) },
                 '& .MuiChartsAxis-tickLabel': { fill: alpha('#FFFFFF', 0.62), fontSize: 11 },
