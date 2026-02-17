@@ -287,13 +287,13 @@ export default function IncomePage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: colors.bg0,
+        bgcolor: '#F8FAFC', // светлый общий фон
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: '100%',
       }}
     >
-      {/* Header на фоне */}
+      {/* Header */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         spacing={1}
@@ -305,7 +305,7 @@ export default function IncomePage() {
             variant="h5"
             sx={{
               fontWeight: 980,
-              color: colors.text,
+              color: '#0F172A',
               letterSpacing: -0.3,
             }}
           >
@@ -314,7 +314,7 @@ export default function IncomePage() {
           <Typography
             variant="body2"
             sx={{
-              color: colors.muted,
+              color: '#64748B',
               mt: 0.5,
               fontWeight: 600,
             }}
@@ -341,8 +341,6 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: colors.border,
-                color: colors.muted,
               }}
             >
               ←
@@ -353,9 +351,7 @@ export default function IncomePage() {
               sx={{
                 width: { xs: '100%', sm: 'auto' },
                 fontWeight: 800,
-                bgcolor: alpha(colors.card2, 0.9),
-                color: colors.text,
-                borderRadius: 999,
+                bgcolor: '#FFFFFF',
               }}
             />
 
@@ -365,8 +361,6 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: colors.border,
-                color: colors.muted,
               }}
             >
               →
@@ -390,17 +384,15 @@ export default function IncomePage() {
         </Stack>
       </Stack>
 
-      {/* Ошибка просто текстом на фоне */}
       {error ? (
         <Typography
           variant="body2"
-          sx={{ mb: 2, color: colors.danger || '#F97373', fontWeight: 600 }}
+          sx={{ mb: 2, color: '#EF4444', fontWeight: 600 }}
         >
           {error}
         </Typography>
       ) : null}
 
-      {/* Таблица прямо на фоне */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -411,7 +403,6 @@ export default function IncomePage() {
       ) : (
         <Box
           sx={{
-            px: { xs: 0, sm: 0 },
             overflowX: 'auto',
           }}
         >
@@ -421,6 +412,7 @@ export default function IncomePage() {
               width: '100%',
               minWidth: { sm: 720 },
               tableLayout: { xs: 'fixed', sm: 'auto' },
+              bgcolor: '#FFFFFF', // белый фон таблицы
               '& th, & td': {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 0.6, sm: 1 },
@@ -429,17 +421,17 @@ export default function IncomePage() {
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 verticalAlign: 'top',
-                borderBottomColor: alpha('#FFFFFF', 0.06),
+                borderBottomColor: '#E2E8F0',
               },
               '& th': {
                 fontWeight: 900,
-                color: colors.text,
+                color: '#0F172A',
                 whiteSpace: 'nowrap',
-                bgcolor: alpha(colors.card2, 0.7),
+                bgcolor: '#F8FAFC', // светлый хедер
               },
               '& td': {
                 whiteSpace: { xs: 'normal', sm: 'nowrap' },
-                color: colors.muted,
+                color: '#0F172A',
               },
               '& .MuiTableRow-root:last-of-type td': { borderBottom: 0 },
             }}
@@ -488,7 +480,7 @@ export default function IncomePage() {
                   <TableCell
                     sx={{
                       fontWeight: 900,
-                      color: colors.text,
+                      color: '#0F172A',
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -501,7 +493,7 @@ export default function IncomePage() {
                       sx={{
                         fontSize: { xs: 12, sm: 13 },
                         fontWeight: 800,
-                        color: colors.text,
+                        color: '#0F172A',
                         lineHeight: 1.15,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -520,7 +512,7 @@ export default function IncomePage() {
                         sx={{
                           mt: 0.2,
                           fontSize: 11,
-                          color: colors.muted,
+                          color: '#64748B',
                           lineHeight: 1.15,
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
@@ -541,7 +533,7 @@ export default function IncomePage() {
                   </TableCell>
 
                   <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                    <IconButton onClick={() => openEdit(x)} size="small" sx={{ color: colors.muted }}>
+                    <IconButton onClick={() => openEdit(x)} size="small">
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                     <IconButton onClick={() => remove(x)} size="small" color="error">
@@ -555,7 +547,6 @@ export default function IncomePage() {
         </Box>
       )}
 
-      {/* Диалог */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"
