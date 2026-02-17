@@ -659,17 +659,15 @@ export default function AnalyticsPage() {
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow — табличка‑панель */}
+      {/* Cashflow — спокойная панель */}
       <Box
         sx={{
-          mb: { xs: 5, md: 3 },
-          borderRadius: 20,
-          p: { xs: 1.75, md: 2.25 },
-          bgcolor: alpha('#020617', 0.96),
-          backgroundImage: `radial-gradient(circle at 0% 0%, ${alpha(COLORS.income, 0.18)} 0%, transparent 55%),
-                            radial-gradient(circle at 100% 0%, ${alpha(COLORS.expenses, 0.18)} 0%, transparent 55%)`,
+          mb: { xs: 4, md: 3 },
+          borderRadius: 16,
+          p: { xs: 1.5, md: 2 },
+          bgcolor: alpha(colors.card2, 0.90),
           border: `1px solid ${alpha('#FFFFFF', 0.06)}`,
-          boxShadow: '0 24px 70px rgba(0,0,0,0.65)',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
         }}
       >
         <Typography
@@ -678,7 +676,7 @@ export default function AnalyticsPage() {
             fontWeight: 950,
             color: colors.text,
             letterSpacing: -0.2,
-            mb: 1,
+            mb: 0.75,
           }}
         >
           Cashflow за 12 месяцев
@@ -688,11 +686,8 @@ export default function AnalyticsPage() {
           variant="caption"
           sx={{
             display: 'block',
-            mb: 2,
+            mb: 1.75,
             color: alpha('#FFFFFF', 0.6),
-            textTransform: 'uppercase',
-            letterSpacing: 0.6,
-            fontWeight: 700,
           }}
         >
           Доходы, расходы и баланс по месяцам
@@ -805,18 +800,16 @@ export default function AnalyticsPage() {
         </Box>
       </Box>
 
-      {/* Топ категорий — табличка‑панель */}
+      {/* Топ категорий — спокойная панель */}
       <Box
         sx={{
-          mt: { xs: 6, md: 3.5 },
+          mt: { xs: 5, md: 3 },
           mb: { xs: 2.5, md: 0 },
-          borderRadius: 20,
-          p: { xs: 1.75, md: 2.25 },
-          bgcolor: alpha('#020617', 0.96),
-          backgroundImage: `radial-gradient(circle at 0% 0%, ${alpha(COLORS.expenses, 0.20)} 0%, transparent 55%),
-                            radial-gradient(circle at 100% 0%, ${alpha(COLORS.income, 0.16)} 0%, transparent 55%)`,
+          borderRadius: 16,
+          p: { xs: 1.5, md: 2 },
+          bgcolor: alpha(colors.card2, 0.90),
           border: `1px solid ${alpha('#FFFFFF', 0.06)}`,
-          boxShadow: '0 24px 70px rgba(0,0,0,0.65)',
+          boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
         }}
       >
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ mb: 1.75 }}>
