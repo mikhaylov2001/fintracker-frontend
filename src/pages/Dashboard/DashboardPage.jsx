@@ -81,13 +81,13 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
       sx={{
         ...surfaceSx,
         height: "100%",
-        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобилке
+        minHeight: { xs: 96, sm: 104, md: 116 }, // компактнее на мобиле
         cursor: onClick ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition: "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
 
-        // гарантируем границу KPI независимо от surfaceSx
+        // фиксируем бордер KPI (даже если в surfaceSx он иной)
         border: `1px solid ${alpha(accent, 0.34)}`,
 
         "&:before": {
@@ -97,7 +97,6 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
           background: `linear-gradient(135deg, ${alpha(accent, 0.18)} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
-
         "@media (hover: hover) and (pointer: fine)": onClick
           ? {
               "&:hover": {
@@ -132,12 +131,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
 
           <Typography
             variant="overline"
-            sx={{
-              color: colors.muted,
-              fontWeight: 950,
-              letterSpacing: 0.55,
-              lineHeight: 1.05,
-            }}
+            sx={{ color: colors.muted, fontWeight: 950, letterSpacing: 0.55, lineHeight: 1.05 }}
           >
             {label}
           </Typography>
@@ -159,11 +153,7 @@ const StatCard = memo(function StatCard({ label, value, sub, icon, accent = colo
 
         <Typography
           variant="caption"
-          sx={{
-            mt: 0.5,
-            color: colors.muted,
-            display: { xs: "none", md: "block" }, // на мобилке не показываем sub
-          }}
+          sx={{ mt: 0.5, color: colors.muted, display: { xs: "none", md: "block" } }}
         >
           {sub && String(sub).trim() ? sub : "\u00A0"}
         </Typography>
@@ -255,36 +245,11 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
 
       <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
-          <Typography variant="body2">
-            Доходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_income))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Расходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_expenses))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Баланс:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.balance))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Сбережения:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.savings))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Норма сбережений:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {has ? `${v}%` : "—%"}
-            </Box>
-          </Typography>
+          <Typography variant="body2">Доходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_income))}</Box></Typography>
+          <Typography variant="body2">Расходы: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.total_expenses))}</Box></Typography>
+          <Typography variant="body2">Баланс: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.balance))}</Box></Typography>
+          <Typography variant="body2">Сбережения: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{fmtRub.format(n(h.savings))}</Box></Typography>
+          <Typography variant="body2">Норма сбережений: <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>{has ? `${v}%` : "—%"}</Box></Typography>
         </Stack>
       </AccordionDetails>
     </Accordion>
@@ -494,16 +459,18 @@ export default function DashboardPage() {
 
   return (
     <Box sx={{ width: "100%", color: colors.text }}>
-      {/* HERO: без границы (как итоги месяца) */}
-      <Card
-        elevation={0}
+      {/* TOP приветствие: Box (без рамок гарантированно) */}
+      <Box
         sx={{
           ...surfaceSx,
           borderRadius: 22,
           mb: 2,
-          border: "none",
+
+          // убираем любые бордеры даже если они в surfaceSx
+          border: "0 !important",
           outline: "none",
           boxShadow: "0 18px 60px rgba(0,0,0,0.55)",
+
           backgroundImage: `
             linear-gradient(135deg,
               ${alpha(colors.primary, 0.14)} 0%,
@@ -513,7 +480,7 @@ export default function DashboardPage() {
           `,
         }}
       >
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+        <Box sx={{ p: { xs: 2, md: 3 } }}>
           <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
             <Box sx={{ flexGrow: 1 }}>
               <Typography variant="h5" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.25 }}>
@@ -587,8 +554,8 @@ export default function DashboardPage() {
               </ToggleButtonGroup>
             </Stack>
           </Stack>
-        </CardContent>
-      </Card>
+        </Box>
+      </Box>
 
       {/* KPI: mobile 2x2, desktop 4 в ряд */}
       <Box
