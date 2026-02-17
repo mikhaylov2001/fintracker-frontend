@@ -1,3 +1,4 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
 import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -23,6 +24,14 @@ import {
   surfaceOutlinedSx,
   pillSx,
 } from "../../styles/bankingTokens";
+
+/* те же цвета, что в AnalyticsPage */
+const COLORS = {
+  income: colors.primary,
+  expenses: colors.warning,
+  balance: "#6366F1",
+  rate: "#A78BFA",
+};
 
 /* helpers */
 const n = (v) => {
@@ -64,7 +73,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-// 1) KPI‑карточка — копия из AnalyticsPage
+/* KpiCard — копипаста из AnalyticsPage */
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -609,7 +618,7 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI — как в AnalyticsPage */}
+      {/* KPI — те же accent, что в AnalyticsPage */}
       <Box
         sx={{
           display: "grid",
@@ -622,14 +631,14 @@ export default function DashboardPage() {
           label="Баланс"
           value={fmtRub.format(displayBalance)}
           sub=" "
-          accent={colors.accent}
+          accent={COLORS.balance}
           icon={<AccountBalanceWalletOutlinedIcon />}
         />
         <KpiCard
           label="Доходы"
           value={fmtRub.format(displayIncome)}
           sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
-          accent={colors.primary}
+          accent={COLORS.income}
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
@@ -637,7 +646,7 @@ export default function DashboardPage() {
           label="Расходы"
           value={fmtRub.format(displayExpenses)}
           sub=" "
-          accent={colors.warning}
+          accent={COLORS.expenses}
           onClick={goExpenses}
           icon={<ArrowCircleDownOutlinedIcon />}
         />
@@ -645,7 +654,7 @@ export default function DashboardPage() {
           label="Норма сбережений"
           value={`${displayRate}%`}
           sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
-          accent={colors.info}
+          accent={COLORS.rate}
           icon={<PercentOutlinedIcon />}
         />
       </Box>
