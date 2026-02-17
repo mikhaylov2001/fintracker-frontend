@@ -40,6 +40,23 @@ const COLORS = {
   rate: '#A78BFA',
 };
 
+const surfaceArr = Array.isArray(surfaceSx) ? surfaceSx : [surfaceSx];
+
+// Глобальный "киллер" границ (для всех блоков, кроме KPI)
+const NO_BORDER = {
+  border: '0 !important',
+  borderColor: 'transparent !important',
+  outline: '0 !important',
+  boxShadow: 'none', // если "граница" на самом деле тень-ободок
+  '&.MuiPaper-root': {
+    border: '0 !important',
+    borderColor: 'transparent !important',
+    outline: '0 !important',
+  },
+  '&:before': { display: 'none !important' },
+  '&:after': { display: 'none !important' },
+};
+
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -92,7 +109,7 @@ const withHeadroom = (maxVal) => {
 };
 /* ------------------------------------------------------ */
 
-/* KPI card — оставляем рамку (как на Dashboard) */
+/* KPI card — ЕДИНСТВЕННОЕ место, где границы оставляем */
 const KpiCard = memo(function KpiCard({ label, value, sub, icon, accent, onClick }) {
   const handleKeyDown = useCallback(
     (e) => {
@@ -267,7 +284,7 @@ function BalancePinnedTooltip(props) {
           px: 1.25,
           py: 0.85,
           boxShadow: '0 18px 50px rgba(0,0,0,0.45)',
-          border: `1px solid ${alpha('#FFFFFF', 0.12)}`, // это не "граница блока", а рамка тултипа
+          border: 0,
           pointerEvents: 'none',
           maxWidth: 240,
         }}
@@ -490,13 +507,17 @@ export default function AnalyticsPage() {
     </Box>
   );
 
-  // Блоки (НЕ KPI): без границ вообще
-  const borderlessCardSx = {
-    ...surfaceSx,
-    border: '0 !important',
-    outline: 'none',
-    boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
+  const premiumCardSx = {
+    borderRadius: 24,
+    boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
+    overflow: 'hidden',
+    position: 'relative',
+    mb: 2,
+  };
+
+  const panelSx = {
     borderRadius: 22,
+    boxShadow: '0 18px 60px rgba(0,0,0,0.55)',
     overflow: 'hidden',
   };
 
@@ -508,16 +529,14 @@ export default function AnalyticsPage() {
 
   return (
     <PageWrap>
-      {/* Premium header (borderless) */}
+      {/* Premium header — БЕЗ ГРАНИЦ */}
       <Card
         elevation={0}
-        sx={{
-          ...borderlessCardSx,
-          borderRadius: 24,
-          boxShadow: '0 22px 80px rgba(0,0,0,0.60)',
-          mb: 2,
-          position: 'relative',
-        }}
+        sx={[
+          ...surfaceArr,
+          NO_BORDER,
+          premiumCardSx,
+        ]}
       >
         <Box
           sx={{
@@ -543,7 +562,7 @@ export default function AnalyticsPage() {
                   display: 'grid',
                   placeItems: 'center',
                   bgcolor: alpha(COLORS.balance, 0.14),
-                  border: '0 !important',
+                  border: 0,
                   boxShadow: `0 18px 55px ${alpha(COLORS.balance, 0.18)}`,
                   flex: '0 0 auto',
                 }}
@@ -626,6 +645,7 @@ export default function AnalyticsPage() {
                   borderRadius: 999,
                   p: 0.25,
                   boxShadow: '0 14px 42px rgba(0,0,0,0.35)',
+                  '& .MuiToggleButtonGroup-grouped': { border: '0 !important' },
                   '& .MuiToggleButton-root': {
                     border: 0,
                     px: 1.6,
@@ -650,7 +670,7 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* KPI (рамки оставляем) */}
+      {/* KPI — границы остаются */}
       <Box
         sx={{
           display: 'grid',
@@ -659,14 +679,21 @@ export default function AnalyticsPage() {
           mb: 2,
         }}
       >
-        <KpiCard label="Баланс" value={n(kpiBalance) ? fmtRub.format(kpiBalance) : fmtRub.format(0)} sub=" " accent={COLORS.balance} icon={<AccountBalanceWalletOutlinedIcon />} />
+        <KpiCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} icon={<AccountBalanceWalletOutlinedIcon />} />
         <KpiCard label="Доходы" value={fmtRub.format(kpiIncome)} sub=" " accent={COLORS.income} icon={<ArrowCircleUpOutlinedIcon />} />
         <KpiCard label="Расходы" value={fmtRub.format(kpiExpenses)} sub=" " accent={COLORS.expenses} icon={<ArrowCircleDownOutlinedIcon />} />
         <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
       </Box>
 
-      {/* Cashflow (borderless, без Divider) */}
-      <Card elevation={0} sx={{ ...borderlessCardSx, mb: 2 }}>
+      {/* Cashflow — БЕЗ ГРАНИЦ */}
+      <Card
+        elevation={0}
+        sx={[
+          ...surfaceArr,
+          NO_BORDER,
+          { ...panelSx, mb: 2 },
+        ]}
+      >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}>
             Cashflow за 12 месяцев
@@ -770,8 +797,15 @@ export default function AnalyticsPage() {
         </CardContent>
       </Card>
 
-      {/* Топ категорий (borderless, без Divider и без outlined Chip) */}
-      <Card elevation={0} sx={borderlessCardSx}>
+      {/* Топ категорий — БЕЗ ГРАНИЦ */}
+      <Card
+        elevation={0}
+        sx={[
+          ...surfaceArr,
+          NO_BORDER,
+          panelSx,
+        ]}
+      >
         <CardContent sx={{ p: { xs: 2, md: 2.75 } }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
             <Typography variant="h6" sx={{ fontWeight: 950, color: colors.text, flexGrow: 1, letterSpacing: -0.2 }}>
