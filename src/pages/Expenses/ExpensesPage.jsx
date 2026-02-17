@@ -114,10 +114,36 @@ export default function ExpensesPage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ДЛЯ РАСХОДОВ ----------
   const [ym, setYm] = useState(() => {
-    const d = new Date();
-    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+    const now = new Date();
+    try {
+      const raw = window.localStorage.getItem('fintracker:expenseMonth');
+      if (!raw) {
+        return { year: now.getFullYear(), month: now.getMonth() + 1 };
+      }
+      const parsed = JSON.parse(raw);
+      const y = Number(parsed?.year);
+      const m = Number(parsed?.month);
+      if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) {
+        return { year: now.getFullYear(), month: now.getMonth() + 1 };
+      }
+      return { year: y, month: m };
+    } catch {
+      return { year: now.getFullYear(), month: now.getMonth() + 1 };
+    }
   });
+
+  const changeYm = useCallback((updater) => {
+    setYm((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      try {
+        window.localStorage.setItem('fintracker:expenseMonth', JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+  // ------------------------------------------------------
 
   const fmtRub = useMemo(
     () =>
@@ -317,7 +343,7 @@ export default function ExpensesPage() {
           >
             <Button
               variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, -1))}
+              onClick={() => changeYm((s) => addMonthsYM(s, -1))}
               sx={{ minWidth: 44, px: 1.2 }}
             >
               ←
@@ -334,7 +360,7 @@ export default function ExpensesPage() {
 
             <Button
               variant="outlined"
-              onClick={() => setYm((s) => addMonthsYM(s, +1))}
+              onClick={() => changeYm((s) => addMonthsYM(s, +1))}
               sx={{ minWidth: 44, px: 1.2 }}
             >
               →
