@@ -36,6 +36,7 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { bankingColors as colors } from '../../styles/bankingTokens';
+import api from '../../api'; // скорректируй путь под свой проект
 
 const LS = {
   currency: 'ft.settings.currency',
@@ -160,12 +161,26 @@ export default function SettingsPage() {
       setSnack({ open: true, severity: 'error', message: 'Пароли не совпадают' });
       return;
     }
-    // TODO: API запрос на смену пароля
-    setSnack({ open: true, severity: 'success', message: 'Пароль изменён' });
-    setEditPasswordOpen(false);
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+
+    try {
+      await api.post('/api/account/change-password', {
+        currentPassword,
+        newPassword,
+      });
+
+      setSnack({ open: true, severity: 'success', message: 'Пароль изменён' });
+      setEditPasswordOpen(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (e) {
+      const msg =
+        e?.response?.data?.message ||
+        e?.response?.data?.error ||
+        'Не удалось изменить пароль';
+
+      setSnack({ open: true, severity: 'error', message: msg });
+    }
   };
 
   const handleDeleteData = async () => {
