@@ -162,7 +162,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const token = localStorage.getItem('token'); // ключ под который ты сохраняешь access
+      const token = localStorage.getItem('token'); // если ключ другой — замени
       const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
 
       const res = await fetch(`${baseUrl}/api/account/change-password`, {
@@ -171,7 +171,6 @@ export default function SettingsPage() {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        credentials: 'include',
         body: JSON.stringify({
           currentPassword,
           newPassword,
