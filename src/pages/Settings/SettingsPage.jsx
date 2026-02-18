@@ -44,13 +44,7 @@ const LS = {
   compactNumbers: 'ft.settings.compactNumbers',
 };
 
-const safeJsonParse = (s, fallback) => {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return fallback;
-  }
-};
+
 
 const downloadJson = (filename, data) => {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
