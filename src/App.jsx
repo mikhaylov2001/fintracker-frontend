@@ -15,6 +15,8 @@ import AnalyticsPage from "./pages/Analytics/AnalyticsPage";
 import PrivateRoutes from "./routes/PrivateRoutes";
 import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import HomeRedirect from "./routes/HomeRedirect";
+import SettingsPage from './pages/Settings/SettingsPage';
+
 
 function App() {
   return (
@@ -34,6 +36,7 @@ function App() {
               <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/income" element={<IncomePage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
             </Route>
           </Route>
 
