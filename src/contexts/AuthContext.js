@@ -88,11 +88,12 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  const login = async ({ userName, password }) => {
+  // ЛОГИН ТОЛЬКО ПО EMAIL + PASSWORD
+  const login = async ({ email, password }) => {
     const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, password }),
+      body: JSON.stringify({ email, password }),
       credentials: "include",
     });
 
@@ -103,11 +104,12 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const register = async ({ userName, email, password, chatId }) => {
+  // РЕГИСТРАЦИЯ: firstName + lastName + email + password
+  const register = async ({ firstName, lastName, email, password }) => {
     const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, email, password, chatId }),
+      body: JSON.stringify({ firstName, lastName, email, password }),
       credentials: "include",
     });
 
