@@ -1,3 +1,4 @@
+// src/pages/Settings/SettingsPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
@@ -472,8 +473,8 @@ export default function SettingsPage() {
             </Box>
           </RowItem>
         </Box>
+      )}
 
-      {/* DIALOG: Редактирование имени */}
       <Dialog
         open={editNameOpen}
         onClose={() => setEditNameOpen(false)}
@@ -508,7 +509,6 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* DIALOG: Смена email */}
       <Dialog
         open={editEmailOpen}
         onClose={() => setEditEmailOpen(false)}
@@ -545,7 +545,6 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* DIALOG: Смена пароля */}
       <Dialog
         open={editPasswordOpen}
         onClose={() => setEditPasswordOpen(false)}
@@ -590,7 +589,6 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* DIALOG: Удаление данных */}
       <Dialog
         open={deleteDataOpen}
         onClose={() => setDeleteDataOpen(false)}
@@ -646,14 +644,17 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3500}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert severity={snack.severity} variant="filled" onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          onClose={() => setSnack((s) => ({ ...s, open: false }))}
+        >
           {snack.message}
         </Alert>
       </Snackbar>
