@@ -21,6 +21,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import PaidIcon from "@mui/icons-material/Paid";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import QueryStatsIcon from "@mui/icons-material/QueryStats";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import LogoutIcon from "@mui/icons-material/Logout";
 
 import { bankingColors } from "../styles/bankingTokens";
@@ -45,6 +46,7 @@ export default function AppLayout() {
       { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
       { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
       { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },
+      { label: "Настройки", icon: <SettingsOutlinedIcon />, to: "/settings", match: (p) => p.startsWith("/settings") },
     ],
     [dashTo]
   );
