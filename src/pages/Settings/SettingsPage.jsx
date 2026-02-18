@@ -90,7 +90,6 @@ const RowItem = ({ children, noDivider }) => (
 
 export default function SettingsPage() {
   const { user } = useAuth();
-  const userId = user?.id;
 
   const [tab, setTab] = useState(0);
 
@@ -284,11 +283,6 @@ export default function SettingsPage() {
               <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
                 {user?.email || 'Не указан email'}
               </Typography>
-              {userId && (
-                <Typography variant="caption" sx={{ color: alpha('#fff', 0.45), fontWeight: 700 }}>
-                  ID: {userId}
-                </Typography>
-              )}
             </Box>
 
             <Button
@@ -366,12 +360,15 @@ export default function SettingsPage() {
           <RowItem noDivider>
             <InfoOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Fintracker</Typography>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>FinTrackerPro</Typography>
               <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
                 Версия {process.env.REACT_APP_VERSION || '1.0.0'}
               </Typography>
-              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}>
-                Разработчик: Дмитрий Михайлов
+              <Typography
+                variant="caption"
+                sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}
+              >
+                Создатель: Дмитрий Михайлов
               </Typography>
             </Box>
           </RowItem>
