@@ -324,10 +324,7 @@ export default function AnalyticsPage() {
   );
 
   // Полные числа — для десктопа
-  const fmtAxis = useMemo(
-    () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
-    []
-  );
+  const fmtAxis = useMemo(() => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }), []);
 
   // Мобилка: к/м, десктоп: полные числа
   const axisMoneyFormatter = useCallback(
@@ -350,6 +347,23 @@ export default function AnalyticsPage() {
     () => (isMobile ? { left: 4, right: 10, top: 10, bottom: 28 } : { left: 10, right: 12, top: 10, bottom: 28 }),
     [isMobile]
   );
+
+  // === ДОБАВЛЕНО: сдвиг графиков к левой границе на мобилке (компенсируем PageWrap px:2 = 16px)
+  const edgeLeftSx = useMemo(
+    () =>
+      isMobile
+        ? {
+            ml: -2, // -16px
+            width: 'calc(100% + 16px)',
+            maxWidth: 'none',
+            overflowX: 'hidden',
+          }
+        : {
+            width: '100%',
+          },
+    [isMobile]
+  );
+  // === /ДОБАВЛЕНО
 
   useEffect(() => {
     let cancelled = false;
@@ -706,7 +720,8 @@ export default function AnalyticsPage() {
 
         <CashflowLegend />
 
-        <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
+        {/* ИЗМЕНЕНО: добавил ...edgeLeftSx */}
+        <Box sx={{ ...edgeLeftSx, height: { xs: 280, md: 340 } }}>
           <BarChart
             height={340}
             hideLegend
@@ -765,7 +780,8 @@ export default function AnalyticsPage() {
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
           </Stack>
 
-          <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
+          {/* ИЗМЕНЕНО: добавил ...edgeLeftSx */}
+          <Box sx={{ ...edgeLeftSx, height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
               xAxis={[
@@ -875,7 +891,8 @@ export default function AnalyticsPage() {
             Нет данных по категориям за выбранный период.
           </Typography>
         ) : (
-          <Box sx={{ width: '100%', height: { xs: 280, md: 280 }, minWidth: 0 }}>
+          /* ИЗМЕНЕНО: добавил ...edgeLeftSx */
+          <Box sx={{ ...edgeLeftSx, height: { xs: 280, md: 280 }, minWidth: 0 }}>
             <BarChart
               height={280}
               layout="horizontal"
