@@ -2,7 +2,47 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 
 const AuthContext = createContext(null);
-const API_BASE_URL = "/api/auth";
+
+// Бэкенд‑URL (Railway)
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app";
+const API_AUTH_BASE = "/api/auth";
+
+// Обёртка с авто‑refresh
+const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
+  const doRequest = async () => {
+    const token = getToken();
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    };
+
+    return fetch(`${API_BASE_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include", // чтобы ходили refresh‑куки
+    });
+  };
+
+  let res = await doRequest();
+
+  if (res.status === 401) {
+    // пробуем обновить токен
+    const refreshRes = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/refresh`, {
+      method: "POST",
+      credentials: "include",
+    });
+
+    if (refreshRes.ok) {
+      const data = await refreshRes.json().catch(() => ({}));
+      saveAuthData(data); // token + user
+      res = await doRequest(); // повторяем исходный запрос
+    }
+  }
+
+  return res;
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -40,7 +80,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const login = async ({ userName, password }) => {
-    const res = await fetch(`${API_BASE_URL}/login`, {
+    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName, password }),
@@ -55,7 +95,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const register = async ({ userName, email, password, chatId }) => {
-    const res = await fetch(`${API_BASE_URL}/register`, {
+    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userName, email, password, chatId }),
@@ -72,7 +112,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithGoogle = async (idToken) => {
-    const res = await fetch(`${API_BASE_URL}/google`, {
+    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ idToken }),
@@ -106,6 +146,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated: !!token,
     loading,
+    authFetch: (path, options) =>
+      authFetchImpl(path, options, () => token, saveAuthData),
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

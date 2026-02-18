@@ -89,41 +89,34 @@ const RowItem = ({ children, noDivider }) => (
 );
 
 export default function SettingsPage() {
-  const { user, token } = useAuth();
+  const { user, authFetch } = useAuth();
 
   const [tab, setTab] = useState(0);
 
-  // Интерфейс
   const [currency, setCurrency] = useState('RUB');
   const [hideAmounts, setHideAmounts] = useState(false);
 
-  // Диалоги
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editEmailOpen, setEditEmailOpen] = useState(false);
   const [editPasswordOpen, setEditPasswordOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
 
-  // Форма редактирования имени
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
 
-  // Форма смены email
   const [newEmail, setNewEmail] = useState('');
   const [emailPassword, setEmailPassword] = useState('');
 
-  // Форма смены пароля
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Форма удаления данных
   const [deleteMonth, setDeleteMonth] = useState('');
   const [deleteIncome, setDeleteIncome] = useState(false);
   const [deleteExpenses, setDeleteExpenses] = useState(false);
 
   const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
 
-  // Загрузка настроек из localStorage
   useEffect(() => {
     const c = localStorage.getItem(LS.currency);
     const h = localStorage.getItem(LS.hideAmounts);
@@ -141,13 +134,13 @@ export default function SettingsPage() {
   }, [hideAmounts]);
 
   const handleSaveName = async () => {
-    // TODO: запрос на обновление имени/фамилии
+    // TODO: запрос на обновление имени/фамилии через authFetch
     setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
     setEditNameOpen(false);
   };
 
   const handleSaveEmail = async () => {
-    // TODO: запрос на смену email
+    // TODO: запрос на смену email через authFetch
     setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
     setEditEmailOpen(false);
     setNewEmail('');
@@ -160,20 +153,9 @@ export default function SettingsPage() {
       return;
     }
 
-    if (!token) {
-      setSnack({ open: true, severity: 'error', message: 'Вы не авторизованы' });
-      return;
-    }
-
     try {
-      const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
-
-      const res = await fetch(`${baseUrl}/api/account/change-password`, {
+      const res = await authFetch('/api/account/change-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
         body: JSON.stringify({
           currentPassword,
           newPassword,
@@ -210,7 +192,7 @@ export default function SettingsPage() {
       return;
     }
 
-    // TODO: запрос на удаление данных
+    // TODO: запрос на удаление данных через authFetch
     const what = [];
     if (deleteIncome) what.push('доходы');
     if (deleteExpenses) what.push('расходы');
@@ -490,7 +472,6 @@ export default function SettingsPage() {
             </Box>
           </RowItem>
         </Box>
-      )}
 
       {/* DIALOG: Редактирование имени */}
       <Dialog
