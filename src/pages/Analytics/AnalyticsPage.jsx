@@ -1,22 +1,13 @@
 import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
-import {
-  Typography,
-  Box,
-  Stack,
-  Chip,
-  Tabs,
-  Tab,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Typography, Box, Stack, Chip, Tabs, Tab } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton';
 import { BarChart } from '@mui/x-charts/BarChart';
 import { LineChart } from '@mui/x-charts/LineChart';
 import { useDrawingArea } from '@mui/x-charts/hooks';
-import {
-  ChartsTooltipContainer,
-  ChartsItemTooltipContent,
-} from '@mui/x-charts/ChartsTooltip';
+import { ChartsTooltipContainer, ChartsItemTooltipContent } from '@mui/x-charts/ChartsTooltip';
 
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import ArrowCircleUpOutlinedIcon from '@mui/icons-material/ArrowCircleUpOutlined';
@@ -45,7 +36,7 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-// Короткий формат оси, чтобы не съедать левый отступ (350 000 -> 350к)
+// Короткий формат оси для мобилки, чтобы не съедало левый край
 const fmtAxisShort = (v) => {
   const val = n(v);
   const abs = Math.abs(val);
@@ -94,7 +85,7 @@ const niceStep = (maxVal) => {
 
 /** +25% запаса вверх для шкалы */
 const withHeadroom = (maxVal) => {
-  const raw = maxVal + maxVal * 0.25; // +25%
+  const raw = maxVal + maxVal * 0.25;
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
 };
@@ -291,30 +282,23 @@ function BalancePinnedTooltip(props) {
 
 const CashflowLegend = memo(function CashflowLegend() {
   return (
-    <Stack
-      direction="row"
-      spacing={2}
-      alignItems="center"
-      justifyContent="center"
-      sx={{ mt: 0.25, mb: 1.0 }}
-    >
+    <Stack direction="row" spacing={2} alignItems="center" justifyContent="center" sx={{ mt: 0.25, mb: 1.0 }}>
       <Stack direction="row" spacing={0.9} alignItems="center">
         <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.income }} />
-        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>
-          Доходы
-        </Typography>
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>Доходы</Typography>
       </Stack>
       <Stack direction="row" spacing={0.9} alignItems="center">
         <Box sx={{ width: 10, height: 10, borderRadius: 2, bgcolor: COLORS.expenses }} />
-        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>
-          Расходы
-        </Typography>
+        <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: 12 }}>Расходы</Typography>
       </Stack>
     </Stack>
   );
 });
 
 export default function AnalyticsPage() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -339,9 +323,32 @@ export default function AnalyticsPage() {
     []
   );
 
+  // Полные числа — для десктопа
   const fmtAxis = useMemo(
     () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
     []
+  );
+
+  // Мобилка: к/м, десктоп: полные числа
+  const axisMoneyFormatter = useCallback(
+    (v) => (isMobile ? fmtAxisShort(v) : fmtAxis.format(Number(v || 0))),
+    [isMobile, fmtAxis]
+  );
+
+  const cashflowMargin = useMemo(
+    () => (isMobile ? { left: 34, right: 10, top: 18, bottom: 50 } : { left: 70, right: 16, top: 18, bottom: 50 }),
+    [isMobile]
+  );
+
+  const balanceMargin = useMemo(
+    () => (isMobile ? { left: 34, right: 10, top: 14, bottom: 28 } : { left: 70, right: 16, top: 14, bottom: 28 }),
+    [isMobile]
+  );
+
+  const topCatsYAxisWidth = isMobile ? 72 : 110;
+  const topCatsMargin = useMemo(
+    () => (isMobile ? { left: 4, right: 10, top: 10, bottom: 28 } : { left: 10, right: 12, top: 10, bottom: 28 }),
+    [isMobile]
   );
 
   useEffect(() => {
@@ -429,10 +436,7 @@ export default function AnalyticsPage() {
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
   const ytdSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
-  const ytdRate = useMemo(
-    () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
-    [ytdIncome, ytdBalance]
-  );
+  const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
 
   const currentMonthSummary = useMemo(
     () => history.find((h) => h.year === year && h.month === month) || null,
@@ -550,14 +554,7 @@ export default function AnalyticsPage() {
           backgroundColor: 'transparent',
         }}
       >
-        <Box
-          sx={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            background: 'none',
-          }}
-        />
+        <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'none' }} />
 
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -727,8 +724,7 @@ export default function AnalyticsPage() {
               {
                 min: 0,
                 tickNumber: 6,
-                // было: fmtAxis.format(...) — длинно, съедало левый край
-                valueFormatter: (v) => fmtAxisShort(v),
+                valueFormatter: (v) => axisMoneyFormatter(v),
                 tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 domainLimit: (_minVal, maxVal) => {
                   const max = withHeadroom(Number(maxVal || 0));
@@ -741,8 +737,7 @@ export default function AnalyticsPage() {
               { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
             ]}
             grid={{ horizontal: true }}
-            // было left: 70 — из-за этого на мобилке начиналось "с середины"
-            margin={{ left: 34, right: 10, top: 18, bottom: 50 }}
+            margin={cashflowMargin}
             sx={{
               '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
               '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
@@ -753,13 +748,7 @@ export default function AnalyticsPage() {
         </Box>
 
         <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            justifyContent="center"
-            sx={{ mb: { xs: 2, md: 1.5 } }}
-          >
+          <Stack direction="row" spacing={1} alignItems="center" justifyContent="center" sx={{ mb: { xs: 2, md: 1.5 } }}>
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
             <Typography
               variant="caption"
@@ -795,8 +784,7 @@ export default function AnalyticsPage() {
                     const max = withHeadroom(Number(maxVal || 0));
                     return { min: 0, max };
                   },
-                  // было: fmtAxis.format(...) — длинно, съедало левый край
-                  valueFormatter: (v) => fmtAxisShort(v),
+                  valueFormatter: (v) => axisMoneyFormatter(v),
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
@@ -812,8 +800,7 @@ export default function AnalyticsPage() {
               ]}
               slots={{ tooltip: BalancePinnedTooltip }}
               grid={{ horizontal: true }}
-              // было left: 70
-              margin={{ left: 34, right: 10, top: 14, bottom: 28 }}
+              margin={balanceMargin}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
                 '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
@@ -896,15 +883,13 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  // было 90 — на мобилке сильно сдвигало бары вправо
-                  width: 72,
-                  tickLabelStyle: { fontSize: 10, fill: WHITE, fontWeight: 800 },
+                  width: topCatsYAxisWidth,
+                  tickLabelStyle: { fontSize: isMobile ? 10 : 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               xAxis={[
                 {
-                  // было fmtAxis.format — длинно
-                  valueFormatter: (v) => fmtAxisShort(v),
+                  valueFormatter: (v) => axisMoneyFormatter(v),
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
@@ -916,8 +901,7 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              // минимальный левый отступ (дальше уже управляет yAxis.width)
-              margin={{ left: 4, right: 10, top: 10, bottom: 28 }}
+              margin={topCatsMargin}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
                 '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
