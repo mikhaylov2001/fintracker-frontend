@@ -58,7 +58,6 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      // ВАЖНО: на бэке должен быть login по email
       await login({ email: form.email, password: form.password });
       navigate(afterLoginPath, { replace: true });
     } catch (err) {
