@@ -89,7 +89,7 @@ const RowItem = ({ children, noDivider }) => (
 );
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const [tab, setTab] = useState(0);
 
@@ -140,15 +140,14 @@ export default function SettingsPage() {
     localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0');
   }, [hideAmounts]);
 
-  // Обработчики редактирования профиля
   const handleSaveName = async () => {
-    // TODO: API запрос на обновление имени/фамилии
+    // TODO: запрос на обновление имени/фамилии
     setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
     setEditNameOpen(false);
   };
 
   const handleSaveEmail = async () => {
-    // TODO: API запрос на смену email
+    // TODO: запрос на смену email
     setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
     setEditEmailOpen(false);
     setNewEmail('');
@@ -161,15 +160,19 @@ export default function SettingsPage() {
       return;
     }
 
+    if (!token) {
+      setSnack({ open: true, severity: 'error', message: 'Вы не авторизованы' });
+      return;
+    }
+
     try {
-      const token = localStorage.getItem('token'); // если ключ другой — замени
       const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
 
       const res = await fetch(`${baseUrl}/api/account/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           currentPassword,
@@ -207,7 +210,7 @@ export default function SettingsPage() {
       return;
     }
 
-    // TODO: API запрос на удаление данных
+    // TODO: запрос на удаление данных
     const what = [];
     if (deleteIncome) what.push('доходы');
     if (deleteExpenses) what.push('расходы');
@@ -224,7 +227,6 @@ export default function SettingsPage() {
     setDeleteExpenses(false);
   };
 
-  // Генерация списка месяцев (последние 12)
   const monthOptions = useMemo(() => {
     const result = [];
     const now = new Date();
@@ -239,7 +241,6 @@ export default function SettingsPage() {
 
   return (
     <PageWrap>
-      {/* Header */}
       <Box sx={{ mb: { xs: 2, md: 2.5 }, pt: { xs: 0.5, md: 1 } }}>
         <Typography
           variant="h4"
@@ -254,8 +255,7 @@ export default function SettingsPage() {
         </Typography>
       </Box>
 
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: alpha('#fff', 0.10), mb: 0 }}>
+      <Box sx={{ borderBottom: 1, borderColor: alpha('#fff', 0.1), mb: 0 }}>
         <Tabs
           value={tab}
           onChange={(e, v) => setTab(v)}
@@ -284,7 +284,6 @@ export default function SettingsPage() {
         </Tabs>
       </Box>
 
-      {/* TAB 0: Аккаунт */}
       {tab === 0 && (
         <Box>
           <SectionTitle>Профиль</SectionTitle>
@@ -404,7 +403,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* TAB 1: Интерфейс */}
       {tab === 1 && (
         <Box>
           <SectionTitle>Отображение</SectionTitle>
@@ -459,7 +457,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* TAB 2: Данные */}
       {tab === 2 && (
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
