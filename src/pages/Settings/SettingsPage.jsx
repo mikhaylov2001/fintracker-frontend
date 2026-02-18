@@ -36,7 +36,6 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { bankingColors as colors } from '../../styles/bankingTokens';
-import api from '../../api'; // скорректируй путь под свой проект
 
 const LS = {
   currency: 'ft.settings.currency',
@@ -163,10 +162,27 @@ export default function SettingsPage() {
     }
 
     try {
-      await api.post('/api/account/change-password', {
-        currentPassword,
-        newPassword,
+      const token = localStorage.getItem('token'); // ключ под который ты сохраняешь access
+      const baseUrl = process.env.REACT_APP_API_URL || '';
+
+      const res = await fetch(`${baseUrl}/api/account/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
       });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = data.message || data.error || 'Не удалось изменить пароль';
+        throw new Error(msg);
+      }
 
       setSnack({ open: true, severity: 'success', message: 'Пароль изменён' });
       setEditPasswordOpen(false);
@@ -174,12 +190,11 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (e) {
-      const msg =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        'Не удалось изменить пароль';
-
-      setSnack({ open: true, severity: 'error', message: msg });
+      setSnack({
+        open: true,
+        severity: 'error',
+        message: e.message || 'Не удалось изменить пароль',
+      });
     }
   };
 
