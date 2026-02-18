@@ -3,80 +3,135 @@ import {
   Box,
   Typography,
   Stack,
-  List,
-  ListSubheader,
-  ListItem,
-  ListItemText,
-  ListItemButton,
-  ListItemIcon,
-  Divider,
+  Tabs,
+  Tab,
   Switch,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Button,
+  TextField,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Snackbar,
   Alert,
-  Chip,
+  Divider,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Avatar,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
-import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import CurrencyRubleOutlinedIcon from '@mui/icons-material/CurrencyRubleOutlined';
-import CloudDownloadOutlinedIcon from '@mui/icons-material/CloudDownloadOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { bankingColors as colors, surfaceOutlinedSx } from '../../styles/bankingTokens';
+import { bankingColors as colors } from '../../styles/bankingTokens';
 
 const LS = {
   currency: 'ft.settings.currency',
   hideAmounts: 'ft.settings.hideAmounts',
-  compactNumbers: 'ft.settings.compactNumbers',
 };
 
+const PageWrap = ({ children }) => (
+  <Box
+    sx={{
+      width: '100%',
+      mx: 'auto',
+      maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 },
+    }}
+  >
+    {children}
+  </Box>
+);
 
+const SectionTitle = ({ children }) => (
+  <Typography
+    sx={{
+      fontSize: { xs: 13, md: 14 },
+      fontWeight: 950,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      color: alpha('#fff', 0.55),
+      mb: 1.5,
+      mt: 3,
+    }}
+  >
+    {children}
+  </Typography>
+);
 
-const downloadJson = (filename, data) => {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-};
+const RowItem = ({ children, noDivider }) => (
+  <>
+    <Box
+      sx={{
+        py: { xs: 2, md: 2.25 },
+        px: { xs: 2, md: 3 },
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2,
+        bgcolor: 'transparent',
+      }}
+    >
+      {children}
+    </Box>
+    {!noDivider && <Divider sx={{ borderColor: alpha('#fff', 0.08) }} />}
+  </>
+);
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth(); // если logout нет в контексте — см. ниже примечание
+  const { user } = useAuth();
   const userId = user?.id;
 
+  const [tab, setTab] = useState(0);
+
+  // Интерфейс
   const [currency, setCurrency] = useState('RUB');
   const [hideAmounts, setHideAmounts] = useState(false);
-  const [compactNumbers, setCompactNumbers] = useState(true);
 
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  // Диалоги
+  const [editNameOpen, setEditNameOpen] = useState(false);
+  const [editEmailOpen, setEditEmailOpen] = useState(false);
+  const [editPasswordOpen, setEditPasswordOpen] = useState(false);
+  const [deleteDataOpen, setDeleteDataOpen] = useState(false);
+
+  // Форма редактирования имени
+  const [firstName, setFirstName] = useState(user?.firstName || '');
+  const [lastName, setLastName] = useState(user?.lastName || '');
+
+  // Форма смены email
+  const [newEmail, setNewEmail] = useState('');
+  const [emailPassword, setEmailPassword] = useState('');
+
+  // Форма смены пароля
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  // Форма удаления данных
+  const [deleteMonth, setDeleteMonth] = useState('');
+  const [deleteIncome, setDeleteIncome] = useState(false);
+  const [deleteExpenses, setDeleteExpenses] = useState(false);
+
   const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
 
+  // Загрузка настроек из localStorage
   useEffect(() => {
     const c = localStorage.getItem(LS.currency);
     const h = localStorage.getItem(LS.hideAmounts);
-    const k = localStorage.getItem(LS.compactNumbers);
 
     if (c) setCurrency(c);
     if (h != null) setHideAmounts(h === '1');
-    if (k != null) setCompactNumbers(k === '1');
   }, []);
 
   useEffect(() => {
@@ -87,422 +142,503 @@ export default function SettingsPage() {
     localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0');
   }, [hideAmounts]);
 
-  useEffect(() => {
-    localStorage.setItem(LS.compactNumbers, compactNumbers ? '1' : '0');
-  }, [compactNumbers]);
+  // Обработчики редактирования профиля
+  const handleSaveName = useCallback(async () => {
+    // TODO: API запрос на обновление имени/фамилии
+    setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
+    setEditNameOpen(false);
+  }, [firstName, lastName]);
 
-  const handleExport = useCallback(() => {
-    const raw = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key) continue;
-      raw[key] = localStorage.getItem(key);
-    }
+  const handleSaveEmail = useCallback(async () => {
+    // TODO: API запрос на смену email
+    setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
+    setEditEmailOpen(false);
+    setNewEmail('');
+    setEmailPassword('');
+  }, [newEmail, emailPassword]);
 
-    const payload = {
-      exportedAt: new Date().toISOString(),
-      user: { id: userId ?? null, email: user?.email ?? null, username: user?.username ?? null },
-      settings: { currency, hideAmounts, compactNumbers },
-      localStorage: raw,
-    };
-
-    downloadJson(`fintracker-export-${new Date().toISOString().slice(0, 10)}.json`, payload);
-    setSnack({ open: true, severity: 'success', message: 'Экспорт готов (JSON скачан).' });
-  }, [userId, user?.email, user?.username, currency, hideAmounts, compactNumbers]);
-
-  const handleResetLocal = useCallback(() => {
-    Object.values(LS).forEach((k) => localStorage.removeItem(k));
-
-    setCurrency('RUB');
-    setHideAmounts(false);
-    setCompactNumbers(true);
-
-    setConfirmOpen(false);
-    setSnack({ open: true, severity: 'info', message: 'Локальные настройки сброшены.' });
-  }, []);
-
-  const handleLogout = useCallback(async () => {
-    if (typeof logout !== 'function') {
-      setSnack({
-        open: true,
-        severity: 'error',
-        message: 'logout() не найден в AuthContext. Добавь его или замени обработчик.',
-      });
+  const handleSavePassword = useCallback(async () => {
+    if (newPassword !== confirmPassword) {
+      setSnack({ open: true, severity: 'error', message: 'Пароли не совпадают' });
       return;
     }
-    await logout();
-  }, [logout]);
+    // TODO: API запрос на смену пароля
+    setSnack({ open: true, severity: 'success', message: 'Пароль изменён' });
+    setEditPasswordOpen(false);
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+  }, [currentPassword, newPassword, confirmPassword]);
 
-  const PageWrap = useCallback(
-    ({ children }) => (
-      <Box
-        sx={{
-          width: '100%',
-          mx: 'auto',
-          px: { xs: 2, md: 3, lg: 4 },
-          maxWidth: { xs: '100%', sm: 720, md: 1040, lg: 1240, xl: 1400 },
-        }}
-      >
-        {children}
-      </Box>
-    ),
-    []
-  );
+  const handleDeleteData = useCallback(async () => {
+    if (!deleteMonth) {
+      setSnack({ open: true, severity: 'error', message: 'Выберите месяц' });
+      return;
+    }
+    if (!deleteIncome && !deleteExpenses) {
+      setSnack({ open: true, severity: 'error', message: 'Выберите что удалить' });
+      return;
+    }
 
-  const sectionSx = useMemo(
-    () => ({
-      ...surfaceOutlinedSx,
-      p: { xs: 1.25, md: 1.75 },
-      borderColor: alpha('#fff', 0.10),
-      bgcolor: alpha(colors.card2, 0.70),
-    }),
-    []
-  );
+    // TODO: API запрос на удаление данных
+    const what = [];
+    if (deleteIncome) what.push('доходы');
+    if (deleteExpenses) what.push('расходы');
+
+    setSnack({
+      open: true,
+      severity: 'info',
+      message: `Удалены ${what.join(' и ')} за ${deleteMonth}`,
+    });
+
+    setDeleteDataOpen(false);
+    setDeleteMonth('');
+    setDeleteIncome(false);
+    setDeleteExpenses(false);
+  }, [deleteMonth, deleteIncome, deleteExpenses]);
+
+  // Генерация списка месяцев (последние 12)
+  const monthOptions = useMemo(() => {
+    const result = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const label = d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
+      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      result.push({ label, value });
+    }
+    return result;
+  }, []);
 
   return (
     <PageWrap>
       {/* Header */}
-      <Box sx={{ mb: { xs: 2.5, md: 3 }, pt: { xs: 1, md: 1.5 } }}>
-        <Stack direction="row" spacing={1.25} alignItems="center">
-          <Box
-            sx={{
-              width: { xs: 40, md: 46 },
-              height: { xs: 40, md: 46 },
-              borderRadius: 3,
-              display: 'grid',
-              placeItems: 'center',
-              bgcolor: alpha(colors.primary, 0.14),
-              border: `1px solid ${alpha(colors.primary, 0.22)}`,
-            }}
-          >
-            <SettingsOutlinedIcon sx={{ color: alpha('#FFFFFF', 0.92) }} />
-          </Box>
-
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 980,
-                color: colors.text,
-                letterSpacing: -0.35,
-                lineHeight: 1.05,
-                fontSize: { xs: '1.35rem', sm: '1.55rem', md: '1.8rem' },
-              }}
-            >
-              Настройки
-            </Typography>
-
-            <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.7 }}>
-              <Chip
-                size="small"
-                label={user?.email || user?.username || 'Гость'}
-                sx={{
-                  fontWeight: 900,
-                  borderRadius: 999,
-                  bgcolor: alpha('#fff', 0.08),
-                  color: alpha('#fff', 0.85),
-                }}
-              />
-              {userId ? (
-                <Chip
-                  size="small"
-                  label={`id: ${userId}`}
-                  sx={{
-                    fontWeight: 900,
-                    borderRadius: 999,
-                    bgcolor: alpha('#fff', 0.06),
-                    color: alpha('#fff', 0.70),
-                  }}
-                />
-              ) : null}
-            </Stack>
-          </Box>
-        </Stack>
+      <Box sx={{ mb: { xs: 2, md: 2.5 }, pt: { xs: 0.5, md: 1 } }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 980,
+            color: colors.text,
+            letterSpacing: -0.4,
+            fontSize: { xs: '1.65rem', sm: '1.85rem', md: '2.1rem' },
+          }}
+        >
+          Настройки
+        </Typography>
       </Box>
 
-      <Stack spacing={{ xs: 2, md: 2.25 }}>
-        {/* Account */}
-        <Box sx={sectionSx}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader
-                component="div"
-                sx={{
-                  bgcolor: 'transparent',
-                  color: alpha('#fff', 0.75),
-                  fontWeight: 950,
-                  letterSpacing: 0.5,
-                  px: 0,
-                }}
-              >
-                Аккаунт
-              </ListSubheader>
-            }
-          >
-            <ListItem disableGutters sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: alpha('#fff', 0.82) }}>
-                <AccountCircleOutlinedIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary={user?.email || user?.username || 'Не авторизован'}
-                secondary={user?.email && user?.username ? user.username : ' '}
-                primaryTypographyProps={{ fontWeight: 950, color: colors.text }}
-                secondaryTypographyProps={{ color: alpha('#fff', 0.6), fontWeight: 700 }}
-              />
-            </ListItem>
+      {/* Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: alpha('#fff', 0.10), mb: 0 }}>
+        <Tabs
+          value={tab}
+          onChange={(e, v) => setTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            '& .MuiTab-root': {
+              color: alpha('#fff', 0.65),
+              fontWeight: 900,
+              textTransform: 'none',
+              fontSize: { xs: 14, md: 15 },
+              minHeight: 48,
+            },
+            '& .Mui-selected': {
+              color: '#fff',
+            },
+            '& .MuiTabs-indicator': {
+              bgcolor: colors.primary,
+              height: 3,
+            },
+          }}
+        >
+          <Tab label="Аккаунт" />
+          <Tab label="Интерфейс" />
+          <Tab label="Данные" />
+        </Tabs>
+      </Box>
 
-            <Divider sx={{ borderColor: alpha('#fff', 0.08) }} />
+      {/* TAB 0: Аккаунт */}
+      {tab === 0 && (
+        <Box>
+          <SectionTitle>Профиль</SectionTitle>
 
-            <ListItem disableGutters sx={{ px: 0 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleLogout}
-                startIcon={<LogoutOutlinedIcon />}
-                sx={{
-                  borderRadius: 3,
-                  py: 1.15,
-                  fontWeight: 950,
-                  textTransform: 'none',
-                  bgcolor: alpha('#fff', 0.10),
-                  color: '#fff',
-                  boxShadow: 'none',
-                  '&:hover': { bgcolor: alpha('#fff', 0.16), boxShadow: 'none' },
-                }}
-              >
-                Выйти
-              </Button>
-            </ListItem>
-          </List>
-        </Box>
-
-        {/* UI */}
-        <Box sx={sectionSx}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader
-                component="div"
-                sx={{
-                  bgcolor: 'transparent',
-                  color: alpha('#fff', 0.75),
-                  fontWeight: 950,
-                  letterSpacing: 0.5,
-                  px: 0,
-                }}
-              >
-                Интерфейс
-              </ListSubheader>
-            }
-          >
-            <ListItemButton
-              disableGutters
-              sx={{ px: 0, borderRadius: 2 }}
-              onClick={() => setHideAmounts((v) => !v)}
+          <RowItem>
+            <Avatar
+              sx={{
+                width: 56,
+                height: 56,
+                bgcolor: alpha(colors.primary, 0.18),
+                color: '#fff',
+                fontSize: 22,
+                fontWeight: 900,
+              }}
             >
-              <ListItemIcon sx={{ minWidth: 40, color: alpha('#fff', 0.82) }}>
-                <PaletteOutlinedIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Скрывать суммы"
-                secondary="Полезно, если показываешь экран кому-то рядом"
-                primaryTypographyProps={{ fontWeight: 950, color: colors.text }}
-                secondaryTypographyProps={{ color: alpha('#fff', 0.6), fontWeight: 700 }}
-              />
-              <Switch checked={hideAmounts} onChange={(e) => setHideAmounts(e.target.checked)} />
-            </ListItemButton>
+              {(user?.firstName?.[0] || user?.userName?.[0] || 'U').toUpperCase()}
+            </Avatar>
 
-            <Divider sx={{ borderColor: alpha('#fff', 0.08), my: 0.5 }} />
-
-            <ListItemButton
-              disableGutters
-              sx={{ px: 0, borderRadius: 2 }}
-              onClick={() => setCompactNumbers((v) => !v)}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: alpha('#fff', 0.82) }}>
-                <PaletteOutlinedIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Компактные числа (к/м)"
-                secondary="Удобнее на мобильном и в графиках"
-                primaryTypographyProps={{ fontWeight: 950, color: colors.text }}
-                secondaryTypographyProps={{ color: alpha('#fff', 0.6), fontWeight: 700 }}
-              />
-              <Switch checked={compactNumbers} onChange={(e) => setCompactNumbers(e.target.checked)} />
-            </ListItemButton>
-          </List>
-        </Box>
-
-        {/* Currency */}
-        <Box sx={sectionSx}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader
-                component="div"
-                sx={{
-                  bgcolor: 'transparent',
-                  color: alpha('#fff', 0.75),
-                  fontWeight: 950,
-                  letterSpacing: 0.5,
-                  px: 0,
-                }}
-              >
-                Валюта
-              </ListSubheader>
-            }
-          >
-            <ListItem disableGutters sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: alpha('#fff', 0.82) }}>
-                <CurrencyRubleOutlinedIcon />
-              </ListItemIcon>
-
-              <Box sx={{ width: '100%' }}>
-                <FormControl fullWidth size="small">
-                  <InputLabel id="currency-label">Валюта</InputLabel>
-                  <Select
-                    labelId="currency-label"
-                    value={currency}
-                    label="Валюта"
-                    onChange={(e) => setCurrency(e.target.value)}
-                    sx={{
-                      borderRadius: 3,
-                      color: '#fff',
-                      '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.14) },
-                      '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.22) },
-                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: alpha(colors.primary, 0.55) },
-                      '.MuiSvgIcon-root': { color: alpha('#fff', 0.8) },
-                    }}
-                  >
-                    <MenuItem value="RUB">RUB — ₽</MenuItem>
-                    <MenuItem value="USD">USD — $</MenuItem>
-                    <MenuItem value="EUR">EUR — €</MenuItem>
-                  </Select>
-                </FormControl>
-
-                <Typography variant="caption" sx={{ display: 'block', mt: 0.75, color: alpha('#fff', 0.6), fontWeight: 700 }}>
-                  Пока это настройка интерфейса; если нужно — сделаем конвертацию/мультивалютность.
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography sx={{ fontWeight: 950, color: colors.text, fontSize: { xs: 16, md: 17 } }}>
+                {user?.firstName && user?.lastName
+                  ? `${user.firstName} ${user.lastName}`
+                  : user?.userName || user?.email || 'Пользователь'}
+              </Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                {user?.email || 'Не указан email'}
+              </Typography>
+              {userId && (
+                <Typography variant="caption" sx={{ color: alpha('#fff', 0.45), fontWeight: 700 }}>
+                  ID: {userId}
                 </Typography>
-              </Box>
-            </ListItem>
-          </List>
+              )}
+            </Box>
+
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<EditOutlinedIcon />}
+              onClick={() => setEditNameOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontWeight: 900,
+                borderColor: alpha('#fff', 0.16),
+                color: '#fff',
+                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+              }}
+            >
+              Изменить
+            </Button>
+          </RowItem>
+
+          <SectionTitle>Безопасность</SectionTitle>
+
+          <RowItem>
+            <EmailOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Email</Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                {user?.email || 'Не указан'}
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setEditEmailOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontWeight: 900,
+                borderColor: alpha('#fff', 0.16),
+                color: '#fff',
+                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+              }}
+            >
+              Изменить
+            </Button>
+          </RowItem>
+
+          <RowItem>
+            <LockOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Пароль</Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                ••••••••
+              </Typography>
+            </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setEditPasswordOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: 'none',
+                fontWeight: 900,
+                borderColor: alpha('#fff', 0.16),
+                color: '#fff',
+                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+              }}
+            >
+              Изменить
+            </Button>
+          </RowItem>
+
+          <SectionTitle>О приложении</SectionTitle>
+
+          <RowItem noDivider>
+            <InfoOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Fintracker</Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                Версия {process.env.REACT_APP_VERSION || '1.0.0'}
+              </Typography>
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}>
+                Разработчик: Дмитрий Михайлов
+              </Typography>
+            </Box>
+          </RowItem>
         </Box>
+      )}
 
-        {/* Data */}
-        <Box sx={sectionSx}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader
-                component="div"
-                sx={{
-                  bgcolor: 'transparent',
-                  color: alpha('#fff', 0.75),
-                  fontWeight: 950,
-                  letterSpacing: 0.5,
-                  px: 0,
-                }}
+      {/* TAB 1: Интерфейс */}
+      {tab === 1 && (
+        <Box>
+          <SectionTitle>Отображение</SectionTitle>
+
+          <RowItem>
+            <PaletteOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Скрывать суммы</Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+                Полезно при показе экрана другим
+              </Typography>
+            </Box>
+            <Switch checked={hideAmounts} onChange={(e) => setHideAmounts(e.target.checked)} />
+          </RowItem>
+
+          <SectionTitle>Валюта</SectionTitle>
+
+          <RowItem noDivider>
+            <CurrencyRubleOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel id="currency-label">Валюта</InputLabel>
+                <Select
+                  labelId="currency-label"
+                  value={currency}
+                  label="Валюта"
+                  onChange={(e) => setCurrency(e.target.value)}
+                  sx={{
+                    borderRadius: 2.5,
+                    color: '#fff',
+                    '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.16) },
+                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.26) },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: alpha(colors.primary, 0.65),
+                    },
+                    '.MuiSvgIcon-root': { color: alpha('#fff', 0.8) },
+                  }}
+                >
+                  <MenuItem value="RUB">RUB — ₽</MenuItem>
+                  <MenuItem value="USD">USD — $</MenuItem>
+                  <MenuItem value="EUR">EUR — €</MenuItem>
+                </Select>
+              </FormControl>
+              <Typography
+                variant="caption"
+                sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}
               >
-                Данные
-              </ListSubheader>
-            }
-          >
-            <ListItem disableGutters sx={{ px: 0 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleExport}
-                startIcon={<CloudDownloadOutlinedIcon />}
-                sx={{
-                  borderRadius: 3,
-                  py: 1.15,
-                  fontWeight: 950,
-                  textTransform: 'none',
-                  bgcolor: alpha(colors.primary, 0.18),
-                  color: '#fff',
-                  boxShadow: 'none',
-                  '&:hover': { bgcolor: alpha(colors.primary, 0.26), boxShadow: 'none' },
-                }}
-              >
-                Экспорт (JSON)
-              </Button>
-            </ListItem>
+                Настройка интерфейса — конвертация валют не происходит
+              </Typography>
+            </Box>
+          </RowItem>
+        </Box>
+      )}
 
-            <Divider sx={{ borderColor: alpha('#fff', 0.08), my: 1 }} />
+      {/* TAB 2: Данные */}
+      {tab === 2 && (
+        <Box>
+          <SectionTitle>Удаление данных</SectionTitle>
 
-            <ListItem disableGutters sx={{ px: 0 }}>
+          <RowItem noDivider>
+            <DeleteOutlineOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15, mb: 0.5 }}>
+                Удалить данные за месяц
+              </Typography>
+              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700, mb: 2 }}>
+                Выберите месяц и тип данных для удаления
+              </Typography>
+
               <Button
                 fullWidth
                 variant="outlined"
-                onClick={() => setConfirmOpen(true)}
-                startIcon={<DeleteOutlineOutlinedIcon />}
+                onClick={() => setDeleteDataOpen(true)}
                 sx={{
-                  borderRadius: 3,
-                  py: 1.15,
+                  borderRadius: 2.5,
+                  py: 1.2,
                   fontWeight: 950,
                   textTransform: 'none',
                   borderColor: alpha('#fff', 0.16),
-                  color: alpha('#fff', 0.92),
-                  '&:hover': { borderColor: alpha('#fff', 0.26), bgcolor: alpha('#fff', 0.04) },
+                  color: '#fff',
+                  '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
                 }}
               >
-                Сбросить локальные настройки
+                Открыть выбор
               </Button>
-            </ListItem>
-
-            <Typography variant="caption" sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}>
-              Это не удалит транзакции на сервере — только настройки в браузере.
-            </Typography>
-          </List>
+            </Box>
+          </RowItem>
         </Box>
+      )}
 
-        {/* About */}
-        <Box sx={sectionSx}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader
-                component="div"
-                sx={{
-                  bgcolor: 'transparent',
-                  color: alpha('#fff', 0.75),
-                  fontWeight: 950,
-                  letterSpacing: 0.5,
-                  px: 0,
-                }}
-              >
-                О приложении
-              </ListSubheader>
-            }
-          >
-            <ListItem disableGutters sx={{ px: 0 }}>
-              <ListItemIcon sx={{ minWidth: 40, color: alpha('#fff', 0.82) }}>
-                <InfoOutlinedIcon />
-              </ListItemIcon>
-              <ListItemText
-                primary="Fintracker"
-                secondary={`Версия: ${process.env.REACT_APP_VERSION || '—'}`}
-                primaryTypographyProps={{ fontWeight: 950, color: colors.text }}
-                secondaryTypographyProps={{ color: alpha('#fff', 0.6), fontWeight: 700 }}
-              />
-            </ListItem>
-          </List>
-        </Box>
-      </Stack>
-
-      {/* Confirm reset */}
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
-        <DialogTitle>Сбросить локальные настройки?</DialogTitle>
+      {/* DIALOG: Редактирование имени */}
+      <Dialog
+        open={editNameOpen}
+        onClose={() => setEditNameOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>Редактировать профиль</DialogTitle>
         <DialogContent dividers>
-          <Typography sx={{ color: alpha('#000', 0.75) }}>
-            Будут сброшены: валюта, “скрывать суммы”, “компактные числа”.
-          </Typography>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Имя"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              fullWidth
+              autoComplete="given-name"
+            />
+            <TextField
+              label="Фамилия"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              fullWidth
+              autoComplete="family-name"
+            />
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirmOpen(false)}>Отмена</Button>
-          <Button color="error" variant="contained" onClick={handleResetLocal}>
-            Сбросить
+          <Button onClick={() => setEditNameOpen(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleSaveName}>
+            Сохранить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG: Смена email */}
+      <Dialog
+        open={editEmailOpen}
+        onClose={() => setEditEmailOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>Изменить email</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Новый email"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              fullWidth
+              autoComplete="email"
+            />
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={emailPassword}
+              onChange={(e) => setEmailPassword(e.target.value)}
+              fullWidth
+              autoComplete="current-password"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleSaveEmail}>
+            Изменить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG: Смена пароля */}
+      <Dialog
+        open={editPasswordOpen}
+        onClose={() => setEditPasswordOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>Изменить пароль</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              fullWidth
+              autoComplete="current-password"
+            />
+            <TextField
+              label="Новый пароль"
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              fullWidth
+              autoComplete="new-password"
+            />
+            <TextField
+              label="Подтвердите новый пароль"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              fullWidth
+              autoComplete="new-password"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditPasswordOpen(false)}>Отмена</Button>
+          <Button variant="contained" onClick={handleSavePassword}>
+            Изменить
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* DIALOG: Удаление данных */}
+      <Dialog
+        open={deleteDataOpen}
+        onClose={() => setDeleteDataOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>Удалить данные</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            <FormControl fullWidth size="small">
+              <InputLabel id="delete-month-label">Месяц</InputLabel>
+              <Select
+                labelId="delete-month-label"
+                value={deleteMonth}
+                label="Месяц"
+                onChange={(e) => setDeleteMonth(e.target.value)}
+              >
+                {monthOptions.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box>
+              <Typography sx={{ fontWeight: 900, mb: 1, fontSize: 14 }}>Что удалить:</Typography>
+              <FormGroup>
+                <FormControlLabel
+                  control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} />}
+                  label="Доходы"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} />
+                  }
+                  label="Расходы"
+                />
+              </FormGroup>
+            </Box>
+
+            <Alert severity="warning" sx={{ fontWeight: 700 }}>
+              Это действие необратимо. Данные будут удалены безвозвратно.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDataOpen(false)}>Отмена</Button>
+          <Button color="error" variant="contained" onClick={handleDeleteData}>
+            Удалить
           </Button>
         </DialogActions>
       </Dialog>
