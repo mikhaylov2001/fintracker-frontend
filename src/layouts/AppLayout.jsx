@@ -1,3 +1,4 @@
+// src/layouts/AppLayout.jsx
 import React, { useMemo, useState, useCallback, useRef } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
@@ -37,12 +38,19 @@ export default function AppLayout() {
   const openMobile = useCallback(() => setMobileOpen(true), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  const userLabel = user?.userName || user?.email || "Пользователь";
+  // Имя в меню: Имя Фамилия → userName → email
+  const userLabel = useMemo(() => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.userName || user?.email || "Пользователь";
+  }, [user?.firstName, user?.lastName, user?.userName, user?.email]);
+
   const dashTo = user?.userName ? `/u/${user.userName}` : "/";
 
   const navItems = useMemo(
     () => [
-      { label: "Дашборд", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") },
+      { label: "Дашборд", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") || p === "/" },
       { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
       { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
       { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },
@@ -160,7 +168,6 @@ export default function AppLayout() {
       const dx = Math.abs(t.clientX - x);
       const dy = Math.abs(t.clientY - y);
 
-      // если жест преимущественно горизонтальный — гасим внутри app
       if (dx > dy && dx > 8) {
         e.preventDefault();
       }

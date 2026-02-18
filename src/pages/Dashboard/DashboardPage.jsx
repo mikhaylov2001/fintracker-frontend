@@ -394,7 +394,13 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  const displayName = user?.userName || user?.email || "пользователь";
+  // Имя для приветствия: Имя Фамилия → userName → email
+  const displayName = useMemo(() => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    return user?.userName || user?.email || "пользователь";
+  }, [user?.firstName, user?.lastName, user?.userName, user?.email]);
 
   useEffect(() => {
     let cancelled = false;
@@ -618,7 +624,7 @@ export default function DashboardPage() {
         </Stack>
       </Box>
 
-      {/* KPI — те же accent, что в AnalyticsPage */}
+      {/* KPI */}
       <Box
         sx={{
           display: "grid",
