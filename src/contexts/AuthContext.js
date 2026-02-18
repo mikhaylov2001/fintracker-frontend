@@ -5,7 +5,8 @@ const AuthContext = createContext(null);
 
 // Бэкенд‑URL (Railway)
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app";
+  process.env.REACT_APP_API_BASE_URL ||
+  "https://fintrackerpro-production.up.railway.app";
 const API_AUTH_BASE = "/api/auth";
 
 // Обёртка с авто‑refresh
@@ -28,7 +29,6 @@ const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
   let res = await doRequest();
 
   if (res.status === 401) {
-    // пробуем обновить токен
     const refreshRes = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/refresh`, {
       method: "POST",
       credentials: "include",
@@ -36,8 +36,8 @@ const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
 
     if (refreshRes.ok) {
       const data = await refreshRes.json().catch(() => ({}));
-      saveAuthData(data); // token + user
-      res = await doRequest(); // повторяем исходный запрос
+      saveAuthData(data);
+      res = await doRequest();
     }
   }
 
@@ -77,6 +77,15 @@ export const AuthProvider = ({ children }) => {
       setUser(nextUser);
       localStorage.setItem("authUser", JSON.stringify(nextUser));
     }
+  };
+
+  // локальное обновление user (после изменения профиля/email)
+  const updateUserInState = (partialUser) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partialUser || {}) };
+      localStorage.setItem("authUser", JSON.stringify(next));
+      return next;
+    });
   };
 
   const login = async ({ userName, password }) => {
@@ -148,6 +157,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     authFetch: (path, options) =>
       authFetchImpl(path, options, () => token, saveAuthData),
+    updateUserInState,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

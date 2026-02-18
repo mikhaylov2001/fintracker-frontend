@@ -3,7 +3,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
-  Stack,
   Tabs,
   Tab,
   Switch,
@@ -24,6 +23,7 @@ import {
   FormControlLabel,
   FormGroup,
   Avatar,
+  Stack,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
@@ -90,7 +90,7 @@ const RowItem = ({ children, noDivider }) => (
 );
 
 export default function SettingsPage() {
-  const { user, authFetch } = useAuth();
+  const { user, authFetch, updateUserInState } = useAuth();
 
   const [tab, setTab] = useState(0);
 
@@ -134,18 +134,72 @@ export default function SettingsPage() {
     localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0');
   }, [hideAmounts]);
 
+  // если user обновился из вне (например после login), подтянем name в локальные стейты
+  useEffect(() => {
+    setFirstName(user?.firstName || '');
+    setLastName(user?.lastName || '');
+  }, [user]);
+
   const handleSaveName = async () => {
-    // TODO: запрос на обновление имени/фамилии через authFetch
-    setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
-    setEditNameOpen(false);
+    try {
+      const res = await authFetch('/api/account/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          firstName,
+          lastName,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = data.message || data.error || 'Не удалось обновить профиль';
+        throw new Error(msg);
+      }
+
+      const updatedUser = await res.json();
+      updateUserInState(updatedUser);
+
+      setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
+      setEditNameOpen(false);
+    } catch (e) {
+      setSnack({
+        open: true,
+        severity: 'error',
+        message: e.message || 'Не удалось обновить профиль',
+      });
+    }
   };
 
   const handleSaveEmail = async () => {
-    // TODO: запрос на смену email через authFetch
-    setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
-    setEditEmailOpen(false);
-    setNewEmail('');
-    setEmailPassword('');
+    try {
+      const res = await authFetch('/api/account/email', {
+        method: 'PUT',
+        body: JSON.stringify({
+          newEmail,
+          password: emailPassword,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const msg = data.message || data.error || 'Не удалось изменить email';
+        throw new Error(msg);
+      }
+
+      const updatedUser = await res.json();
+      updateUserInState(updatedUser);
+
+      setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
+      setEditEmailOpen(false);
+      setNewEmail('');
+      setEmailPassword('');
+    } catch (e) {
+      setSnack({
+        open: true,
+        severity: 'error',
+        message: e.message || 'Не удалось изменить email',
+      });
+    }
   };
 
   const handleSavePassword = async () => {
@@ -193,7 +247,7 @@ export default function SettingsPage() {
       return;
     }
 
-    // TODO: запрос на удаление данных через authFetch
+    // TODO: сюда потом добавишь реальный запрос удаления
     const what = [];
     if (deleteIncome) what.push('доходы');
     if (deleteExpenses) what.push('расходы');
@@ -475,6 +529,7 @@ export default function SettingsPage() {
         </Box>
       )}
 
+      {/* Диалог имени */}
       <Dialog
         open={editNameOpen}
         onClose={() => setEditNameOpen(false)}
@@ -509,6 +564,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Диалог email */}
       <Dialog
         open={editEmailOpen}
         onClose={() => setEditEmailOpen(false)}
@@ -545,6 +601,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Диалог пароля */}
       <Dialog
         open={editPasswordOpen}
         onClose={() => setEditPasswordOpen(false)}
@@ -589,6 +646,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Диалог удаления данных */}
       <Dialog
         open={deleteDataOpen}
         onClose={() => setDeleteDataOpen(false)}
