@@ -1,9 +1,9 @@
+// src/pages/Auth/LoginPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
-
 
 const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -14,7 +14,7 @@ export default function LoginPage() {
   const location = useLocation();
   const { login, loginWithGoogle } = useAuth();
 
-  const [form, setForm] = useState({ userName: "", password: "" });
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const googleDivRef = useRef(null);
 
@@ -58,11 +58,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      await login({ userName: form.userName, password: form.password });
+      // ВАЖНО: на бэке должен быть login по email
+      await login({ email: form.email, password: form.password });
       navigate(afterLoginPath, { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Неверное имя пользователя или пароль");
+      setError("Неверный email или пароль");
     }
   };
 
@@ -138,12 +139,13 @@ export default function LoginPage() {
             <TextField
               margin="normal"
               fullWidth
-              label="Имя пользователя"
-              name="userName"
-              value={form.userName}
+              label="Email"
+              type="email"
+              name="email"
+              value={form.email}
               onChange={handleChange}
               required
-              autoComplete="username"
+              autoComplete="email"
             />
             <TextField
               margin="normal"

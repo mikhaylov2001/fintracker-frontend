@@ -1,9 +1,9 @@
+// src/pages/Auth/RegisterPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
-
 
 const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -14,7 +14,8 @@ export default function RegisterPage() {
   const { register, loginWithGoogle } = useAuth();
 
   const [form, setForm] = useState({
-    userName: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
   });
@@ -61,7 +62,8 @@ export default function RegisterPage() {
     setError("");
     try {
       await register({
-        userName: form.userName,
+        firstName: form.firstName,
+        lastName: form.lastName,
         email: form.email,
         password: form.password,
       });
@@ -144,12 +146,23 @@ export default function RegisterPage() {
             <TextField
               margin="normal"
               fullWidth
-              label="Имя пользователя"
-              name="userName"
-              value={form.userName}
+              label="Имя"
+              name="firstName"
+              value={form.firstName}
               onChange={handleChange}
               required
-              autoComplete="username"
+              autoComplete="given-name"
+            />
+
+            <TextField
+              margin="normal"
+              fullWidth
+              label="Фамилия"
+              name="lastName"
+              value={form.lastName}
+              onChange={handleChange}
+              required
+              autoComplete="family-name"
             />
 
             <TextField
