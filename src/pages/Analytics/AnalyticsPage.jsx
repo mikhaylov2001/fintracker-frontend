@@ -36,7 +36,7 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-// Короткий формат оси для мобилки, чтобы не съедало левый край
+// Короткий формат для мобилки (чтобы даже если включим подписи — они были короткие)
 const fmtAxisShort = (v) => {
   const val = n(v);
   const abs = Math.abs(val);
@@ -298,6 +298,7 @@ const CashflowLegend = memo(function CashflowLegend() {
 export default function AnalyticsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const ultraLeft = isMobile; // <<< “в самый край” делаем только на мобилке
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -324,31 +325,35 @@ export default function AnalyticsPage() {
   );
 
   // Полные числа — для десктопа
-  const fmtAxis = useMemo(
-    () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
-    []
-  );
+  const fmtAxis = useMemo(() => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }), []);
 
-  // Мобилка: к/м, десктоп: полные числа
   const axisMoneyFormatter = useCallback(
     (v) => (isMobile ? fmtAxisShort(v) : fmtAxis.format(Number(v || 0))),
     [isMobile, fmtAxis]
   );
 
+  const yTickStyle = useMemo(() => {
+    if (ultraLeft) {
+      return { fontSize: 0, fill: 'transparent', fontWeight: 800 };
+    }
+    return { fontSize: 11, fill: WHITE, fontWeight: 800 };
+  }, [ultraLeft]);
+
   const cashflowMargin = useMemo(
-    () => (isMobile ? { left: 34, right: 10, top: 18, bottom: 50 } : { left: 70, right: 16, top: 18, bottom: 50 }),
-    [isMobile]
+    () => (ultraLeft ? { left: 0, right: 0, top: 18, bottom: 50 } : { left: 70, right: 16, top: 18, bottom: 50 }),
+    [ultraLeft]
   );
 
   const balanceMargin = useMemo(
-    () => (isMobile ? { left: 34, right: 10, top: 14, bottom: 28 } : { left: 70, right: 16, top: 14, bottom: 28 }),
-    [isMobile]
+    () => (ultraLeft ? { left: 0, right: 0, top: 14, bottom: 28 } : { left: 70, right: 16, top: 14, bottom: 28 }),
+    [ultraLeft]
   );
 
-  const topCatsYAxisWidth = isMobile ? 72 : 110;
+  const topCatsYAxisWidth = ultraLeft ? 0 : isMobile ? 72 : 110;
+
   const topCatsMargin = useMemo(
-    () => (isMobile ? { left: 4, right: 10, top: 10, bottom: 28 } : { left: 10, right: 12, top: 10, bottom: 28 }),
-    [isMobile]
+    () => (ultraLeft ? { left: 0, right: 0, top: 10, bottom: 28 } : { left: 10, right: 12, top: 10, bottom: 28 }),
+    [ultraLeft]
   );
 
   useEffect(() => {
@@ -436,7 +441,10 @@ export default function AnalyticsPage() {
   const ytdExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
   const ytdBalance = useMemo(() => ytdIncome - ytdExpenses, [ytdIncome, ytdExpenses]);
   const ytdSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
-  const ytdRate = useMemo(() => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0), [ytdIncome, ytdBalance]);
+  const ytdRate = useMemo(
+    () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
+    [ytdIncome, ytdBalance]
+  );
 
   const currentMonthSummary = useMemo(
     () => history.find((h) => h.year === year && h.month === month) || null,
@@ -628,12 +636,7 @@ export default function AnalyticsPage() {
             </Box>
           </Stack>
 
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            alignItems={{ sm: 'center' }}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
             <Chip
               label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
               variant="filled"
@@ -706,7 +709,8 @@ export default function AnalyticsPage() {
 
         <CashflowLegend />
 
-        <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
+        {/* mx:-2 на xs — чтобы график ушёл в самый левый край, несмотря на PageWrap px:2 */}
+        <Box sx={{ width: '100%', height: { xs: 280, md: 340 }, mx: { xs: -2, sm: 0 }, overflow: 'hidden' }}>
           <BarChart
             height={340}
             hideLegend
@@ -725,7 +729,8 @@ export default function AnalyticsPage() {
                 min: 0,
                 tickNumber: 6,
                 valueFormatter: (v) => axisMoneyFormatter(v),
-                tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
+                tickLabelStyle: yTickStyle,
+                tickSize: ultraLeft ? 0 : undefined,
                 domainLimit: (_minVal, maxVal) => {
                   const max = withHeadroom(Number(maxVal || 0));
                   return { min: 0, max };
@@ -739,9 +744,9 @@ export default function AnalyticsPage() {
             grid={{ horizontal: true }}
             margin={cashflowMargin}
             sx={{
-              '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
-              '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
-              '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+              '& .MuiChartsAxis-line': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.16)' },
+              '& .MuiChartsAxis-tick': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.12)' },
+              '& .MuiChartsAxis-tickLabel': { fill: ultraLeft ? 'transparent' : WHITE, fontSize: ultraLeft ? 0 : 11 },
               '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
             }}
           />
@@ -765,7 +770,7 @@ export default function AnalyticsPage() {
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
           </Stack>
 
-          <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
+          <Box sx={{ width: '100%', height: { xs: 260, md: 320 }, mx: { xs: -2, sm: 0 }, overflow: 'hidden' }}>
             <LineChart
               height={320}
               xAxis={[
@@ -785,7 +790,8 @@ export default function AnalyticsPage() {
                     return { min: 0, max };
                   },
                   valueFormatter: (v) => axisMoneyFormatter(v),
-                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
+                  tickLabelStyle: yTickStyle,
+                  tickSize: ultraLeft ? 0 : undefined,
                 },
               ]}
               series={[
@@ -802,9 +808,9 @@ export default function AnalyticsPage() {
               grid={{ horizontal: true }}
               margin={balanceMargin}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
-                '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
-                '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+                '& .MuiChartsAxis-line': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.16)' },
+                '& .MuiChartsAxis-tick': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.12)' },
+                '& .MuiChartsAxis-tickLabel': { fill: ultraLeft ? 'transparent' : WHITE, fontSize: ultraLeft ? 0 : 11 },
                 '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
                 '& .MuiLineElement-root': { strokeWidth: 3 },
                 '& .MuiMarkElement-root': {
@@ -875,7 +881,7 @@ export default function AnalyticsPage() {
             Нет данных по категориям за выбранный период.
           </Typography>
         ) : (
-          <Box sx={{ width: '100%', height: { xs: 280, md: 280 }, minWidth: 0 }}>
+          <Box sx={{ width: '100%', height: { xs: 280, md: 280 }, minWidth: 0, mx: { xs: -2, sm: 0 }, overflow: 'hidden' }}>
             <BarChart
               height={280}
               layout="horizontal"
@@ -884,7 +890,10 @@ export default function AnalyticsPage() {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
                   width: topCatsYAxisWidth,
-                  tickLabelStyle: { fontSize: isMobile ? 10 : 11, fill: WHITE, fontWeight: 800 },
+                  tickLabelStyle: ultraLeft
+                    ? { fontSize: 0, fill: 'transparent', fontWeight: 800 }
+                    : { fontSize: isMobile ? 10 : 11, fill: WHITE, fontWeight: 800 },
+                  tickSize: ultraLeft ? 0 : undefined,
                 },
               ]}
               xAxis={[
@@ -903,9 +912,9 @@ export default function AnalyticsPage() {
               grid={{ vertical: true }}
               margin={topCatsMargin}
               sx={{
-                '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
-                '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
-                '& .MuiChartsAxis-tickLabel': { fill: WHITE, fontSize: 11 },
+                '& .MuiChartsAxis-line': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.16)' },
+                '& .MuiChartsAxis-tick': { stroke: ultraLeft ? 'transparent' : 'rgba(255,255,255,0.12)' },
+                '& .MuiChartsAxis-tickLabel': { fill: ultraLeft ? 'transparent' : WHITE, fontSize: ultraLeft ? 0 : 11 },
                 '& .MuiChartsGrid-line': { stroke: 'rgba(255,255,255,0.06)' },
                 '.MuiChartsLegend-root': { display: 'none' },
               }}
