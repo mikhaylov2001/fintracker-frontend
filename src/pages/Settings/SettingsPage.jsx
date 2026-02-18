@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -26,7 +26,6 @@ import {
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
-import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
 import CurrencyRubleOutlinedIcon from '@mui/icons-material/CurrencyRubleOutlined';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
@@ -143,21 +142,21 @@ export default function SettingsPage() {
   }, [hideAmounts]);
 
   // Обработчики редактирования профиля
-  const handleSaveName = useCallback(async () => {
+  const handleSaveName = async () => {
     // TODO: API запрос на обновление имени/фамилии
     setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
     setEditNameOpen(false);
-  }, [firstName, lastName]);
+  };
 
-  const handleSaveEmail = useCallback(async () => {
+  const handleSaveEmail = async () => {
     // TODO: API запрос на смену email
     setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
     setEditEmailOpen(false);
     setNewEmail('');
     setEmailPassword('');
-  }, [newEmail, emailPassword]);
+  };
 
-  const handleSavePassword = useCallback(async () => {
+  const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
       setSnack({ open: true, severity: 'error', message: 'Пароли не совпадают' });
       return;
@@ -168,9 +167,9 @@ export default function SettingsPage() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-  }, [currentPassword, newPassword, confirmPassword]);
+  };
 
-  const handleDeleteData = useCallback(async () => {
+  const handleDeleteData = async () => {
     if (!deleteMonth) {
       setSnack({ open: true, severity: 'error', message: 'Выберите месяц' });
       return;
@@ -195,7 +194,7 @@ export default function SettingsPage() {
     setDeleteMonth('');
     setDeleteIncome(false);
     setDeleteExpenses(false);
-  }, [deleteMonth, deleteIncome, deleteExpenses]);
+  };
 
   // Генерация списка месяцев (последние 12)
   const monthOptions = useMemo(() => {
