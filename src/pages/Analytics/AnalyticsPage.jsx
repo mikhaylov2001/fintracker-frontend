@@ -45,6 +45,15 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
+// Короткий формат оси, чтобы не съедать левый отступ (350 000 -> 350к)
+const fmtAxisShort = (v) => {
+  const val = n(v);
+  const abs = Math.abs(val);
+  if (abs >= 1_000_000) return `${Math.round(val / 1_000_000)}м`;
+  if (abs >= 1_000) return `${Math.round(val / 1_000)}к`;
+  return `${Math.round(val)}`;
+};
+
 const ymNum = (y, m) => y * 12 + (m - 1);
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
@@ -718,7 +727,8 @@ export default function AnalyticsPage() {
               {
                 min: 0,
                 tickNumber: 6,
-                valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                // было: fmtAxis.format(...) — длинно, съедало левый край
+                valueFormatter: (v) => fmtAxisShort(v),
                 tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 domainLimit: (_minVal, maxVal) => {
                   const max = withHeadroom(Number(maxVal || 0));
@@ -731,7 +741,8 @@ export default function AnalyticsPage() {
               { data: cashflowRows.map((r) => r.expenses), label: 'Расходы', color: COLORS.expenses },
             ]}
             grid={{ horizontal: true }}
-            margin={{ left: 70, right: 16, top: 18, bottom: 50 }}
+            // было left: 70 — из-за этого на мобилке начиналось "с середины"
+            margin={{ left: 34, right: 10, top: 18, bottom: 50 }}
             sx={{
               '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
               '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
@@ -784,7 +795,8 @@ export default function AnalyticsPage() {
                     const max = withHeadroom(Number(maxVal || 0));
                     return { min: 0, max };
                   },
-                  valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                  // было: fmtAxis.format(...) — длинно, съедало левый край
+                  valueFormatter: (v) => fmtAxisShort(v),
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
@@ -800,7 +812,8 @@ export default function AnalyticsPage() {
               ]}
               slots={{ tooltip: BalancePinnedTooltip }}
               grid={{ horizontal: true }}
-              margin={{ left: 70, right: 16, top: 14, bottom: 28 }}
+              // было left: 70
+              margin={{ left: 34, right: 10, top: 14, bottom: 28 }}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
                 '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
@@ -883,13 +896,15 @@ export default function AnalyticsPage() {
                 {
                   data: (topTab === 'expenses' ? topCatsExpenses : topCatsIncome).map((x) => x.category),
                   scaleType: 'band',
-                  width: 90,
-                  tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
+                  // было 90 — на мобилке сильно сдвигало бары вправо
+                  width: 72,
+                  tickLabelStyle: { fontSize: 10, fill: WHITE, fontWeight: 800 },
                 },
               ]}
               xAxis={[
                 {
-                  valueFormatter: (v) => fmtAxis.format(Number(v || 0)),
+                  // было fmtAxis.format — длинно
+                  valueFormatter: (v) => fmtAxisShort(v),
                   tickLabelStyle: { fontSize: 11, fill: WHITE, fontWeight: 800 },
                 },
               ]}
@@ -901,7 +916,8 @@ export default function AnalyticsPage() {
                 },
               ]}
               grid={{ vertical: true }}
-              margin={{ left: 8, right: 12, top: 10, bottom: 28 }}
+              // минимальный левый отступ (дальше уже управляет yAxis.width)
+              margin={{ left: 4, right: 10, top: 10, bottom: 28 }}
               sx={{
                 '& .MuiChartsAxis-line': { stroke: 'rgba(255,255,255,0.16)' },
                 '& .MuiChartsAxis-tick': { stroke: 'rgba(255,255,255,0.12)' },
