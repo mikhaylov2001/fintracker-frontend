@@ -163,7 +163,7 @@ export default function SettingsPage() {
 
     try {
       const token = localStorage.getItem('token'); // ключ под который ты сохраняешь access
-      const baseUrl = process.env.REACT_APP_API_URL || '';
+      const baseUrl = process.env.REACT_APP_API_BASE_URL || '';
 
       const res = await fetch(`${baseUrl}/api/account/change-password`, {
         method: 'POST',
