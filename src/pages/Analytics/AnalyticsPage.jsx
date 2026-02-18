@@ -36,7 +36,7 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-// короткий формат оси для мобилки
+// Короткий формат оси для мобилки, чтобы не съедало левый край
 const fmtAxisShort = (v) => {
   const val = n(v);
   const abs = Math.abs(val);
@@ -323,8 +323,11 @@ export default function AnalyticsPage() {
     []
   );
 
-  // Полные числа — для десктопа (и чтобы не было no-unused-vars)
-  const fmtAxis = useMemo(() => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }), []);
+  // Полные числа — для десктопа
+  const fmtAxis = useMemo(
+    () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
+    []
+  );
 
   // Мобилка: к/м, десктоп: полные числа
   const axisMoneyFormatter = useCallback(
@@ -343,29 +346,10 @@ export default function AnalyticsPage() {
   );
 
   const topCatsYAxisWidth = isMobile ? 72 : 110;
-
   const topCatsMargin = useMemo(
     () => (isMobile ? { left: 4, right: 10, top: 10, bottom: 28 } : { left: 10, right: 12, top: 10, bottom: 28 }),
     [isMobile]
   );
-
-  // <<< ключевая штука: смещаем ТОЛЬКО контейнер графиков влево к самой границе >>>
-  // На твоей мобилке обычно суммарный левый padding получается 24px (AppLayout px:1 = 8px + PageWrap px:2 = 16px).
-  // Поэтому: ml:-3 (=-24px) и width: calc(100% + 24px)
-  const edgeLeftSx = useMemo(
-    () =>
-      isMobile
-        ? {
-            ml: -3,
-            width: 'calc(100% + 24px)',
-          }
-        : {
-            ml: 0,
-            width: '100%',
-          },
-    [isMobile]
-  );
-  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -644,7 +628,12 @@ export default function AnalyticsPage() {
             </Box>
           </Stack>
 
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={1}
+            alignItems={{ sm: 'center' }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             <Chip
               label={loading ? 'Загрузка…' : error ? 'Частично' : 'Актуально'}
               variant="filled"
@@ -717,7 +706,7 @@ export default function AnalyticsPage() {
 
         <CashflowLegend />
 
-        <Box sx={{ ...edgeLeftSx, maxWidth: '100%', height: { xs: 280, md: 340 }, overflow: 'hidden' }}>
+        <Box sx={{ width: '100%', height: { xs: 280, md: 340 } }}>
           <BarChart
             height={340}
             hideLegend
@@ -776,7 +765,7 @@ export default function AnalyticsPage() {
             <Box sx={{ width: 6, height: 6, borderRadius: 999, bgcolor: COLORS.balance }} />
           </Stack>
 
-          <Box sx={{ ...edgeLeftSx, maxWidth: '100%', height: { xs: 260, md: 320 }, overflow: 'hidden' }}>
+          <Box sx={{ width: '100%', height: { xs: 260, md: 320 } }}>
             <LineChart
               height={320}
               xAxis={[
@@ -886,7 +875,7 @@ export default function AnalyticsPage() {
             Нет данных по категориям за выбранный период.
           </Typography>
         ) : (
-          <Box sx={{ ...edgeLeftSx, maxWidth: '100%', height: { xs: 280, md: 280 }, minWidth: 0, overflow: 'hidden' }}>
+          <Box sx={{ width: '100%', height: { xs: 280, md: 280 }, minWidth: 0 }}>
             <BarChart
               height={280}
               layout="horizontal"
