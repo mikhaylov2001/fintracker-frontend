@@ -1,31 +1,47 @@
 // src/api/incomeApi.js
 import { useApiClient } from "./client";
 
+// ===== чистые функции без хуков =====
+export const fetchMyIncomesByMonth = (asAxios, year, month, page = 0, size = 50) =>
+  asAxios(`/api/incomes/me/month/${year}/${month}?page=${page}&size=${size}`);
+
+export const fetchMyIncomes = (asAxios, page = 0, size = 10) =>
+  asAxios(`/api/incomes/me?page=${page}&size=${size}`);
+
+export const fetchIncomesByMonth = (asAxios, userId, year, month, page = 0, size = 50) =>
+  asAxios(`/api/incomes/user/${userId}/month/${year}/${month}?page=${page}&size=${size}`);
+
+export const fetchCreateIncome = (asAxios, payload) =>
+  asAxios("/api/incomes", { method: "POST", body: JSON.stringify(payload) });
+
+export const fetchUpdateIncome = (asAxios, incomeId, payload) =>
+  asAxios(`/api/incomes/${incomeId}`, { method: "PUT", body: JSON.stringify(payload) });
+
+export const fetchDeleteIncome = (asAxios, incomeId) =>
+  asAxios(`/api/incomes/${incomeId}`, { method: "DELETE" });
+
+// ===== хук =====
 export const useIncomeApi = () => {
   const { asAxios } = useApiClient();
 
-  // ===== NEW (me) =====
   const getMyIncomesByMonth = (year, month, page = 0, size = 50) =>
-    asAxios(`/api/incomes/me/month/${year}/${month}?page=${page}&size=${size}`);
+    fetchMyIncomesByMonth(asAxios, year, month, page, size);
 
   const getMyIncomes = (page = 0, size = 10) =>
-    asAxios(`/api/incomes/me?page=${page}&size=${size}`);
+    fetchMyIncomes(asAxios, page, size);
 
-  // ===== LEGACY (userId) =====
   const getIncomesByMonth = (userId, year, month, page = 0, size = 50) =>
-    asAxios(`/api/incomes/user/${userId}/month/${year}/${month}?page=${page}&size=${size}`);
+    fetchIncomesByMonth(asAxios, userId, year, month, page, size);
 
   const getIncomes = getIncomesByMonth;
 
-  // ===== CRUD =====
-  const createIncome = (payload) =>
-    asAxios("/api/incomes", { method: "POST", body: JSON.stringify(payload) });
+  const createIncome = (payload) => fetchCreateIncome(asAxios, payload);
 
   const updateIncome = (incomeId, payload) =>
-    asAxios(`/api/incomes/${incomeId}`, { method: "PUT", body: JSON.stringify(payload) });
+    fetchUpdateIncome(asAxios, incomeId, payload);
 
   const deleteIncome = (incomeId) =>
-    asAxios(`/api/incomes/${incomeId}`, { method: "DELETE" });
+    fetchDeleteIncome(asAxios, incomeId);
 
   return {
     getMyIncomesByMonth,

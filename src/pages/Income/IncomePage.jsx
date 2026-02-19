@@ -1,4 +1,3 @@
-// src/pages/Income/IncomePage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -27,11 +26,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-import { useIncomeApi } from "../../api/incomeApi";
-
-  // остальной код без изменений
-
-
+import { useIncomeApi } from '../../api/incomeApi';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 const COLORS = { income: '#22C55E' };
@@ -110,6 +105,13 @@ export default function IncomePage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const {
+    getMyIncomesByMonth,
+    createIncome,
+    updateIncome,
+    deleteIncome,
+  } = useIncomeApi();
+
   // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ----------
   const [ym, setYm] = useState(() => {
     const now = new Date();
@@ -174,7 +176,7 @@ export default function IncomePage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month, getMyIncomesByMonth]);
 
   useEffect(() => {
     load();

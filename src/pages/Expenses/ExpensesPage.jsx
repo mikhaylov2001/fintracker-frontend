@@ -1,4 +1,3 @@
-// src/pages/Expenses/ExpensesPage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -27,11 +26,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-import { useExpensesApi } from "../../api/expensesApi";
-
-
-
-
+import { useExpensesApi } from '../../api/expensesApi';
 import { useCurrency } from '../../contexts/CurrencyContext';
 
 const COLORS = { expenses: '#F97316' };
@@ -116,6 +111,13 @@ export default function ExpensesPage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
+  const {
+    getMyExpensesByMonth,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+  } = useExpensesApi();
+
   // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ДЛЯ РАСХОДОВ ----------
   const [ym, setYm] = useState(() => {
     const now = new Date();
@@ -180,7 +182,7 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month, getMyExpensesByMonth]);
 
   useEffect(() => {
     load();

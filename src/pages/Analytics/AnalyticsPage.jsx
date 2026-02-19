@@ -17,20 +17,9 @@ import PercentOutlinedIcon from '@mui/icons-material/PercentOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
-// было
-// import { getMonthlySummary } from "../../api/summaryApi";
 import { useSummaryApi } from "../../api/summaryApi";
-
-
-
-  // вызов не меняем:
-  // getMonthlySummary(userId, ym.year, ym.month)
-  // первый параметр просто игнорируется в реализации
-}
-
-
-import { getMyExpensesByMonth } from '../../api/expensesApi';
-import { getMyIncomesByMonth } from '../../api/incomeApi';
+import { useExpensesApi } from '../../api/expensesApi';
+import { useIncomeApi } from '../../api/incomeApi';
 
 import { bankingColors as colors, surfaceOutlinedSx } from '../../styles/bankingTokens';
 import { useCurrency } from '../../contexts/CurrencyContext';
@@ -49,7 +38,6 @@ const n = (v) => {
   return Number.isFinite(x) ? x : 0;
 };
 
-// Короткий формат оси для мобилки, чтобы не съедало левый край
 const fmtAxisShort = (v) => {
   const val = n(v);
   const abs = Math.abs(val);
@@ -316,6 +304,10 @@ export default function AnalyticsPage() {
   const { user } = useAuth();
   const userId = user?.id;
 
+  const { getMonthlySummary } = useSummaryApi();
+  const { getMyExpensesByMonth } = useExpensesApi();
+  const { getMyIncomesByMonth } = useIncomeApi();
+
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -327,13 +319,11 @@ export default function AnalyticsPage() {
   const [mode, setMode] = useState('month');
   const [topTab, setTopTab] = useState('expenses');
 
-  // Полные числа — для десктопа
   const fmtAxis = useMemo(
     () => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }),
     []
   );
 
-  // Мобилка: к/м, десктоп: полные числа
   const axisMoneyFormatter = useCallback(
     (v) => (isMobile ? fmtAxisShort(v) : fmtAxis.format(Number(v || 0))),
     [isMobile, fmtAxis]
@@ -396,7 +386,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, year, month]);
+  }, [userId, year, month, getMonthlySummary]);
 
   const last12 = useMemo(() => {
     const base = { year, month };
@@ -527,7 +517,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, monthsForCats]);
+  }, [userId, monthsForCats, getMyExpensesByMonth, getMyIncomesByMonth]);
 
   const PageWrap = ({ children }) => (
     <Box
