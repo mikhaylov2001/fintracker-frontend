@@ -1,3 +1,4 @@
+// src/pages/Income/IncomePage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -105,12 +106,8 @@ export default function IncomePage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const {
-    getMyIncomesByMonth,
-    createIncome,
-    updateIncome,
-    deleteIncome,
-  } = useIncomeApi();
+  const incomeApi = useIncomeApi();
+  const getMyIncomesByMonthRef = useRef(incomeApi.getMyIncomesByMonth);
 
   // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ----------
   const [ym, setYm] = useState(() => {
@@ -161,11 +158,44 @@ export default function IncomePage() {
 
   const amountRef = useRef(null);
 
-  const load = useCallback(async () => {
+  // основная загрузка при смене ym
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
+        const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
+        const data = res.data;
+
+        if (!cancelled) {
+          setItems(data?.content ?? []);
+        }
+      } catch (e) {
+        const msg = e?.message || 'Ошибка загрузки доходов';
+        if (!cancelled) {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [toast, ym.year, ym.month]);
+
+  const reload = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-
+      const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
       const data = res.data;
       setItems(data?.content ?? []);
@@ -176,11 +206,7 @@ export default function IncomePage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month, getMyIncomesByMonth]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  }, [toast, ym.year, ym.month]);
 
   const openCreate = () => {
     const iso = new Date().toISOString().slice(0, 10);
@@ -242,23 +268,22 @@ export default function IncomePage() {
       attempted = true;
 
       if (editing?.id) {
-        await updateIncome(editing.id, payload);
+        await incomeApi.updateIncome(editing.id, payload);
         toast.success('Доход обновлён');
       } else {
-        await createIncome(payload);
+        await incomeApi.createIncome(payload);
         toast.success('Доход добавлен');
       }
 
       setOpen(false);
-      await load();
+      await reload();
     } catch (e) {
       const msg = e?.message || 'Ошибка сохранения';
 
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? 'Доход обновлён' : 'Доход добавлен');
-
-        await load();
+        await reload();
       } else {
         setError(msg);
         toast.error(msg);
@@ -271,9 +296,9 @@ export default function IncomePage() {
   const remove = async (income) => {
     try {
       setError('');
-      await deleteIncome(income.id);
+      await incomeApi.deleteIncome(income.id);
       toast.success('Доход удалён');
-      await load();
+      await reload();
     } catch (e) {
       const msg = e?.message || 'Ошибка удаления';
       setError(msg);

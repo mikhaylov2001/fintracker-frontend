@@ -50,7 +50,7 @@ const normalizeDateOnly = (d) => {
 };
 
 const formatDateRu = (dateLike) => {
-  const s = normalizeDateOnly(dateLike); // YYYY-MM-DD
+  const s = normalizeDateOnly(dateLike);
   const [y, m, d] = s.split('-');
   if (!y || !m || !d) return s;
   return `${d}.${m}.${y}`;
@@ -112,12 +112,8 @@ export default function ExpensesPage() {
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const {
-    getMyExpensesByMonth,
-    createExpense,
-    updateExpense,
-    deleteExpense,
-  } = useExpensesApi();
+  const expensesApi = useExpensesApi();
+  const getMyExpensesByMonthRef = useRef(expensesApi.getMyExpensesByMonth);
 
   // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ДЛЯ РАСХОДОВ ----------
   const [ym, setYm] = useState(() => {
@@ -168,11 +164,44 @@ export default function ExpensesPage() {
 
   const amountRef = useRef(null);
 
-  const load = useCallback(async () => {
+  // загрузка при смене ym
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      try {
+        setLoading(true);
+        setError('');
+
+        const getMyExpensesByMonth = getMyExpensesByMonthRef.current;
+        const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
+        const data = res.data;
+
+        if (!cancelled) {
+          setItems(data?.content ?? []);
+        }
+      } catch (e) {
+        const msg = e?.message || 'Ошибка загрузки расходов';
+        if (!cancelled) {
+          setError(msg);
+          toast.error(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [toast, ym.year, ym.month]);
+
+  const reload = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
-
+      const getMyExpensesByMonth = getMyExpensesByMonthRef.current;
       const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
       const data = res.data;
       setItems(data?.content ?? []);
@@ -183,11 +212,7 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month, getMyExpensesByMonth]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  }, [toast, ym.year, ym.month]);
 
   const openCreate = () => {
     const iso = new Date().toISOString().slice(0, 10);
@@ -248,23 +273,22 @@ export default function ExpensesPage() {
       attempted = true;
 
       if (editing?.id) {
-        await updateExpense(editing.id, payload);
+        await expensesApi.updateExpense(editing.id, payload);
         toast.success('Расход обновлён');
       } else {
-        await createExpense(payload);
+        await expensesApi.createExpense(payload);
         toast.success('Расход добавлен');
       }
 
       setOpen(false);
-      await load();
+      await reload();
     } catch (e) {
       const msg = e?.message || 'Ошибка сохранения';
 
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? 'Расход обновлён' : 'Расход добавлен');
-
-        await load();
+        await reload();
       } else {
         setError(msg);
         toast.error(msg);
@@ -277,9 +301,9 @@ export default function ExpensesPage() {
   const remove = async (expense) => {
     try {
       setError('');
-      await deleteExpense(expense.id);
+      await expensesApi.deleteExpense(expense.id);
       toast.success('Расход удалён');
-      await load();
+      await reload();
     } catch (e) {
       const msg = e?.message || 'Ошибка удаления';
       setError(msg);
