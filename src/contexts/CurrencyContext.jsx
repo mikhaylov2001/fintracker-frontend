@@ -1,3 +1,4 @@
+// src/contexts/CurrencyContext.jsx
 import React, {
   createContext,
   useContext,
@@ -11,6 +12,17 @@ import { useAuth } from "./AuthContext";
 const CurrencyContext = createContext(null);
 
 const DEFAULT_CURRENCY = "RUB";
+
+// Базовая валюта хранения данных
+const BASE_CURRENCY = "RUB";
+
+// Простейшая таблица курсов относительно RUB
+// 1 RUB = rates[<валюта>]
+const RATES = {
+  RUB: 1,
+  USD: 0.011, // пример: 1 RUB ≈ 0.011 USD
+  EUR: 0.010, // пример: 1 RUB ≈ 0.010 EUR
+};
 
 export const CurrencyProvider = ({ children }) => {
   const { authFetch } = useAuth();
@@ -54,21 +66,34 @@ export const CurrencyProvider = ({ children }) => {
     setHideAmounts((prev) => !prev);
   }, []);
 
+  // Функция конвертации из базовой валюты (RUB) в выбранную
+  const convertFromBase = useCallback(
+    (value) => {
+      const num = Number(value || 0);
+      const rate = RATES[currency] ?? 1;
+      return num * rate;
+    },
+    [currency]
+  );
+
   const formatAmount = useCallback(
     (value) => {
       if (hideAmounts) return "••••";
-      const num = Number(value || 0);
+
+      const numBase = Number(value || 0);           // в БД хранится в RUB
+      const numConverted = convertFromBase(numBase); // конвертация в выбранную
+
       try {
         return new Intl.NumberFormat("ru-RU", {
           style: "currency",
           currency,
           maximumFractionDigits: 0,
-        }).format(num);
+        }).format(numConverted);
       } catch {
-        return `${num.toFixed(0)} ${currency}`;
+        return `${numConverted.toFixed(0)} ${currency}`;
       }
     },
-    [currency, hideAmounts]
+    [currency, hideAmounts, convertFromBase]
   );
 
   const value = useMemo(
@@ -80,6 +105,8 @@ export const CurrencyProvider = ({ children }) => {
       setHideAmounts,
       toggleHideAmounts,
       formatAmount,
+      convertFromBase,
+      baseCurrency: BASE_CURRENCY,
     }),
     [
       loaded,
@@ -89,6 +116,7 @@ export const CurrencyProvider = ({ children }) => {
       setHideAmounts,
       toggleHideAmounts,
       formatAmount,
+      convertFromBase,
     ]
   );
 
