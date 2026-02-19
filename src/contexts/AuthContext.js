@@ -126,10 +126,43 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("Logout request failed:", e);
     } finally {
+      // сбрасываем стейт
       setUser(null);
       setToken(null);
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
+
+      // чистим localStorage / sessionStorage
+      try {
+        localStorage.clear();
+      } catch {}
+      try {
+        sessionStorage.clear();
+      } catch {}
+
+      // удаляем доступные JS-куки для домена
+      try {
+        document.cookie
+          .split(";")
+          .map((c) => c.trim())
+          .forEach((c) => {
+            if (!c) return;
+            const eq = c.indexOf("=");
+            const name = eq > -1 ? c.substring(0, eq) : c;
+            document.cookie =
+              name +
+              "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
+            document.cookie =
+              name +
+              "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/api;";
+          });
+      } catch (e) {
+        console.warn("Cookie clear failed:", e);
+      }
+
+      // на всякий случай ещё раз удаляем ключи авторизации
+      try {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+      } catch {}
     }
   }, []);
 
