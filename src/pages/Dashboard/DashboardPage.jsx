@@ -498,6 +498,14 @@ export default function DashboardPage() {
     return user?.userName || user?.email || "пользователь";
   }, [user?.firstName, user?.lastName, user?.userName, user?.email]);
 
+  // СБРОС ЛОКАЛЬНОГО СТЕЙТА ПРИ СМЕНЕ ПОЛЬЗОВАТЕЛЯ
+  useEffect(() => {
+    setUsedMonths([]);
+    setSummariesMap(new Map());
+    setLoading(true);
+    setError("");
+  }, [user?.id]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -576,7 +584,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month]);
+  }, [year, month, user?.id]);
 
   const historyDesc = useMemo(() => {
     return usedMonths.map(({ year: y, month: m }) => {

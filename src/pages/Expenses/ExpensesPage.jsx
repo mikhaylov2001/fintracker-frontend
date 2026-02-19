@@ -29,6 +29,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 import { useExpensesApi } from '../../api/expensesApi';
 import { useCurrency } from '../../contexts/CurrencyContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 const COLORS = { expenses: '#F97316' };
 
@@ -108,6 +109,8 @@ export default function ExpensesPage() {
   const toast = useToast();
   const theme = useTheme();
   const { formatAmount } = useCurrency();
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -164,7 +167,17 @@ export default function ExpensesPage() {
 
   const amountRef = useRef(null);
 
-  // загрузка при смене ym
+  // СБРОС локального состояния при смене пользователя
+  useEffect(() => {
+    setItems([]);
+    setError('');
+    setDateErr('');
+    setOpen(false);
+    setEditing(null);
+    setLoading(true);
+  }, [userId]); [web:2254]
+
+  // загрузка при смене ym / userId
   useEffect(() => {
     let cancelled = false;
 
@@ -172,6 +185,14 @@ export default function ExpensesPage() {
       try {
         setLoading(true);
         setError('');
+
+        if (!userId) {
+          if (!cancelled) {
+            setItems([]);
+            setLoading(false);
+          }
+          return;
+        }
 
         const getMyExpensesByMonth = getMyExpensesByMonthRef.current;
         const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
@@ -195,12 +216,17 @@ export default function ExpensesPage() {
     return () => {
       cancelled = true;
     };
-  }, [toast, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month, userId]);
 
   const reload = useCallback(async () => {
     try {
       setLoading(true);
       setError('');
+      if (!userId) {
+        setItems([]);
+        setLoading(false);
+        return;
+      }
       const getMyExpensesByMonth = getMyExpensesByMonthRef.current;
       const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
       const data = res.data;
@@ -212,7 +238,7 @@ export default function ExpensesPage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month]);
+  }, [toast, ym.year, ym.month, userId]);
 
   const openCreate = () => {
     const iso = new Date().toISOString().slice(0, 10);
@@ -364,7 +390,7 @@ export default function ExpensesPage() {
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             <Button
-              variant="outlined"
+              variant="outlined'
               onClick={() => changeYm((s) => addMonthsYM(s, -1))}
               sx={{ minWidth: 44, px: 1.2 }}
             >
@@ -391,7 +417,7 @@ export default function ExpensesPage() {
 
           <Button
             onClick={openCreate}
-            variant="contained"
+            variant="contained'
             fullWidth
             sx={{
               width: { xs: '100%', sm: 'auto' },
@@ -476,7 +502,7 @@ export default function ExpensesPage() {
                   Описание
                 </TableCell>
                 <TableCell
-                  align="right"
+                  align="right'
                   sx={{
                     width: { xs: '14%', sm: 120 },
                     pr: { xs: 0.5, sm: 2 },
@@ -509,7 +535,7 @@ export default function ExpensesPage() {
 
                   <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
                     <Typography
-                      component="div"
+                      component="div'
                       sx={{
                         fontSize: { xs: 12, sm: 13 },
                         fontWeight: 800,
@@ -528,7 +554,7 @@ export default function ExpensesPage() {
 
                     {isMobile ? (
                       <Typography
-                        component="div"
+                        component="div'
                         sx={{
                           mt: 0.2,
                           fontSize: 11,
@@ -552,7 +578,7 @@ export default function ExpensesPage() {
                     {x.description}
                   </TableCell>
 
-                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
+                  <TableCell align="right' sx={{ whiteSpace: 'nowrap' }}>
                     <IconButton onClick={() => openEdit(x)} size="small">
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
@@ -570,7 +596,7 @@ export default function ExpensesPage() {
       {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
-        scroll="paper"
+        scroll="paper'
         open={open}
         onClose={() => (!saving ? setOpen(false) : null)}
         fullWidth
