@@ -38,20 +38,3 @@ export const useSummaryApi = () => {
     getMyUsedMonths,
   };
 };
-
-// ===== именованные функции для старых импортов (БЕЗ заглушек) =====
-
-// !!! ВАЖНО: здесь мы создаём СВОЙ useApiClient, а не используем хук.
-// Предполагается, что useApiClient под капотом экспортирует и «сырое» apiClient.
-// Если такого нет — эти функции можно совсем удалить, и тогда надо починить импорты в коде.
-
-import { apiClient } from "./client"; // если у тебя нет такого экспорта, УДАЛИ блок ниже целиком
-
-export const getMyMonthlySummary = (year, month) =>
-  fetchMyMonthlySummary(apiClient, year, month);
-
-export const getMyMonthlySummaries = () =>
-  fetchMyMonthlySummaries(apiClient);
-
-export const getMyUsedMonths = () =>
-  fetchMyUsedMonths(apiClient);
