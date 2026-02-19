@@ -114,6 +114,32 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // ← ДОБАВЛЕНО: обёртка над fetch с токеном
+  const authFetch = useCallback(
+    async (url, options = {}) => {
+      const finalUrl = url.startsWith("http")
+        ? url
+        : `${API_BASE_URL}${url}`;
+
+      const headers = {
+        ...(options.headers || {}),
+        "Content-Type": options.body ? "application/json" : (options.headers || {})["Content-Type"],
+      };
+
+      // если нужно, можно добавить токен в заголовок
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
+      return fetch(finalUrl, {
+        ...options,
+        headers,
+        credentials: "include",
+      });
+    },
+    [token]
+  );
+
   const value = {
     user,
     token,
@@ -124,6 +150,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!token,
     loading,
     updateUserInState,
+    authFetch,          // ← ДОБАВЛЕНО В value
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
