@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useCallback,
 } from "react";
+import { AuthErrorScreen } from "./AuthErrorScreen";
 
 const AuthContext = createContext(null);
 
@@ -17,8 +18,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
-  // стартовое чтение auth из localStorage
   useEffect(() => {
     let savedToken = null;
     let savedUser = null;
@@ -53,14 +54,13 @@ export const AuthProvider = ({ children }) => {
     const nextUser = data?.user ?? null;
 
     setUser((prevUser) => {
-      // защита: если пытаются подменить пользователя в одной вкладке
       if (prevUser && nextUser && prevUser.id !== nextUser.id) {
-        console.warn(
-          "Detected user switch in one session:",
-          prevUser.id,
-          "->",
-          nextUser.id
+        console.error(
+          "[AUTH] User switch detected in one session",
+          { prevUser, nextUser, time: new Date().toISOString() }
         );
+
+        setAuthError(true);
 
         try {
           localStorage.clear();
@@ -68,7 +68,6 @@ export const AuthProvider = ({ children }) => {
         } catch {}
 
         setToken(null);
-        window.location.href = "/login";
         return null;
       }
 
@@ -112,6 +111,7 @@ export const AuthProvider = ({ children }) => {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
+      setAuthError(false);
       saveAuthData(data);
       return data;
     },
@@ -133,6 +133,7 @@ export const AuthProvider = ({ children }) => {
           data.error || data.message || "Registration failed"
         );
 
+      setAuthError(false);
       saveAuthData(data);
       return data;
     },
@@ -155,6 +156,7 @@ export const AuthProvider = ({ children }) => {
         );
       }
 
+      setAuthError(false);
       saveAuthData(data);
       return data;
     },
@@ -204,6 +206,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem("authUser");
       } catch {}
 
+      setAuthError(false);
       window.location.href = "/login";
     }
   }, []);
@@ -238,15 +241,12 @@ export const AuthProvider = ({ children }) => {
         return { res, hadToken };
       };
 
-      // первый запрос
       let { res, hadToken } = await doRequest();
 
-      // если не было токена или статус не 401 — просто возвращаем
       if (!hadToken || res.status !== 401) {
         return res;
       }
 
-      // был токен и получили 401 → пробуем refresh
       try {
         const refreshRes = await fetch(
           `${API_BASE_URL}${API_AUTH_BASE}/refresh`,
@@ -288,9 +288,20 @@ export const AuthProvider = ({ children }) => {
     loading,
     updateUserInState,
     authFetch,
+    authError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  if (authError) {
+    return (
+      <AuthContext.Provider value={value}>
+        <AuthErrorScreen />
+      </AuthContext.Provider>
+    );
+  }
+
+  return (
+    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
