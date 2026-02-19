@@ -1,4 +1,3 @@
-// src/pages/Settings/SettingsPage.jsx
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Box,
@@ -380,7 +379,7 @@ export default function SettingsPage() {
       }
       const data = await res.json();
       setCurrency(data.displayCurrency || 'RUB');
-      setHideAmounts(data.hideAmounts);
+      setHideAmounts(!!data.hideAmounts);
       showSnack('success', 'Настройки интерфейса обновлены');
     } catch (e) {
       showSnack('error', e.message || 'Не удалось обновить настройки интерфейса');

@@ -1,4 +1,4 @@
-// src/contexts/CurrencyContext.js
+// src/contexts/CurrencyContext.jsx
 import React, {
   createContext,
   useContext,
@@ -24,6 +24,9 @@ export const CurrencyProvider = ({ children }) => {
 
     const load = async () => {
       try {
+        // если authFetch ещё не инициализирован – просто выходим
+        if (!authFetch) return;
+
         const res = await authFetch("/api/settings/me");
         if (!res.ok) throw new Error();
         const data = await res.json();
@@ -47,52 +50,9 @@ export const CurrencyProvider = ({ children }) => {
     };
   }, [authFetch]);
 
-  const updateSettingsOnServer = useCallback(
-    async (nextCurrency, nextHide) => {
-      try {
-        const res = await authFetch("/api/settings/me", {
-          method: "PUT",
-          body: JSON.stringify({
-            displayCurrency: nextCurrency ?? currency,
-            hideAmounts:
-              typeof nextHide === "boolean" ? nextHide : hideAmounts,
-          }),
-        });
-        if (!res.ok) {
-          const d = await res.json().catch(() => ({}));
-          throw new Error(
-            d.message || d.error || "Не удалось обновить настройки"
-          );
-        }
-        const data = await res.json();
-        setCurrency(data.displayCurrency || DEFAULT_CURRENCY);
-        setHideAmounts(!!data.hideAmounts);
-      } catch (e) {
-        console.error("Failed to update settings", e);
-      }
-    },
-    [authFetch, currency, hideAmounts]
-  );
-
-  const setCurrencyAndSave = useCallback(
-    (val) => {
-      setCurrency(val);
-      updateSettingsOnServer(val, undefined);
-    },
-    [updateSettingsOnServer]
-  );
-
-  const setHideAmountsAndSave = useCallback(
-    (val) => {
-      setHideAmounts(val);
-      updateSettingsOnServer(undefined, val);
-    },
-    [updateSettingsOnServer]
-  );
-
   const toggleHideAmounts = useCallback(() => {
-    setHideAmountsAndSave(!hideAmounts);
-  }, [hideAmounts, setHideAmountsAndSave]);
+    setHideAmounts((prev) => !prev);
+  }, []);
 
   const formatAmount = useCallback(
     (value) => {
@@ -116,20 +76,12 @@ export const CurrencyProvider = ({ children }) => {
       loaded,
       currency,
       hideAmounts,
-      setCurrency: setCurrencyAndSave,
-      setHideAmounts: setHideAmountsAndSave,
+      setCurrency,
+      setHideAmounts,
       toggleHideAmounts,
       formatAmount,
     }),
-    [
-      loaded,
-      currency,
-      hideAmounts,
-      setCurrencyAndSave,
-      setHideAmountsAndSave,
-      toggleHideAmounts,
-      formatAmount,
-    ]
+    [loaded, currency, hideAmounts, setCurrency, setHideAmounts, toggleHideAmounts, formatAmount]
   );
 
   return (
