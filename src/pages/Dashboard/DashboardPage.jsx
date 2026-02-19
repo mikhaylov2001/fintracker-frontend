@@ -17,8 +17,6 @@ import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
-// было: импорт прямых функций
-// import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../../api/summaryApi";
 import { useSummaryApi } from "../../api/summaryApi";
 
 import {
@@ -409,7 +407,10 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
-        const [rawMonths, rawAll] = await Promise.all([getMyUsedMonths(), getMyMonthlySummaries()]);
+        const [rawMonths, rawAll] = await Promise.all([
+          getMyUsedMonths(),
+          getMyMonthlySummaries(),
+        ]);
 
         const monthsStr = unwrap(rawMonths);
         const used = Array.isArray(monthsStr) ? monthsStr.map(parseYm).filter(Boolean) : [];
@@ -464,7 +465,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month, getMyUsedMonths, getMyMonthlySummaries, getMyMonthlySummary]);
+  }, [year, month]); // ← только year и month
 
   const historyDesc = useMemo(() => {
     return usedMonths.map(({ year: y, month: m }) => {
@@ -483,7 +484,10 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  const curSummary = useMemo(() => summariesMap.get(ymKey(year, month)) || null, [summariesMap, year, month]);
+  const curSummary = useMemo(
+    () => summariesMap.get(ymKey(year, month)) || null,
+    [summariesMap, year, month]
+  );
 
   const incomeMonth = n(curSummary?.total_income);
   const expenseMonth = n(curSummary?.total_expenses);
@@ -496,10 +500,19 @@ export default function DashboardPage() {
     return historyDesc.filter((h) => h.year === year && ymNum(h.year, h.month) <= cur);
   }, [historyDesc, year, month]);
 
-  const yearIncome = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0), [yearMonths]);
-  const yearExpenses = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0), [yearMonths]);
+  const yearIncome = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
+    [yearMonths]
+  );
+  const yearExpenses = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
+    [yearMonths]
+  );
   const yearBalance = yearIncome - yearExpenses;
-  const yearSavings = useMemo(() => yearMonths.reduce((acc, h) => acc + n(h.savings), 0), [yearMonths]);
+  const yearSavings = useMemo(
+    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
+    [yearMonths]
+  );
 
   const yearSavingsRate = useMemo(() => {
     if (yearIncome <= 0) return 0;
@@ -508,7 +521,9 @@ export default function DashboardPage() {
   }, [yearIncome, yearBalance]);
 
   const isYear = kpiMode === "year";
-  const periodLabel = isYear ? `Показаны данные: ${year} год` : `Показаны данные: ${monthTitle(year, month)}`;
+  const periodLabel = isYear
+    ? `Показаны данные: ${year} год`
+    : `Показаны данные: ${monthTitle(year, month)}`;
 
   const displayIncome = isYear ? yearIncome : incomeMonth;
   const displayExpenses = isYear ? yearExpenses : expenseMonth;
