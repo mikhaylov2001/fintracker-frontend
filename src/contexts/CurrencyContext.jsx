@@ -1,4 +1,3 @@
-// src/contexts/CurrencyContext.jsx
 import React, {
   createContext,
   useContext,
@@ -24,11 +23,12 @@ export const CurrencyProvider = ({ children }) => {
 
     const load = async () => {
       try {
-        // если authFetch ещё не инициализирован – просто выходим
         if (!authFetch) return;
 
         const res = await authFetch("/api/settings/me");
-        if (!res.ok) throw new Error();
+        if (!res.ok) {
+          throw new Error("Не удалось загрузить настройки");
+        }
         const data = await res.json();
         if (cancelled) return;
 
@@ -81,7 +81,15 @@ export const CurrencyProvider = ({ children }) => {
       toggleHideAmounts,
       formatAmount,
     }),
-    [loaded, currency, hideAmounts, setCurrency, setHideAmounts, toggleHideAmounts, formatAmount]
+    [
+      loaded,
+      currency,
+      hideAmounts,
+      setCurrency,
+      setHideAmounts,
+      toggleHideAmounts,
+      formatAmount,
+    ]
   );
 
   return (

@@ -8,5 +8,7 @@ export default function PrivateRoutes() {
 
   if (loading) return <div>Загрузка...</div>;
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace state={{ from: location }} />;
+  return isAuthenticated
+    ? <Outlet />
+    : <Navigate to="/login" replace state={{ from: location }} />;
 }

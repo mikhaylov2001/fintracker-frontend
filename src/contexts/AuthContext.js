@@ -1,5 +1,10 @@
-// src/contexts/AuthContext.js
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 
 const AuthContext = createContext(null);
 
@@ -51,52 +56,66 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  const login = useCallback(async ({ email, password }) => {
-    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-      credentials: "include",
-    });
+  const login = useCallback(
+    async ({ email, password }) => {
+      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || data.message || "Login failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
 
-  const register = useCallback(async ({ firstName, lastName, email, password }) => {
-    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ firstName, lastName, email, password }),
-      credentials: "include",
-    });
+  const register = useCallback(
+    async ({ firstName, lastName, email, password }) => {
+      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ firstName, lastName, email, password }),
+        credentials: "include",
+      });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || data.message || "Registration failed");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok)
+        throw new Error(
+          data.error || data.message || "Registration failed"
+        );
 
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
 
-  const loginWithGoogle = useCallback(async (idToken) => {
-    const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/google`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idToken }),
-      credentials: "include",
-    });
+  const loginWithGoogle = useCallback(
+    async (idToken) => {
+      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken }),
+        credentials: "include",
+      });
 
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data.error || data.message || "Google authentication failed");
-    }
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(
+          data.error || data.message || "Google authentication failed"
+        );
+      }
 
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -114,7 +133,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ← ДОБАВЛЕНО: обёртка над fetch с токеном
   const authFetch = useCallback(
     async (url, options = {}) => {
       const finalUrl = url.startsWith("http")
@@ -123,21 +141,29 @@ export const AuthProvider = ({ children }) => {
 
       const headers = {
         ...(options.headers || {}),
-        "Content-Type": options.body ? "application/json" : (options.headers || {})["Content-Type"],
       };
 
-      // если нужно, можно добавить токен в заголовок
+      if (options.body && !headers["Content-Type"]) {
+        headers["Content-Type"] = "application/json";
+      }
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
 
-      return fetch(finalUrl, {
+      const res = await fetch(finalUrl, {
         ...options,
         headers,
         credentials: "include",
       });
+
+      if (res.status === 401 || res.status === 403) {
+        await logout();
+      }
+
+      return res;
     },
-    [token]
+    [token, logout]
   );
 
   const value = {
@@ -150,7 +176,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!token,
     loading,
     updateUserInState,
-    authFetch,          // ← ДОБАВЛЕНО В value
+    authFetch,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
