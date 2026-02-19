@@ -15,6 +15,17 @@ export const fetchMyMonthlySummary = (asAxios, year, month) =>
 export const fetchMonthlySummary = (asAxios, _userIdIgnored, year, month) =>
   asAxios(`/api/summary/me/month/${year}/${month}`);
 
+// ===== чистые «get*» для совместимости с существующими импортами =====
+// Используются в не‑React коде: передаём asAxios явно
+export const getMyMonthlySummaries = (asAxios) =>
+  fetchMyMonthlySummaries(asAxios);
+
+export const getMyUsedMonths = (asAxios) =>
+  fetchMyUsedMonths(asAxios);
+
+export const getMyMonthlySummary = (asAxios, year, month) =>
+  fetchMyMonthlySummary(asAxios, year, month);
+
 // ===== хук для React‑компонентов =====
 export const useSummaryApi = () => {
   const { asAxios } = useApiClient();
@@ -22,19 +33,19 @@ export const useSummaryApi = () => {
   const getMonthlySummary = (_userIdIgnored, year, month) =>
     fetchMonthlySummary(asAxios, _userIdIgnored, year, month);
 
-  const getMyMonthlySummary = (year, month) =>
+  const getMyMonthlySummaryHook = (year, month) =>
     fetchMyMonthlySummary(asAxios, year, month);
 
-  const getMyMonthlySummaries = () =>
+  const getMyMonthlySummariesHook = () =>
     fetchMyMonthlySummaries(asAxios);
 
-  const getMyUsedMonths = () =>
+  const getMyUsedMonthsHook = () =>
     fetchMyUsedMonths(asAxios);
 
   return {
     getMonthlySummary,
-    getMyMonthlySummary,
-    getMyMonthlySummaries,
-    getMyUsedMonths,
+    getMyMonthlySummary: getMyMonthlySummaryHook,
+    getMyMonthlySummaries: getMyMonthlySummariesHook,
+    getMyUsedMonths: getMyUsedMonthsHook,
   };
 };
