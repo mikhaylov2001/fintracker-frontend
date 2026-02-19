@@ -246,7 +246,6 @@ export default function SettingsPage() {
     setLastName(user?.lastName || '');
   }, [user]);
 
-  // чекбоксы "всё"
   const allChecked = deleteIncome && deleteExpenses;
   const someChecked = deleteIncome || deleteExpenses;
   const handleToggleAll = (e) => {
@@ -254,7 +253,6 @@ export default function SettingsPage() {
     setDeleteExpenses(e.target.checked);
   };
 
-  // ── Handlers ──
   const handleSaveName = async () => {
     try {
       const res = await authFetch('/api/account/profile', {
@@ -367,7 +365,6 @@ export default function SettingsPage() {
     }
   };
 
-  // обновление настроек интерфейса (валюта/скрывать суммы) на бэке
   const handleUpdateSettings = async (nextCurrency, nextHide) => {
     try {
       const res = await authFetch('/api/settings/me', {
@@ -440,7 +437,6 @@ export default function SettingsPage() {
         </Tabs>
       </Box>
 
-      {/* TAB 0: Аккаунт */}
       {tab === 0 && (
         <Box>
           <SectionTitle>Профиль</SectionTitle>
@@ -537,7 +533,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* TAB 1: Интерфейс */}
       {tab === 1 && (
         <Box>
           <SectionTitle>Отображение</SectionTitle>
@@ -587,7 +582,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* TAB 2: Данные */}
       {tab === 2 && (
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
@@ -615,6 +609,7 @@ export default function SettingsPage() {
           </RowItem>
         </Box>
       )}
+
 
       {/* Диалог: Имя */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>

@@ -19,7 +19,6 @@ export const CurrencyProvider = ({ children }) => {
   const [hideAmounts, setHideAmounts] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // загрузка настроек с бэка
   useEffect(() => {
     let cancelled = false;
 
@@ -43,13 +42,11 @@ export const CurrencyProvider = ({ children }) => {
     };
 
     load();
-
     return () => {
       cancelled = true;
     };
   }, [authFetch]);
 
-  // обновление настроек на бэке
   const updateSettingsOnServer = useCallback(
     async (nextCurrency, nextHide) => {
       try {
