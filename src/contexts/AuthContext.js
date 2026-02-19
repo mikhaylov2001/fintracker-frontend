@@ -172,34 +172,72 @@ export const AuthProvider = ({ children }) => {
         ? url
         : `${API_BASE_URL}${url}`;
 
-      const headers = {
-        ...(options.headers || {}),
+      const doRequest = async () => {
+        const headers = {
+          ...(options.headers || {}),
+        };
+
+        if (options.body && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const hadToken = !!token;
+
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+
+        const res = await fetch(finalUrl, {
+          ...options,
+          headers,
+          credentials: "include",
+        });
+
+        return { res, hadToken };
       };
 
-      if (options.body && !headers["Content-Type"]) {
-        headers["Content-Type"] = "application/json";
+      // первый запрос
+      let { res, hadToken } = await doRequest();
+
+      // если нет токена или статус не 401 — просто возвращаем
+      if (!hadToken || res.status !== 401) {
+        // 403 теперь не разлогинивает, просто отдаём ответ
+        return res;
       }
 
-      const hadToken = !!token;
+      // был токен и получили 401 → пробуем refresh
+      try {
+        const refreshRes = await fetch(
+          `${API_BASE_URL}${API_AUTH_BASE}/refresh`,
+          {
+            method: "POST",
+            credentials: "include",
+          }
+        );
 
-      if (token) {
-        headers.Authorization = `Bearer ${token}`;
-      }
+        if (!refreshRes.ok) {
+          // refresh не удался → полный logout и редирект
+          await logout();
+          window.location.href = "/login";
+          return res;
+        }
 
-      const res = await fetch(finalUrl, {
-        ...options,
-        headers,
-        credentials: "include",
-      });
+        const data = await refreshRes.json().catch(() => ({}));
 
-      // Логаут только если мы реально отправляли токен
-      if (hadToken && (res.status === 401 || res.status === 403)) {
+        if (data.token || data.accessToken || data.jwt || data.user) {
+          saveAuthData(data);
+        }
+
+        // повторяем исходный запрос уже с новым токеном
+        ({ res } = await doRequest());
+        return res;
+      } catch {
         await logout();
+        window.location.href = "/login";
+        return res;
       }
-
-      return res;
     },
-    [token, logout]
+    [token, logout, saveAuthData]
   );
 
   const value = {
