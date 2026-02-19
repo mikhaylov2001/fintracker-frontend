@@ -5,35 +5,97 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useEffect,
 } from "react";
+import { useAuth } from "./AuthContext";
 
 const CurrencyContext = createContext(null);
 
 const DEFAULT_CURRENCY = "RUB";
-const HIDE_KEY = "fintracker:hideAmounts";
 
 export const CurrencyProvider = ({ children }) => {
+  const { authFetch } = useAuth();
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
+  const [hideAmounts, setHideAmounts] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  // флаг "спрятать суммы" (глобально)
-  const [hideAmounts, setHideAmounts] = useState(() => {
-    try {
-      const v = window.localStorage.getItem(HIDE_KEY);
-      return v === "1";
-    } catch {
-      return false;
-    }
-  });
+  // 1. Загружаем настройки из бэка при старте
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const res = await authFetch("/api/settings/me");
+        if (!res.ok) throw new Error();
+        const data = await res.json();
+        if (cancelled) return;
+
+        setCurrency(data.displayCurrency || DEFAULT_CURRENCY);
+        setHideAmounts(!!data.hideAmounts);
+      } catch {
+        if (!cancelled) {
+          setCurrency(DEFAULT_CURRENCY);
+          setHideAmounts(false);
+        }
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch]);
+
+  // 2. Обновление настроек на бэке (общий помощник)
+  const updateSettingsOnServer = useCallback(
+    async (nextCurrency, nextHide) => {
+      try {
+        const res = await authFetch("/api/settings/me", {
+          method: "PUT",
+          body: JSON.stringify({
+            displayCurrency: nextCurrency ?? currency,
+            hideAmounts:
+              typeof nextHide === "boolean" ? nextHide : hideAmounts,
+          }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(
+            d.message || d.error || "Не удалось обновить настройки"
+          );
+        }
+        const data = await res.json();
+        setCurrency(data.displayCurrency || DEFAULT_CURRENCY);
+        setHideAmounts(!!data.hideAmounts);
+      } catch (e) {
+        console.error("Failed to update settings", e);
+      }
+    },
+    [authFetch, currency, hideAmounts]
+  );
+
+  const setCurrencyAndSave = useCallback(
+    (val) => {
+      setCurrency(val);
+      updateSettingsOnServer(val, undefined);
+    },
+    [updateSettingsOnServer]
+  );
+
+  const setHideAmountsAndSave = useCallback(
+    (val) => {
+      setHideAmounts(val);
+      updateSettingsOnServer(undefined, val);
+    },
+    [updateSettingsOnServer]
+  );
 
   const toggleHideAmounts = useCallback(() => {
-    setHideAmounts((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem(HIDE_KEY, next ? "1" : "0");
-      } catch {}
-      return next;
-    });
-  }, []);
+    setHideAmountsAndSave(!hideAmounts);
+  }, [hideAmounts, setHideAmountsAndSave]);
 
   const formatAmount = useCallback(
     (value) => {
@@ -54,13 +116,23 @@ export const CurrencyProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
+      loaded,
       currency,
-      setCurrency,
       hideAmounts,
+      setCurrency: setCurrencyAndSave,
+      setHideAmounts: setHideAmountsAndSave,
       toggleHideAmounts,
       formatAmount,
     }),
-    [currency, hideAmounts, toggleHideAmounts, formatAmount]
+    [
+      loaded,
+      currency,
+      hideAmounts,
+      setCurrencyAndSave,
+      setHideAmountsAndSave,
+      toggleHideAmounts,
+      formatAmount,
+    ]
   );
 
   return (
