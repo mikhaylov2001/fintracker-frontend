@@ -39,34 +39,19 @@ export const useSummaryApi = () => {
   };
 };
 
-/**
- * ===== совместимость со старыми импортами =====
- * Поддерживаются старые импорты:
- *   import {
- *     getMyMonthlySummary,
- *     getMyMonthlySummaries,
- *     getMyUsedMonths,
- *   } from "../../api/summaryApi";
- *
- * Эти функции теперь — заглушки, чтобы сборка не падала.
- * В рабочем коде переходи на:
- *   const { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } = useSummaryApi();
- */
+// ===== именованные функции для старых импортов (БЕЗ заглушек) =====
 
-export const getMyMonthlySummary = () => {
-  throw new Error(
-    'getMyMonthlySummary больше не вызывается напрямую. Используйте useSummaryApi(): const { getMyMonthlySummary } = useSummaryApi();'
-  );
-};
+// !!! ВАЖНО: здесь мы создаём СВОЙ useApiClient, а не используем хук.
+// Предполагается, что useApiClient под капотом экспортирует и «сырое» apiClient.
+// Если такого нет — эти функции можно совсем удалить, и тогда надо починить импорты в коде.
 
-export const getMyMonthlySummaries = () => {
-  throw new Error(
-    'getMyMonthlySummaries больше не вызывается напрямую. Используйте useSummaryApi(): const { getMyMonthlySummaries } = useSummaryApi();'
-  );
-};
+import { apiClient } from "./client"; // если у тебя нет такого экспорта, УДАЛИ блок ниже целиком
 
-export const getMyUsedMonths = () => {
-  throw new Error(
-    'getMyUsedMonths больше не вызывается напрямую. Используйте useSummaryApi(): const { getMyUsedMonths } = useSummaryApi();'
-  );
-};
+export const getMyMonthlySummary = (year, month) =>
+  fetchMyMonthlySummary(apiClient, year, month);
+
+export const getMyMonthlySummaries = () =>
+  fetchMyMonthlySummaries(apiClient);
+
+export const getMyUsedMonths = () =>
+  fetchMyUsedMonths(apiClient);
