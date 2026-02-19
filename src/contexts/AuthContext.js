@@ -147,6 +147,8 @@ export const AuthProvider = ({ children }) => {
         headers["Content-Type"] = "application/json";
       }
 
+      const hadToken = !!token;
+
       if (token) {
         headers.Authorization = `Bearer ${token}`;
       }
@@ -157,7 +159,8 @@ export const AuthProvider = ({ children }) => {
         credentials: "include",
       });
 
-      if (res.status === 401 || res.status === 403) {
+      // Логаут только если мы реально отправляли токен
+      if (hadToken && (res.status === 401 || res.status === 403)) {
         await logout();
       }
 
