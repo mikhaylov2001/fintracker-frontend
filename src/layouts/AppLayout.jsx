@@ -59,10 +59,11 @@ export default function AppLayout() {
     [dashTo]
   );
 
-  const handleLogout = () => {
-    logout();
+  // ✅ async: сначала бэкенд удаляет cookies, потом редиректим
+  const handleLogout = useCallback(async () => {
+    await logout();
     navigate("/login");
-  };
+  }, [logout, navigate]);
 
   const drawerPaperSx = {
     bgcolor: alpha(bankingColors.card, 0.96),
@@ -149,7 +150,6 @@ export default function AppLayout() {
     </Box>
   );
 
-  // ref для координат свайпа
   const touchRef = useRef({ x: null, y: null });
 
   const handleTouchStart = useCallback((e) => {

@@ -1,9 +1,8 @@
 // src/contexts/AuthContext.js
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 
 const AuthContext = createContext(null);
 
-// Бэкенд‑URL (Railway)
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
   "https://fintrackerpro-production.up.railway.app";
@@ -22,7 +21,7 @@ const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
     return fetch(`${API_BASE_URL}${path}`, {
       ...options,
       headers,
-      credentials: "include", // чтобы ходили refresh‑куки
+      credentials: "include",
     });
   };
 
@@ -36,6 +35,18 @@ const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
 
     if (refreshRes.ok) {
       const data = await refreshRes.json().catch(() => ({}));
+
+      // Защита от смены пользователя через refresh-cookie
+      const prevUser = JSON.parse(localStorage.getItem("authUser") || "null");
+      const nextUserId = data?.user?.id;
+
+      if (prevUser?.id && nextUserId && prevUser.id !== nextUserId) {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+        window.location.href = "/login";
+        return res;
+      }
+
       saveAuthData(data);
       res = await doRequest();
     }
@@ -65,7 +76,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const saveAuthData = (data) => {
+  const saveAuthData = useCallback((data) => {
     const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
     const nextUser = data?.user ?? null;
 
@@ -77,19 +88,17 @@ export const AuthProvider = ({ children }) => {
       setUser(nextUser);
       localStorage.setItem("authUser", JSON.stringify(nextUser));
     }
-  };
+  }, []);
 
-  // локальное обновление user (после изменения профиля/email)
-  const updateUserInState = (partialUser) => {
+  const updateUserInState = useCallback((partialUser) => {
     setUser((prev) => {
       const next = { ...(prev || {}), ...(partialUser || {}) };
       localStorage.setItem("authUser", JSON.stringify(next));
       return next;
     });
-  };
+  }, []);
 
-  // ЛОГИН ТОЛЬКО ПО EMAIL + PASSWORD
-  const login = async ({ email, password }) => {
+  const login = useCallback(async ({ email, password }) => {
     const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -102,10 +111,9 @@ export const AuthProvider = ({ children }) => {
 
     saveAuthData(data);
     return data;
-  };
+  }, [saveAuthData]);
 
-  // РЕГИСТРАЦИЯ: firstName + lastName + email + password
-  const register = async ({ firstName, lastName, email, password }) => {
+  const register = useCallback(async ({ firstName, lastName, email, password }) => {
     const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -114,15 +122,13 @@ export const AuthProvider = ({ children }) => {
     });
 
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data.error || data.message || "Registration failed");
-    }
+    if (!res.ok) throw new Error(data.error || data.message || "Registration failed");
 
     saveAuthData(data);
     return data;
-  };
+  }, [saveAuthData]);
 
-  const loginWithGoogle = async (idToken) => {
+  const loginWithGoogle = useCallback(async (idToken) => {
     const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/google`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -132,21 +138,29 @@ export const AuthProvider = ({ children }) => {
 
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      throw new Error(
-        data.error || data.message || "Google authentication failed"
-      );
+      throw new Error(data.error || data.message || "Google authentication failed");
     }
 
     saveAuthData(data);
     return data;
-  };
+  }, [saveAuthData]);
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
-  };
+  // ✅ logout вызывает бэкенд — сервер ставит Max-Age=0 на обе cookie
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    } finally {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authUser");
+    }
+  }, []);
 
   const value = {
     user,
