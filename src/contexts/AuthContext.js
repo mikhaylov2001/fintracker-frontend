@@ -18,14 +18,28 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // стартовое чтение auth из localStorage
   useEffect(() => {
-    const savedToken = localStorage.getItem("authToken");
-    const savedUser = localStorage.getItem("authUser");
+    let savedToken = null;
+    let savedUser = null;
 
-    if (savedToken) setToken(savedToken);
+    try {
+      savedToken = localStorage.getItem("authToken");
+      savedUser = localStorage.getItem("authUser");
+    } catch {}
+
+    if (savedToken) {
+      setToken(savedToken);
+    }
+
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed.id) {
+          setUser(parsed);
+        } else {
+          setUser(null);
+        }
       } catch {
         setUser(null);
       }
@@ -38,20 +52,50 @@ export const AuthProvider = ({ children }) => {
     const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
     const nextUser = data?.user ?? null;
 
+    setUser((prevUser) => {
+      // защита: если пытаются подменить пользователя в одной вкладке
+      if (prevUser && nextUser && prevUser.id !== nextUser.id) {
+        console.warn(
+          "Detected user switch in one session:",
+          prevUser.id,
+          "->",
+          nextUser.id
+        );
+
+        try {
+          localStorage.clear();
+          sessionStorage.clear();
+        } catch {}
+
+        setToken(null);
+        window.location.href = "/login";
+        return null;
+      }
+
+      if (nextUser) {
+        try {
+          localStorage.setItem("authUser", JSON.stringify(nextUser));
+        } catch {}
+        return nextUser;
+      }
+
+      return prevUser;
+    });
+
     if (nextToken) {
       setToken(nextToken);
-      localStorage.setItem("authToken", nextToken);
-    }
-    if (nextUser) {
-      setUser(nextUser);
-      localStorage.setItem("authUser", JSON.stringify(nextUser));
+      try {
+        localStorage.setItem("authToken", nextToken);
+      } catch {}
     }
   }, []);
 
   const updateUserInState = useCallback((partialUser) => {
     setUser((prev) => {
       const next = { ...(prev || {}), ...(partialUser || {}) };
-      localStorage.setItem("authUser", JSON.stringify(next));
+      try {
+        localStorage.setItem("authUser", JSON.stringify(next));
+      } catch {}
       return next;
     });
   }, []);
@@ -126,11 +170,9 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("Logout request failed:", e);
     } finally {
-      // сбрасываем стейт
       setUser(null);
       setToken(null);
 
-      // чистим localStorage / sessionStorage
       try {
         localStorage.clear();
       } catch {}
@@ -138,7 +180,6 @@ export const AuthProvider = ({ children }) => {
         sessionStorage.clear();
       } catch {}
 
-      // удаляем доступные JS-куки для домена
       try {
         document.cookie
           .split(";")
@@ -158,11 +199,12 @@ export const AuthProvider = ({ children }) => {
         console.warn("Cookie clear failed:", e);
       }
 
-      // на всякий случай ещё раз удаляем ключи авторизации
       try {
         localStorage.removeItem("authToken");
         localStorage.removeItem("authUser");
       } catch {}
+
+      window.location.href = "/login";
     }
   }, []);
 
@@ -199,9 +241,8 @@ export const AuthProvider = ({ children }) => {
       // первый запрос
       let { res, hadToken } = await doRequest();
 
-      // если нет токена или статус не 401 — просто возвращаем
+      // если не было токена или статус не 401 — просто возвращаем
       if (!hadToken || res.status !== 401) {
-        // 403 теперь не разлогинивает, просто отдаём ответ
         return res;
       }
 
@@ -216,9 +257,7 @@ export const AuthProvider = ({ children }) => {
         );
 
         if (!refreshRes.ok) {
-          // refresh не удался → полный logout и редирект
           await logout();
-          window.location.href = "/login";
           return res;
         }
 
@@ -228,12 +267,10 @@ export const AuthProvider = ({ children }) => {
           saveAuthData(data);
         }
 
-        // повторяем исходный запрос уже с новым токеном
         ({ res } = await doRequest());
         return res;
       } catch {
         await logout();
-        window.location.href = "/login";
         return res;
       }
     },
