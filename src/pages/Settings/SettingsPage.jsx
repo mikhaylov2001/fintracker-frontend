@@ -1,5 +1,5 @@
 // src/pages/Settings/SettingsPage.jsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -24,6 +24,8 @@ import {
   FormGroup,
   Avatar,
   Stack,
+  Chip,
+  InputAdornment,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 
@@ -34,6 +36,7 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
 import { bankingColors as colors } from '../../styles/bankingTokens';
@@ -43,14 +46,138 @@ const LS = {
   hideAmounts: 'ft.settings.hideAmounts',
 };
 
+/* ─── helpers ─── */
+const parseYearMonth = (str) => {
+  const m = String(str || '').trim().match(/^(\d{4})-(\d{1,2})$/);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  if (mo < 1 || mo > 12) return null;
+  return { year: y, month: mo };
+};
+
+const ymValue = (year, month) =>
+  `${year}-${String(month).padStart(2, '0')}`;
+
+const ymLabel = (year, month) =>
+  new Date(year, month - 1, 1).toLocaleDateString('ru-RU', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+/* ─── MonthPicker ─── */
+function MonthPicker({ value, onChange }) {
+  const [inputVal, setInputVal] = useState(value || '');
+
+  useEffect(() => {
+    setInputVal(value || '');
+  }, [value]);
+
+  // последние 24 месяца, сгруппированные по году
+  const months = useMemo(() => {
+    const now = new Date();
+    const list = [];
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      list.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+    }
+    // группируем по году
+    const grouped = {};
+    for (const item of list) {
+      if (!grouped[item.year]) grouped[item.year] = [];
+      grouped[item.year].push(item.month);
+    }
+    return grouped;
+  }, []);
+
+  const handleChipClick = (year, month) => {
+    const v = ymValue(year, month);
+    setInputVal(v);
+    onChange(v);
+  };
+
+  const handleInputChange = (e) => {
+    const v = e.target.value;
+    setInputVal(v);
+    const parsed = parseYearMonth(v);
+    if (parsed) onChange(ymValue(parsed.year, parsed.month));
+  };
+
+  const MONTH_NAMES = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+
+  return (
+    <Box>
+      {/* Ручной ввод */}
+      <TextField
+        fullWidth
+        size="small"
+        label="Месяц (ГГГГ-ММ)"
+        placeholder="2026-02"
+        value={inputVal}
+        onChange={handleInputChange}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <CalendarMonthOutlinedIcon fontSize="small" />
+            </InputAdornment>
+          ),
+        }}
+        helperText={
+          value && parseYearMonth(value)
+            ? ymLabel(parseYearMonth(value).year, parseYearMonth(value).month)
+            : 'Введите в формате ГГГГ-ММ или выберите ниже'
+        }
+        sx={{ mb: 2 }}
+      />
+
+      {/* Сетка месяцев по годам */}
+      {Object.entries(months)
+        .sort(([a], [b]) => Number(b) - Number(a))
+        .map(([year, monthList]) => (
+          <Box key={year} sx={{ mb: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 900, color: alpha('#000', 0.5), mb: 0.75, display: 'block' }}
+            >
+              {year}
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+              {monthList.map((m) => {
+                const v = ymValue(Number(year), m);
+                const selected = value === v;
+                return (
+                  <Chip
+                    key={m}
+                    label={MONTH_NAMES[m - 1]}
+                    size="small"
+                    onClick={() => handleChipClick(Number(year), m)}
+                    sx={{
+                      fontWeight: 900,
+                      cursor: 'pointer',
+                      bgcolor: selected ? colors.primary : alpha('#000', 0.07),
+                      color: selected ? '#05140C' : 'inherit',
+                      border: selected
+                        ? `1px solid ${colors.primary}`
+                        : '1px solid transparent',
+                      '&:hover': {
+                        bgcolor: selected
+                          ? colors.primary
+                          : alpha('#000', 0.13),
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
+          </Box>
+        ))}
+    </Box>
+  );
+}
+
+/* ─── Layout helpers ─── */
 const PageWrap = ({ children }) => (
-  <Box
-    sx={{
-      width: '100%',
-      mx: 'auto',
-      maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 },
-    }}
-  >
+  <Box sx={{ width: '100%', mx: 'auto', maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 } }}>
     {children}
   </Box>
 );
@@ -89,6 +216,7 @@ const RowItem = ({ children, noDivider }) => (
   </>
 );
 
+/* ─── Main ─── */
 export default function SettingsPage() {
   const { user, authFetch, updateUserInState } = useAuth();
 
@@ -115,58 +243,54 @@ export default function SettingsPage() {
   const [deleteMonth, setDeleteMonth] = useState('');
   const [deleteIncome, setDeleteIncome] = useState(false);
   const [deleteExpenses, setDeleteExpenses] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
+
+  const showSnack = useCallback((severity, message) => {
+    setSnack({ open: true, severity, message });
+  }, []);
 
   useEffect(() => {
     const c = localStorage.getItem(LS.currency);
     const h = localStorage.getItem(LS.hideAmounts);
-
     if (c) setCurrency(c);
     if (h != null) setHideAmounts(h === '1');
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(LS.currency, currency);
-  }, [currency]);
+  useEffect(() => { localStorage.setItem(LS.currency, currency); }, [currency]);
+  useEffect(() => { localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0'); }, [hideAmounts]);
 
-  useEffect(() => {
-    localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0');
-  }, [hideAmounts]);
-
-  // если user обновился из вне (например после login), подтянем name в локальные стейты
   useEffect(() => {
     setFirstName(user?.firstName || '');
     setLastName(user?.lastName || '');
   }, [user]);
 
+  /* ── "Всё" чекбокс ── */
+  const allChecked = deleteIncome && deleteExpenses;
+  const someChecked = deleteIncome || deleteExpenses;
+  const handleToggleAll = (e) => {
+    setDeleteIncome(e.target.checked);
+    setDeleteExpenses(e.target.checked);
+  };
+
+  /* ── Handlers ── */
   const handleSaveName = async () => {
     try {
       const res = await authFetch('/api/account/profile', {
         method: 'PUT',
-        body: JSON.stringify({
-          firstName,
-          lastName,
-        }),
+        body: JSON.stringify({ firstName, lastName }),
       });
-
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = data.message || data.error || 'Не удалось обновить профиль';
-        throw new Error(msg);
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'Не удалось обновить профиль');
       }
-
       const updatedUser = await res.json();
       updateUserInState(updatedUser);
-
-      setSnack({ open: true, severity: 'success', message: 'Имя и фамилия обновлены' });
+      showSnack('success', 'Имя и фамилия обновлены');
       setEditNameOpen(false);
     } catch (e) {
-      setSnack({
-        open: true,
-        severity: 'error',
-        message: e.message || 'Не удалось обновить профиль',
-      });
+      showSnack('error', e.message || 'Не удалось обновить профиль');
     }
   };
 
@@ -174,107 +298,95 @@ export default function SettingsPage() {
     try {
       const res = await authFetch('/api/account/email', {
         method: 'PUT',
-        body: JSON.stringify({
-          newEmail,
-          password: emailPassword,
-        }),
+        body: JSON.stringify({ newEmail, password: emailPassword }),
       });
-
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = data.message || data.error || 'Не удалось изменить email';
-        throw new Error(msg);
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'Не удалось изменить email');
       }
-
       const updatedUser = await res.json();
       updateUserInState(updatedUser);
-
-      setSnack({ open: true, severity: 'success', message: 'Email обновлён' });
+      showSnack('success', 'Email обновлён');
       setEditEmailOpen(false);
       setNewEmail('');
       setEmailPassword('');
     } catch (e) {
-      setSnack({
-        open: true,
-        severity: 'error',
-        message: e.message || 'Не удалось изменить email',
-      });
+      showSnack('error', e.message || 'Не удалось изменить email');
     }
   };
 
   const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
-      setSnack({ open: true, severity: 'error', message: 'Пароли не совпадают' });
+      showSnack('error', 'Пароли не совпадают');
       return;
     }
-
     try {
       const res = await authFetch('/api/account/change-password', {
         method: 'POST',
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
+        body: JSON.stringify({ currentPassword, newPassword }),
       });
-
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const msg = data.message || data.error || 'Не удалось изменить пароль';
-        throw new Error(msg);
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'Не удалось изменить пароль');
       }
-
-      setSnack({ open: true, severity: 'success', message: 'Пароль изменён' });
+      showSnack('success', 'Пароль изменён');
       setEditPasswordOpen(false);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (e) {
-      setSnack({
-        open: true,
-        severity: 'error',
-        message: e.message || 'Не удалось изменить пароль',
-      });
+      showSnack('error', e.message || 'Не удалось изменить пароль');
     }
   };
 
   const handleDeleteData = async () => {
-    if (!deleteMonth) {
-      setSnack({ open: true, severity: 'error', message: 'Выберите месяц' });
+    if (!deleteMonth || !parseYearMonth(deleteMonth)) {
+      showSnack('error', 'Выберите корректный месяц');
       return;
     }
     if (!deleteIncome && !deleteExpenses) {
-      setSnack({ open: true, severity: 'error', message: 'Выберите что удалить' });
+      showSnack('error', 'Выберите что удалить');
       return;
     }
 
-    // TODO: сюда потом добавишь реальный запрос удаления
-    const what = [];
-    if (deleteIncome) what.push('доходы');
-    if (deleteExpenses) what.push('расходы');
+    // определяем тип запроса
+    let type;
+    if (deleteIncome && deleteExpenses) type = 'all';
+    else if (deleteIncome) type = 'income';
+    else type = 'expenses';
 
-    setSnack({
-      open: true,
-      severity: 'info',
-      message: `Удалены ${what.join(' и ')} за ${deleteMonth}`,
-    });
+    const { year, month } = parseYearMonth(deleteMonth);
 
-    setDeleteDataOpen(false);
-    setDeleteMonth('');
-    setDeleteIncome(false);
-    setDeleteExpenses(false);
-  };
+    try {
+      setDeleting(true);
+      const res = await authFetch(
+        `/api/data/me/month/${year}/${month}?type=${type}`,
+        { method: 'DELETE' }
+      );
 
-  const monthOptions = useMemo(() => {
-    const result = [];
-    const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const label = d.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-      const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-      result.push({ label, value });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'Ошибка при удалении');
+      }
+
+      const what = [];
+      if (deleteIncome) what.push('доходы');
+      if (deleteExpenses) what.push('расходы');
+
+      showSnack(
+        'success',
+        `Удалены ${what.join(' и ')} за ${ymLabel(year, month)}`
+      );
+      setDeleteDataOpen(false);
+      setDeleteMonth('');
+      setDeleteIncome(false);
+      setDeleteExpenses(false);
+    } catch (e) {
+      showSnack('error', e.message || 'Ошибка при удалении');
+    } finally {
+      setDeleting(false);
     }
-    return result;
-  }, []);
+  };
 
   return (
     <PageWrap>
@@ -306,13 +418,8 @@ export default function SettingsPage() {
               fontSize: { xs: 14, md: 15 },
               minHeight: 48,
             },
-            '& .Mui-selected': {
-              color: '#fff',
-            },
-            '& .MuiTabs-indicator': {
-              bgcolor: colors.primary,
-              height: 3,
-            },
+            '& .Mui-selected': { color: '#fff' },
+            '& .MuiTabs-indicator': { bgcolor: colors.primary, height: 3 },
           }}
         >
           <Tab label="Аккаунт" />
@@ -321,24 +428,20 @@ export default function SettingsPage() {
         </Tabs>
       </Box>
 
+      {/* ── TAB 0: Аккаунт ── */}
       {tab === 0 && (
         <Box>
           <SectionTitle>Профиль</SectionTitle>
-
           <RowItem>
             <Avatar
               sx={{
-                width: 56,
-                height: 56,
+                width: 56, height: 56,
                 bgcolor: alpha(colors.primary, 0.18),
-                color: '#fff',
-                fontSize: 22,
-                fontWeight: 900,
+                color: '#fff', fontSize: 22, fontWeight: 900,
               }}
             >
               {(user?.firstName?.[0] || user?.userName?.[0] || 'U').toUpperCase()}
             </Avatar>
-
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography sx={{ fontWeight: 950, color: colors.text, fontSize: { xs: 16, md: 17 } }}>
                 {user?.firstName && user?.lastName
@@ -349,18 +452,13 @@ export default function SettingsPage() {
                 {user?.email || 'Не указан email'}
               </Typography>
             </Box>
-
             <Button
-              variant="outlined"
-              size="small"
+              variant="outlined" size="small"
               startIcon={<EditOutlinedIcon />}
               onClick={() => setEditNameOpen(true)}
               sx={{
-                borderRadius: 2.5,
-                textTransform: 'none',
-                fontWeight: 900,
-                borderColor: alpha('#fff', 0.16),
-                color: '#fff',
+                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
+                borderColor: alpha('#fff', 0.16), color: '#fff',
                 '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
               }}
             >
@@ -369,7 +467,6 @@ export default function SettingsPage() {
           </RowItem>
 
           <SectionTitle>Безопасность</SectionTitle>
-
           <RowItem>
             <EmailOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
@@ -379,15 +476,11 @@ export default function SettingsPage() {
               </Typography>
             </Box>
             <Button
-              variant="outlined"
-              size="small"
+              variant="outlined" size="small"
               onClick={() => setEditEmailOpen(true)}
               sx={{
-                borderRadius: 2.5,
-                textTransform: 'none',
-                fontWeight: 900,
-                borderColor: alpha('#fff', 0.16),
-                color: '#fff',
+                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
+                borderColor: alpha('#fff', 0.16), color: '#fff',
                 '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
               }}
             >
@@ -404,15 +497,11 @@ export default function SettingsPage() {
               </Typography>
             </Box>
             <Button
-              variant="outlined"
-              size="small"
+              variant="outlined" size="small"
               onClick={() => setEditPasswordOpen(true)}
               sx={{
-                borderRadius: 2.5,
-                textTransform: 'none',
-                fontWeight: 900,
-                borderColor: alpha('#fff', 0.16),
-                color: '#fff',
+                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
+                borderColor: alpha('#fff', 0.16), color: '#fff',
                 '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
               }}
             >
@@ -421,7 +510,6 @@ export default function SettingsPage() {
           </RowItem>
 
           <SectionTitle>О приложении</SectionTitle>
-
           <RowItem noDivider>
             <InfoOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
@@ -429,10 +517,7 @@ export default function SettingsPage() {
               <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
                 Версия {process.env.REACT_APP_VERSION || '1.0.0'}
               </Typography>
-              <Typography
-                variant="caption"
-                sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}
-              >
+              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}>
                 Создатель: Дмитрий Михайлов
               </Typography>
             </Box>
@@ -440,10 +525,10 @@ export default function SettingsPage() {
         </Box>
       )}
 
+      {/* ── TAB 1: Интерфейс ── */}
       {tab === 1 && (
         <Box>
           <SectionTitle>Отображение</SectionTitle>
-
           <RowItem>
             <PaletteOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
@@ -456,7 +541,6 @@ export default function SettingsPage() {
           </RowItem>
 
           <SectionTitle>Валюта</SectionTitle>
-
           <RowItem noDivider>
             <CurrencyRubleOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
@@ -468,13 +552,10 @@ export default function SettingsPage() {
                   label="Валюта"
                   onChange={(e) => setCurrency(e.target.value)}
                   sx={{
-                    borderRadius: 2.5,
-                    color: '#fff',
+                    borderRadius: 2.5, color: '#fff',
                     '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.16) },
                     '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.26) },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                      borderColor: alpha(colors.primary, 0.65),
-                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: alpha(colors.primary, 0.65) },
                     '.MuiSvgIcon-root': { color: alpha('#fff', 0.8) },
                   }}
                 >
@@ -483,10 +564,7 @@ export default function SettingsPage() {
                   <MenuItem value="EUR">EUR — €</MenuItem>
                 </Select>
               </FormControl>
-              <Typography
-                variant="caption"
-                sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}
-              >
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}>
                 Настройка интерфейса — конвертация валют не происходит
               </Typography>
             </Box>
@@ -494,10 +572,10 @@ export default function SettingsPage() {
         </Box>
       )}
 
+      {/* ── TAB 2: Данные ── */}
       {tab === 2 && (
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
-
           <RowItem noDivider>
             <DeleteOutlineOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
             <Box sx={{ flex: 1 }}>
@@ -507,18 +585,12 @@ export default function SettingsPage() {
               <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700, mb: 2 }}>
                 Выберите месяц и тип данных для удаления
               </Typography>
-
               <Button
-                fullWidth
-                variant="outlined"
+                fullWidth variant="outlined"
                 onClick={() => setDeleteDataOpen(true)}
                 sx={{
-                  borderRadius: 2.5,
-                  py: 1.2,
-                  fontWeight: 950,
-                  textTransform: 'none',
-                  borderColor: alpha('#fff', 0.16),
-                  color: '#fff',
+                  borderRadius: 2.5, py: 1.2, fontWeight: 950, textTransform: 'none',
+                  borderColor: alpha('#fff', 0.16), color: '#fff',
                   '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
                 }}
               >
@@ -529,127 +601,56 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* Диалог имени */}
-      <Dialog
-        open={editNameOpen}
-        onClose={() => setEditNameOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
+      {/* ── Диалог: Имя ── */}
+      <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Редактировать профиль</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              label="Имя"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              fullWidth
-              autoComplete="given-name"
-            />
-            <TextField
-              label="Фамилия"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              fullWidth
-              autoComplete="family-name"
-            />
+            <TextField label="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth autoComplete="given-name" />
+            <TextField label="Фамилия" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth autoComplete="family-name" />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditNameOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveName}>
-            Сохранить
-          </Button>
+          <Button variant="contained" onClick={handleSaveName}>Сохранить</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Диалог email */}
-      <Dialog
-        open={editEmailOpen}
-        onClose={() => setEditEmailOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
+      {/* ── Диалог: Email ── */}
+      <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Изменить email</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              label="Новый email"
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              fullWidth
-              autoComplete="email"
-            />
-            <TextField
-              label="Текущий пароль"
-              type="password"
-              value={emailPassword}
-              onChange={(e) => setEmailPassword(e.target.value)}
-              fullWidth
-              autoComplete="current-password"
-            />
+            <TextField label="Новый email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} fullWidth autoComplete="email" />
+            <TextField label="Текущий пароль" type="password" value={emailPassword} onChange={(e) => setEmailPassword(e.target.value)} fullWidth autoComplete="current-password" />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveEmail}>
-            Изменить
-          </Button>
+          <Button variant="contained" onClick={handleSaveEmail}>Изменить</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Диалог пароля */}
-      <Dialog
-        open={editPasswordOpen}
-        onClose={() => setEditPasswordOpen(false)}
-        maxWidth="xs"
-        fullWidth
-        PaperProps={{ sx: { borderRadius: 3 } }}
-      >
+      {/* ── Диалог: Пароль ── */}
+      <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Изменить пароль</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField
-              label="Текущий пароль"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              fullWidth
-              autoComplete="current-password"
-            />
-            <TextField
-              label="Новый пароль"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              fullWidth
-              autoComplete="new-password"
-            />
-            <TextField
-              label="Подтвердите новый пароль"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              fullWidth
-              autoComplete="new-password"
-            />
+            <TextField label="Текущий пароль" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} fullWidth autoComplete="current-password" />
+            <TextField label="Новый пароль" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} fullWidth autoComplete="new-password" />
+            <TextField label="Подтвердите новый пароль" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} fullWidth autoComplete="new-password" />
           </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditPasswordOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSavePassword}>
-            Изменить
-          </Button>
+          <Button variant="contained" onClick={handleSavePassword}>Изменить</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Диалог удаления данных */}
+      {/* ── Диалог: Удаление данных ── */}
       <Dialog
         open={deleteDataOpen}
-        onClose={() => setDeleteDataOpen(false)}
+        onClose={() => !deleting && setDeleteDataOpen(false)}
         maxWidth="xs"
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
@@ -657,33 +658,32 @@ export default function SettingsPage() {
         <DialogTitle sx={{ fontWeight: 950 }}>Удалить данные</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ pt: 1 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel id="delete-month-label">Месяц</InputLabel>
-              <Select
-                labelId="delete-month-label"
-                value={deleteMonth}
-                label="Месяц"
-                onChange={(e) => setDeleteMonth(e.target.value)}
-              >
-                {monthOptions.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
 
+            {/* Пикер месяца */}
+            <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
+
+            {/* Что удалить */}
             <Box>
               <Typography sx={{ fontWeight: 900, mb: 1, fontSize: 14 }}>Что удалить:</Typography>
               <FormGroup>
+                {/* Всё */}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={allChecked}
+                      indeterminate={someChecked && !allChecked}
+                      onChange={handleToggleAll}
+                    />
+                  }
+                  label={<Typography sx={{ fontWeight: 900 }}>Всё</Typography>}
+                />
+                <Divider sx={{ my: 0.5 }} />
                 <FormControlLabel
                   control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} />}
                   label="Доходы"
                 />
                 <FormControlLabel
-                  control={
-                    <Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} />
-                  }
+                  control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} />}
                   label="Расходы"
                 />
               </FormGroup>
@@ -695,24 +695,28 @@ export default function SettingsPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDataOpen(false)}>Отмена</Button>
-          <Button color="error" variant="contained" onClick={handleDeleteData}>
-            Удалить
+          <Button onClick={() => setDeleteDataOpen(false)} disabled={deleting}>
+            Отмена
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDeleteData}
+            disabled={deleting}
+          >
+            {deleting ? 'Удаление...' : 'Удалить'}
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* ── Snackbar ── */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3500}
         onClose={() => setSnack((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
       >
-        <Alert
-          severity={snack.severity}
-          variant="filled"
-          onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        >
+        <Alert severity={snack.severity} variant="filled" onClose={() => setSnack((s) => ({ ...s, open: false }))}>
           {snack.message}
         </Alert>
       </Snackbar>
