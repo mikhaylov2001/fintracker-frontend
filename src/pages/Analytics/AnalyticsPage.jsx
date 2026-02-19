@@ -1,3 +1,4 @@
+// src/pages/Analytics/AnalyticsPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
 import { Typography, Box, Stack, Chip, Tabs, Tab } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -21,6 +22,7 @@ import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 
 import { bankingColors as colors, surfaceOutlinedSx } from '../../styles/bankingTokens';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 const COLORS = {
   income: colors.primary,
@@ -298,6 +300,7 @@ const CashflowLegend = memo(function CashflowLegend() {
 export default function AnalyticsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { formatAmount } = useCurrency();
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -312,16 +315,6 @@ export default function AnalyticsPage() {
 
   const [mode, setMode] = useState('month');
   const [topTab, setTopTab] = useState('expenses');
-
-  const fmtRub = useMemo(
-    () =>
-      new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
 
   // Полные числа — для десктопа
   const fmtAxis = useMemo(
@@ -692,10 +685,34 @@ export default function AnalyticsPage() {
           mb: { xs: 5, md: 3 },
         }}
       >
-        <KpiCard label="Баланс" value={fmtRub.format(kpiBalance)} sub=" " accent={COLORS.balance} icon={<AccountBalanceWalletOutlinedIcon />} />
-        <KpiCard label="Доходы" value={fmtRub.format(kpiIncome)} sub=" " accent={COLORS.income} icon={<ArrowCircleUpOutlinedIcon />} />
-        <KpiCard label="Расходы" value={fmtRub.format(kpiExpenses)} sub=" " accent={COLORS.expenses} icon={<ArrowCircleDownOutlinedIcon />} />
-        <KpiCard label="Норма сбережений" value={`${kpiRate}%`} sub={`Сбережения: ${fmtRub.format(kpiSavings)}`} accent={COLORS.rate} icon={<PercentOutlinedIcon />} />
+        <KpiCard
+          label="Баланс"
+          value={formatAmount(kpiBalance)}
+          sub=" "
+          accent={COLORS.balance}
+          icon={<AccountBalanceWalletOutlinedIcon />}
+        />
+        <KpiCard
+          label="Доходы"
+          value={formatAmount(kpiIncome)}
+          sub=" "
+          accent={COLORS.income}
+          icon={<ArrowCircleUpOutlinedIcon />}
+        />
+        <KpiCard
+          label="Расходы"
+          value={formatAmount(kpiExpenses)}
+          sub=" "
+          accent={COLORS.expenses}
+          icon={<ArrowCircleDownOutlinedIcon />}
+        />
+        <KpiCard
+          label="Норма сбережений"
+          value={`${kpiRate}%`}
+          sub={`Сбережения: ${formatAmount(kpiSavings)}`}
+          accent={COLORS.rate}
+          icon={<PercentOutlinedIcon />}
+        />
       </Box>
 
       {/* Cashflow */}

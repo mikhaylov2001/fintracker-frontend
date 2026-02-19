@@ -1,3 +1,4 @@
+// src/pages/Income/IncomePage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -32,6 +33,8 @@ import {
   getMyIncomesByMonth,
   updateIncome,
 } from '../../api/incomeApi';
+
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 const COLORS = { income: '#22C55E' };
 
@@ -104,6 +107,7 @@ const ymLabel = ({ year, month }) => `${String(month).padStart(2, '0')}.${year}`
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
+  const { formatAmount } = useCurrency();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -138,16 +142,6 @@ export default function IncomePage() {
     });
   }, []);
   // ----------------------------------------
-
-  const fmtRub = useMemo(
-    () =>
-      new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -287,7 +281,10 @@ export default function IncomePage() {
     }
   };
 
-  const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
+  const total = useMemo(
+    () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
+    [items]
+  );
 
   return (
     <Box
@@ -325,7 +322,7 @@ export default function IncomePage() {
               fontWeight: 600,
             }}
           >
-            {ymLabel(ym)} · Итого: {fmtRub.format(total)}
+            {ymLabel(ym)} · Итого: {formatAmount(total)}
           </Typography>
         </Box>
 
@@ -492,7 +489,7 @@ export default function IncomePage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {fmtRub.format(Number(x.amount || 0))}
+                    {formatAmount(Number(x.amount || 0))}
                   </TableCell>
 
                   <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>

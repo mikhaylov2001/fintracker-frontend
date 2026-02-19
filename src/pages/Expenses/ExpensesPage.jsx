@@ -1,3 +1,4 @@
+// src/pages/Expenses/ExpensesPage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Box,
@@ -32,6 +33,8 @@ import {
   updateExpense,
   deleteExpense,
 } from '../../api/expensesApi';
+
+import { useCurrency } from '../../contexts/CurrencyContext';
 
 const COLORS = { expenses: '#F97316' };
 
@@ -110,6 +113,7 @@ const isProxySerialization500 = (msg) =>
 export default function ExpensesPage() {
   const toast = useToast();
   const theme = useTheme();
+  const { formatAmount } = useCurrency();
 
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -144,16 +148,6 @@ export default function ExpensesPage() {
     });
   }, []);
   // ------------------------------------------------------
-
-  const fmtRub = useMemo(
-    () =>
-      new Intl.NumberFormat('ru-RU', {
-        style: 'currency',
-        currency: 'RUB',
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -292,7 +286,10 @@ export default function ExpensesPage() {
     }
   };
 
-  const total = items.reduce((acc, x) => acc + Number(x.amount || 0), 0);
+  const total = useMemo(
+    () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
+    [items]
+  );
 
   return (
     <Box
@@ -325,7 +322,7 @@ export default function ExpensesPage() {
             variant="body2"
             sx={{ color: '#64748B', mt: 0.5 }}
           >
-            {ymLabel(ym)} · Итого: {fmtRub.format(total)}
+            {ymLabel(ym)} · Итого: {formatAmount(total)}
           </Typography>
         </Box>
 
@@ -482,7 +479,7 @@ export default function ExpensesPage() {
                       whiteSpace: 'nowrap',
                     }}
                   >
-                    {fmtRub.format(Number(x.amount || 0))}
+                    {formatAmount(Number(x.amount || 0))}
                   </TableCell>
 
                   <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>

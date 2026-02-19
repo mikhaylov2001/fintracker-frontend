@@ -25,6 +25,8 @@ import {
   pillSx,
 } from "../../styles/bankingTokens";
 
+import { useCurrency } from "../../contexts/CurrencyContext";
+
 /* те же цвета, что в AnalyticsPage */
 const COLORS = {
   income: colors.primary,
@@ -242,7 +244,7 @@ const accordionSx = {
   "&:before": { display: "none" },
 };
 
-const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub }) {
+const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, formatAmount }) {
   const raw = Number(h?.savings_rate_percent);
   const has = Number.isFinite(raw);
   const v = has ? Math.round(raw) : null;
@@ -286,25 +288,25 @@ const HistoryAccordion = memo(function HistoryAccordion({ h, monthTitle, fmtRub 
           <Typography variant="body2">
             Доходы:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_income))}
+              {formatAmount(n(h.total_income))}
             </Box>
           </Typography>
           <Typography variant="body2">
             Расходы:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.total_expenses))}
+              {formatAmount(n(h.total_expenses))}
             </Box>
           </Typography>
           <Typography variant="body2">
             Баланс:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.balance))}
+              {formatAmount(n(h.balance))}
             </Box>
           </Typography>
           <Typography variant="body2">
             Сбережения:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {fmtRub.format(n(h.savings))}
+              {formatAmount(n(h.savings))}
             </Box>
           </Typography>
           <Typography variant="body2">
@@ -336,19 +338,10 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatAmount } = useCurrency();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const fmtRub = useMemo(
-    () =>
-      new Intl.NumberFormat("ru-RU", {
-        style: "currency",
-        currency: "RUB",
-        maximumFractionDigits: 0,
-      }),
-    []
-  );
 
   const fmtToday = useMemo(
     () =>
@@ -394,7 +387,6 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  // Имя для приветствия: Имя Фамилия → userName → email
   const displayName = useMemo(() => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
@@ -635,22 +627,22 @@ export default function DashboardPage() {
       >
         <KpiCard
           label="Баланс"
-          value={fmtRub.format(displayBalance)}
+          value={formatAmount(displayBalance)}
           sub=" "
           accent={COLORS.balance}
           icon={<AccountBalanceWalletOutlinedIcon />}
         />
         <KpiCard
           label="Доходы"
-          value={fmtRub.format(displayIncome)}
-          sub={`Расходы: ${fmtRub.format(displayExpenses)}`}
+          value={formatAmount(displayIncome)}
+          sub={`Расходы: ${formatAmount(displayExpenses)}`}
           accent={COLORS.income}
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
         <KpiCard
           label="Расходы"
-          value={fmtRub.format(displayExpenses)}
+          value={formatAmount(displayExpenses)}
           sub=" "
           accent={COLORS.expenses}
           onClick={goExpenses}
@@ -659,7 +651,7 @@ export default function DashboardPage() {
         <KpiCard
           label="Норма сбережений"
           value={`${displayRate}%`}
-          sub={`Сбережения: ${fmtRub.format(displaySavings)}`}
+          sub={`Сбережения: ${formatAmount(displaySavings)}`}
           accent={COLORS.rate}
           icon={<PercentOutlinedIcon />}
         />
@@ -670,9 +662,9 @@ export default function DashboardPage() {
         <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
 
         <Stack spacing={1}>
-          <SummaryRow label="Доходы" value={fmtRub.format(incomeMonth)} color={colors.primary} />
-          <SummaryRow label="Расходы" value={fmtRub.format(expenseMonth)} color={colors.warning} />
-          <SummaryRow label="Сбережения" value={fmtRub.format(savingsMonth)} color={colors.accent} />
+          <SummaryRow label="Доходы" value={formatAmount(incomeMonth)} color={colors.primary} />
+          <SummaryRow label="Расходы" value={formatAmount(expenseMonth)} color={colors.warning} />
+          <SummaryRow label="Сбережения" value={formatAmount(savingsMonth)} color={colors.accent} />
         </Stack>
 
         <Stack
@@ -695,7 +687,12 @@ export default function DashboardPage() {
             </Typography>
           ) : (
             historyDesc.map((h) => (
-              <HistoryAccordion key={`${h.year}-${h.month}`} h={h} monthTitle={monthTitle} fmtRub={fmtRub} />
+              <HistoryAccordion
+                key={`${h.year}-${h.month}`}
+                h={h}
+                monthTitle={monthTitle}
+                formatAmount={formatAmount}
+              />
             ))
           )}
         </Box>

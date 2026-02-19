@@ -40,13 +40,9 @@ import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined
 
 import { useAuth } from '../../contexts/AuthContext';
 import { bankingColors as colors } from '../../styles/bankingTokens';
+import { useCurrency } from '../../contexts/CurrencyContext';
 
-const LS = {
-  currency: 'ft.settings.currency',
-  hideAmounts: 'ft.settings.hideAmounts',
-};
-
-/* ─── helpers ─── */
+// ─── helpers ───
 const parseYearMonth = (str) => {
   const m = String(str || '').trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
@@ -65,7 +61,7 @@ const ymLabel = (year, month) =>
     year: 'numeric',
   });
 
-/* ─── MonthPicker ─── */
+// ─── MonthPicker ───
 function MonthPicker({ value, onChange }) {
   const [inputVal, setInputVal] = useState(value || '');
 
@@ -73,7 +69,6 @@ function MonthPicker({ value, onChange }) {
     setInputVal(value || '');
   }, [value]);
 
-  // последние 24 месяца, сгруппированные по году
   const months = useMemo(() => {
     const now = new Date();
     const list = [];
@@ -81,7 +76,6 @@ function MonthPicker({ value, onChange }) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       list.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
     }
-    // группируем по году
     const grouped = {};
     for (const item of list) {
       if (!grouped[item.year]) grouped[item.year] = [];
@@ -107,7 +101,6 @@ function MonthPicker({ value, onChange }) {
 
   return (
     <Box>
-      {/* Ручной ввод */}
       <TextField
         fullWidth
         size="small"
@@ -130,7 +123,6 @@ function MonthPicker({ value, onChange }) {
         sx={{ mb: 2 }}
       />
 
-      {/* Сетка месяцев по годам */}
       {Object.entries(months)
         .sort(([a], [b]) => Number(b) - Number(a))
         .map(([year, monthList]) => (
@@ -175,7 +167,7 @@ function MonthPicker({ value, onChange }) {
   );
 }
 
-/* ─── Layout helpers ─── */
+// ─── Layout helpers ───
 const PageWrap = ({ children }) => (
   <Box sx={{ width: '100%', mx: 'auto', maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 } }}>
     {children}
@@ -216,14 +208,12 @@ const RowItem = ({ children, noDivider }) => (
   </>
 );
 
-/* ─── Main ─── */
+// ─── Main ───
 export default function SettingsPage() {
   const { user, authFetch, updateUserInState } = useAuth();
+  const { currency, hideAmounts, setCurrency, setHideAmounts } = useCurrency();
 
   const [tab, setTab] = useState(0);
-
-  const [currency, setCurrency] = useState('RUB');
-  const [hideAmounts, setHideAmounts] = useState(false);
 
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editEmailOpen, setEditEmailOpen] = useState(false);
@@ -252,21 +242,11 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    const c = localStorage.getItem(LS.currency);
-    const h = localStorage.getItem(LS.hideAmounts);
-    if (c) setCurrency(c);
-    if (h != null) setHideAmounts(h === '1');
-  }, []);
-
-  useEffect(() => { localStorage.setItem(LS.currency, currency); }, [currency]);
-  useEffect(() => { localStorage.setItem(LS.hideAmounts, hideAmounts ? '1' : '0'); }, [hideAmounts]);
-
-  useEffect(() => {
     setFirstName(user?.firstName || '');
     setLastName(user?.lastName || '');
   }, [user]);
 
-  /* ── "Всё" чекбокс ── */
+  // чекбоксы "всё"
   const allChecked = deleteIncome && deleteExpenses;
   const someChecked = deleteIncome || deleteExpenses;
   const handleToggleAll = (e) => {
@@ -274,7 +254,7 @@ export default function SettingsPage() {
     setDeleteExpenses(e.target.checked);
   };
 
-  /* ── Handlers ── */
+  // ── Handlers ──
   const handleSaveName = async () => {
     try {
       const res = await authFetch('/api/account/profile', {
@@ -349,7 +329,6 @@ export default function SettingsPage() {
       return;
     }
 
-    // определяем тип запроса
     let type;
     if (deleteIncome && deleteExpenses) type = 'all';
     else if (deleteIncome) type = 'income';
@@ -386,6 +365,39 @@ export default function SettingsPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  // обновление настроек интерфейса (валюта/скрывать суммы) на бэке
+  const handleUpdateSettings = async (nextCurrency, nextHide) => {
+    try {
+      const res = await authFetch('/api/settings/me', {
+        method: 'PUT',
+        body: JSON.stringify({
+          displayCurrency: nextCurrency ?? currency,
+          hideAmounts: typeof nextHide === 'boolean' ? nextHide : hideAmounts,
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.message || d.error || 'Не удалось обновить настройки');
+      }
+      const data = await res.json();
+      setCurrency(data.displayCurrency || 'RUB');
+      setHideAmounts(data.hideAmounts);
+      showSnack('success', 'Настройки интерфейса обновлены');
+    } catch (e) {
+      showSnack('error', e.message || 'Не удалось обновить настройки интерфейса');
+    }
+  };
+
+  const handleToggleHideAmounts = (checked) => {
+    setHideAmounts(checked);
+    handleUpdateSettings(undefined, checked);
+  };
+
+  const handleChangeCurrency = (val) => {
+    setCurrency(val);
+    handleUpdateSettings(val, undefined);
   };
 
   return (
@@ -428,7 +440,7 @@ export default function SettingsPage() {
         </Tabs>
       </Box>
 
-      {/* ── TAB 0: Аккаунт ── */}
+      {/* TAB 0: Аккаунт */}
       {tab === 0 && (
         <Box>
           <SectionTitle>Профиль</SectionTitle>
@@ -525,7 +537,7 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* ── TAB 1: Интерфейс ── */}
+      {/* TAB 1: Интерфейс */}
       {tab === 1 && (
         <Box>
           <SectionTitle>Отображение</SectionTitle>
@@ -537,7 +549,10 @@ export default function SettingsPage() {
                 Полезно при показе экрана другим
               </Typography>
             </Box>
-            <Switch checked={hideAmounts} onChange={(e) => setHideAmounts(e.target.checked)} />
+            <Switch
+              checked={hideAmounts}
+              onChange={(e) => handleToggleHideAmounts(e.target.checked)}
+            />
           </RowItem>
 
           <SectionTitle>Валюта</SectionTitle>
@@ -550,7 +565,7 @@ export default function SettingsPage() {
                   labelId="currency-label"
                   value={currency}
                   label="Валюта"
-                  onChange={(e) => setCurrency(e.target.value)}
+                  onChange={(e) => handleChangeCurrency(e.target.value)}
                   sx={{
                     borderRadius: 2.5, color: '#fff',
                     '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.16) },
@@ -565,14 +580,14 @@ export default function SettingsPage() {
                 </Select>
               </FormControl>
               <Typography variant="caption" sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}>
-                Настройка интерфейса — конвертация валют не происходит
+                Данные хранятся в базовой валюте, здесь только отображение и конвертация.
               </Typography>
             </Box>
           </RowItem>
         </Box>
       )}
 
-      {/* ── TAB 2: Данные ── */}
+      {/* TAB 2: Данные */}
       {tab === 2 && (
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
@@ -601,7 +616,7 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* ── Диалог: Имя ── */}
+      {/* Диалог: Имя */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Редактировать профиль</DialogTitle>
         <DialogContent dividers>
@@ -616,7 +631,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Диалог: Email ── */}
+      {/* Диалог: Email */}
       <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Изменить email</DialogTitle>
         <DialogContent dividers>
@@ -631,7 +646,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Диалог: Пароль ── */}
+      {/* Диалог: Пароль */}
       <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
         <DialogTitle sx={{ fontWeight: 950 }}>Изменить пароль</DialogTitle>
         <DialogContent dividers>
@@ -647,7 +662,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Диалог: Удаление данных ── */}
+      {/* Диалог: Удаление данных */}
       <Dialog
         open={deleteDataOpen}
         onClose={() => !deleting && setDeleteDataOpen(false)}
@@ -659,14 +674,11 @@ export default function SettingsPage() {
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ pt: 1 }}>
 
-            {/* Пикер месяца */}
             <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
 
-            {/* Что удалить */}
             <Box>
               <Typography sx={{ fontWeight: 900, mb: 1, fontSize: 14 }}>Что удалить:</Typography>
               <FormGroup>
-                {/* Всё */}
                 <FormControlLabel
                   control={
                     <Checkbox
@@ -709,7 +721,7 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ── Snackbar ── */}
+      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3500}
