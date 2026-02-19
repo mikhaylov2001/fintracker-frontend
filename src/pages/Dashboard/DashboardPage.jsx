@@ -1,3 +1,4 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
 import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -337,10 +338,9 @@ function DashboardSkeleton() {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { formatAmount } = useCurrency();
+  const { formatAmount, hideAmounts, toggleHideAmounts } = useCurrency();
   const summaryApi = useSummaryApi();
 
-  // refs, чтобы ссылки на функции не менялись для useEffect
   const getMyMonthlySummaryRef = useRef(summaryApi.getMyMonthlySummary);
   const getMyMonthlySummariesRef = useRef(summaryApi.getMyMonthlySummaries);
   const getMyUsedMonthsRef = useRef(summaryApi.getMyUsedMonths);
@@ -628,6 +628,17 @@ export default function DashboardPage() {
                 width: { xs: "100%", sm: "auto" },
                 borderColor: alpha(colors.primary, 0.18),
                 "& .MuiChip-icon": { ml: 1, mr: -0.25 },
+              }}
+            />
+
+            <Chip
+              label={hideAmounts ? "Показать суммы" : "Скрыть суммы"}
+              onClick={toggleHideAmounts}
+              sx={{
+                ...pillSx,
+                width: { xs: "100%", sm: "auto" },
+                borderColor: alpha(colors.primary, 0.18),
+                cursor: "pointer",
               }}
             />
 

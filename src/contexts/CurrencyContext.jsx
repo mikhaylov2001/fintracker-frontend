@@ -1,15 +1,43 @@
 // src/contexts/CurrencyContext.js
-import React, { createContext, useContext, useMemo, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  useState,
+  useCallback,
+} from "react";
 
 const CurrencyContext = createContext(null);
 
 const DEFAULT_CURRENCY = "RUB";
+const HIDE_KEY = "fintracker:hideAmounts";
 
 export const CurrencyProvider = ({ children }) => {
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
 
+  // флаг "спрятать суммы" (глобально)
+  const [hideAmounts, setHideAmounts] = useState(() => {
+    try {
+      const v = window.localStorage.getItem(HIDE_KEY);
+      return v === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  const toggleHideAmounts = useCallback(() => {
+    setHideAmounts((prev) => {
+      const next = !prev;
+      try {
+        window.localStorage.setItem(HIDE_KEY, next ? "1" : "0");
+      } catch {}
+      return next;
+    });
+  }, []);
+
   const formatAmount = useCallback(
     (value) => {
+      if (hideAmounts) return "••••";
       const num = Number(value || 0);
       try {
         return new Intl.NumberFormat("ru-RU", {
@@ -21,19 +49,25 @@ export const CurrencyProvider = ({ children }) => {
         return `${num.toFixed(0)} ${currency}`;
       }
     },
-    [currency]
+    [currency, hideAmounts]
   );
 
   const value = useMemo(
     () => ({
       currency,
       setCurrency,
+      hideAmounts,
+      toggleHideAmounts,
       formatAmount,
     }),
-    [currency, formatAmount]
+    [currency, hideAmounts, toggleHideAmounts, formatAmount]
   );
 
-  return <CurrencyContext.Provider value={value}>{children}</CurrencyContext.Provider>;
+  return (
+    <CurrencyContext.Provider value={value}>
+      {children}
+    </CurrencyContext.Provider>
+  );
 };
 
 export const useCurrency = () => {

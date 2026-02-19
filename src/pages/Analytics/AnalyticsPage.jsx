@@ -1,3 +1,4 @@
+// src/pages/Analytics/AnalyticsPage.jsx
 import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from 'react';
 import { Typography, Box, Stack, Chip, Tabs, Tab } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -298,7 +299,7 @@ const CashflowLegend = memo(function CashflowLegend() {
 export default function AnalyticsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { formatAmount } = useCurrency();
+  const { formatAmount, hideAmounts, toggleHideAmounts } = useCurrency();
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -307,7 +308,6 @@ export default function AnalyticsPage() {
   const expensesApi = useExpensesApi();
   const incomeApi = useIncomeApi();
 
-  // фиксируем функции в useRef, чтобы не дергать эффекты по ссылке
   const getMonthlySummaryRef = useRef(summaryApi.getMonthlySummary);
   const getMyExpensesByMonthRef = useRef(expensesApi.getMyExpensesByMonth);
   const getMyIncomesByMonthRef = useRef(incomeApi.getMyIncomesByMonth);
@@ -647,6 +647,20 @@ export default function AnalyticsPage() {
                 color: error ? COLORS.expenses : colors.primary,
                 fontWeight: 900,
                 width: { xs: '100%', sm: 'auto' },
+              }}
+            />
+
+            <Chip
+              label={hideAmounts ? 'Показать суммы' : 'Скрыть суммы'}
+              onClick={toggleHideAmounts}
+              sx={{
+                borderRadius: 999,
+                border: 0,
+                bgcolor: alpha(colors.card2, 0.7),
+                color: colors.text,
+                fontWeight: 900,
+                width: { xs: '100%', sm: 'auto' },
+                cursor: 'pointer',
               }}
             />
 
