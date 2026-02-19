@@ -1,16 +1,26 @@
-import { apiFetch } from "./client";
+// src/api/summaryApi.js
+import { useApiClient } from "./client";
 
-const asAxios = async (path, options) => ({ data: await apiFetch(path, options) });
+export const useSummaryApi = () => {
+  const { asAxios } = useApiClient();
 
-// Используем только "me" ручки (современный вариант)
-export const getMonthlySummary = (_userIdIgnored, year, month) =>
-  asAxios(`/api/summary/me/month/${year}/${month}`);
+  // Используем только "me" ручки (современный вариант)
+  const getMonthlySummary = (_userIdIgnored, year, month) =>
+    asAxios(`/api/summary/me/month/${year}/${month}`);
 
-export const getMyMonthlySummary = (year, month) =>
-  asAxios(`/api/summary/me/month/${year}/${month}`);
+  const getMyMonthlySummary = (year, month) =>
+    asAxios(`/api/summary/me/month/${year}/${month}`);
 
-export const getMyMonthlySummaries = () =>
-  asAxios("/api/summary/me/monthly/all");
+  const getMyMonthlySummaries = () =>
+    asAxios("/api/summary/me/monthly/all");
 
-export const getMyUsedMonths = () =>
-  asAxios("/api/summary/me/months");
+  const getMyUsedMonths = () =>
+    asAxios("/api/summary/me/months");
+
+  return {
+    getMonthlySummary,
+    getMyMonthlySummary,
+    getMyMonthlySummaries,
+    getMyUsedMonths,
+  };
+};

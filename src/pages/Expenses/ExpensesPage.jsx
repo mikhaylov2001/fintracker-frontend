@@ -27,12 +27,17 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-import {
-  getMyExpensesByMonth,
-  createExpense,
-  updateExpense,
-  deleteExpense,
-} from '../../api/expensesApi';
+import { useExpensesApi } from "../../api/expensesApi";
+
+export default function ExpensesPage() {
+  const {
+    getMyExpensesByMonth,
+    createExpense,
+    updateExpense,
+    deleteExpense,
+  } = useExpensesApi();
+}
+
 
 import { useCurrency } from '../../contexts/CurrencyContext';
 

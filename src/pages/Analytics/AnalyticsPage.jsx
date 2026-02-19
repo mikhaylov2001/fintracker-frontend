@@ -17,7 +17,19 @@ import PercentOutlinedIcon from '@mui/icons-material/PercentOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { getMonthlySummary } from '../../api/summaryApi';
+// было
+// import { getMonthlySummary } from "../../api/summaryApi";
+import { useSummaryApi } from "../../api/summaryApi";
+
+export default function AnalyticsPage() {
+  const { getMonthlySummary } = useSummaryApi();
+
+  // вызов не меняем:
+  // getMonthlySummary(userId, ym.year, ym.month)
+  // первый параметр просто игнорируется в реализации
+}
+
+
 import { getMyExpensesByMonth } from '../../api/expensesApi';
 import { getMyIncomesByMonth } from '../../api/incomeApi';
 

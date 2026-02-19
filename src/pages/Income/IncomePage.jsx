@@ -27,12 +27,19 @@ import Autocomplete from '@mui/material/Autocomplete';
 import EmptyState from '../../components/EmptyState';
 import { useToast } from '../../contexts/ToastContext';
 
-import {
-  createIncome,
-  deleteIncome,
-  getMyIncomesByMonth,
-  updateIncome,
-} from '../../api/incomeApi';
+import { useIncomeApi } from "../../api/incomeApi";
+
+export default function IncomePage() {
+  const {
+    getMyIncomesByMonth,
+    createIncome,
+    updateIncome,
+    deleteIncome,
+  } = useIncomeApi();
+
+  // остальной код без изменений
+}
+
 
 import { useCurrency } from '../../contexts/CurrencyContext';
 

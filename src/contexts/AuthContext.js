@@ -8,53 +8,6 @@ const API_BASE_URL =
   "https://fintrackerpro-production.up.railway.app";
 const API_AUTH_BASE = "/api/auth";
 
-// Обёртка с авто‑refresh
-const authFetchImpl = async (path, options = {}, getToken, saveAuthData) => {
-  const doRequest = async () => {
-    const token = getToken();
-    const headers = {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    };
-
-    return fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      headers,
-      credentials: "include",
-    });
-  };
-
-  let res = await doRequest();
-
-  if (res.status === 401) {
-    const refreshRes = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/refresh`, {
-      method: "POST",
-      credentials: "include",
-    });
-
-    if (refreshRes.ok) {
-      const data = await refreshRes.json().catch(() => ({}));
-
-      // Защита от смены пользователя через refresh-cookie
-      const prevUser = JSON.parse(localStorage.getItem("authUser") || "null");
-      const nextUserId = data?.user?.id;
-
-      if (prevUser?.id && nextUserId && prevUser.id !== nextUserId) {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
-        window.location.href = "/login";
-        return res;
-      }
-
-      saveAuthData(data);
-      res = await doRequest();
-    }
-  }
-
-  return res;
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
@@ -145,7 +98,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, [saveAuthData]);
 
-  // ✅ logout вызывает бэкенд — сервер ставит Max-Age=0 на обе cookie
   const logout = useCallback(async () => {
     try {
       await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
@@ -171,8 +123,6 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAuthenticated: !!token,
     loading,
-    authFetch: (path, options) =>
-      authFetchImpl(path, options, () => token, saveAuthData),
     updateUserInState,
   };
 
