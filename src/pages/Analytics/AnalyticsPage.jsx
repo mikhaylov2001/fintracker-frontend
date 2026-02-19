@@ -21,8 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
 // import { getMonthlySummary } from "../../api/summaryApi";
 import { useSummaryApi } from "../../api/summaryApi";
 
-export default function AnalyticsPage() {
-  const { getMonthlySummary } = useSummaryApi();
+
 
   // вызов не меняем:
   // getMonthlySummary(userId, ym.year, ym.month)

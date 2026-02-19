@@ -29,14 +29,7 @@ import { useToast } from '../../contexts/ToastContext';
 
 import { useExpensesApi } from "../../api/expensesApi";
 
-export default function ExpensesPage() {
-  const {
-    getMyExpensesByMonth,
-    createExpense,
-    updateExpense,
-    deleteExpense,
-  } = useExpensesApi();
-}
+
 
 
 import { useCurrency } from '../../contexts/CurrencyContext';
