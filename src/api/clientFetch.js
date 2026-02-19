@@ -78,7 +78,7 @@ async function refreshToken() {
 
     if (newAccess) writeToken(newAccess);
 
-    // Дополнительно — если есть user, обновим authUser
+    // если бэкенд вернул user — обновим authUser
     if (data?.user) {
       localStorage.setItem("authUser", JSON.stringify(data.user));
     }
@@ -115,16 +115,26 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
+  // первая попытка — если 401, пробуем refresh
   if (res.status === 401) {
     const newToken = await refreshToken();
-    if (newToken) ({ res, data } = await doRequest());
+    if (newToken) {
+      ({ res, data } = await doRequest());
+    }
   }
 
+  // повторный 401 — чистим хранилище и кидаем ошибку,
+  // чтобы страницы показали toast/текст, но без window.location.reload
   if (res.status === 401) {
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
-    window.location.href = "/login";
-    return;
+
+    const msg =
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || res.statusText;
+
+    throw new Error(`${res.status}: ${msg}`);
   }
 
   if (!res.ok) {
