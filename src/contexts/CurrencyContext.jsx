@@ -19,7 +19,7 @@ export const CurrencyProvider = ({ children }) => {
   const [hideAmounts, setHideAmounts] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // 1. Загружаем настройки из бэка при старте
+  // загрузка настроек с бэка
   useEffect(() => {
     let cancelled = false;
 
@@ -49,7 +49,7 @@ export const CurrencyProvider = ({ children }) => {
     };
   }, [authFetch]);
 
-  // 2. Обновление настроек на бэке (общий помощник)
+  // обновление настроек на бэке
   const updateSettingsOnServer = useCallback(
     async (nextCurrency, nextHide) => {
       try {

@@ -299,7 +299,7 @@ const CashflowLegend = memo(function CashflowLegend() {
 export default function AnalyticsPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { formatAmount } = useCurrency();          // ← осталось только formatAmount
+  const { formatAmount } = useCurrency();
 
   const { user } = useAuth();
   const userId = user?.id;
@@ -645,19 +645,6 @@ export default function AnalyticsPage() {
                 border: 0,
                 bgcolor: error ? alpha(COLORS.expenses, 0.14) : alpha(colors.primary, 0.14),
                 color: error ? COLORS.expenses : colors.primary,
-                fontWeight: 900,
-                width: { xs: '100%', sm: 'auto' },
-              }}
-            />
-
-            {/* Вместо локального переключателя — просто подсказка */}
-            <Chip
-              label="Скрытие сумм настраивается в разделе «Интерфейс»"
-              sx={{
-                borderRadius: 999,
-                border: 0,
-                bgcolor: alpha(colors.card2, 0.7),
-                color: colors.text,
                 fontWeight: 900,
                 width: { xs: '100%', sm: 'auto' },
               }}
