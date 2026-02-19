@@ -17,7 +17,9 @@ import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
-import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../../api/summaryApi";
+// было: импорт прямых функций
+// import { getMyMonthlySummary, getMyMonthlySummaries, getMyUsedMonths } from "../../api/summaryApi";
+import { useSummaryApi } from "../../api/summaryApi";
 
 import {
   bankingColors as colors,
@@ -339,6 +341,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
+  const {
+    getMyMonthlySummary,
+    getMyMonthlySummaries,
+    getMyUsedMonths,
+  } = useSummaryApi();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -457,7 +464,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month]);
+  }, [year, month, getMyUsedMonths, getMyMonthlySummaries, getMyMonthlySummary]);
 
   const historyDesc = useMemo(() => {
     return usedMonths.map(({ year: y, month: m }) => {
