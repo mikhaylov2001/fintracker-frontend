@@ -49,45 +49,54 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const saveAuthData = useCallback((data) => {
-    const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
-    const nextUser = data?.user ?? null;
-
-    setUser((prevUser) => {
-      if (prevUser && nextUser && prevUser.id !== nextUser.id) {
-        console.error(
-          "[AUTH] User switch detected in one session",
-          { prevUser, nextUser, time: new Date().toISOString() }
-        );
-
-        setAuthError(true);
-
-        try {
-          localStorage.clear();
-          sessionStorage.clear();
-        } catch {}
-
-        setToken(null);
-        return null;
-      }
-
-      if (nextUser) {
-        try {
-          localStorage.setItem("authUser", JSON.stringify(nextUser));
-        } catch {}
-        return nextUser;
-      }
-
-      return prevUser;
-    });
-
-    if (nextToken) {
-      setToken(nextToken);
-      try {
-        localStorage.setItem("authToken", nextToken);
-      } catch {}
-    }
+  const hardResetState = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    try {
+      localStorage.clear();
+    } catch {}
+    try {
+      sessionStorage.clear();
+    } catch {}
   }, []);
+
+  const saveAuthData = useCallback(
+    (data) => {
+      const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextUser = data?.user ?? null;
+
+      setUser((prevUser) => {
+        if (prevUser && nextUser && prevUser.id !== nextUser.id) {
+          console.error("[AUTH] User switch detected in one session", {
+            prevUser,
+            nextUser,
+            time: new Date().toISOString(),
+          });
+
+          hardResetState();
+          setAuthError(true);
+          return null;
+        }
+
+        if (nextUser) {
+          try {
+            localStorage.setItem("authUser", JSON.stringify(nextUser));
+          } catch {}
+          return nextUser;
+        }
+
+        return prevUser;
+      });
+
+      if (nextToken) {
+        setToken(nextToken);
+        try {
+          localStorage.setItem("authToken", nextToken);
+        } catch {}
+      }
+    },
+    [hardResetState]
+  );
 
   const updateUserInState = useCallback((partialUser) => {
     setUser((prev) => {
@@ -172,15 +181,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.warn("Logout request failed:", e);
     } finally {
-      setUser(null);
-      setToken(null);
-
-      try {
-        localStorage.clear();
-      } catch {}
-      try {
-        sessionStorage.clear();
-      } catch {}
+      hardResetState();
 
       try {
         document.cookie
@@ -201,15 +202,10 @@ export const AuthProvider = ({ children }) => {
         console.warn("Cookie clear failed:", e);
       }
 
-      try {
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("authUser");
-      } catch {}
-
       setAuthError(false);
-      window.location.href = "/login";
+      // без прямого window.location.href — роутинг делает AppLayout / LoginPage
     }
-  }, []);
+  }, [hardResetState]);
 
   const authFetch = useCallback(
     async (url, options = {}) => {
