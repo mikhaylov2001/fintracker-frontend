@@ -1,5 +1,4 @@
-// src/pages/Analytics/AnalyticsPage.jsx
-import React, { useEffect, useMemo, useState, useCallback, memo } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from 'react';
 import { Typography, Box, Stack, Chip, Tabs, Tab } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
@@ -17,7 +16,7 @@ import PercentOutlinedIcon from '@mui/icons-material/PercentOutlined';
 import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
 
 import { useAuth } from '../../contexts/AuthContext';
-import { useSummaryApi } from "../../api/summaryApi";
+import { useSummaryApi } from '../../api/summaryApi';
 import { useExpensesApi } from '../../api/expensesApi';
 import { useIncomeApi } from '../../api/incomeApi';
 
@@ -304,9 +303,14 @@ export default function AnalyticsPage() {
   const { user } = useAuth();
   const userId = user?.id;
 
-  const { getMonthlySummary } = useSummaryApi();
-  const { getMyExpensesByMonth } = useExpensesApi();
-  const { getMyIncomesByMonth } = useIncomeApi();
+  const summaryApi = useSummaryApi();
+  const expensesApi = useExpensesApi();
+  const incomeApi = useIncomeApi();
+
+  // фиксируем функции в useRef, чтобы не дергать эффекты по ссылке
+  const getMonthlySummaryRef = useRef(summaryApi.getMonthlySummary);
+  const getMyExpensesByMonthRef = useRef(expensesApi.getMyExpensesByMonth);
+  const getMyIncomesByMonthRef = useRef(incomeApi.getMyIncomesByMonth);
 
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -355,6 +359,8 @@ export default function AnalyticsPage() {
 
         if (!userId) throw new Error('Нет user.id (проверь authUser в localStorage).');
 
+        const getMonthlySummary = getMonthlySummaryRef.current;
+
         const baseYM = { year, month };
         const tasks = [];
         const rows = [];
@@ -386,7 +392,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, year, month, getMonthlySummary]);
+  }, [userId, year, month]);
 
   const last12 = useMemo(() => {
     const base = { year, month };
@@ -469,6 +475,9 @@ export default function AnalyticsPage() {
       try {
         setCatsLoading(true);
 
+        const getMyExpensesByMonth = getMyExpensesByMonthRef.current;
+        const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
+
         const accExp = new Map();
         const accInc = new Map();
 
@@ -517,7 +526,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, monthsForCats, getMyExpensesByMonth, getMyIncomesByMonth]);
+  }, [userId, monthsForCats]);
 
   const PageWrap = ({ children }) => (
     <Box
