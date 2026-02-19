@@ -1,5 +1,4 @@
-// src/pages/Dashboard/DashboardPage.jsx
-import React, { useEffect, useMemo, useState, useCallback, memo } from "react";
+import React, { useEffect, useMemo, useState, useCallback, memo, useRef } from "react";
 import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
@@ -339,11 +338,12 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { formatAmount } = useCurrency();
-  const {
-    getMyMonthlySummary,
-    getMyMonthlySummaries,
-    getMyUsedMonths,
-  } = useSummaryApi();
+  const summaryApi = useSummaryApi();
+
+  // refs, чтобы ссылки на функции не менялись для useEffect
+  const getMyMonthlySummaryRef = useRef(summaryApi.getMyMonthlySummary);
+  const getMyMonthlySummariesRef = useRef(summaryApi.getMyMonthlySummaries);
+  const getMyUsedMonthsRef = useRef(summaryApi.getMyUsedMonths);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -358,8 +358,14 @@ export default function DashboardPage() {
     []
   );
 
-  const fmtMonth = useMemo(() => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }), []);
-  const monthTitle = useCallback((y, m) => fmtMonth.format(new Date(y, m - 1, 1)), [fmtMonth]);
+  const fmtMonth = useMemo(
+    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
+    []
+  );
+  const monthTitle = useCallback(
+    (y, m) => fmtMonth.format(new Date(y, m - 1, 1)),
+    [fmtMonth]
+  );
 
   const [period, setPeriod] = useState(() => {
     const now = new Date();
@@ -373,7 +379,10 @@ export default function DashboardPage() {
   const month = period.month;
   const todayLabel = fmtToday.format(new Date());
 
-  const kpiModeKey = useMemo(() => `fintracker:kpiMode:${user?.id || "anon"}`, [user?.id]);
+  const kpiModeKey = useMemo(
+    () => `fintracker:kpiMode:${user?.id || "anon"}`,
+    [user?.id]
+  );
   const [kpiMode, setKpiMode] = useState(() => {
     try {
       const v = window.localStorage.getItem(kpiModeKey);
@@ -387,7 +396,10 @@ export default function DashboardPage() {
       window.localStorage.setItem(kpiModeKey, kpiMode);
     } catch {}
   }, [kpiModeKey, kpiMode]);
-  const onKpiModeChange = useCallback((_e, next) => next && setKpiMode(next), []);
+  const onKpiModeChange = useCallback(
+    (_e, next) => next && setKpiMode(next),
+    []
+  );
 
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
@@ -407,13 +419,19 @@ export default function DashboardPage() {
         setLoading(true);
         setError("");
 
+        const getMyUsedMonths = getMyUsedMonthsRef.current;
+        const getMyMonthlySummaries = getMyMonthlySummariesRef.current;
+        const getMyMonthlySummary = getMyMonthlySummaryRef.current;
+
         const [rawMonths, rawAll] = await Promise.all([
           getMyUsedMonths(),
           getMyMonthlySummaries(),
         ]);
 
         const monthsStr = unwrap(rawMonths);
-        const used = Array.isArray(monthsStr) ? monthsStr.map(parseYm).filter(Boolean) : [];
+        const used = Array.isArray(monthsStr)
+          ? monthsStr.map(parseYm).filter(Boolean)
+          : [];
         used.sort((a, b) => b.year - a.year || b.month - a.month);
 
         const all = unwrap(rawAll);
@@ -428,7 +446,9 @@ export default function DashboardPage() {
           map.set(ymKey(y, m), item);
         }
 
-        const missing = used.filter(({ year: y, month: m }) => !map.has(ymKey(y, m)));
+        const missing = used.filter(
+          ({ year: y, month: m }) => !map.has(ymKey(y, m))
+        );
         for (const part of chunk(missing, 6)) {
           const res = await Promise.all(
             part.map(({ year: y, month: m }) =>
@@ -445,9 +465,12 @@ export default function DashboardPage() {
 
         const curKey = ymKey(year, month);
         if (!map.has(curKey)) {
-          const rawCur = await getMyMonthlySummary(year, month).catch(() => null);
+          const rawCur = await getMyMonthlySummary(year, month).catch(
+            () => null
+          );
           const dto = rawCur ? unwrap(rawCur) : null;
-          if (dto && typeof dto === "object") map.set(curKey, { ...dto, year, month });
+          if (dto && typeof dto === "object")
+            map.set(curKey, { ...dto, year, month });
         }
 
         if (!cancelled) {
@@ -455,7 +478,8 @@ export default function DashboardPage() {
           setSummariesMap(map);
         }
       } catch (e) {
-        if (!cancelled) setError(e?.message || "Ошибка загрузки данных");
+        if (!cancelled)
+          setError(e?.message || "Ошибка загрузки данных");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -465,7 +489,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month]); // ← только year и month
+  }, [year, month]);
 
   const historyDesc = useMemo(() => {
     return usedMonths.map(({ year: y, month: m }) => {
