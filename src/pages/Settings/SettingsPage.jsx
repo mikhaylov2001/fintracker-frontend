@@ -576,6 +576,50 @@ export default function SettingsPage() {
               <Typography variant="caption" sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}>
                 Данные хранятся в базовой валюте, здесь только отображение и конвертация.
               </Typography>
+
+              {/* Информационный блок о курсах */}
+              <Box
+                sx={{
+                  mt: 1.5,
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: alpha('#000', 0.22),
+                  border: `1px solid ${alpha('#fff', 0.12)}`,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    letterSpacing: 0.5,
+                    color: alpha('#fff', 0.7),
+                    mb: 0.75,
+                  }}
+                >
+                  Текущие курсы (пример)
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: 13, color: alpha('#fff', 0.85), fontWeight: 700 }}
+                >
+                  1 USD ≈ 90 ₽
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ fontSize: 13, color: alpha('#fff', 0.85), fontWeight: 700 }}
+                >
+                  1 EUR ≈ 100 ₽
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  sx={{ display: 'block', mt: 0.75, color: alpha('#fff', 0.55), fontWeight: 700 }}
+                >
+                  Курс указан для ориентира, реальные значения могут отличаться.
+                </Typography>
+              </Box>
             </Box>
           </RowItem>
         </Box>
@@ -608,7 +652,6 @@ export default function SettingsPage() {
           </RowItem>
         </Box>
       )}
-
 
       {/* Диалог: Имя */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
@@ -729,4 +772,3 @@ export default function SettingsPage() {
     </PageWrap>
   );
 }
-
