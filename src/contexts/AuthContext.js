@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.js
 import React, {
   createContext,
   useState,
@@ -20,6 +21,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
+  // начальное восстановление из localStorage
   useEffect(() => {
     let savedToken = null;
     let savedUser = null;
@@ -60,12 +62,14 @@ export const AuthProvider = ({ children }) => {
     } catch {}
   }, []);
 
+  // ЕДИНСТВЕННОЕ место, где меняются user/token
   const saveAuthData = useCallback(
     (data) => {
       const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
       const nextUser = data?.user ?? null;
 
       setUser((prevUser) => {
+        // защита: не позволяем тихо сменить пользователя в одной вкладке
         if (prevUser && nextUser && prevUser.id !== nextUser.id) {
           console.error("[AUTH] User switch detected in one session", {
             prevUser,
@@ -183,6 +187,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       hardResetState();
 
+      // чистим доступные JS-куки
       try {
         document.cookie
           .split(";")
@@ -203,7 +208,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       setAuthError(false);
-      // без прямого window.location.href — роутинг делает AppLayout / LoginPage
+      // редирект делает AppLayout (navigate('/login'))
     }
   }, [hardResetState]);
 
@@ -237,12 +242,15 @@ export const AuthProvider = ({ children }) => {
         return { res, hadToken };
       };
 
+      // первый запрос
       let { res, hadToken } = await doRequest();
 
+      // если не было токена или статус не 401 — просто возвращаем
       if (!hadToken || res.status !== 401) {
         return res;
       }
 
+      // был токен и получили 401 → пробуем refresh
       try {
         const refreshRes = await fetch(
           `${API_BASE_URL}${API_AUTH_BASE}/refresh`,
