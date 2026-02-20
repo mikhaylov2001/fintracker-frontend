@@ -75,14 +75,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <AppBackground
-      sx={{
-        display: "grid",
-        placeItems: "center",
-        px: 2,
-        py: { xs: 3, md: 0 },
-      }}
-    >
+    <AppBackground sx={{ display: "grid", placeItems: "center", px: 2, py: { xs: 3, md: 0 } }}>
       <Box
         sx={{
           width: "100%",
@@ -104,24 +97,10 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontWeight: 950,
-              fontSize: 22,
-              lineHeight: 1.15,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 950, fontSize: 22, lineHeight: 1.15 }}>
             FinTrackerPro
           </Typography>
-          <Typography
-            sx={{
-              mt: 0.8,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 13.5,
-              lineHeight: 1.35,
-            }}
-          >
+          <Typography sx={{ mt: 0.8, color: "rgba(255,255,255,0.72)", fontSize: 13.5, lineHeight: 1.35 }}>
             Создай аккаунт и начни вести финансы уже сегодня.
           </Typography>
         </Box>
@@ -139,24 +118,10 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
-              fontSize: 34,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 950, fontSize: 34, lineHeight: 1.1 }}>
             Создай аккаунт
           </Typography>
-          <Typography
-            sx={{
-              mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 15,
-              maxWidth: 420,
-            }}
-          >
+          <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.72)", fontSize: 15, maxWidth: 420 }}>
             Регистрация займёт минуту. Дальше — история по месяцам, баланс и норма сбережений.
           </Typography>
         </Box>
@@ -173,13 +138,7 @@ export default function RegisterPage() {
             backdropFilter: "blur(10px)",
           }}
         >
-          <Typography
-            variant="h5"
-            component="h1"
-            gutterBottom
-            align="center"
-            sx={{ fontWeight: 950 }}
-          >
+          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
             Регистрация
           </Typography>
 
@@ -253,11 +212,7 @@ export default function RegisterPage() {
 
           <Typography variant="body2" align="center">
             Уже есть аккаунт?{" "}
-            <Link
-              component="button"
-              type="button"
-              onClick={() => navigate("/login")}
-            >
+            <Link component="button" type="button" onClick={() => navigate("/login")}>
               Войти
             </Link>
           </Typography>

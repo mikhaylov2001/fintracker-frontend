@@ -67,14 +67,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AppBackground
-      sx={{
-        display: "grid",
-        placeItems: "center",
-        px: 2,
-        py: { xs: 3, md: 0 },
-      }}
-    >
+    <AppBackground sx={{ display: "grid", placeItems: "center", px: 2, py: { xs: 3, md: 0 } }}>
       <Box
         sx={{
           width: "100%",
@@ -96,24 +89,10 @@ export default function LoginPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontWeight: 950,
-              fontSize: 22,
-              lineHeight: 1.15,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.92)", fontWeight: 950, fontSize: 22, lineHeight: 1.15 }}>
             FinTrackerPro
           </Typography>
-          <Typography
-            sx={{
-              mt: 0.8,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 13.5,
-              lineHeight: 1.35,
-            }}
-          >
+          <Typography sx={{ mt: 0.8, color: "rgba(255,255,255,0.72)", fontSize: 13.5, lineHeight: 1.35 }}>
             Доходы, расходы и норма сбережений — в одном месте.
           </Typography>
         </Box>
@@ -131,24 +110,10 @@ export default function LoginPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
-              fontSize: 34,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ color: "rgba(255,255,255,0.9)", fontWeight: 950, fontSize: 34, lineHeight: 1.1 }}>
             FinTrackerPro
           </Typography>
-          <Typography
-            sx={{
-              mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 15,
-              maxWidth: 420,
-            }}
-          >
+          <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.72)", fontSize: 15, maxWidth: 420 }}>
             Войди и следи за динамикой по месяцам — баланс, доходы, расходы и норма сбережений.
           </Typography>
         </Box>
@@ -165,13 +130,7 @@ export default function LoginPage() {
             backdropFilter: "blur(10px)",
           }}
         >
-          <Typography
-            variant="h5"
-            component="h1"
-            gutterBottom
-            align="center"
-            sx={{ fontWeight: 950 }}
-          >
+          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
             Вход
           </Typography>
 
@@ -222,11 +181,7 @@ export default function LoginPage() {
 
           <Typography variant="body2" align="center">
             Нет аккаунта?{" "}
-            <Link
-              component="button"
-              type="button"
-              onClick={() => navigate("/register")}
-            >
+            <Link component="button" type="button" onClick={() => navigate("/register")}>
               Зарегистрироваться
             </Link>
           </Typography>
