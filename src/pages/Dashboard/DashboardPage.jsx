@@ -183,7 +183,8 @@ const KpiCard = memo(function KpiCard({
                   fontSize: { xs: 17, md: 18 },
                   color: alpha(accent, 0.98),
                 },
-              })}
+              })
+            : null}
         </Box>
 
         <Typography
