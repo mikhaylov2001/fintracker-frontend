@@ -31,16 +31,20 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-// ─── STYLES & TOKENS (из твоего аналога) ───
+// ─── Токены как в дашборде ───
 const bankingColors = {
   bg0: "#021513",
   bg1: "#031C18",
+
   card: "#04231E",
   card2: "#03201B",
+
   border: "rgba(125, 244, 194, 0.24)",
   border2: "rgba(167, 243, 208, 0.32)",
+
   text: "rgba(241,245,249,0.97)",
   muted: "rgba(241,245,249,0.72)",
+
   primary: "#22C55E",
   accent: "#34D399",
   info: "#38BDF8",
@@ -75,14 +79,14 @@ const gridOverlaySx = {
   mixBlendMode: "soft-light",
 };
 
-const surfaceSx = {
-  borderRadius: 4.5, // чуть скруглим как на карточках
-  border: "0",
-  backgroundColor: alpha(bankingColors.card, 0.96),
-  boxShadow: "0 16px 44px rgba(0,0,0,0.48)",
+// Белая карточка под список (без рамки, мягкая тень)
+const listCardSx = {
+  borderRadius: 4,
+  bgcolor: "#FFFFFF",
+  boxShadow: "0 14px 40px rgba(15,23,42,0.45)",
 };
 
-// Стилизация инпутов под темную тему
+// Инпуты в диалоге под тёмный фон
 const darkInputSx = {
   "& .MuiInputLabel-root": { color: bankingColors.muted },
   "& .MuiInputLabel-root.Mui-focused": { color: bankingColors.primary },
@@ -96,13 +100,12 @@ const darkInputSx = {
   "& .MuiSvgIcon-root": { color: bankingColors.muted },
 };
 
-// ─── OPTIONS & HELPERS ───
+// ─── Константы и хелперы ───
 const CATEGORY_OPTIONS = [
   "Работа",
   "Подработка",
   "Вклады",
   "Инвестиции",
-  "Налоги",
   "Подарки",
   "Другое",
 ];
@@ -183,7 +186,7 @@ const addMonthsYM = ({ year, month }, delta) => {
 const ymLabel = ({ year, month }) =>
   `${String(month).padStart(2, "0")}.${year}`;
 
-// ─── COMPONENT ───
+// ─── Компонент ───
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
@@ -196,7 +199,6 @@ export default function IncomePage() {
   const incomeApi = useIncomeApi();
   const getMyIncomesByMonthRef = useRef(incomeApi.getMyIncomesByMonth);
 
-  // State
   const [ym, setYm] = useState(() => {
     const now = new Date();
     try {
@@ -422,20 +424,22 @@ export default function IncomePage() {
           px: { xs: 2, md: 3, lg: 4 },
           py: { xs: 2, md: 3 },
           width: "100%",
+          maxWidth: { xs: "100%", md: 1120 },
+          mx: "auto",
         }}
       >
         {/* Header */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1}
+          spacing={1.5}
           alignItems={{ xs: "stretch", sm: "center" }}
           sx={{ mb: 3 }}
         >
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
               variant="h4"
               sx={{
-                fontWeight: 900,
+                fontWeight: 950,
                 color: bankingColors.text,
                 letterSpacing: -0.5,
               }}
@@ -456,18 +460,19 @@ export default function IncomePage() {
 
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={1.5}
+            spacing={1.25}
             alignItems={{ xs: "stretch", sm: "center" }}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0.75}
               alignItems="center"
               sx={{
-                bgcolor: alpha(bankingColors.card, 0.5),
-                p: 0.5,
-                borderRadius: 99,
+                bgcolor: alpha(bankingColors.card2, 0.8),
+                px: 1,
+                py: 0.75,
+                borderRadius: 999,
                 border: `1px solid ${bankingColors.border}`,
                 width: { xs: "100%", sm: "auto" },
                 justifyContent: "center",
@@ -476,7 +481,10 @@ export default function IncomePage() {
               <IconButton
                 onClick={() => changeYm((s) => addMonthsYM(s, -1))}
                 size="small"
-                sx={{ color: bankingColors.text, "&:hover": { bgcolor: alpha("#fff", 0.1) } }}
+                sx={{
+                  color: bankingColors.text,
+                  "&:hover": { bgcolor: alpha("#fff", 0.08) },
+                }}
               >
                 ←
               </IconButton>
@@ -486,6 +494,8 @@ export default function IncomePage() {
                   fontWeight: 800,
                   fontSize: 14,
                   px: 1,
+                  minWidth: 80,
+                  textAlign: "center",
                 }}
               >
                 {ymLabel(ym)}
@@ -493,7 +503,10 @@ export default function IncomePage() {
               <IconButton
                 onClick={() => changeYm((s) => addMonthsYM(s, +1))}
                 size="small"
-                sx={{ color: bankingColors.text, "&:hover": { bgcolor: alpha("#fff", 0.1) } }}
+                sx={{
+                  color: bankingColors.text,
+                  "&:hover": { bgcolor: alpha("#fff", 0.08) },
+                }}
               >
                 →
               </IconButton>
@@ -507,15 +520,15 @@ export default function IncomePage() {
                 width: { xs: "100%", sm: "auto" },
                 borderRadius: 999,
                 px: 3,
-                py: 1,
-                fontWeight: 800,
+                py: 1.05,
+                fontWeight: 850,
                 textTransform: "none",
                 bgcolor: bankingColors.primary,
                 "&:hover": { bgcolor: bankingColors.accent },
-                boxShadow: `0 8px 20px ${alpha(bankingColors.primary, 0.4)}`,
+                boxShadow: `0 10px 30px ${alpha(bankingColors.primary, 0.45)}`,
               }}
             >
-              Добавить
+              Добавить доход
             </Button>
           </Stack>
         </Stack>
@@ -530,117 +543,173 @@ export default function IncomePage() {
           </Typography>
         ) : null}
 
-        {/* Card with Table */}
+        {/* Список / карточка */}
         {!loading && items.length === 0 ? (
           <Box
             sx={{
-              ...surfaceSx,
-              p: 4,
+              ...listCardSx,
+              px: { xs: 2, sm: 3 },
+              py: { xs: 3, sm: 4 },
               textAlign: "center",
-              color: bankingColors.muted,
             }}
           >
             <EmptyState
               title="Пока нет записей"
-              description="Добавь первую операцию — и тут появится список."
+              description="Добавь первую операцию — и здесь появится список за выбранный месяц."
               actionLabel="Добавить доход"
               onAction={openCreate}
             />
           </Box>
         ) : (
-          <Box sx={{ ...surfaceSx, overflow: "hidden" }}>
-            <Box sx={{ overflowX: "auto" }}>
+          <Box
+            sx={{
+              ...listCardSx,
+              // шире по горизонтали: почти до краёв контейнера
+              width: "100%",
+              mt: 1,
+            }}
+          >
+            <Box
+              sx={{
+                overflowX: "auto",
+              }}
+            >
               <Table
+                size="small"
                 sx={{
                   width: "100%",
-                  minWidth: { sm: 720 },
+                  minWidth: { xs: 640, md: 900 }, // шире список
+                  tableLayout: { xs: "fixed", md: "auto" },
+                  "& th, & td": {
+                    px: { xs: 1.25, sm: 2.25 },
+                    py: { xs: 1, sm: 1.25 },
+                    fontSize: { xs: 12, sm: 13 },
+                    lineHeight: 1.2,
+                    borderBottomColor: "#E2E8F0",
+                  },
                   "& th": {
-                    fontWeight: 800,
-                    color: bankingColors.muted,
+                    fontWeight: 900,
+                    color: "#0F172A",
                     whiteSpace: "nowrap",
-                    borderBottom: `1px solid ${alpha(bankingColors.border, 0.5)}`,
-                    bgcolor: alpha("#000", 0.2),
-                    py: 2,
-                    px: 2,
+                    bgcolor: "#F8FAFC",
                   },
                   "& td": {
-                    color: bankingColors.text,
-                    borderBottom: `1px solid ${alpha(bankingColors.border, 0.15)}`,
-                    py: 1.5,
-                    px: 2,
-                    fontSize: 14,
-                    fontWeight: 600,
+                    color: "#0F172A",
+                    whiteSpace: { xs: "normal", sm: "nowrap" },
                   },
                   "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
                   "& .MuiTableRow-root:hover": {
-                    bgcolor: alpha(bankingColors.primary, 0.05),
+                    bgcolor: "rgba(15,23,42,0.03)",
                   },
                 }}
               >
                 <TableHead>
                   <TableRow>
-                    <TableCell>Дата</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Категория</TableCell>
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                    <TableCell sx={{ width: { xs: "18%", sm: 120 } }}>
+                      Дата
+                    </TableCell>
+                    <TableCell sx={{ width: { xs: "26%", sm: 150 } }}>
+                      Сумма
+                    </TableCell>
+                    <TableCell sx={{ width: { xs: "36%", sm: 220 } }}>
+                      Категория
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        width: 220,
+                        display: { xs: "none", sm: "table-cell" },
+                      }}
+                    >
                       Источник
                     </TableCell>
-                    <TableCell align="right">Действия</TableCell>
+                    <TableCell
+                      align="right"
+                      sx={{
+                        width: { xs: "20%", sm: 120 },
+                        pr: { xs: 1.5, sm: 2.25 },
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Действия
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {items.map((x) => (
-                    <TableRow key={x.id}>
+                    <TableRow key={x.id} hover>
                       <TableCell sx={{ whiteSpace: "nowrap" }}>
                         {isMobile
                           ? formatDateRuShort(x.date)
                           : formatDateRu(x.date)}
                       </TableCell>
+
                       <TableCell
                         sx={{
                           fontWeight: 900,
-                          color: bankingColors.primary,
+                          color: "#0F172A",
                           whiteSpace: "nowrap",
                         }}
                       >
                         {formatAmount(Number(x.amount || 0))}
                       </TableCell>
-                      <TableCell>
-                        <Box>
+
+                      <TableCell sx={{ pr: { xs: 1.5, sm: 2.25 } }}>
+                        <Typography
+                          component="div"
+                          sx={{
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: "#0F172A",
+                            lineHeight: 1.2,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: { xs: 2, sm: 1 },
+                          }}
+                          title={x.category || ""}
+                        >
+                          {x.category}
+                        </Typography>
+
+                        {isMobile ? (
                           <Typography
-                            component="span"
-                            sx={{ fontWeight: 700, fontSize: 14 }}
+                            component="div"
+                            sx={{
+                              mt: 0.2,
+                              fontSize: 11,
+                              color: "#64748B",
+                              lineHeight: 1.2,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                            }}
+                            title={x.source || ""}
                           >
-                            {x.category}
+                            {x.source}
                           </Typography>
-                          {isMobile && x.source && (
-                            <Typography
-                              variant="caption"
-                              display="block"
-                              sx={{ color: bankingColors.muted }}
-                            >
-                              {x.source}
-                            </Typography>
-                          )}
-                        </Box>
+                        ) : null}
                       </TableCell>
+
                       <TableCell
                         sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        title={x.source || ""}
                       >
                         {x.source}
                       </TableCell>
+
                       <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                         <IconButton
                           onClick={() => openEdit(x)}
                           size="small"
-                          sx={{ color: bankingColors.muted, "&:hover": { color: "#fff" } }}
+                          sx={{ color: "#64748B", "&:hover": { color: "#0F172A" } }}
                         >
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                           onClick={() => remove(x)}
                           size="small"
-                          sx={{ color: alpha(bankingColors.danger, 0.7), "&:hover": { color: bankingColors.danger } }}
+                          sx={{ color: "#EF4444", "&:hover": { color: "#B91C1C" } }}
                         >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
@@ -661,17 +730,18 @@ export default function IncomePage() {
           maxWidth="sm"
           PaperProps={{
             sx: {
-              ...surfaceSx,
-              backgroundImage: "none",
+              borderRadius: 3,
+              bgcolor: bankingColors.card,
+              boxShadow: "0 22px 60px rgba(0,0,0,0.7)",
               border: `1px solid ${alpha(bankingColors.border, 0.3)}`,
             },
           }}
         >
           <DialogTitle sx={{ fontWeight: 900, color: bankingColors.text }}>
-            {editing ? "Редактировать доход" : "Новый доход"}
+            {editing ? "Редактировать доход" : "Добавить доход"}
           </DialogTitle>
           <DialogContent sx={{ pt: 1 }}>
-            <Stack spacing={2.5} sx={{ mt: 1 }}>
+            <Stack spacing={2.4} sx={{ mt: 1 }}>
               <TextField
                 label="Сумма"
                 inputRef={amountRef}
@@ -689,23 +759,14 @@ export default function IncomePage() {
                 freeSolo
                 options={CATEGORY_OPTIONS}
                 value={form.category}
-                onChange={(_e, val) => setForm((s) => ({ ...s, category: val ?? "" }))}
-                onInputChange={(_e, val) => setForm((s) => ({ ...s, category: val }))}
+                onChange={(_e, val) =>
+                  setForm((s) => ({ ...s, category: val ?? "" }))
+                }
+                onInputChange={(_e, val) =>
+                  setForm((s) => ({ ...s, category: val }))
+                }
                 renderInput={(params) => (
                   <TextField {...params} label="Категория" sx={darkInputSx} />
-                )}
-                PaperComponent={(props) => (
-                  <Box
-                    {...props}
-                    sx={{
-                      bgcolor: bankingColors.card2,
-                      color: bankingColors.text,
-                      "& .MuiAutocomplete-option": {
-                         "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                         "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) }
-                      }
-                    }}
-                  />
                 )}
               />
 
@@ -713,23 +774,14 @@ export default function IncomePage() {
                 freeSolo
                 options={SOURCE_OPTIONS}
                 value={form.source}
-                onChange={(_e, val) => setForm((s) => ({ ...s, source: val ?? "" }))}
-                onInputChange={(_e, val) => setForm((s) => ({ ...s, source: val }))}
+                onChange={(_e, val) =>
+                  setForm((s) => ({ ...s, source: val ?? "" }))
+                }
+                onInputChange={(_e, val) =>
+                  setForm((s) => ({ ...s, source: val }))
+                }
                 renderInput={(params) => (
                   <TextField {...params} label="Источник" sx={darkInputSx} />
-                )}
-                PaperComponent={(props) => (
-                  <Box
-                    {...props}
-                    sx={{
-                      bgcolor: bankingColors.card2,
-                      color: bankingColors.text,
-                      "& .MuiAutocomplete-option": {
-                         "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                         "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) }
-                      }
-                    }}
-                  />
                 )}
               />
 
@@ -741,8 +793,9 @@ export default function IncomePage() {
                   const iso = ruToIsoStrict(ru);
                   let nextErr = "";
                   if (ru.length === 10) {
-                    if (!iso) nextErr = "Неверный формат";
-                    else if (!isValidIsoDate(iso)) nextErr = "Нет такой даты";
+                    if (!iso) nextErr = "Неверный формат даты";
+                    else if (!isValidIsoDate(iso))
+                      nextErr = "Такой даты не существует";
                   }
                   setDateErr(nextErr);
                   setForm((s) => ({
@@ -751,23 +804,23 @@ export default function IncomePage() {
                     date: iso && isValidIsoDate(iso) ? iso : s.date,
                   }));
                 }}
-                placeholder="ДД.ММ.ГГГГ"
+                placeholder="16.02.2026"
                 inputProps={{ inputMode: "numeric" }}
                 fullWidth
                 error={Boolean(dateErr)}
-                helperText={dateErr}
+                helperText={dateErr || "Введите цифры: ДДММГГГГ"}
                 sx={darkInputSx}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
-                      <CalendarMonthIcon sx={{ color: bankingColors.muted }} />
+                      <CalendarMonthIcon />
                     </InputAdornment>
                   ),
                 }}
               />
             </Stack>
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3 }}>
+          <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
             <Button
               onClick={() => setOpen(false)}
               disabled={saving}
@@ -782,13 +835,13 @@ export default function IncomePage() {
               sx={{
                 bgcolor: bankingColors.primary,
                 color: "#fff",
-                fontWeight: 800,
-                borderRadius: 99,
+                fontWeight: 850,
+                borderRadius: 999,
                 px: 3,
                 "&:hover": { bgcolor: bankingColors.accent },
               }}
             >
-              {saving ? "Сохранение..." : "Сохранить"}
+              {saving ? "Сохранение…" : "Сохранить"}
             </Button>
           </DialogActions>
         </Dialog>
