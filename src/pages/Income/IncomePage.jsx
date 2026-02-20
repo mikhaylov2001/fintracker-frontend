@@ -46,7 +46,7 @@ import { bankingColors, pageBackgroundSx } from "../../styles/bankingTokens";
 
 const COLORS = { income: bankingColors.primary };
 
-const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Налоги", "Подарки", "Другое"];
+const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Подарки", "Другое"];
 const SOURCE_OPTIONS = ["Зарплата", "Премия", "Проценты", "Дивиденды", "Бизнес", "Другое"];
 
 const PILL_INPUT_SX = {
@@ -443,16 +443,17 @@ export default function IncomePage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: "auto" }}>
+        // ВНЕШНИЙ КОНТЕЙНЕР БЕЗ ГРАНИЦ И СКРУГЛЕНИЙ
+        <Box sx={{ overflowX: "auto", borderRadius: 0, bgcolor: "transparent" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-              bgcolor: bankingColors.card2,
-              borderRadius: 2,
-              overflow: "hidden",
+              bgcolor: "transparent",        // таблица без собственного фона
+              borderRadius: 0,               // убираем скругления
+              overflow: "visible",
               border: "none",
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
@@ -464,9 +465,17 @@ export default function IncomePage() {
                 verticalAlign: "middle",
                 textAlign: "left",
               },
-              "& th": { fontWeight: 900, color: bankingColors.text, bgcolor: bankingColors.card2 },
-              "& td": { color: bankingColors.text },
-              "& .MuiTableRow-root:hover td": { backgroundColor: "rgba(34, 197, 94, 0.14)" },
+              "& th": {
+                fontWeight: 900,
+                color: bankingColors.text,
+                bgcolor: "transparent",
+              },
+              "& td": {
+                color: bankingColors.text,
+              },
+              "& .MuiTableRow-root:hover td": {
+                backgroundColor: "rgba(34, 197, 94, 0.14)",
+              },
               "& th:last-child, & td:last-child": {
                 textAlign: "center",
               },
