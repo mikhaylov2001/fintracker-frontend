@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.js
 import React, {
   createContext,
   useState,
@@ -7,13 +6,21 @@ import React, {
   useCallback,
 } from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
+import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL ||
-  "https://fintrackerpro-production.up.railway.app";
+// В prod на Vercel оставляем пустым, чтобы был same-origin /api/...
+const API_BASE_URL = (process.env.REACT_APP_API_BASE_URL || "").trim();
 const API_AUTH_BASE = "/api/auth";
+
+const AUTH_STORAGE_KEYS = [
+  "authToken",
+  "token",
+  "accessToken",
+  "jwt",
+  "authUser",
+];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -21,7 +28,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
-  // начальное восстановление из localStorage
   useEffect(() => {
     let savedToken = null;
     let savedUser = null;
@@ -31,18 +37,12 @@ export const AuthProvider = ({ children }) => {
       savedUser = localStorage.getItem("authUser");
     } catch {}
 
-    if (savedToken) {
-      setToken(savedToken);
-    }
+    if (savedToken) setToken(savedToken);
 
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.id) {
-          setUser(parsed);
-        } else {
-          setUser(null);
-        }
+        setUser(parsed && parsed.id ? parsed : null);
       } catch {
         setUser(null);
       }
@@ -54,29 +54,28 @@ export const AuthProvider = ({ children }) => {
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
+
     try {
-      localStorage.clear();
+      for (const k of AUTH_STORAGE_KEYS) localStorage.removeItem(k);
     } catch {}
+
     try {
       sessionStorage.clear();
     } catch {}
   }, []);
 
-  // ЕДИНСТВЕННОЕ место, где меняются user/token
   const saveAuthData = useCallback(
     (data) => {
       const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
       const nextUser = data?.user ?? null;
 
       setUser((prevUser) => {
-        // защита: не позволяем тихо сменить пользователя в одной вкладке
         if (prevUser && nextUser && prevUser.id !== nextUser.id) {
           console.error("[AUTH] User switch detected in one session", {
             prevUser,
             nextUser,
             time: new Date().toISOString(),
           });
-
           hardResetState();
           setAuthError(true);
           return null;
@@ -114,15 +113,10 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(
     async ({ email, password }) => {
-      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/login`, {
+      const data = await apiFetch(`${API_AUTH_BASE}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-        credentials: "include",
       });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || data.message || "Login failed");
 
       setAuthError(false);
       saveAuthData(data);
@@ -133,18 +127,10 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(
     async ({ firstName, lastName, email, password }) => {
-      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/register`, {
+      const data = await apiFetch(`${API_AUTH_BASE}/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName, lastName, email, password }),
-        credentials: "include",
       });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        throw new Error(
-          data.error || data.message || "Registration failed"
-        );
 
       setAuthError(false);
       saveAuthData(data);
@@ -155,19 +141,10 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGoogle = useCallback(
     async (idToken) => {
-      const res = await fetch(`${API_BASE_URL}${API_AUTH_BASE}/google`, {
+      const data = await apiFetch(`${API_AUTH_BASE}/google`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idToken }),
-        credentials: "include",
       });
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(
-          data.error || data.message || "Google authentication failed"
-        );
-      }
 
       setAuthError(false);
       saveAuthData(data);
@@ -178,6 +155,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
+      // этот запрос не критичен — даже если 401, мы всё равно чистим локально
       await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
         method: "POST",
         credentials: "include",
@@ -186,100 +164,23 @@ export const AuthProvider = ({ children }) => {
       console.warn("Logout request failed:", e);
     } finally {
       hardResetState();
-
-      // чистим доступные JS-куки
-      try {
-        document.cookie
-          .split(";")
-          .map((c) => c.trim())
-          .forEach((c) => {
-            if (!c) return;
-            const eq = c.indexOf("=");
-            const name = eq > -1 ? c.substring(0, eq) : c;
-            document.cookie =
-              name +
-              "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;";
-            document.cookie =
-              name +
-              "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/api;";
-          });
-      } catch (e) {
-        console.warn("Cookie clear failed:", e);
-      }
-
       setAuthError(false);
-      // редирект делает AppLayout (navigate('/login'))
+      // редирект пусть делает AppLayout
     }
   }, [hardResetState]);
 
-  const authFetch = useCallback(
-    async (url, options = {}) => {
-      const finalUrl = url.startsWith("http")
-        ? url
-        : `${API_BASE_URL}${url}`;
-
-      const doRequest = async () => {
-        const headers = {
-          ...(options.headers || {}),
-        };
-
-        if (options.body && !headers["Content-Type"]) {
-          headers["Content-Type"] = "application/json";
-        }
-
-        const hadToken = !!token;
-
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-
-        const res = await fetch(finalUrl, {
-          ...options,
-          headers,
-          credentials: "include",
-        });
-
-        return { res, hadToken };
-      };
-
-      // первый запрос
-      let { res, hadToken } = await doRequest();
-
-      // если не было токена или статус не 401 — просто возвращаем
-      if (!hadToken || res.status !== 401) {
-        return res;
-      }
-
-      // был токен и получили 401 → пробуем refresh
-      try {
-        const refreshRes = await fetch(
-          `${API_BASE_URL}${API_AUTH_BASE}/refresh`,
-          {
-            method: "POST",
-            credentials: "include",
-          }
-        );
-
-        if (!refreshRes.ok) {
-          await logout();
-          return res;
-        }
-
-        const data = await refreshRes.json().catch(() => ({}));
-
-        if (data.token || data.accessToken || data.jwt || data.user) {
-          saveAuthData(data);
-        }
-
-        ({ res } = await doRequest());
-        return res;
-      } catch {
-        await logout();
-        return res;
-      }
-    },
-    [token, logout, saveAuthData]
-  );
+  // Совместимость со старым кодом страниц: они ожидают authFetch -> Response
+  const authFetch = useCallback(async (url, options = {}) => {
+    const path = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+    const data = await apiFetch(path, options);
+    // делаем Response-подобный объект: минимум .ok/.status/.json()
+    return {
+      ok: true,
+      status: 200,
+      json: async () => data,
+      data,
+    };
+  }, []);
 
   const value = {
     user,

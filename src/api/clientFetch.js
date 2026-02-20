@@ -1,4 +1,3 @@
-// src/api/clientFetch.js
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
 
 const normalizeToken = (t) => {
@@ -23,23 +22,14 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", t);
 };
 
-const rawBase = (process.env.REACT_APP_API_BASE_URL || "").trim();
-
-const isVercelHost = () => {
-  if (typeof window === "undefined") return false;
-  const h = String(window.location.hostname || "").toLowerCase();
-  return h.endsWith(".vercel.app") || h === "vercel.app";
-};
-
-const API_BASE = isVercelHost() ? "" : rawBase;
+const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
+  .trim()
+  .replace(/\/+$/, ""); // "" в prod
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
-
-  const base = String(API_BASE || "").replace(/\/+$/, "");
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-
-  return base ? `${base}${p}` : p;
+  return API_BASE ? `${API_BASE}${p}` : p;
 };
 
 const parseBody = async (res) => {
@@ -58,9 +48,7 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const url = buildUrl("/api/auth/refresh");
-
-    const res = await fetch(url, {
+    const res = await fetch(buildUrl("/api/auth/refresh"), {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -77,11 +65,7 @@ async function refreshToken() {
       data?.access_token_value;
 
     if (newAccess) writeToken(newAccess);
-
-    // если бэкенд вернул user — обновим authUser
-    if (data?.user) {
-      localStorage.setItem("authUser", JSON.stringify(data.user));
-    }
+    if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
 
     return normalizeToken(newAccess) || null;
   })();
@@ -99,14 +83,21 @@ export async function apiFetch(path, options = {}) {
   const doRequest = async () => {
     const token = readToken();
 
+    const headers = { ...(options.headers || {}) };
+
+    const isFormData =
+      typeof FormData !== "undefined" && options.body instanceof FormData;
+
+    if (!isFormData && options.body && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    if (token) headers.Authorization = `Bearer ${token}`;
+
     const res = await fetch(url, {
       ...options,
       credentials: options.credentials ?? "include",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(options.headers || {}),
-      },
+      headers,
     });
 
     const data = await parseBody(res);
@@ -115,25 +106,18 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  // первая попытка — если 401, пробуем refresh
   if (res.status === 401) {
     const newToken = await refreshToken();
-    if (newToken) {
-      ({ res, data } = await doRequest());
-    }
+    if (newToken) ({ res, data } = await doRequest());
   }
 
-  // повторный 401 — чистим хранилище и кидаем ошибку,
-  // чтобы страницы показали toast/текст, но без window.location.reload
   if (res.status === 401) {
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
-
     const msg =
       typeof data === "string"
         ? data
         : data?.message || data?.error || res.statusText;
-
     throw new Error(`${res.status}: ${msg}`);
   }
 
