@@ -49,7 +49,6 @@ const CATEGORY_OPTIONS = [
   "Транспорт",
   "Коммунальные услуги",
   "Здоровье",
-  "Учеба",
   "Развлечения",
   "Другое",
 ];
@@ -498,19 +497,19 @@ export default function ExpensesPage() {
               overflow: "visible",
               border: "none",
               "& th, & td": {
-                px: { xs: 0.75, sm: 2 },
-                py: { xs: 0.8, sm: 1.1 },
+                px: { xs: 1, sm: 2 },
+                py: { xs: 0.9, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
                 borderBottom: "none !important",
                 whiteSpace: { xs: "normal", sm: "nowrap" },
                 verticalAlign: "middle",
-                textAlign: "left",
               },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
                 bgcolor: "transparent",
+                textAlign: "left",
               },
               "& td": {
                 color: bankingColors.text,
@@ -518,16 +517,20 @@ export default function ExpensesPage() {
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(249, 115, 22, 0.14)",
               },
-              "& th:last-child, & td:last-child": {
-                textAlign: "center",
-              },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "22%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "35%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "30%", sm: 160 },
+                    textAlign: { xs: "center", sm: "left" },
+                  }}
+                >
+                  Сумма
+                </TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
                     width: 200,
@@ -539,6 +542,7 @@ export default function ExpensesPage() {
                 <TableCell
                   sx={{
                     width: { xs: "15%", sm: 120 },
+                    textAlign: "center",
                   }}
                 >
                   Действия
@@ -559,6 +563,7 @@ export default function ExpensesPage() {
                       sx={{
                         fontWeight: 900,
                         color: COLORS.expenses,
+                        textAlign: { xs: "center", sm: "left" },
                       }}
                     >
                       {formatAmount(Number(x.amount || 0))}
