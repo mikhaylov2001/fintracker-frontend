@@ -31,6 +31,9 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
+// Импорт базовых стилей без границ
+import { surfaceSx, pillSx } from "../../styles/bankingStyles";
+
 const COLORS = { income: "#22C55E" };
 
 const CATEGORY_OPTIONS = [
@@ -362,8 +365,10 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
+        // применяем базовый стиль без границ
+        ...surfaceSx,
         minHeight: "100vh",
-        bgcolor: "#F8FAFC",
+        bgcolor: "transparent",
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
@@ -426,7 +431,7 @@ export default function IncomePage() {
             </Button>
 
             <Chip
-              label={ymLabel(ym)}
+              label={ ymLabel(ym) }
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
@@ -494,6 +499,8 @@ export default function IncomePage() {
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
               bgcolor: "#FFFFFF",
+              // Убираем рамку таблицы и границы ячеек
+              border: 0,
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 0.6, sm: 1 },
@@ -502,13 +509,14 @@ export default function IncomePage() {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 verticalAlign: "top",
-                borderBottomColor: "#E2E8F0",
+                borderBottomColor: "transparent",
               },
               "& th": {
                 fontWeight: 900,
                 color: "#0F172A",
                 whiteSpace: "nowrap",
                 bgcolor: "#F8FAFC",
+                borderBottom: 0,
               },
               "& td": {
                 whiteSpace: { xs: "normal", sm: "nowrap" },
@@ -646,6 +654,15 @@ export default function IncomePage() {
         onClose={() => (!saving ? setOpen(false) : null)}
         fullWidth
         maxWidth="sm"
+        PaperProps={{
+          sx: {
+            // убираем границу и лишние тени внутри диалога
+            border: 0,
+            boxShadow: "none",
+            borderRadius: 2,
+            ...surfaceSx, // сохранить базовую поверхность, но без границ
+          },
+        }}
       >
         <DialogTitle>
           {editing ? "Редактировать доход" : "Добавить доход"}
@@ -697,8 +714,7 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, source: newValue ?? "" }))
               }
               onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, source: newInput }))
-              }
+                setForm((s) => ({ ...s, source: newInput }))}
               renderInput={(params) => (
                 <TextField {...params} label="Источник" fullWidth />
               )}
