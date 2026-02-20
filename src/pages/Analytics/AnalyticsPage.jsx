@@ -107,6 +107,7 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
+/* KPI card */
 const KpiCard = memo(function KpiCard({
   label,
   value,
@@ -125,18 +126,20 @@ const KpiCard = memo(function KpiCard({
     [onClick]
   );
 
+  const clickable = Boolean(onClick);
+
   return (
     <Box
       component="div"
       onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? handleKeyDown : undefined}
       sx={{
         ...surfaceOutlinedSx,
         height: "100%",
         minHeight: { xs: 96, sm: 104, md: 116 },
-        cursor: onClick ? "pointer" : "default",
+        cursor: clickable ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition:
@@ -155,7 +158,7 @@ const KpiCard = memo(function KpiCard({
           )} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
-        "@media (hover: hover) and (pointer: fine)": onClick
+        "@media (hover: hover) and (pointer: fine)": clickable
           ? {
               "&:hover": {
                 transform: "translateY(-1px)",
@@ -563,7 +566,6 @@ export default function AnalyticsPage() {
     return arr;
   }, [mode, year, month]);
 
-  // сброс топ‑категорий при смене пользователя
   useEffect(() => {
     setTopCatsExpenses([]);
     setTopCatsIncome([]);
@@ -639,6 +641,9 @@ export default function AnalyticsPage() {
         mx: "auto",
         px: { xs: 2, md: 3, lg: 4 },
         maxWidth: { xs: "100%", sm: 720, md: 1040, lg: 1240, xl: 1400 },
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
       }}
     >
       {children}
@@ -783,6 +788,7 @@ export default function AnalyticsPage() {
                 color: error ? COLORS.expenses : colors.primary,
                 fontWeight: 900,
                 width: { xs: "100%", sm: "auto" },
+                cursor: "default",
               }}
             />
 
@@ -1101,6 +1107,7 @@ export default function AnalyticsPage() {
                 0.12
               ),
               fontWeight: 900,
+              cursor: "default",
             }}
           />
         </Stack>

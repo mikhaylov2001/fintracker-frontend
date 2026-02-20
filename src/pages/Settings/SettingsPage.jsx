@@ -168,7 +168,16 @@ function MonthPicker({ value, onChange }) {
 
 // ─── Layout helpers ───
 const PageWrap = ({ children }) => (
-  <Box sx={{ width: '100%', mx: 'auto', maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 } }}>
+  <Box
+    sx={{
+      width: '100%',
+      mx: 'auto',
+      maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 },
+      userSelect: 'none',
+      WebkitUserSelect: 'none',
+      MsUserSelect: 'none',
+    }}
+  >
     {children}
   </Box>
 );
