@@ -42,8 +42,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import { bankingColors } from "../../styles/bankingTokens";
 
-// ----------------- вспомогательные вещи -----------------
-
 const COLORS = { income: bankingColors.primary };
 
 const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Подарки", "Другое"];
@@ -130,8 +128,6 @@ const ymLabel = ({ year, month }) => `${String(month).padStart(2, "0")}.${year}`
 
 const getIncomeDateLike = (x) =>
   x?.date ?? x?.operationDate ?? x?.incomeDate ?? x?.createdAt ?? x?.created_at ?? x?.timestamp ?? "";
-
-// ----------------- компонент -----------------
 
 export default function IncomePage() {
   const toast = useToast();
@@ -369,8 +365,6 @@ export default function IncomePage() {
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
-
-        // глобально: текст не выделяется
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
@@ -487,19 +481,19 @@ export default function IncomePage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: "auto" }}>
+        <Box sx={{ overflowX: "hidden" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
-              minWidth: { sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" },
+              minWidth: { sm: 720 }, // десктоп как был
+              tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
               border: "none",
               "& th, & td": {
-                px: { xs: 0.75, sm: 2 },
+                px: { xs: 0.5, sm: 2 },
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
@@ -519,18 +513,31 @@ export default function IncomePage() {
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(34, 197, 94, 0.14)",
               },
-              "& th:last-child, & td:last-child": {
-                textAlign: "center",
-              },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
-                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Источник</TableCell>
-                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>Категория</TableCell>
+                <TableCell
+                  sx={{
+                    width: 200,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
+                  Источник
+                </TableCell>
+                {/* заголовок "Действия" только на десктопе */}
+                <TableCell
+                  sx={{
+                    width: { xs: "20%", sm: 120 },
+                    display: { xs: "none", sm: "table-cell" },
+                    textAlign: "center",
+                  }}
+                >
+                  Действия
+                </TableCell>
               </TableRow>
             </TableHead>
 
@@ -539,7 +546,9 @@ export default function IncomePage() {
                 const dateLike = getIncomeDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell>{isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}</TableCell>
+                    <TableCell>
+                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
+                    </TableCell>
 
                     <TableCell sx={{ fontWeight: 900, color: bankingColors.accent }}>
                       {formatAmount(Number(x.amount || 0))}
@@ -547,13 +556,29 @@ export default function IncomePage() {
 
                     <TableCell>{x.category}</TableCell>
 
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{x.source}</TableCell>
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                      {x.source}
+                    </TableCell>
 
-                    <TableCell>
-                      <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
+                    <TableCell
+                      sx={{
+                        textAlign: "right",
+                        px: { xs: 0.25, sm: 2 },
+                        width: { xs: "20%", sm: 120 },
+                      }}
+                    >
+                      <IconButton
+                        onClick={() => openEdit(x)}
+                        size="small"
+                        sx={{ userSelect: "none", mr: 0.25 }}
+                      >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
-                      <IconButton onClick={() => remove(x)} size="small" sx={{ color: bankingColors.danger, userSelect: "none" }}>
+                      <IconButton
+                        onClick={() => remove(x)}
+                        size="small"
+                        sx={{ color: bankingColors.danger, userSelect: "none" }}
+                      >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
@@ -820,7 +845,12 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ bgcolor: COLORS.income, color: bankingColors.bg0, "&:hover": { bgcolor: "#16A34A" }, userSelect: "none" }}
+            sx={{
+              bgcolor: COLORS.income,
+              color: bankingColors.bg0,
+              "&:hover": { bgcolor: "#16A34A" },
+              userSelect: "none",
+            }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
