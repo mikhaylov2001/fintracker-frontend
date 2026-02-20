@@ -7,7 +7,7 @@ import {
   Button,
   Dialog,
   DialogTitle,
-DialogContent,
+  DialogContent,
   DialogActions,
   TextField,
   Table,
@@ -486,13 +486,14 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: "auto" }}>
+        // ВАЖНО: на xs ширина = 100%, minWidth включается только с sm -> на мобиле НЕТ горизонтального скролла
+        <Box sx={{ overflowX: "hidden" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
               minWidth: { sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" }, // desktop как в доходах
+              tableLayout: { xs: "fixed", sm: "auto" },
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
@@ -528,7 +529,9 @@ export default function ExpensesPage() {
                 <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
                 <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
                 <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
-                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Описание</TableCell>
+                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>
+                  Описание
+                </TableCell>
                 <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
               </TableRow>
             </TableHead>
