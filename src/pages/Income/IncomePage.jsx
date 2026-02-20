@@ -31,8 +31,8 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Импорт базовых стилей без границ из bankingTokens.js
-import { surfaceSx } from "../../styles/bankingTokens";
+// Можно вообще не использовать bankingTokens, чтобы не было рамок
+// import { surfaceSx } from "../../styles/bankingTokens";
 
 const COLORS = { income: "#22C55E" };
 
@@ -41,7 +41,6 @@ const CATEGORY_OPTIONS = [
   "Подработка",
   "Вклады",
   "Инвестиции",
-  "Налоги",
   "Подарки",
   "Другое",
 ];
@@ -366,9 +365,8 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
-        ...surfaceSx,
         minHeight: "100vh",
-        bgcolor: "transparent",
+        bgcolor: "#022C22", // тёмно-зелёный фон страницы
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
@@ -389,7 +387,7 @@ export default function IncomePage() {
             variant="h5"
             sx={{
               fontWeight: 980,
-              color: "#0F172A",
+              color: "#ECFDF5",
               letterSpacing: -0.3,
             }}
           >
@@ -398,7 +396,7 @@ export default function IncomePage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#64748B",
+              color: "#A7F3D0",
               mt: 0.5,
               fontWeight: 600,
             }}
@@ -424,6 +422,8 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: "#16A34A",
+                color: "#A7F3D0",
               }}
             >
               ←
@@ -434,7 +434,8 @@ export default function IncomePage() {
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
-                bgcolor: "#FFFFFF",
+                bgcolor: "rgba(15,23,42,0.7)",
+                color: "#E5F9F0",
               }}
             />
 
@@ -444,6 +445,8 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: "#16A34A",
+                color: "#A7F3D0",
               }}
             >
               →
@@ -458,8 +461,10 @@ export default function IncomePage() {
               width: { xs: "100%", sm: "auto" },
               borderRadius: 999,
               px: 2.2,
-              bgcolor: COLORS.income,
-              "&:hover": { bgcolor: "#16A34A" },
+              bgcolor: "#16A34A",
+              color: "#022C22",
+              fontWeight: 700,
+              "&:hover": { bgcolor: "#15803D" },
             }}
           >
             Добавить доход
@@ -471,7 +476,7 @@ export default function IncomePage() {
       {error ? (
         <Typography
           variant="body2"
-          sx={{ mb: 2, color: "#EF4444", fontWeight: 600 }}
+          sx={{ mb: 2, color: "#FCA5A5", fontWeight: 600 }}
         >
           {error}
         </Typography>
@@ -497,7 +502,9 @@ export default function IncomePage() {
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-              bgcolor: "#FFFFFF",
+              bgcolor: "#064E3B", // карточка списка
+              borderRadius: 2,
+              overflow: "hidden",
               border: 0,
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
@@ -507,20 +514,23 @@ export default function IncomePage() {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 verticalAlign: "top",
-                borderBottomColor: "transparent",
+                borderBottomColor: "rgba(15, 23, 42, 0.18)",
               },
               "& th": {
                 fontWeight: 900,
-                color: "#0F172A",
+                color: "#ECFDF5",
                 whiteSpace: "nowrap",
-                bgcolor: "#F8FAFC",
-                borderBottom: 0,
+                bgcolor: "#065F46",
+                borderBottom: "1px solid rgba(15, 23, 42, 0.28)",
               },
               "& td": {
                 whiteSpace: { xs: "normal", sm: "nowrap" },
-                color: "#0F172A",
+                color: "#ECFDF5",
               },
               "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
+              "& .MuiTableRow-root:hover td": {
+                backgroundColor: "rgba(16, 185, 129, 0.08)",
+              },
             }}
           >
             <TableHead>
@@ -573,7 +583,7 @@ export default function IncomePage() {
                   <TableCell
                     sx={{
                       fontWeight: 900,
-                      color: "#0F172A",
+                      color: "#BBF7D0",
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -586,7 +596,7 @@ export default function IncomePage() {
                       sx={{
                         fontSize: { xs: 12, sm: 13 },
                         fontWeight: 800,
-                        color: "#0F172A",
+                        color: "#ECFDF5",
                         lineHeight: 1.15,
                         overflow: "hidden",
                         textOverflow: "ellipsis",
@@ -605,7 +615,7 @@ export default function IncomePage() {
                         sx={{
                           mt: 0.2,
                           fontSize: 11,
-                          color: "#64748B",
+                          color: "#A7F3D0",
                           lineHeight: 1.15,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -627,12 +637,15 @@ export default function IncomePage() {
 
                   <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
                     <IconButton onClick={() => openEdit(x)} size="small">
-                      <EditOutlinedIcon fontSize="small" />
+                      <EditOutlinedIcon
+                        fontSize="small"
+                        sx={{ color: "#E5E7EB" }}
+                      />
                     </IconButton>
                     <IconButton
                       onClick={() => remove(x)}
                       size="small"
-                      color="error"
+                      sx={{ color: "#FCA5A5" }}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -655,9 +668,10 @@ export default function IncomePage() {
         PaperProps={{
           sx: {
             border: 0,
-            boxShadow: "none",
-            borderRadius: 2,
-            ...surfaceSx,
+            boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+            borderRadius: 3,
+            bgcolor: "#022C22",
+            color: "#ECFDF5",
           },
         }}
       >
@@ -671,6 +685,7 @@ export default function IncomePage() {
             maxHeight: fullScreen ? "calc(100vh - 140px)" : 520,
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
+            bgcolor: "#064E3B",
           }}
         >
           <Stack spacing={2} sx={{ mt: 1 }}>
@@ -684,6 +699,10 @@ export default function IncomePage() {
               placeholder="50000.00"
               inputProps={{ inputMode: "decimal" }}
               fullWidth
+              InputLabelProps={{ style: { color: "#D1FAE5" } }}
+              InputProps={{
+                style: { color: "#ECFDF5" },
+              }}
             />
 
             <Autocomplete
@@ -698,7 +717,16 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, category: newInput }))
               }
               renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
+                <TextField
+                  {...params}
+                  label="Категория"
+                  fullWidth
+                  InputLabelProps={{ style: { color: "#D1FAE5" } }}
+                  InputProps={{
+                    ...params.InputProps,
+                    style: { color: "#ECFDF5" },
+                  }}
+                />
               )}
             />
 
@@ -714,7 +742,16 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, source: newInput }))
               }
               renderInput={(params) => (
-                <TextField {...params} label="Источник" fullWidth />
+                <TextField
+                  {...params}
+                  label="Источник"
+                  fullWidth
+                  InputLabelProps={{ style: { color: "#D1FAE5" } }}
+                  InputProps={{
+                    ...params.InputProps,
+                    style: { color: "#ECFDF5" },
+                  }}
+                />
               )}
             />
 
@@ -748,6 +785,10 @@ export default function IncomePage() {
                 "Введите цифры: ДДММГГГГ (точки добавятся сами)"
               }
               error={Boolean(dateErr)}
+              InputLabelProps={{ style: { color: "#D1FAE5" } }}
+              InputProps={{
+                style: { color: "#ECFDF5" },
+              }}
             />
           </Stack>
         </DialogContent>
@@ -765,6 +806,10 @@ export default function IncomePage() {
             variant="outlined"
             disabled={saving}
             fullWidth={fullScreen}
+            sx={{
+              borderColor: "#16A34A",
+              color: "#D1FAE5",
+            }}
           >
             Отмена
           </Button>
@@ -775,6 +820,7 @@ export default function IncomePage() {
             fullWidth={fullScreen}
             sx={{
               bgcolor: COLORS.income,
+              color: "#022C22",
               "&:hover": { bgcolor: "#16A34A" },
             }}
           >
