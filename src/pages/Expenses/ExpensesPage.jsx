@@ -491,7 +491,7 @@ export default function ExpensesPage() {
             size="small"
             sx={{
               width: "100%",
-              minWidth: { sm: 720 }, // десктоп как был, мобилка без горизонтального скролла
+              minWidth: { sm: 720 }, // десктоп как был
               tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
@@ -519,16 +519,13 @@ export default function ExpensesPage() {
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(249, 115, 22, 0.14)",
               },
-              "& th:last-child, & td:last-child": {
-                textAlign: "center",
-              },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "30%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "30%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "40%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: { xs: "28%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "44%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
                     width: 200,
@@ -542,6 +539,7 @@ export default function ExpensesPage() {
                   sx={{
                     width: { xs: "auto", sm: 120 },
                     display: { xs: "none", sm: "table-cell" },
+                    textAlign: "center",
                   }}
                 >
                   Действия
@@ -612,6 +610,7 @@ export default function ExpensesPage() {
                       sx={{
                         textAlign: "center",
                         px: { xs: 0.5, sm: 2 },
+                        width: { xs: "auto", sm: 120 },
                       }}
                     >
                       <IconButton
