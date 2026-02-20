@@ -345,7 +345,7 @@ export default function ExpensesPage() {
         toast.error(msg);
       }
     } finally {
-        setSaving(false);
+      setSaving(false);
     }
   };
 
@@ -376,7 +376,6 @@ export default function ExpensesPage() {
         msUserSelect: "none",
       }}
     >
-      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
@@ -478,7 +477,6 @@ export default function ExpensesPage() {
         </Typography>
       ) : null}
 
-      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -487,17 +485,15 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: "hidden" }}>
+        <Box sx={{ overflowX: { xs: "hidden", sm: "auto" } }}>
           <Table
             size="small"
             sx={{
               width: "100%",
               minWidth: { xs: "100%", sm: 720 },
-              // на мобиле auto, чтобы браузер ровнее раскидал колонки
               tableLayout: { xs: "auto", sm: "auto" },
               bgcolor: "transparent",
               borderRadius: 0,
-              overflow: "visible",
               border: "none",
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
@@ -522,24 +518,38 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "30%", sm: 160 } }}>Дата</TableCell>
                 <TableCell
-                  align="center"
                   sx={{
-                    width: { xs: "30%", sm: 160 },
+                    width: { xs: "22%", sm: 120 },
+                    textAlign: { xs: "left", sm: "center" },
+                  }}
+                >
+                  Дата
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "28%", sm: 140 },
                     textAlign: "center",
                   }}
                 >
                   Сумма
                 </TableCell>
+                <TableCell sx={{ width: { xs: "35%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "40%", sm: 400 },
-                    textAlign: "left",
+                    width: 220,
+                    display: { xs: "none", sm: "table-cell" },
                   }}
                 >
-                  <Box sx={{ display: { xs: "none", sm: "block" } }}>Категория / Описание</Box>
-                  <Box sx={{ display: { xs: "block", sm: "none" } }}>Категория</Box>
+                  Описание
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "15%", sm: 120 },
+                    textAlign: "center",
+                  }}
+                >
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -549,12 +559,17 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell>
+                    {/* Дата: слева на мобиле, по центру на десктопе */}
+                    <TableCell
+                      sx={{
+                        textAlign: { xs: "left", sm: "center" },
+                      }}
+                    >
                       {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
                     </TableCell>
 
+                    {/* Сумма: по центру везде */}
                     <TableCell
-                      align="center"
                       sx={{
                         fontWeight: 900,
                         color: COLORS.expenses,
@@ -565,91 +580,69 @@ export default function ExpensesPage() {
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
+                    {/* Категория (+ описание на мобиле под ней) */}
                     <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={1}
-                        sx={{ justifyContent: "space-between" }}
+                      <Typography
+                        component="div"
+                        sx={{
+                          fontSize: { xs: 12, sm: 13 },
+                          fontWeight: 800,
+                          color: bankingColors.text,
+                          lineHeight: 1.15,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: { xs: 1, sm: 1 },
+                        }}
+                        title={x.category || ""}
                       >
-                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                          <Typography
-                            component="div"
-                            sx={{
-                              fontSize: { xs: 12, sm: 13 },
-                              fontWeight: 800,
-                              color: bankingColors.text,
-                              lineHeight: 1.15,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              display: "-webkit-box",
-                              WebkitBoxOrient: "vertical",
-                              WebkitLineClamp: { xs: 1, sm: 1 },
-                            }}
-                            title={x.category || ""}
-                          >
-                            {x.category}
-                          </Typography>
+                        {x.category}
+                      </Typography>
 
-                          {isMobile ? (
-                            <Typography
-                              component="div"
-                              sx={{
-                                mt: 0.2,
-                                fontSize: 11,
-                                color: bankingColors.muted,
-                                lineHeight: 1.15,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={x.description || ""}
-                            >
-                              {x.description}
-                            </Typography>
-                          ) : (
-                            <Typography
-                              component="div"
-                              sx={{
-                                mt: 0.2,
-                                fontSize: 12,
-                                color: bankingColors.muted,
-                                lineHeight: 1.15,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                              title={x.description || ""}
-                            >
-                              {x.description}
-                            </Typography>
-                          )}
-                        </Box>
-
-                        <Box
+                      {isMobile ? (
+                        <Typography
+                          component="div"
                           sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            ml: 0.5,
-                            flexShrink: 0,
+                            mt: 0.2,
+                            fontSize: 11,
+                            color: bankingColors.muted,
+                            lineHeight: 1.15,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
                           }}
+                          title={x.description || ""}
                         >
-                          <IconButton
-                            onClick={() => openEdit(x)}
-                            size="small"
-                            sx={{ userSelect: "none" }}
-                          >
-                            <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
-                          </IconButton>
-                          <IconButton
-                            onClick={() => remove(x)}
-                            size="small"
-                            sx={{ color: bankingColors.danger, userSelect: "none" }}
-                          >
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Stack>
+                          {x.description}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
+
+                    {/* Описание только на десктопе в отдельной колонке */}
+                    <TableCell
+                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                      title={x.description || ""}
+                    >
+                      {x.description}
+                    </TableCell>
+
+                    {/* Действия */}
+                    <TableCell sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                      <IconButton
+                        onClick={() => openEdit(x)}
+                        size="small"
+                        sx={{ userSelect: "none" }}
+                      >
+                        <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => remove(x)}
+                        size="small"
+                        sx={{ color: bankingColors.danger, userSelect: "none" }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 );
@@ -659,7 +652,6 @@ export default function ExpensesPage() {
         </Box>
       )}
 
-      {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"
