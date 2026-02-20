@@ -377,11 +377,15 @@ export default function IncomePage() {
         msUserSelect: "none",
         pointerEvents: "none",
 
+        // прячем курсор по всей странице
+        cursor: "none",
+
         // интерактивные элементы работают нормально
         "& button, & a, & input, & textarea, & select, & label, & .MuiIconButton-root, & .MuiChip-root": {
           pointerEvents: "auto",
           userSelect: "auto",
           WebkitUserSelect: "auto",
+          cursor: "none",
         },
       }}
     >
@@ -510,12 +514,7 @@ export default function IncomePage() {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
-                lineHeight: 1.3,
-                borderBottom: "none !important",
-                whiteSpace: "nowrap",
-                verticalAlign: "middle",
-                textAlign: "left",
-              },
+                lineHeight: 1.3 },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
