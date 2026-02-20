@@ -370,22 +370,18 @@ export default function IncomePage() {
         py: { xs: 2, md: 3 },
         width: "100%",
 
-        // глобально: нельзя выделять текст и кликать по фону
+        // глобально: текст не выделяется, фон не кликается
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         msUserSelect: "none",
         pointerEvents: "none",
 
-        // прячем курсор по всей странице
-        cursor: "none",
-
-        // интерактивные элементы работают нормально
+        // интерактивные элементы: кликаются и могут выделять текст (если нужно)
         "& button, & a, & input, & textarea, & select, & label, & .MuiIconButton-root, & .MuiChip-root": {
           pointerEvents: "auto",
           userSelect: "auto",
           WebkitUserSelect: "auto",
-          cursor: "none",
         },
       }}
     >
@@ -429,6 +425,7 @@ export default function IncomePage() {
                 px: 1.2,
                 borderColor: bankingColors.border,
                 color: bankingColors.muted,
+                // на самой кнопке текст тоже не выделяется
                 userSelect: "none",
                 WebkitUserSelect: "none",
               }}
@@ -514,7 +511,12 @@ export default function IncomePage() {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
-                lineHeight: 1.3 },
+                lineHeight: 1.3,
+                borderBottom: "none !important",
+                whiteSpace: "nowrap",
+                verticalAlign: "middle",
+                textAlign: "left",
+              },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
