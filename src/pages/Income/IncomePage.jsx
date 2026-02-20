@@ -621,7 +621,7 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundColor: bankingColors.card2,
+            backgroundColor: "#111827", // немного светлее общей тёмной темы
             borderRadius: 2,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -638,7 +638,7 @@ export default function IncomePage() {
             maxHeight: fullScreen ? "calc(100vh - 140px)" : 520,
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
-            bgcolor: bankingColors.card2,
+            bgcolor: "#111827",
           }}
         >
           <Stack spacing={2.2} sx={{ mt: 1 }}>
@@ -654,7 +654,10 @@ export default function IncomePage() {
               placeholder="50000.00"
               inputProps={{ inputMode: "decimal" }}
               fullWidth
-              InputLabelProps={{ style: { color: bankingColors.muted } }}
+              InputLabelProps={{
+                style: { color: bankingColors.muted },
+                shrink: true,
+              }}
               InputProps={{
                 disableUnderline: true,
                 sx: {
@@ -685,7 +688,10 @@ export default function IncomePage() {
                   variant="standard"
                   label="Категория"
                   fullWidth
-                  InputLabelProps={{ style: { color: bankingColors.muted } }}
+                  InputLabelProps={{
+                    style: { color: bankingColors.muted },
+                    shrink: true,
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     disableUnderline: true,
@@ -719,7 +725,10 @@ export default function IncomePage() {
                   variant="standard"
                   label="Источник"
                   fullWidth
-                  InputLabelProps={{ style: { color: bankingColors.muted } }}
+                  InputLabelProps={{
+                    style: { color: bankingColors.muted },
+                    shrink: true,
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     disableUnderline: true,
@@ -762,10 +771,11 @@ export default function IncomePage() {
                     placeholder: "16.02.2026",
                     helperText:
                       dateErr ||
-                      "Можно напечатать дату или выбрать в календаре",
+                      "Введите дату вручную в формате ДД.ММ.ГГГГ или выберите в календаре",
                     error: Boolean(dateErr),
                     InputLabelProps: {
                       style: { color: bankingColors.muted },
+                      shrink: true,
                     },
                     InputProps: {
                       disableUnderline: true,
