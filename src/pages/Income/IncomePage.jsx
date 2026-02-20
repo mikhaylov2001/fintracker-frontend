@@ -24,6 +24,13 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Autocomplete from "@mui/material/Autocomplete";
 
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
+// при желании можешь раскомментировать русскую локаль
+// import "dayjs/locale/ru";
+
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
 
@@ -679,7 +686,7 @@ export default function IncomePage() {
           }}
         >
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {/* Сумма */}
+            {/* Сумма — чуть светлее фон */}
             <TextField
               variant="standard"
               label="Сумма"
@@ -695,7 +702,7 @@ export default function IncomePage() {
               InputProps={{
                 disableUnderline: true,
                 sx: {
-                  bgcolor: bankingColors.card,
+                  bgcolor: "rgba(255,255,255,0.06)",
                   borderRadius: 1.5,
                   px: 1.5,
                   py: 1.2,
@@ -727,7 +734,7 @@ export default function IncomePage() {
                     ...params.InputProps,
                     disableUnderline: true,
                     sx: {
-                      bgcolor: bankingColors.card,
+                      bgcolor: "rgba(255,255,255,0.06)",
                       borderRadius: 1.5,
                       px: 1.5,
                       py: 1.2,
@@ -761,7 +768,7 @@ export default function IncomePage() {
                     ...params.InputProps,
                     disableUnderline: true,
                     sx: {
-                      bgcolor: bankingColors.card,
+                      bgcolor: "rgba(255,255,255,0.06)",
                       borderRadius: 1.5,
                       px: 1.5,
                       py: 1.2,
@@ -772,50 +779,73 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата */}
-            <TextField
-              variant="standard"
-              label="Дата"
-              value={form.dateRu || ""}
-              onChange={(e) => {
-                const ru = formatRuDateTyping(e.target.value);
-                const iso = ruToIsoStrict(ru);
+            {/* Дата: календарь + ручной ввод + информативность */}
+            <LocalizationProvider
+              dateAdapter={AdapterDayjs}
+              // adapterLocale="ru"
+            >
+              <DatePicker
+                label="Дата"
+                value={form.date ? dayjs(form.date) : null}
+                onChange={(newValue) => {
+                  if (!newValue || !newValue.isValid()) return;
+                  const iso = newValue.format("YYYY-MM-DD");
+                  setDateErr("");
+                  setForm((s) => ({
+                    ...s,
+                    date: iso,
+                    dateRu: formatDateRu(iso),
+                  }));
+                }}
+                format="DD.MM.YYYY"
+                slotProps={{
+                  textField: {
+                    variant: "standard",
+                    fullWidth: true,
+                    value: form.dateRu,
+                    onChange: (e) => {
+                      const ru = formatRuDateTyping(e.target.value);
+                      const iso = ruToIsoStrict(ru);
 
-                let nextErr = "";
-                if (ru.length === 10) {
-                  if (!iso) nextErr = "Неверный формат даты";
-                  else if (!isValidIsoDate(iso))
-                    nextErr = "Такой даты не существует";
-                }
+                      let nextErr = "";
+                      if (ru.length === 10) {
+                        if (!iso) nextErr = "Неверный формат даты";
+                        else if (!isValidIsoDate(iso))
+                          nextErr = "Такой даты не существует";
+                      }
 
-                setDateErr(nextErr);
+                      setDateErr(nextErr);
 
-                setForm((s) => ({
-                  ...s,
-                  dateRu: ru,
-                  date: iso && isValidIsoDate(iso) ? iso : s.date,
-                }));
-              }}
-              placeholder="16.02.2026"
-              inputProps={{ inputMode: "numeric" }}
-              fullWidth
-              helperText={
-                dateErr ||
-                "Введите цифры: ДДММГГГГ (точки добавятся сами)"
-              }
-              error={Boolean(dateErr)}
-              InputLabelProps={{ style: { color: bankingColors.muted } }}
-              InputProps={{
-                disableUnderline: true,
-                sx: {
-                  bgcolor: bankingColors.card,
-                  borderRadius: 1.5,
-                  px: 1.5,
-                  py: 1.2,
-                  color: bankingColors.text,
-                },
-              }}
-            />
+                      setForm((s) => ({
+                        ...s,
+                        dateRu: ru,
+                        date:
+                          iso && isValidIsoDate(iso) ? iso : s.date,
+                      }));
+                    },
+                    placeholder: "16.02.2026",
+                    inputProps: { inputMode: "numeric" },
+                    helperText:
+                      dateErr ||
+                      "Введите цифры: ДДММГГГГ или выберите дату в календаре",
+                    error: Boolean(dateErr),
+                    InputLabelProps: {
+                      style: { color: bankingColors.muted },
+                    },
+                    InputProps: {
+                      disableUnderline: true,
+                      sx: {
+                        bgcolor: "rgba(255,255,255,0.06)",
+                        borderRadius: 1.5,
+                        px: 1.5,
+                        py: 1.2,
+                        color: bankingColors.text,
+                      },
+                    },
+                  },
+                }}
+              />
+            </LocalizationProvider>
           </Stack>
         </DialogContent>
 
