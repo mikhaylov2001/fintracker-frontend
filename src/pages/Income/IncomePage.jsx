@@ -428,7 +428,7 @@ export default function IncomePage() {
           mx: "auto",
         }}
       >
-        {/* Header на чистом фоне */}
+        {/* Header */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.5}
@@ -469,11 +469,11 @@ export default function IncomePage() {
               spacing={0.75}
               alignItems="center"
               sx={{
+                bgcolor: alpha(bankingColors.card2, 0.8),
                 px: 1,
                 py: 0.75,
                 borderRadius: 999,
                 border: `1px solid ${bankingColors.border}`,
-                bgcolor: "transparent",
                 width: { xs: "100%", sm: "auto" },
                 justifyContent: "center",
               }}
@@ -543,7 +543,7 @@ export default function IncomePage() {
           </Typography>
         ) : null}
 
-        {/* Список */}
+        {/* Список / карточка */}
         {!loading && items.length === 0 ? (
           <Box
             sx={{
@@ -564,16 +564,21 @@ export default function IncomePage() {
           <Box
             sx={{
               ...listCardSx,
+              // шире по горизонтали: почти до краёв контейнера
               width: "100%",
               mt: 1,
             }}
           >
-            <Box sx={{ overflowX: "auto" }}>
+            <Box
+              sx={{
+                overflowX: "auto",
+              }}
+            >
               <Table
                 size="small"
                 sx={{
                   width: "100%",
-                  minWidth: { xs: 640, md: 900 },
+                  minWidth: { xs: 640, md: 900 }, // шире список
                   tableLayout: { xs: "fixed", md: "auto" },
                   "& th, & td": {
                     px: { xs: 1.25, sm: 2.25 },
@@ -697,20 +702,14 @@ export default function IncomePage() {
                         <IconButton
                           onClick={() => openEdit(x)}
                           size="small"
-                          sx={{
-                            color: "#64748B",
-                            "&:hover": { color: "#0F172A" },
-                          }}
+                          sx={{ color: "#64748B", "&:hover": { color: "#0F172A" } }}
                         >
                           <EditOutlinedIcon fontSize="small" />
                         </IconButton>
                         <IconButton
                           onClick={() => remove(x)}
                           size="small"
-                          sx={{
-                            color: "#EF4444",
-                            "&:hover": { color: "#B91C1C" },
-                          }}
+                          sx={{ color: "#EF4444", "&:hover": { color: "#B91C1C" } }}
                         >
                           <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
