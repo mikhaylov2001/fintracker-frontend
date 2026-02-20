@@ -363,7 +363,7 @@ export default function IncomePage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#F8FAFC",
+        bgcolor: COLORS.income,          // зелёный фон всей страницы
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
@@ -393,7 +393,7 @@ export default function IncomePage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#64748B",
+              color: "#064E3B",
               mt: 0.5,
               fontWeight: 600,
             }}
@@ -420,6 +420,13 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: "#BBF7D0",
+                color: "#022C22",
+                bgcolor: "rgba(255,255,255,0.12)",
+                "&:hover": {
+                  borderColor: "#A7F3D0",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                },
               }}
             >
               ←
@@ -430,7 +437,8 @@ export default function IncomePage() {
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
-                bgcolor: "#FFFFFF",
+                bgcolor: "#ECFDF5",
+                color: "#022C22",
               }}
             />
 
@@ -440,6 +448,13 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: "#BBF7D0",
+                color: "#022C22",
+                bgcolor: "rgba(255,255,255,0.12)",
+                "&:hover": {
+                  borderColor: "#A7F3D0",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                },
               }}
             >
               →
@@ -454,8 +469,9 @@ export default function IncomePage() {
               width: { xs: "100%", sm: "auto" },
               borderRadius: 999,
               px: 2.2,
-              bgcolor: COLORS.income,
-              "&:hover": { bgcolor: "#16A34A" },
+              bgcolor: "#16A34A",
+              "&:hover": { bgcolor: "#15803D" },
+              boxShadow: "0 14px 40px rgba(22, 163, 74, 0.55)",
             }}
           >
             Добавить доход
@@ -467,7 +483,7 @@ export default function IncomePage() {
       {error ? (
         <Typography
           variant="body2"
-          sx={{ mb: 2, color: "#EF4444", fontWeight: 600 }}
+          sx={{ mb: 2, color: "#FEE2E2", fontWeight: 600 }}
         >
           {error}
         </Typography>
@@ -487,7 +503,7 @@ export default function IncomePage() {
             mt: 1.5,
             borderRadius: 2.5,
             bgcolor: "#FFFFFF",
-            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.18)",
+            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.35)",
             overflow: "hidden",
           }}
         >
@@ -512,7 +528,7 @@ export default function IncomePage() {
                   fontWeight: 900,
                   color: "#0F172A",
                   whiteSpace: "nowrap",
-                  bgcolor: "#F8FAFC",
+                  bgcolor: "#F1F5F9",
                 },
                 "& td": {
                   whiteSpace: { xs: "normal", sm: "nowrap" },
@@ -766,7 +782,7 @@ export default function IncomePage() {
             fullWidth={fullScreen}
             sx={{
               bgcolor: COLORS.income,
-              "&:hover": { bgcolor: "#16A34A" },
+              "&:hover": { bgcolor: "#15803D" },
             }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
