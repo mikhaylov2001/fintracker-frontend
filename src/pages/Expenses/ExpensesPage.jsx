@@ -491,7 +491,7 @@ export default function ExpensesPage() {
             sx={{
               width: "100%",
               minWidth: { xs: "100%", sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" },
+              tableLayout: { xs: "fixed", sm: "fixed" },
               bgcolor: "transparent",
               borderRadius: 0,
               border: "none",
@@ -520,7 +520,7 @@ export default function ExpensesPage() {
               <TableRow>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: 120 },
+                    width: { xs: "25%", sm: "20%" },
                     textAlign: { xs: "center", sm: "center" },
                   }}
                 >
@@ -528,7 +528,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: 140 },
+                    width: { xs: "25%", sm: "20%" },
                     textAlign: { xs: "center", sm: "center" },
                   }}
                 >
@@ -536,7 +536,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: 200 },
+                    width: { xs: "25%", sm: "25%" },
                     textAlign: { xs: "center", sm: "left" },
                   }}
                 >
@@ -544,15 +544,16 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: 220,
+                    width: { xs: 0, sm: "25%" },
                     display: { xs: "none", sm: "table-cell" },
+                    textAlign: "left",
                   }}
                 >
                   Описание
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: 120 },
+                    width: { xs: "25%", sm: "10%" },
                     textAlign: "center",
                   }}
                 >
@@ -640,7 +641,6 @@ export default function ExpensesPage() {
                         onClick={() => openEdit(x)}
                         size="small"
                         sx={{ userSelect: "none" }}
-                        aria-label="Редактировать"
                       >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
@@ -648,7 +648,6 @@ export default function ExpensesPage() {
                         onClick={() => remove(x)}
                         size="small"
                         sx={{ color: bankingColors.danger, userSelect: "none" }}
-                        aria-label="Удалить"
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
