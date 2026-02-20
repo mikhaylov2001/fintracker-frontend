@@ -31,7 +31,11 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-const COLORS = { income: "#22C55E" };
+// income — акцент, bg — тёмный зелёный фон страницы
+const COLORS = {
+  income: "#22C55E",
+  bg: "#05140C",
+};
 
 const CATEGORY_OPTIONS = [
   "Работа",
@@ -363,7 +367,7 @@ export default function IncomePage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: COLORS.income,          // зелёный фон всей страницы
+        bgcolor: COLORS.bg, // тёмный зелёный фон страницы
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
@@ -384,7 +388,7 @@ export default function IncomePage() {
             variant="h5"
             sx={{
               fontWeight: 980,
-              color: "#0F172A",
+              color: "#ECFDF5",
               letterSpacing: -0.3,
             }}
           >
@@ -393,7 +397,7 @@ export default function IncomePage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#064E3B",
+              color: "rgba(226, 252, 239, 0.82)",
               mt: 0.5,
               fontWeight: 600,
             }}
@@ -420,12 +424,12 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: "#BBF7D0",
-                color: "#022C22",
-                bgcolor: "rgba(255,255,255,0.12)",
+                borderColor: "rgba(209, 250, 229, 0.7)",
+                color: "#ECFDF5",
+                bgcolor: "rgba(15, 118, 110, 0.28)",
                 "&:hover": {
-                  borderColor: "#A7F3D0",
-                  bgcolor: "rgba(255,255,255,0.2)",
+                  borderColor: "rgba(187, 247, 208, 0.9)",
+                  bgcolor: "rgba(15, 118, 110, 0.4)",
                 },
               }}
             >
@@ -438,7 +442,7 @@ export default function IncomePage() {
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
                 bgcolor: "#ECFDF5",
-                color: "#022C22",
+                color: "#052e16",
               }}
             />
 
@@ -448,12 +452,12 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: "#BBF7D0",
-                color: "#022C22",
-                bgcolor: "rgba(255,255,255,0.12)",
+                borderColor: "rgba(209, 250, 229, 0.7)",
+                color: "#ECFDF5",
+                bgcolor: "rgba(15, 118, 110, 0.28)",
                 "&:hover": {
-                  borderColor: "#A7F3D0",
-                  bgcolor: "rgba(255,255,255,0.2)",
+                  borderColor: "rgba(187, 247, 208, 0.9)",
+                  bgcolor: "rgba(15, 118, 110, 0.4)",
                 },
               }}
             >
@@ -469,9 +473,9 @@ export default function IncomePage() {
               width: { xs: "100%", sm: "auto" },
               borderRadius: 999,
               px: 2.2,
-              bgcolor: "#16A34A",
-              "&:hover": { bgcolor: "#15803D" },
-              boxShadow: "0 14px 40px rgba(22, 163, 74, 0.55)",
+              bgcolor: COLORS.income,
+              "&:hover": { bgcolor: "#16A34A" },
+              boxShadow: "0 16px 40px rgba(34, 197, 94, 0.55)",
             }}
           >
             Добавить доход
@@ -503,7 +507,7 @@ export default function IncomePage() {
             mt: 1.5,
             borderRadius: 2.5,
             bgcolor: "#FFFFFF",
-            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.35)",
+            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.32)",
             overflow: "hidden",
           }}
         >
@@ -782,7 +786,7 @@ export default function IncomePage() {
             fullWidth={fullScreen}
             sx={{
               bgcolor: COLORS.income,
-              "&:hover": { bgcolor: "#15803D" },
+              "&:hover": { bgcolor: "#16A34A" },
             }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
