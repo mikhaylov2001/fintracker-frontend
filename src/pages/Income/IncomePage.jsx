@@ -566,16 +566,17 @@ export default function IncomePage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   verticalAlign: "top",
-                  borderBottom: "none",
                 },
                 "& th": {
                   fontWeight: 900,
                   color: bankingColors.muted,
                   whiteSpace: "nowrap",
+                   borderBottom: "none",
                 },
                 "& td": {
                   whiteSpace: { xs: "normal", sm: "nowrap" },
                   color: bankingColors.text,
+                  borderBottom: "1px solid #1f2937",
                 },
                 "& tbody tr:hover": {
                   backgroundColor: alpha("#0f172a", 0.45),
