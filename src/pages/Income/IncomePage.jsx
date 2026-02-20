@@ -28,7 +28,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-// при желании можешь раскомментировать русскую локаль
 // import "dayjs/locale/ru";
 
 import EmptyState from "../../components/EmptyState";
@@ -187,8 +186,7 @@ export default function IncomePage() {
     amount: "",
     category: "Работа",
     source: "Зарплата",
-    date: new Date().toISOString().slice(0, 10),
-    dateRu: "",
+    date: new Date().toISOString().slice(0, 10), // только ISO
   });
 
   const amountRef = useRef(null);
@@ -273,7 +271,6 @@ export default function IncomePage() {
       category: "Работа",
       source: "Зарплата",
       date: iso,
-      dateRu: formatDateRu(iso),
     });
     setOpen(true);
     setTimeout(() => {
@@ -290,7 +287,6 @@ export default function IncomePage() {
       category: income?.category ?? "Работа",
       source: income?.source ?? "Зарплата",
       date: iso,
-      dateRu: formatDateRu(iso),
     });
     setOpen(true);
     setTimeout(() => {
@@ -686,7 +682,7 @@ export default function IncomePage() {
           }}
         >
           <Stack spacing={2} sx={{ mt: 1 }}>
-            {/* Сумма — чуть светлее фон */}
+            {/* Сумма */}
             <TextField
               variant="standard"
               label="Сумма"
@@ -779,22 +775,23 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: календарь + ручной ввод + информативность */}
-            <LocalizationProvider
-              dateAdapter={AdapterDayjs}
-              // adapterLocale="ru"
-            >
+            {/* Дата: календарь */}
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Дата"
                 value={form.date ? dayjs(form.date) : null}
                 onChange={(newValue) => {
-                  if (!newValue || !newValue.isValid()) return;
-                  const iso = newValue.format("YYYY-MM-DD");
+                  if (!newValue) return;
+                  const d = dayjs(newValue);
+                  if (!d.isValid()) {
+                    setDateErr("Неверная дата");
+                    return;
+                  }
+                  const iso = d.format("YYYY-MM-DD");
                   setDateErr("");
                   setForm((s) => ({
                     ...s,
                     date: iso,
-                    dateRu: formatDateRu(iso),
                   }));
                 }}
                 format="DD.MM.YYYY"
@@ -802,32 +799,10 @@ export default function IncomePage() {
                   textField: {
                     variant: "standard",
                     fullWidth: true,
-                    value: form.dateRu,
-                    onChange: (e) => {
-                      const ru = formatRuDateTyping(e.target.value);
-                      const iso = ruToIsoStrict(ru);
-
-                      let nextErr = "";
-                      if (ru.length === 10) {
-                        if (!iso) nextErr = "Неверный формат даты";
-                        else if (!isValidIsoDate(iso))
-                          nextErr = "Такой даты не существует";
-                      }
-
-                      setDateErr(nextErr);
-
-                      setForm((s) => ({
-                        ...s,
-                        dateRu: ru,
-                        date:
-                          iso && isValidIsoDate(iso) ? iso : s.date,
-                      }));
-                    },
                     placeholder: "16.02.2026",
-                    inputProps: { inputMode: "numeric" },
                     helperText:
                       dateErr ||
-                      "Введите цифры: ДДММГГГГ или выберите дату в календаре",
+                      "Выберите дату в календаре или введите ниже вручную",
                     error: Boolean(dateErr),
                     InputLabelProps: {
                       style: { color: bankingColors.muted },
@@ -846,6 +821,50 @@ export default function IncomePage() {
                 }}
               />
             </LocalizationProvider>
+
+            {/* Дата: ручной ввод DD.MM.ГГГГ */}
+            <TextField
+              variant="standard"
+              label="Дата (вручную)"
+              value={formatDateRu(form.date)}
+              onChange={(e) => {
+                const ru = formatRuDateTyping(e.target.value);
+                const iso = ruToIsoStrict(ru);
+
+                let nextErr = "";
+                if (ru.length === 10) {
+                  if (!iso) nextErr = "Неверный формат даты";
+                  else if (!isValidIsoDate(iso))
+                    nextErr = "Такой даты не существует";
+                }
+
+                setDateErr(nextErr);
+
+                setForm((s) => ({
+                  ...s,
+                  date: iso && isValidIsoDate(iso) ? iso : s.date,
+                }));
+              }}
+              placeholder="16.02.2026"
+              inputProps={{ inputMode: "numeric" }}
+              fullWidth
+              helperText={
+                dateErr ||
+                "Введите цифры: ДДММГГГГ (точки добавятся сами)"
+              }
+              error={Boolean(dateErr)}
+              InputLabelProps={{ style: { color: bankingColors.muted } }}
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  bgcolor: "rgba(255,255,255,0.06)",
+                  borderRadius: 1.5,
+                  px: 1.5,
+                  py: 1.2,
+                  color: bankingColors.text,
+                },
+              }}
+            />
           </Stack>
         </DialogContent>
 
