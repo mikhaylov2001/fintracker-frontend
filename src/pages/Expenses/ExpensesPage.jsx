@@ -490,7 +490,7 @@ export default function ExpensesPage() {
             size="small"
             sx={{
               width: "100%",
-              minWidth: { xs: "100%", sm: 720 },
+              minWidth: { xs: "100%", sm: 820 },
               tableLayout: { xs: "fixed", sm: "fixed" },
               bgcolor: "transparent",
               borderRadius: 0,
@@ -520,7 +520,7 @@ export default function ExpensesPage() {
               <TableRow>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: "20%" },
+                    width: { xs: "25%", sm: "15%" },
                     textAlign: { xs: "center", sm: "center" },
                   }}
                 >
@@ -528,7 +528,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: "20%" },
+                    width: { xs: "25%", sm: "15%" },
                     textAlign: { xs: "center", sm: "center" },
                   }}
                 >
@@ -536,7 +536,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "25%", sm: "25%" },
+                    width: { xs: "25%", sm: "30%" },
                     textAlign: { xs: "center", sm: "left" },
                   }}
                 >
@@ -544,7 +544,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: 0, sm: "25%" },
+                    width: { xs: 0, sm: "30%" },
                     display: { xs: "none", sm: "table-cell" },
                     textAlign: "left",
                   }}
