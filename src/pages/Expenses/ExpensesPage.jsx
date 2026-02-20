@@ -486,14 +486,14 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        // ВАЖНО: на xs ширина = 100%, minWidth включается только с sm -> на мобиле НЕТ горизонтального скролла
         <Box sx={{ overflowX: "hidden" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
+              // десктоп — как было: minWidth только с sm, мобилка — ширина 100% без скролла
               minWidth: { sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" },
+              tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
@@ -506,15 +506,16 @@ export default function ExpensesPage() {
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
                 verticalAlign: "middle",
-                textAlign: "left",
               },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
                 bgcolor: "transparent",
+                textAlign: "left",
               },
               "& td": {
                 color: bankingColors.text,
+                textAlign: "left",
               },
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(249, 115, 22, 0.14)",
@@ -526,13 +527,43 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
-                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>
+                {/* мобильная сетка: 3 колонки по ~1/3, на десктопе фикс как раньше */}
+                <TableCell
+                  sx={{
+                    width: { xs: "30%", sm: 140 },
+                  }}
+                >
+                  Дата
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "30%", sm: 160 },
+                  }}
+                >
+                  Сумма
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "40%", sm: 200 },
+                  }}
+                >
+                  Категория
+                </TableCell>
+                <TableCell
+                  sx={{
+                    width: 200,
+                    display: { xs: "none", sm: "table-cell" },
+                  }}
+                >
                   Описание
                 </TableCell>
-                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "auto", sm: 120 },
+                  }}
+                >
+                  Действия
+                </TableCell>
               </TableRow>
             </TableHead>
 
