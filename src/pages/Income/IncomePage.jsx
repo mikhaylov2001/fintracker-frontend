@@ -507,7 +507,7 @@ export default function IncomePage() {
                 bgcolor: bankingColors.card2,
                 borderRadius: 2,
                 overflow: "hidden",
-                border: 0,
+                border: "none",
                 "& th, & td": {
                   px: { xs: 0.75, sm: 2 },
                   py: { xs: 0.6, sm: 1 },
@@ -516,13 +516,13 @@ export default function IncomePage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   verticalAlign: "top",
-                  borderBottom: "none", // убрать все внутренние линии
+                  borderBottom: "none !important",
                 },
                 "& th": {
                   fontWeight: 900,
                   color: bankingColors.text,
                   whiteSpace: "nowrap",
-                  bgcolor: bankingColors.card,
+                  bgcolor: bankingColors.card2,
                 },
                 "& td": {
                   whiteSpace: { xs: "normal", sm: "nowrap" },
