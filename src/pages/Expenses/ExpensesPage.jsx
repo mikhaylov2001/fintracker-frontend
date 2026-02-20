@@ -491,14 +491,14 @@ export default function ExpensesPage() {
             size="small"
             sx={{
               width: "100%",
-              minWidth: { sm: 720 }, // десктоп как был
+              minWidth: { sm: 720 },
               tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
               border: "none",
               "& th, & td": {
-                px: { xs: 0.75, sm: 2 },
+                px: { xs: 0.5, sm: 2 },
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
@@ -523,9 +523,9 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "28%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "44%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
                     width: 200,
@@ -534,10 +534,10 @@ export default function ExpensesPage() {
                 >
                   Описание
                 </TableCell>
-                {/* Заголовок "Действия" только на десктопе */}
+                {/* заголовок действий только на десктопе */}
                 <TableCell
                   sx={{
-                    width: { xs: "auto", sm: 120 },
+                    width: { xs: "20%", sm: 120 },
                     display: { xs: "none", sm: "table-cell" },
                     textAlign: "center",
                   }}
@@ -608,15 +608,15 @@ export default function ExpensesPage() {
 
                     <TableCell
                       sx={{
-                        textAlign: "center",
-                        px: { xs: 0.5, sm: 2 },
-                        width: { xs: "auto", sm: 120 },
+                        textAlign: "right",
+                        px: { xs: 0.25, sm: 2 },
+                        width: { xs: "20%", sm: 120 },
                       }}
                     >
                       <IconButton
                         onClick={() => openEdit(x)}
                         size="small"
-                        sx={{ userSelect: "none", mr: 0.5 }}
+                        sx={{ userSelect: "none", mr: 0.25 }}
                       >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
