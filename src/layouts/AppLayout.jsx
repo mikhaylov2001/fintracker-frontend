@@ -176,9 +176,9 @@ export default function AppLayout() {
     touchRef.current = { x: null, y: null };
   }, []);
 
-  // ===== ключ: разные контейнеры для широких страниц (доходы/расходы) и остальных =====
   const pathname = location.pathname;
   const isWidePage = pathname.startsWith("/income") || pathname.startsWith("/expenses");
+  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   return (
     <AppBackground>
@@ -192,6 +192,7 @@ export default function AppLayout() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
+        {/* Сайдбар */}
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           <Drawer
             variant="temporary"
@@ -226,11 +227,12 @@ export default function AppLayout() {
           </Drawer>
         </Box>
 
+        {/* Контент */}
         <Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <TopNavBar onMenuClick={openMobile} />
 
           {isWidePage ? (
-            // Для доходов и расходов оставляем «на всю ширину без паддингов»
+            // Доходы/расходы — широкие страницы
             <Box
               sx={{
                 flex: 1,
@@ -244,7 +246,7 @@ export default function AppLayout() {
               <Outlet />
             </Box>
           ) : (
-            // Для логина, регистрации, дашборда, аналитики и т.д. — нормальные отступы
+            // Все остальные, включая логин/регистрацию
             <Box
               sx={{
                 flex: 1,
@@ -254,13 +256,12 @@ export default function AppLayout() {
                 py: { xs: 2.5, sm: 3 },
                 display: "flex",
                 justifyContent: "center",
-                alignItems: "flex-start",
+                alignItems: isAuthPage ? "center" : "flex-start",
                 boxSizing: "border-box",
                 overflowX: "hidden",
               }}
             >
-              {/* Вложенный контейнер, чтобы формы/страницы не растягивались на всю огромную ширину на десктопе */}
-              <Box sx={{ width: "100%", maxWidth: 960 }}>
+              <Box sx={{ width: "100%", maxWidth: isAuthPage ? 520 : 960 }}>
                 <Outlet />
               </Box>
             </Box>
