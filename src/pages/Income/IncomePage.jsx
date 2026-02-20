@@ -366,10 +366,25 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
-        // просто внутренние отступы страницы, БЕЗ pageBackgroundSx
+        // контент: нет выделения текста и кликов по пустым областям
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
+
+        // запрет выделения текста
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
+
+        // по умолчанию клики не обрабатываются
+        pointerEvents: "none",
+
+        // но внутри разрешаем интерактивность для контролов и кнопок
+        "& button, & a, & input, & textarea, & select, & label, & .MuiIconButton-root, & .MuiChip-root": {
+          pointerEvents: "auto",
+          userSelect: "auto",
+        },
       }}
     >
       {/* Header */}
@@ -380,10 +395,24 @@ export default function IncomePage() {
         sx={{ mb: 2.5 }}
       >
         <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h5" sx={{ fontWeight: 980, color: bankingColors.text, letterSpacing: -0.3 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 980,
+              color: bankingColors.text,
+              letterSpacing: -0.3,
+            }}
+          >
             Доходы
           </Typography>
-          <Typography variant="body2" sx={{ color: bankingColors.muted, mt: 0.5, fontWeight: 600 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: bankingColors.muted,
+              mt: 0.5,
+              fontWeight: 600,
+            }}
+          >
             {ymLabel(ym)} · Итого: {formatAmount(total)}
           </Typography>
         </Box>
