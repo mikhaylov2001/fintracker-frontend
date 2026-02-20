@@ -31,9 +31,6 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Можно вообще не использовать bankingTokens, чтобы не было рамок
-// import { surfaceSx } from "../../styles/bankingTokens";
-
 const COLORS = { income: "#22C55E" };
 
 const CATEGORY_OPTIONS = [
@@ -366,7 +363,7 @@ export default function IncomePage() {
     <Box
       sx={{
         minHeight: "100vh",
-        bgcolor: "#022C22", // тёмно-зелёный фон страницы
+        bgcolor: "#F8FAFC", // внешний светлый фон (как было)
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
@@ -387,7 +384,7 @@ export default function IncomePage() {
             variant="h5"
             sx={{
               fontWeight: 980,
-              color: "#ECFDF5",
+              color: "#0F172A",
               letterSpacing: -0.3,
             }}
           >
@@ -396,7 +393,7 @@ export default function IncomePage() {
           <Typography
             variant="body2"
             sx={{
-              color: "#A7F3D0",
+              color: "#64748B",
               mt: 0.5,
               fontWeight: 600,
             }}
@@ -422,8 +419,6 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: "#16A34A",
-                color: "#A7F3D0",
               }}
             >
               ←
@@ -434,8 +429,7 @@ export default function IncomePage() {
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
-                bgcolor: "rgba(15,23,42,0.7)",
-                color: "#E5F9F0",
+                bgcolor: "#FFFFFF",
               }}
             />
 
@@ -445,8 +439,6 @@ export default function IncomePage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
-                borderColor: "#16A34A",
-                color: "#A7F3D0",
               }}
             >
               →
@@ -461,10 +453,8 @@ export default function IncomePage() {
               width: { xs: "100%", sm: "auto" },
               borderRadius: 999,
               px: 2.2,
-              bgcolor: "#16A34A",
-              color: "#022C22",
-              fontWeight: 700,
-              "&:hover": { bgcolor: "#15803D" },
+              bgcolor: COLORS.income,
+              "&:hover": { bgcolor: "#16A34A" },
             }}
           >
             Добавить доход
@@ -476,7 +466,7 @@ export default function IncomePage() {
       {error ? (
         <Typography
           variant="body2"
-          sx={{ mb: 2, color: "#FCA5A5", fontWeight: 600 }}
+          sx={{ mb: 2, color: "#EF4444", fontWeight: 600 }}
         >
           {error}
         </Typography>
@@ -502,7 +492,7 @@ export default function IncomePage() {
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-              bgcolor: "#064E3B", // карточка списка
+              bgcolor: "#022C22", // тёмный фон списка
               borderRadius: 2,
               overflow: "hidden",
               border: 0,
@@ -514,14 +504,14 @@ export default function IncomePage() {
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 verticalAlign: "top",
-                borderBottomColor: "rgba(15, 23, 42, 0.18)",
+                borderBottomColor: "rgba(15, 23, 42, 0.5)",
               },
               "& th": {
                 fontWeight: 900,
                 color: "#ECFDF5",
                 whiteSpace: "nowrap",
-                bgcolor: "#065F46",
-                borderBottom: "1px solid rgba(15, 23, 42, 0.28)",
+                bgcolor: "#064E3B", // чуть светлее хедер
+                borderBottom: "1px solid rgba(15, 23, 42, 0.7)",
               },
               "& td": {
                 whiteSpace: { xs: "normal", sm: "nowrap" },
@@ -668,7 +658,7 @@ export default function IncomePage() {
         PaperProps={{
           sx: {
             border: 0,
-            boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+            boxShadow: "0 24px 60px rgba(15,23,42,0.35)",
             borderRadius: 3,
             bgcolor: "#022C22",
             color: "#ECFDF5",
