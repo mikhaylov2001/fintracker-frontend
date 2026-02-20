@@ -46,7 +46,7 @@ import { bankingColors, pageBackgroundSx } from "../../styles/bankingTokens";
 
 const COLORS = { income: bankingColors.primary };
 
-const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Подарки", "Другое"];
+const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Налоги", "Подарки", "Другое"];
 const SOURCE_OPTIONS = ["Зарплата", "Премия", "Проценты", "Дивиденды", "Бизнес", "Другое"];
 
 const PILL_INPUT_SX = {
@@ -58,7 +58,6 @@ const PILL_INPUT_SX = {
   alignItems: "center",
   color: bankingColors.text,
   "& input": {
-    textAlign: "center",
     padding: 0,
     height: "100%",
     boxSizing: "border-box",
