@@ -16,93 +16,28 @@ import {
   TableHead,
   TableRow,
   IconButton,
-  InputAdornment,
+  Chip,
 } from "@mui/material";
-import { useTheme, alpha } from "@mui/material/styles";
+import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Autocomplete from "@mui/material/Autocomplete";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
+
 import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-// ─── STYLES & TOKENS (из твоего аналога) ───
-const bankingColors = {
-  bg0: "#021513",
-  bg1: "#031C18",
-  card: "#04231E",
-  card2: "#03201B",
-  border: "rgba(125, 244, 194, 0.24)",
-  border2: "rgba(167, 243, 208, 0.32)",
-  text: "rgba(241,245,249,0.97)",
-  muted: "rgba(241,245,249,0.72)",
-  primary: "#22C55E",
-  accent: "#34D399",
-  info: "#38BDF8",
-  warning: "#FBBF24",
-  danger: "#FB7185",
-  success: "#22C55E",
-};
+const COLORS = { income: "#22C55E" };
 
-const pageBackgroundSx = {
-  minHeight: "100vh",
-  position: "relative",
-  overflow: "hidden",
-  bgcolor: bankingColors.bg0,
-  backgroundImage: `
-    radial-gradient(900px 520px at 14% 8%,  ${alpha("#00BC7D", 0.26)} 0%, transparent 60%),
-    radial-gradient(900px 520px at 82% 12%, ${alpha("#009966", 0.20)} 0%, transparent 62%),
-    radial-gradient(900px 520px at 50% 92%, ${alpha("#22C55E", 0.16)} 0%, transparent 62%),
-    linear-gradient(180deg, ${bankingColors.bg1} 0%, ${bankingColors.bg0} 100%)
-  `,
-  userSelect: "none",
-};
-
-const gridOverlaySx = {
-  position: "absolute",
-  inset: 0,
-  pointerEvents: "none",
-  opacity: 0.05,
-  backgroundImage:
-    "linear-gradient(to right, rgba(255,255,255,0.20) 1px, transparent 1px)," +
-    "linear-gradient(to bottom, rgba(255,255,255,0.20) 1px, transparent 1px)",
-  backgroundSize: "84px 84px",
-  mixBlendMode: "soft-light",
-};
-
-const surfaceSx = {
-  borderRadius: 4.5,
-  border: "0",
-  backgroundColor: alpha(bankingColors.card, 0.96),
-  boxShadow: "0 16px 44px rgba(0,0,0,0.48)",
-};
-
-// Стилизация инпутов под темную тему
-const darkInputSx = {
-  "& .MuiInputLabel-root": { color: bankingColors.muted },
-  "& .MuiInputLabel-root.Mui-focused": { color: bankingColors.primary },
-  "& .MuiOutlinedInput-root": {
-    color: bankingColors.text,
-    "& fieldset": { borderColor: alpha(bankingColors.border, 0.5) },
-    "&:hover fieldset": { borderColor: alpha(bankingColors.border, 0.8) },
-    "&.Mui-focused fieldset": { borderColor: bankingColors.primary },
-  },
-  "& .MuiInputAdornment-root": { color: bankingColors.muted },
-  "& .MuiSvgIcon-root": { color: bankingColors.muted },
-};
-
-// ─── OPTIONS & HELPERS ───
 const CATEGORY_OPTIONS = [
   "Работа",
   "Подработка",
   "Вклады",
   "Инвестиции",
-  "Налоги",
   "Подарки",
   "Другое",
 ];
@@ -183,7 +118,6 @@ const addMonthsYM = ({ year, month }, delta) => {
 const ymLabel = ({ year, month }) =>
   `${String(month).padStart(2, "0")}.${year}`;
 
-// ─── COMPONENT ───
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
@@ -191,12 +125,13 @@ export default function IncomePage() {
   const { user } = useAuth();
   const userId = user?.id;
 
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const incomeApi = useIncomeApi();
   const getMyIncomesByMonthRef = useRef(incomeApi.getMyIncomesByMonth);
 
-  // State
+  // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ----------
   const [ym, setYm] = useState(() => {
     const now = new Date();
     try {
@@ -228,6 +163,7 @@ export default function IncomePage() {
       return next;
     });
   }, []);
+  // ----------------------------------------
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -247,6 +183,7 @@ export default function IncomePage() {
 
   const amountRef = useRef(null);
 
+  // СБРОС локального состояния при смене пользователя
   useEffect(() => {
     setItems([]);
     setError("");
@@ -256,12 +193,15 @@ export default function IncomePage() {
     setLoading(true);
   }, [userId]);
 
+  // основная загрузка при смене ym / userId
   useEffect(() => {
     let cancelled = false;
+
     const run = async () => {
       try {
         setLoading(true);
         setError("");
+
         if (!userId) {
           if (!cancelled) {
             setItems([]);
@@ -269,9 +209,11 @@ export default function IncomePage() {
           }
           return;
         }
+
         const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
         const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
         const data = res.data;
+
         if (!cancelled) {
           setItems(data?.content ?? []);
         }
@@ -285,6 +227,7 @@ export default function IncomePage() {
         if (!cancelled) setLoading(false);
       }
     };
+
     run();
     return () => {
       cancelled = true;
@@ -349,9 +292,11 @@ export default function IncomePage() {
 
   const save = async () => {
     let attempted = false;
+
     try {
       setSaving(true);
       setError("");
+
       if (dateErr) throw new Error(dateErr);
 
       const payload = {
@@ -369,6 +314,7 @@ export default function IncomePage() {
       if (!payload.date) throw new Error("Дата обязательна");
 
       attempted = true;
+
       if (editing?.id) {
         await incomeApi.updateIncome(editing.id, payload);
         toast.success("Доход обновлён");
@@ -376,10 +322,12 @@ export default function IncomePage() {
         await incomeApi.createIncome(payload);
         toast.success("Доход добавлен");
       }
+
       setOpen(false);
       await reload();
     } catch (e) {
       const msg = e?.message || "Ошибка сохранения";
+
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
         toast.success(editing?.id ? "Доход обновлён" : "Доход добавлен");
@@ -412,242 +360,293 @@ export default function IncomePage() {
   );
 
   return (
-    <Box sx={pageBackgroundSx}>
-      <Box sx={gridOverlaySx} />
-
-      <Box
-        sx={{
-          position: "relative",
-          zIndex: 1,
-          px: { xs: 2, md: 3, lg: 4 },
-          py: { xs: 2, md: 3 },
-          width: "100%",
-        }}
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: COLORS.income,          // зелёный фон всей страницы
+        px: { xs: 2, md: 3, lg: 4 },
+        py: { xs: 2, md: 3 },
+        width: "100%",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
+      }}
+    >
+      {/* Header */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1}
+        alignItems={{ xs: "stretch", sm: "center" }}
+        sx={{ mb: 2.5 }}
       >
-        {/* Header */}
+        <Box sx={{ flexGrow: 1 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 980,
+              color: "#0F172A",
+              letterSpacing: -0.3,
+            }}
+          >
+            Доходы
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "#064E3B",
+              mt: 0.5,
+              fontWeight: 600,
+            }}
+          >
+            {ymLabel(ym)} · Итого: {formatAmount(total)}
+          </Typography>
+        </Box>
+
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1}
           alignItems={{ xs: "stretch", sm: "center" }}
-          sx={{ mb: 3 }}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
         >
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 900,
-                color: bankingColors.text,
-                letterSpacing: -0.5,
-              }}
-            >
-              Доходы
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: bankingColors.muted,
-                mt: 0.5,
-                fontWeight: 600,
-              }}
-            >
-              {ymLabel(ym)} · Итого: {formatAmount(total)}
-            </Typography>
-          </Box>
-
           <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1.5}
-            alignItems={{ xs: "stretch", sm: "center" }}
+            direction="row"
+            spacing={1}
+            alignItems="center"
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            {/* оставляем как было */}
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
+            <Button
+              variant="outlined"
+              onClick={() => changeYm((s) => addMonthsYM(s, -1))}
               sx={{
-                bgcolor: alpha(bankingColors.card, 0.5),
-                p: 0.5,
-                borderRadius: 99,
-                border: `1px solid ${bankingColors.border}`,
-                width: { xs: "100%", sm: "auto" },
-                justifyContent: "center",
+                minWidth: 44,
+                px: 1.2,
+                borderColor: "#BBF7D0",
+                color: "#022C22",
+                bgcolor: "rgba(255,255,255,0.12)",
+                "&:hover": {
+                  borderColor: "#A7F3D0",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                },
               }}
             >
-              <IconButton
-                onClick={() => changeYm((s) => addMonthsYM(s, -1))}
-                size="small"
-                sx={{ color: bankingColors.text, "&:hover": { bgcolor: alpha("#fff", 0.1) } }}
-              >
-                ←
-              </IconButton>
-              <Typography
-                sx={{
-                  color: bankingColors.text,
-                  fontWeight: 800,
-                  fontSize: 14,
-                  px: 1,
-                }}
-              >
-                {ymLabel(ym)}
-              </Typography>
-              <IconButton
-                onClick={() => changeYm((s) => addMonthsYM(s, +1))}
-                size="small"
-                sx={{ color: bankingColors.text, "&:hover": { bgcolor: alpha("#fff", 0.1) } }}
-              >
-                →
-              </IconButton>
-            </Stack>
+              ←
+            </Button>
+
+            <Chip
+              label={ymLabel(ym)}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                fontWeight: 800,
+                bgcolor: "#ECFDF5",
+                color: "#022C22",
+              }}
+            />
 
             <Button
-              onClick={openCreate}
-              variant="contained"
-              fullWidth
+              variant="outlined"
+              onClick={() => changeYm((s) => addMonthsYM(s, +1))}
               sx={{
-                width: { xs: "100%", sm: "auto" },
-                borderRadius: 999,
-                px: 3,
-                py: 1,
-                fontWeight: 800,
-                textTransform: "none",
-                bgcolor: bankingColors.primary,
-                "&:hover": { bgcolor: bankingColors.accent },
-                boxShadow: `0 8px 20px ${alpha(bankingColors.primary, 0.4)}`,
+                minWidth: 44,
+                px: 1.2,
+                borderColor: "#BBF7D0",
+                color: "#022C22",
+                bgcolor: "rgba(255,255,255,0.12)",
+                "&:hover": {
+                  borderColor: "#A7F3D0",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                },
               }}
             >
-              Добавить
+              →
             </Button>
           </Stack>
+
+          <Button
+            onClick={openCreate}
+            variant="contained"
+            fullWidth
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              borderRadius: 999,
+              px: 2.2,
+              bgcolor: "#16A34A",
+              "&:hover": { bgcolor: "#15803D" },
+              boxShadow: "0 14px 40px rgba(22, 163, 74, 0.55)",
+            }}
+          >
+            Добавить доход
+          </Button>
         </Stack>
+      </Stack>
 
-        {/* Error */}
-        {error ? (
-          <Typography
-            variant="body2"
-            sx={{ mb: 2, color: bankingColors.danger, fontWeight: 600 }}
-          >
-            {error}
-          </Typography>
-        ) : null}
+      {/* Error */}
+      {error ? (
+        <Typography
+          variant="body2"
+          sx={{ mb: 2, color: "#FEE2E2", fontWeight: 600 }}
+        >
+          {error}
+        </Typography>
+      ) : null}
 
-        {/* Список — никаких рамок вообще */}
-        {!loading && items.length === 0 ? (
-          <Box
-            sx={{
-              maxWidth: 960,
-              mx: "auto",
-              p: 4,
-              textAlign: "center",
-              color: bankingColors.muted,
-            }}
-          >
-            <EmptyState
-              title="Пока нет записей"
-              description="Добавь первую операцию — и тут появится список."
-              actionLabel="Добавить доход"
-              onAction={openCreate}
-            />
-          </Box>
-        ) : (
-          <Box
-            sx={{
-              maxWidth: 960,
-              mx: "auto",
-              overflow: "hidden",
-            }}
-          >
+      {/* Table */}
+      {!loading && items.length === 0 ? (
+        <EmptyState
+          title="Пока нет записей"
+          description="Добавь первую операцию — и тут появится список за выбранный месяц."
+          actionLabel="Добавить"
+          onAction={openCreate}
+        />
+      ) : (
+        <Box
+          sx={{
+            mt: 1.5,
+            borderRadius: 2.5,
+            bgcolor: "#FFFFFF",
+            boxShadow: "0 12px 30px rgba(15, 23, 42, 0.35)",
+            overflow: "hidden",
+          }}
+        >
+          <Box sx={{ overflowX: "auto" }}>
             <Table
+              size="small"
               sx={{
                 width: "100%",
-                tableLayout: "fixed",
+                minWidth: { sm: 720 },
+                tableLayout: { xs: "fixed", sm: "auto" },
                 "& th, & td": {
-                  px: 2,
-                  py: 1.5,
-                  fontSize: 14,
-                  fontWeight: 600,
-                },
-                "& th": {
-                  fontWeight: 800,
-                  color: bankingColors.muted,
-                  whiteSpace: "nowrap",
-                  bgcolor: alpha("#000", 0.2),
-                },
-                "& td": {
-                  color: bankingColors.text,
+                  px: { xs: 0.75, sm: 2 },
+                  py: { xs: 0.6, sm: 1 },
+                  fontSize: { xs: 12, sm: 13 },
+                  lineHeight: 1.15,
                   overflow: "hidden",
                   textOverflow: "ellipsis",
+                  verticalAlign: "top",
+                  borderBottomColor: "#E2E8F0",
                 },
-                // убираем все линии таблицы
-                "& .MuiTableCell-root": {
-                  borderBottom: "none",
+                "& th": {
+                  fontWeight: 900,
+                  color: "#0F172A",
+                  whiteSpace: "nowrap",
+                  bgcolor: "#F1F5F9",
                 },
+                "& td": {
+                  whiteSpace: { xs: "normal", sm: "nowrap" },
+                  color: "#0F172A",
+                },
+                "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
               }}
             >
               <TableHead>
                 <TableRow>
-                  <TableCell>Дата</TableCell>
-                  <TableCell>Сумма</TableCell>
-                  <TableCell>Категория</TableCell>
-                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                  <TableCell
+                    sx={{ width: { xs: "20%", sm: 140 }, whiteSpace: "nowrap" }}
+                  >
+                    Дата
+                  </TableCell>
+                  <TableCell
+                    sx={{ width: { xs: "28%", sm: 160 }, whiteSpace: "nowrap" }}
+                  >
+                    Сумма
+                  </TableCell>
+                  <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>
+                    Категория
+                  </TableCell>
+                  <TableCell
+                    sx={{
+                      width: 200,
+                      display: { xs: "none", sm: "table-cell" },
+                    }}
+                  >
                     Источник
                   </TableCell>
-                  <TableCell align="right">Действия</TableCell>
+                  <TableCell
+                    align="right"
+                    sx={{
+                      width: { xs: "14%", sm: 120 },
+                      pr: { xs: 0.5, sm: 2 },
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    <Box sx={{ display: { xs: "none", sm: "block" } }}>
+                      Действия
+                    </Box>
+                  </TableCell>
                 </TableRow>
               </TableHead>
+
               <TableBody>
                 {items.map((x) => (
-                  <TableRow key={x.id}>
+                  <TableRow key={x.id} hover>
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
                       {isMobile
                         ? formatDateRuShort(x.date)
                         : formatDateRu(x.date)}
                     </TableCell>
+
                     <TableCell
                       sx={{
                         fontWeight: 900,
-                        color: bankingColors.primary,
+                        color: "#0F172A",
                         whiteSpace: "nowrap",
                       }}
                     >
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
-                    <TableCell>
-                      <Box>
+
+                    <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                      <Typography
+                        component="div"
+                        sx={{
+                          fontSize: { xs: 12, sm: 13 },
+                          fontWeight: 800,
+                          color: "#0F172A",
+                          lineHeight: 1.15,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: { xs: 2, sm: 1 },
+                        }}
+                        title={x.category || ""}
+                      >
+                        {x.category}
+                      </Typography>
+
+                      {isMobile ? (
                         <Typography
-                          component="span"
-                          sx={{ fontWeight: 700, fontSize: 14 }}
+                          component="div"
+                          sx={{
+                            mt: 0.2,
+                            fontSize: 11,
+                            color: "#64748B",
+                            lineHeight: 1.15,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                          title={x.source || ""}
                         >
-                          {x.category}
+                          {x.source}
                         </Typography>
-                        {isMobile && x.source && (
-                          <Typography
-                            variant="caption"
-                            display="block"
-                            sx={{ color: bankingColors.muted }}
-                          >
-                            {x.source}
-                          </Typography>
-                        )}
-                      </Box>
+                      ) : null}
                     </TableCell>
+
                     <TableCell
                       sx={{ display: { xs: "none", sm: "table-cell" } }}
+                      title={x.source || ""}
                     >
                       {x.source}
                     </TableCell>
+
                     <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                      <IconButton
-                        onClick={() => openEdit(x)}
-                        size="small"
-                        sx={{ color: bankingColors.muted, "&:hover": { color: "#fff" } }}
-                      >
+                      <IconButton onClick={() => openEdit(x)} size="small">
                         <EditOutlinedIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         onClick={() => remove(x)}
                         size="small"
-                        sx={{ color: alpha(bankingColors.danger, 0.7), "&:hover": { color: bankingColors.danger } }}
+                        color="error"
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
@@ -657,149 +656,139 @@ export default function IncomePage() {
               </TableBody>
             </Table>
           </Box>
-        )}
+        </Box>
+      )}
 
-        {/* Dialog — без рамки и без лишней карточности */}
-        <Dialog
-          open={open}
-          onClose={() => (!saving ? setOpen(false) : null)}
-          fullWidth
-          maxWidth="sm"
-          PaperProps={{
-            sx: {
-              borderRadius: 3,
-              bgcolor: bankingColors.card,
-              boxShadow: "0 22px 60px rgba(0,0,0,0.7)",
-              border: "0",
-            },
+      {/* Dialog */}
+      <Dialog
+        fullScreen={fullScreen}
+        scroll="paper"
+        open={open}
+        onClose={() => (!saving ? setOpen(false) : null)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>
+          {editing ? "Редактировать доход" : "Добавить доход"}
+        </DialogTitle>
+
+        <DialogContent
+          sx={{
+            pt: 1,
+            maxHeight: fullScreen ? "calc(100vh - 140px)" : 520,
+            overflowY: "auto",
+            WebkitOverflowScrolling: "touch",
           }}
         >
-          <DialogTitle sx={{ fontWeight: 900, color: bankingColors.text }}>
-            {editing ? "Редактировать доход" : "Новый доход"}
-          </DialogTitle>
-          <DialogContent sx={{ pt: 1 }}>
-            <Stack spacing={2.5} sx={{ mt: 1 }}>
-              <TextField
-                label="Сумма"
-                inputRef={amountRef}
-                value={form.amount}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, amount: e.target.value }))
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              label="Сумма"
+              inputRef={amountRef}
+              value={form.amount}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, amount: e.target.value }))
+              }
+              placeholder="50000.00"
+              inputProps={{ inputMode: "decimal" }}
+              fullWidth
+            />
+
+            <Autocomplete
+              freeSolo
+              disablePortal
+              options={CATEGORY_OPTIONS}
+              value={form.category}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, category: newValue ?? "" }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, category: newInput }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Категория" fullWidth />
+              )}
+            />
+
+            <Autocomplete
+              freeSolo
+              disablePortal
+              options={SOURCE_OPTIONS}
+              value={form.source}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, source: newValue ?? "" }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, source: newInput }))
+              }
+              renderInput={(params) => (
+                <TextField {...params} label="Источник" fullWidth />
+              )}
+            />
+
+            <TextField
+              label="Дата"
+              value={form.dateRu || ""}
+              onChange={(e) => {
+                const ru = formatRuDateTyping(e.target.value);
+                const iso = ruToIsoStrict(ru);
+
+                let nextErr = "";
+                if (ru.length === 10) {
+                  if (!iso) nextErr = "Неверный формат даты";
+                  else if (!isValidIsoDate(iso))
+                    nextErr = "Такой даты не существует";
                 }
-                placeholder="0.00"
-                inputProps={{ inputMode: "decimal" }}
-                fullWidth
-                sx={darkInputSx}
-              />
 
-              <Autocomplete
-                freeSolo
-                options={CATEGORY_OPTIONS}
-                value={form.category}
-                onChange={(_e, val) => setForm((s) => ({ ...s, category: val ?? "" }))}
-                onInputChange={(_e, val) => setForm((s) => ({ ...s, category: val }))}
-                renderInput={(params) => (
-                  <TextField {...params} label="Категория" sx={darkInputSx} />
-                )}
-                PaperComponent={(props) => (
-                  <Box
-                    {...props}
-                    sx={{
-                      bgcolor: bankingColors.card2,
-                      color: bankingColors.text,
-                      "& .MuiAutocomplete-option": {
-                        "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                        "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) },
-                      },
-                    }}
-                  />
-                )}
-              />
+                setDateErr(nextErr);
 
-              <Autocomplete
-                freeSolo
-                options={SOURCE_OPTIONS}
-                value={form.source}
-                onChange={(_e, val) => setForm((s) => ({ ...s, source: val ?? "" }))}
-                onInputChange={(_e, val) => setForm((s) => ({ ...s, source: val }))}
-                renderInput={(params) => (
-                  <TextField {...params} label="Источник" sx={darkInputSx} />
-                )}
-                PaperComponent={(props) => (
-                  <Box
-                    {...props}
-                    sx={{
-                      bgcolor: bankingColors.card2,
-                      color: bankingColors.text,
-                      "& .MuiAutocomplete-option": {
-                        "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                        "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) },
-                      },
-                    }}
-                  />
-                )}
-              />
-
-              <TextField
-                label="Дата"
-                value={form.dateRu || ""}
-                onChange={(e) => {
-                  const ru = formatRuDateTyping(e.target.value);
-                  const iso = ruToIsoStrict(ru);
-                  let nextErr = "";
-                  if (ru.length === 10) {
-                    if (!iso) nextErr = "Неверный формат";
-                    else if (!isValidIsoDate(iso)) nextErr = "Нет такой даты";
-                  }
-                  setDateErr(nextErr);
-                  setForm((s) => ({
-                    ...s,
-                    dateRu: ru,
-                    date: iso && isValidIsoDate(iso) ? iso : s.date,
-                  }));
-                }}
-                placeholder="ДД.ММ.ГГГГ"
-                inputProps={{ inputMode: "numeric" }}
-                fullWidth
-                error={Boolean(dateErr)}
-                helperText={dateErr}
-                sx={darkInputSx}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <CalendarMonthIcon sx={{ color: bankingColors.muted }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </Stack>
-          </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 3 }}>
-            <Button
-              onClick={() => setOpen(false)}
-              disabled={saving}
-              sx={{ color: bankingColors.muted, fontWeight: 700 }}
-            >
-              Отмена
-            </Button>
-            <Button
-              onClick={save}
-              variant="contained"
-              disabled={saving}
-              sx={{
-                bgcolor: bankingColors.primary,
-                color: "#fff",
-                fontWeight: 800,
-                borderRadius: 99,
-                px: 3,
-                "&:hover": { bgcolor: bankingColors.accent },
+                setForm((s) => ({
+                  ...s,
+                  dateRu: ru,
+                  date: iso && isValidIsoDate(iso) ? iso : s.date,
+                }));
               }}
-            >
-              {saving ? "Сохранение..." : "Сохранить"}
-            </Button>
-          </DialogActions>
-        </Dialog>
-      </Box>
+              placeholder="16.02.2026"
+              inputProps={{ inputMode: "numeric" }}
+              fullWidth
+              helperText={
+                dateErr ||
+                "Введите цифры: ДДММГГГГ (точки добавятся сами)"
+              }
+              error={Boolean(dateErr)}
+            />
+          </Stack>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 2,
+            flexDirection: fullScreen ? "column" : "row",
+            gap: 1,
+          }}
+        >
+          <Button
+            onClick={() => setOpen(false)}
+            variant="outlined"
+            disabled={saving}
+            fullWidth={fullScreen}
+          >
+            Отмена
+          </Button>
+          <Button
+            onClick={save}
+            variant="contained"
+            disabled={saving}
+            fullWidth={fullScreen}
+            sx={{
+              bgcolor: COLORS.income,
+              "&:hover": { bgcolor: "#15803D" },
+            }}
+          >
+            {saving ? "Сохранение…" : "Сохранить"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
