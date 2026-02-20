@@ -24,11 +24,6 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import Autocomplete from "@mui/material/Autocomplete";
 
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import dayjs from "dayjs";
-
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
 
@@ -41,9 +36,7 @@ import {
   pageBackgroundSx,
 } from "../../styles/bankingTokens";
 
-// ---------------------------------------------------------
-// Вспомогательные константы и функции
-// ---------------------------------------------------------
+// ----------------- вспомогательные вещи -----------------
 
 const COLORS = { income: bankingColors.primary };
 
@@ -75,15 +68,51 @@ const normalizeDateOnly = (d) => {
 const formatDateRu = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
   const [y, m, d] = s.split("-");
-  if (!y || !m || !d) return s;
+  if (!y || !m || !d) return "";
   return `${d}.${m}.${y}`;
 };
 
 const formatDateRuShort = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
   const [y, m, d] = s.split("-");
-  if (!y || !m || !d) return s;
+  if (!y || !m || !d) return "";
   return `${d}.${m}`;
+};
+
+const digitsOnly = (s) => String(s || "").replace(/\D/g, "");
+
+// форматируем ввод: "16022026" -> "16.02.2026"
+const formatRuDateTyping = (input) => {
+  const d = digitsOnly(input).slice(0, 8);
+  const p1 = d.slice(0, 2);
+  const p2 = d.slice(2, 4);
+  const p3 = d.slice(4, 8);
+  let out = p1;
+  if (p2) out += "." + p2;
+  if (p3) out += "." + p3;
+  return out;
+};
+
+const ruToIsoStrict = (ru) => {
+  const v = String(ru || "").trim();
+  const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return "";
+  const [, dd, mm, yyyy] = m;
+  return `${yyyy}-${mm}-${dd}`;
+};
+
+const isValidIsoDate = (iso) => {
+  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const dt = new Date(y, mo - 1, d);
+  return (
+    dt.getFullYear() === y &&
+    dt.getMonth() === mo - 1 &&
+    dt.getDate() === d
+  );
 };
 
 const isProxySerialization500 = (msg) =>
@@ -97,9 +126,7 @@ const addMonthsYM = ({ year, month }, delta) => {
 const ymLabel = ({ year, month }) =>
   `${String(month).padStart(2, "0")}.${year}`;
 
-// ---------------------------------------------------------
-// Компонент
-// ---------------------------------------------------------
+// ----------------- компонент -----------------
 
 export default function IncomePage() {
   const toast = useToast();
@@ -163,7 +190,7 @@ export default function IncomePage() {
 
   const amountRef = useRef(null);
 
-  // Сброс при смене пользователя
+  // сброс при смене юзера
   useEffect(() => {
     setItems([]);
     setError("");
@@ -173,7 +200,7 @@ export default function IncomePage() {
     setLoading(true);
   }, [userId]);
 
-  // Загрузка доходов
+  // загрузка доходов
   useEffect(() => {
     let cancelled = false;
 
@@ -337,9 +364,7 @@ export default function IncomePage() {
     [items]
   );
 
-  // -------------------------------------------------------
-  // Разметка
-  // -------------------------------------------------------
+  // ----------------- разметка -----------------
 
   return (
     <Box
@@ -481,8 +506,8 @@ export default function IncomePage() {
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
-                textAlign: "center",           // по центру по горизонтали
-                verticalAlign: "middle",        // и по вертикали
+                textAlign: "center",
+                verticalAlign: "middle",
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
               },
@@ -518,12 +543,7 @@ export default function IncomePage() {
                 >
                   Источник
                 </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "14%", sm: 120 },
-                    pr: { xs: 0.5, sm: 2 },
-                  }}
-                >
+                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>
                   Действия
                 </TableCell>
               </TableRow>
@@ -532,7 +552,6 @@ export default function IncomePage() {
             <TableBody>
               {items.map((x) => (
                 <TableRow key={x.id} hover>
-                  {/* Дата в ячейке */}
                   <TableCell>
                     {isMobile
                       ? formatDateRuShort(x.date)
@@ -548,9 +567,7 @@ export default function IncomePage() {
                     {formatAmount(Number(x.amount || 0))}
                   </TableCell>
 
-                  <TableCell>
-                    {x.category}
-                  </TableCell>
+                  <TableCell>{x.category}</TableCell>
 
                   <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
                     {x.source}
@@ -588,7 +605,7 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundColor: "#111827", // чуть светлее общей тёмной темы
+            backgroundColor: "#111827", // форма чуть светлее
             borderRadius: 2,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -711,54 +728,52 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: ручной ввод + календарь */}
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DatePicker
-                label="Дата"
-                value={form.date ? dayjs(form.date) : null}
-                onChange={(newValue) => {
-                  // это вызывается и при выборе в календаре, и когда вручную введённая строка стала валидной датой
-                  if (!newValue) return;
-                  const d = dayjs(newValue);
-                  if (!d.isValid()) {
-                    setDateErr("Неверная дата");
-                    return;
-                  }
-                  const iso = d.format("YYYY-MM-DD");
-                  setDateErr("");
-                  setForm((s) => ({
-                    ...s,
-                    date: iso,
-                  }));
-                }}
-                format="DD.MM.YYYY"
-                slotProps={{
-                  textField: {
-                    variant: "standard",
-                    fullWidth: true,
-                    placeholder: "16.02.2026",
-                    helperText:
-                      dateErr ||
-                      "Введите дату в формате ДД.ММ.ГГГГ или выберите в календаре",
-                    error: Boolean(dateErr),
-                    InputLabelProps: {
-                      style: { color: bankingColors.muted },
-                      shrink: true,
-                    },
-                    InputProps: {
-                      disableUnderline: true,
-                      sx: {
-                        bgcolor: "rgba(255,255,255,0.10)",
-                        borderRadius: 1.8,
-                        px: 1.8,
-                        py: 1.4,
-                        color: bankingColors.text,
-                      },
-                    },
-                  },
-                }}
-              />
-            </LocalizationProvider>
+            {/* Дата: только ручной ввод с автоточками */}
+            <TextField
+              variant="standard"
+              label="Дата"
+              fullWidth
+              value={formatRuDateTyping(formatDateRu(form.date))}
+              onChange={(e) => {
+                const ru = formatRuDateTyping(e.target.value);
+                const iso = ruToIsoStrict(ru);
+
+                let nextErr = "";
+                if (ru.length === 10) {
+                  if (!iso) nextErr = "Неверный формат даты";
+                  else if (!isValidIsoDate(iso))
+                    nextErr = "Такой даты не существует";
+                }
+
+                setDateErr(nextErr);
+
+                setForm((s) => ({
+                  ...s,
+                  date: iso && isValidIsoDate(iso) ? iso : s.date,
+                }));
+              }}
+              placeholder="16.02.2026"
+              inputProps={{ inputMode: "numeric" }}
+              helperText={
+                dateErr ||
+                "Введите дату: ДДММГГГГ — точки добавятся сами (например 16022026 → 16.02.2026)"
+              }
+              error={Boolean(dateErr)}
+              InputLabelProps={{
+                style: { color: bankingColors.muted },
+                shrink: true,
+              }}
+              InputProps={{
+                disableUnderline: true,
+                sx: {
+                  bgcolor: "rgba(255,255,255,0.10)",
+                  borderRadius: 1.8,
+                  px: 1.8,
+                  py: 1.4,
+                  color: bankingColors.text,
+                },
+              }}
+            />
           </Stack>
         </DialogContent>
 
