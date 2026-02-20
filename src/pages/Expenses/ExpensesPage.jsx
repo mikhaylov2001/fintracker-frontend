@@ -478,6 +478,7 @@ export default function ExpensesPage() {
         </Typography>
       ) : null}
 
+      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -492,7 +493,7 @@ export default function ExpensesPage() {
             sx={{
               width: "100%",
               minWidth: { sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" }, // как в IncomePage.jsx
+              tableLayout: { xs: "fixed", sm: "auto" }, // как в IncomePage
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
@@ -538,7 +539,9 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell>{isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}</TableCell>
+                    <TableCell>
+                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
+                    </TableCell>
 
                     <TableCell sx={{ fontWeight: 900, color: COLORS.expenses }}>
                       {formatAmount(Number(x.amount || 0))}
@@ -583,12 +586,19 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }} title={x.description || ""}>
+                    <TableCell
+                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                      title={x.description || ""}
+                    >
                       {x.description}
                     </TableCell>
 
                     <TableCell>
-                      <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
+                      <IconButton
+                        onClick={() => openEdit(x)}
+                        size="small"
+                        sx={{ userSelect: "none" }}
+                      >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
                       <IconButton
