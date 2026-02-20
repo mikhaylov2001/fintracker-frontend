@@ -176,6 +176,7 @@ export default function AppLayout() {
     touchRef.current = { x: null, y: null };
   }, []);
 
+  // ===== ключ: разные контейнеры для широких страниц (доходы/расходы) и остальных =====
   const pathname = location.pathname;
   const isWidePage = pathname.startsWith("/income") || pathname.startsWith("/expenses");
 
@@ -229,6 +230,7 @@ export default function AppLayout() {
           <TopNavBar onMenuClick={openMobile} />
 
           {isWidePage ? (
+            // Для доходов и расходов оставляем «на всю ширину без паддингов»
             <Box
               sx={{
                 flex: 1,
@@ -242,6 +244,7 @@ export default function AppLayout() {
               <Outlet />
             </Box>
           ) : (
+            // Для логина, регистрации, дашборда, аналитики и т.д. — нормальные отступы
             <Box
               sx={{
                 flex: 1,
@@ -256,6 +259,7 @@ export default function AppLayout() {
                 overflowX: "hidden",
               }}
             >
+              {/* Вложенный контейнер, чтобы формы/страницы не растягивались на всю огромную ширину на десктопе */}
               <Box sx={{ width: "100%", maxWidth: 960 }}>
                 <Outlet />
               </Box>
