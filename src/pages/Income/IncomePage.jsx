@@ -41,6 +41,10 @@ import {
   pageBackgroundSx,
 } from "../../styles/bankingTokens";
 
+// ---------------------------------------------------------
+// Вспомогательные константы и функции
+// ---------------------------------------------------------
+
 const COLORS = { income: bankingColors.primary };
 
 const CATEGORY_OPTIONS = [
@@ -92,6 +96,10 @@ const addMonthsYM = ({ year, month }, delta) => {
 
 const ymLabel = ({ year, month }) =>
   `${String(month).padStart(2, "0")}.${year}`;
+
+// ---------------------------------------------------------
+// Компонент
+// ---------------------------------------------------------
 
 export default function IncomePage() {
   const toast = useToast();
@@ -155,6 +163,7 @@ export default function IncomePage() {
 
   const amountRef = useRef(null);
 
+  // Сброс при смене пользователя
   useEffect(() => {
     setItems([]);
     setError("");
@@ -164,6 +173,7 @@ export default function IncomePage() {
     setLoading(true);
   }, [userId]);
 
+  // Загрузка доходов
   useEffect(() => {
     let cancelled = false;
 
@@ -327,6 +337,10 @@ export default function IncomePage() {
     [items]
   );
 
+  // -------------------------------------------------------
+  // Разметка
+  // -------------------------------------------------------
+
   return (
     <Box
       sx={{
@@ -464,22 +478,20 @@ export default function IncomePage() {
               border: "none",
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
-                py: { xs: 0.6, sm: 1 },
+                py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
-                lineHeight: 1.15,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                verticalAlign: "top",
+                lineHeight: 1.3,
+                textAlign: "center",           // по центру по горизонтали
+                verticalAlign: "middle",        // и по вертикали
                 borderBottom: "none !important",
+                whiteSpace: "nowrap",
               },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
-                whiteSpace: "nowrap",
                 bgcolor: bankingColors.card2,
               },
               "& td": {
-                whiteSpace: { xs: "normal", sm: "nowrap" },
                 color: bankingColors.text,
               },
               "& .MuiTableRow-root:hover td": {
@@ -489,14 +501,10 @@ export default function IncomePage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell
-                  sx={{ width: { xs: "20%", sm: 140 }, whiteSpace: "nowrap" }}
-                >
+                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>
                   Дата
                 </TableCell>
-                <TableCell
-                  sx={{ width: { xs: "28%", sm: 160 }, whiteSpace: "nowrap" }}
-                >
+                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>
                   Сумма
                 </TableCell>
                 <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>
@@ -511,16 +519,12 @@ export default function IncomePage() {
                   Источник
                 </TableCell>
                 <TableCell
-                  align="right"
                   sx={{
                     width: { xs: "14%", sm: 120 },
                     pr: { xs: 0.5, sm: 2 },
-                    whiteSpace: "nowrap",
                   }}
                 >
-                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                    Действия
-                  </Box>
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -528,7 +532,8 @@ export default function IncomePage() {
             <TableBody>
               {items.map((x) => (
                 <TableRow key={x.id} hover>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
+                  {/* Дата в ячейке */}
+                  <TableCell>
                     {isMobile
                       ? formatDateRuShort(x.date)
                       : formatDateRu(x.date)}
@@ -538,58 +543,20 @@ export default function IncomePage() {
                     sx={{
                       fontWeight: 900,
                       color: bankingColors.accent,
-                      whiteSpace: "nowrap",
                     }}
                   >
                     {formatAmount(Number(x.amount || 0))}
                   </TableCell>
 
-                  <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
-                    <Typography
-                      component="div"
-                      sx={{
-                        fontSize: { xs: 12, sm: 13 },
-                        fontWeight: 800,
-                        color: bankingColors.text,
-                        lineHeight: 1.15,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: { xs: 2, sm: 1 },
-                      }}
-                      title={x.category || ""}
-                    >
-                      {x.category}
-                    </Typography>
-
-                    {isMobile ? (
-                      <Typography
-                        component="div"
-                        sx={{
-                          mt: 0.2,
-                          fontSize: 11,
-                          color: bankingColors.muted,
-                          lineHeight: 1.15,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                        title={x.source || ""}
-                      >
-                        {x.source}
-                      </Typography>
-                    ) : null}
+                  <TableCell>
+                    {x.category}
                   </TableCell>
 
-                  <TableCell
-                    sx={{ display: { xs: "none", sm: "table-cell" } }}
-                    title={x.source || ""}
-                  >
+                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
                     {x.source}
                   </TableCell>
 
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                  <TableCell>
                     <IconButton onClick={() => openEdit(x)} size="small">
                       <EditOutlinedIcon
                         fontSize="small"
@@ -621,7 +588,7 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundColor: "#111827", // немного светлее общей тёмной темы
+            backgroundColor: "#111827", // чуть светлее общей тёмной темы
             borderRadius: 2,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -744,12 +711,13 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: один инпут (ручной ввод + календарь) */}
+            {/* Дата: ручной ввод + календарь */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Дата"
                 value={form.date ? dayjs(form.date) : null}
                 onChange={(newValue) => {
+                  // это вызывается и при выборе в календаре, и когда вручную введённая строка стала валидной датой
                   if (!newValue) return;
                   const d = dayjs(newValue);
                   if (!d.isValid()) {
@@ -771,7 +739,7 @@ export default function IncomePage() {
                     placeholder: "16.02.2026",
                     helperText:
                       dateErr ||
-                      "Введите дату вручную в формате ДД.ММ.ГГГГ или выберите в календаре",
+                      "Введите дату в формате ДД.ММ.ГГГГ или выберите в календаре",
                     error: Boolean(dateErr),
                     InputLabelProps: {
                       style: { color: bankingColors.muted },
