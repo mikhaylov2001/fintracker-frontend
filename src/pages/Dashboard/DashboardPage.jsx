@@ -75,7 +75,12 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
       direction="row"
       alignItems="baseline"
       justifyContent="space-between"
-      sx={{ mb: 1 }}
+      sx={{
+        mb: 1,
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
+      }}
     >
       <Typography
         variant="h6"
@@ -99,7 +104,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-/* KpiCard — копипаста из AnalyticsPage */
+/* KPI card */
 const KpiCard = memo(function KpiCard({
   label,
   value,
@@ -118,18 +123,20 @@ const KpiCard = memo(function KpiCard({
     [onClick]
   );
 
+  const clickable = Boolean(onClick);
+
   return (
     <Box
       component="div"
       onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={onClick ? handleKeyDown : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onKeyDown={clickable ? handleKeyDown : undefined}
       sx={{
         ...surfaceOutlinedSx,
         height: "100%",
         minHeight: { xs: 96, sm: 104, md: 116 },
-        cursor: onClick ? "pointer" : "default",
+        cursor: clickable ? "pointer" : "default",
         position: "relative",
         overflow: "hidden",
         transition:
@@ -148,7 +155,7 @@ const KpiCard = memo(function KpiCard({
           )} 0%, transparent 62%)`,
           pointerEvents: "none",
         },
-        "@media (hover: hover) and (pointer: fine)": onClick
+        "@media (hover: hover) and (pointer: fine)": clickable
           ? {
               "&:hover": {
                 transform: "translateY(-1px)",
@@ -516,7 +523,6 @@ export default function DashboardPage() {
     return user?.userName || user?.email || "пользователь";
   }, [user?.firstName, user?.lastName, user?.userName, user?.email]);
 
-  // СБРОС ЛОКАЛЬНОГО СТЕЙТА ПРИ СМЕНЕ ПОЛЬЗОВАТЕЛЯ
   useEffect(() => {
     setUsedMonths([]);
     setSummariesMap(new Map());
@@ -554,9 +560,9 @@ export default function DashboardPage() {
         for (const item of list) {
           if (!item || typeof item !== "object") continue;
           const y = Number(item.year);
-          const m = Number(item.month);
-          if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
-          map.set(ymKey(y, m), item);
+          const м = Number(item.month);
+          if (!Number.isFinite(y) || !Number.isFinite(м)) continue;
+          map.set(ymKey(y, м), item);
         }
 
         const missing = used.filter(
@@ -751,12 +757,16 @@ export default function DashboardPage() {
             alignItems={{ sm: "center" }}
             sx={{ width: { xs: "100%", md: "auto" } }}
           >
+            {/* Chip "Актуально" полностью не кликабелен */}
             <Chip
               label="Актуально"
+              clickable={false}
               sx={{
                 ...pillSx,
                 width: { xs: "100%", sm: "auto" },
                 borderColor: alpha(colors.primary, 0.18),
+                cursor: "default",
+                pointerEvents: "none",
               }}
             />
 
@@ -818,6 +828,7 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
+        {/* Баланс — НЕ кликабелен (onClick не передаём) */}
         <KpiCard
           label="Баланс"
           value={formatAmount(displayBalance)}
@@ -825,6 +836,7 @@ export default function DashboardPage() {
           accent={COLORS.balance}
           icon={<AccountBalanceWalletOutlinedIcon />}
         />
+        {/* Доходы — кликабельно */}
         <KpiCard
           label="Доходы"
           value={formatAmount(displayIncome)}
@@ -833,6 +845,7 @@ export default function DashboardPage() {
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
+        {/* Расходы — кликабельно */}
         <KpiCard
           label="Расходы"
           value={formatAmount(displayExpenses)}
@@ -841,6 +854,7 @@ export default function DashboardPage() {
           onClick={goExpenses}
           icon={<ArrowCircleDownOutlinedIcon />}
         />
+        {/* Норма сбережений — НЕ кликабельно */}
         <KpiCard
           label="Норма сбережений"
           value={`${displayRate}%`}
