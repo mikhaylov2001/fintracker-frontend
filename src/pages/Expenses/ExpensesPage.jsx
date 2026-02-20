@@ -376,6 +376,7 @@ export default function ExpensesPage() {
         msUserSelect: "none",
       }}
     >
+      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
@@ -485,23 +486,26 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: { xs: "hidden", sm: "auto" } }}>
+        <Box sx={{ overflowX: "auto" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
-              minWidth: { xs: "100%", sm: 820 },
-              tableLayout: { xs: "fixed", sm: "fixed" },
+              minWidth: { sm: 720 },
+              tableLayout: { xs: "fixed", sm: "auto" }, // как в IncomePage.jsx
               bgcolor: "transparent",
               borderRadius: 0,
+              overflow: "visible",
               border: "none",
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
-                py: { xs: 0.9, sm: 1.1 },
+                py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
                 borderBottom: "none !important",
+                whiteSpace: "nowrap",
                 verticalAlign: "middle",
+                textAlign: "left",
               },
               "& th": {
                 fontWeight: 900,
@@ -514,51 +518,18 @@ export default function ExpensesPage() {
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(249, 115, 22, 0.14)",
               },
+              "& th:last-child, & td:last-child": {
+                textAlign: "center",
+              },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell
-                  sx={{
-                    width: { xs: "25%", sm: "15%" },
-                    textAlign: { xs: "center", sm: "center" },
-                  }}
-                >
-                  Дата
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "25%", sm: "15%" },
-                    textAlign: { xs: "center", sm: "center" },
-                  }}
-                >
-                  Сумма
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "25%", sm: "30%" },
-                    textAlign: { xs: "center", sm: "left" },
-                  }}
-                >
-                  Категория
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: 0, sm: "30%" },
-                    display: { xs: "none", sm: "table-cell" },
-                    textAlign: "left",
-                  }}
-                >
-                  Описание
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "25%", sm: "10%" },
-                    textAlign: "center",
-                  }}
-                >
-                  Действия
-                </TableCell>
+                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Описание</TableCell>
+                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
               </TableRow>
             </TableHead>
 
@@ -567,81 +538,57 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell
-                      sx={{
-                        textAlign: { xs: "center", sm: "center" },
-                      }}
-                    >
-                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
-                    </TableCell>
+                    <TableCell>{isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}</TableCell>
 
-                    <TableCell
-                      sx={{
-                        fontWeight: 900,
-                        color: COLORS.expenses,
-                        textAlign: "center",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
+                    <TableCell sx={{ fontWeight: 900, color: COLORS.expenses }}>
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    <TableCell
-                      sx={{
-                        pr: { xs: 0.5, sm: 2 },
-                        textAlign: { xs: "center", sm: "left" },
-                      }}
-                    >
-                      <Typography
-                        component="div"
-                        sx={{
-                          fontSize: { xs: 12, sm: 13 },
-                          fontWeight: 800,
-                          color: bankingColors.text,
-                          lineHeight: 1.15,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: { xs: 1, sm: 1 },
-                        }}
-                        title={x.category || ""}
-                      >
-                        {x.category}
-                      </Typography>
-
-                      {isMobile ? (
+                    <TableCell>
+                      <Stack spacing={0.3}>
                         <Typography
                           component="div"
                           sx={{
-                            mt: 0.2,
-                            fontSize: 11,
-                            color: bankingColors.muted,
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: bankingColors.text,
                             lineHeight: 1.15,
                             overflow: "hidden",
                             textOverflow: "ellipsis",
-                            whiteSpace: "nowrap",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: 1,
                           }}
-                          title={x.description || ""}
+                          title={x.category || ""}
                         >
-                          {x.description}
+                          {x.category}
                         </Typography>
-                      ) : null}
+
+                        {isMobile ? (
+                          <Typography
+                            component="div"
+                            sx={{
+                              fontSize: 11,
+                              color: bankingColors.muted,
+                              lineHeight: 1.15,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={x.description || ""}
+                          >
+                            {x.description}
+                          </Typography>
+                        ) : null}
+                      </Stack>
                     </TableCell>
 
-                    <TableCell
-                      sx={{ display: { xs: "none", sm: "table-cell" } }}
-                      title={x.description || ""}
-                    >
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }} title={x.description || ""}>
                       {x.description}
                     </TableCell>
 
-                    <TableCell sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                      <IconButton
-                        onClick={() => openEdit(x)}
-                        size="small"
-                        sx={{ userSelect: "none" }}
-                      >
+                    <TableCell>
+                      <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
                       <IconButton
@@ -660,6 +607,7 @@ export default function ExpensesPage() {
         </Box>
       )}
 
+      {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"
