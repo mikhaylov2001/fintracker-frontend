@@ -268,7 +268,7 @@ export default function RegisterPage() {
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 340,
+                maxWidth: 420,
                 display: "flex",
                 justifyContent: "center",
               }}
