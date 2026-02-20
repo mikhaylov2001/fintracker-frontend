@@ -1,4 +1,3 @@
-// src/layouts/AppBackground.jsx
 import React from "react";
 import { Box } from "@mui/material";
 import { pageBackgroundSx, gridOverlaySx } from "../styles/bankingTokens";
@@ -7,11 +6,14 @@ export default function AppBackground({ children, sx }) {
   return (
     <Box
       sx={{
-        // базовый фон приложения
+        // берём только фон из pageBackgroundSx
         ...pageBackgroundSx,
 
-        // убираем эффект вложенной страницы
+        // гарантированно убираем любую "карточку-страницу"
         maxWidth: "100%",
+        width: "100%",
+        minHeight: "100vh",
+
         borderRadius: 0,
         boxShadow: "none",
         border: "none",
@@ -19,20 +21,16 @@ export default function AppBackground({ children, sx }) {
         px: 0,
         py: 0,
 
-        // растягиваем фон на весь экран
-        minHeight: "100vh",
-        width: "100%",
-
         position: "relative",
         overflow: "hidden",
 
         ...sx,
       }}
     >
-      {/* сетка поверх фона, без влияния на границы */}
+      {/* сетка/шум поверх фона, не влияет на границы */}
       <Box sx={{ ...gridOverlaySx, pointerEvents: "none" }} />
 
-      {/* контент приложения без дополнительной карточки */}
+      {/* сам контент приложения без дополнительной обёртки-карточки */}
       <Box sx={{ position: "relative", zIndex: 1, width: "100%", height: "100%" }}>
         {children}
       </Box>
