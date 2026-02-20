@@ -370,19 +370,11 @@ export default function IncomePage() {
         py: { xs: 2, md: 3 },
         width: "100%",
 
-        // глобально: текст не выделяется, фон не кликается
+        // глобально: текст не выделяется
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         msUserSelect: "none",
-        pointerEvents: "none",
-
-        // интерактивные элементы: кликаются и могут выделять текст (если нужно)
-        "& button, & a, & input, & textarea, & select, & label, & .MuiIconButton-root, & .MuiChip-root": {
-          pointerEvents: "auto",
-          userSelect: "auto",
-          WebkitUserSelect: "auto",
-        },
       }}
     >
       {/* Header */}
@@ -425,7 +417,6 @@ export default function IncomePage() {
                 px: 1.2,
                 borderColor: bankingColors.border,
                 color: bankingColors.muted,
-                // на самой кнопке текст тоже не выделяется
                 userSelect: "none",
                 WebkitUserSelect: "none",
               }}
@@ -559,10 +550,10 @@ export default function IncomePage() {
                     <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{x.source}</TableCell>
 
                     <TableCell>
-                      <IconButton onClick={() => openEdit(x)} size="small">
+                      <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
-                      <IconButton onClick={() => remove(x)} size="small" sx={{ color: bankingColors.danger }}>
+                      <IconButton onClick={() => remove(x)} size="small" sx={{ color: bankingColors.danger, userSelect: "none" }}>
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
@@ -591,7 +582,7 @@ export default function IncomePage() {
           },
         }}
       >
-        <DialogTitle sx={{ color: bankingColors.text }}>
+        <DialogTitle sx={{ color: bankingColors.text, userSelect: "none", WebkitUserSelect: "none" }}>
           {editing ? "Редактировать доход" : "Добавить доход"}
         </DialogTitle>
 
@@ -712,7 +703,7 @@ export default function IncomePage() {
                           openCalendar(e);
                         }}
                         size="small"
-                        sx={{ color: bankingColors.muted }}
+                        sx={{ color: bankingColors.muted, userSelect: "none" }}
                         aria-label="Открыть календарь"
                       >
                         <CalendarMonthOutlinedIcon fontSize="small" />
@@ -820,7 +811,7 @@ export default function IncomePage() {
             variant="outlined"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ borderColor: bankingColors.border, color: bankingColors.muted }}
+            sx={{ borderColor: bankingColors.border, color: bankingColors.muted, userSelect: "none" }}
           >
             Отмена
           </Button>
@@ -829,7 +820,7 @@ export default function IncomePage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ bgcolor: COLORS.income, color: bankingColors.bg0, "&:hover": { bgcolor: "#16A34A" } }}
+            sx={{ bgcolor: COLORS.income, color: bankingColors.bg0, "&:hover": { bgcolor: "#16A34A" }, userSelect: "none" }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
