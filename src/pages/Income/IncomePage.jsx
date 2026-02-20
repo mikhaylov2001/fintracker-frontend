@@ -211,7 +211,7 @@ export default function IncomePage() {
         }
 
         const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
-        the const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
+        const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
         const data = res.data;
 
         if (!cancelled) {
