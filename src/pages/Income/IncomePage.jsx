@@ -364,7 +364,19 @@ export default function IncomePage() {
   const total = useMemo(() => items.reduce((acc, x) => acc + Number(x.amount || 0), 0), [items]);
 
   return (
-    <Box sx={{ ...pageBackgroundSx, px: { xs: 2, md: 3, lg: 4 }, py: { xs: 2, md: 3 } }}>
+    <Box
+      sx={{
+        ...pageBackgroundSx,
+        // убираем эффект вложенной "карточки-страницы"
+        maxWidth: "100%",
+        borderRadius: 0,
+        boxShadow: "none",
+        border: "none",
+        bgcolor: "transparent",
+        px: { xs: 2, md: 3, lg: 4 },
+        py: { xs: 2, md: 3 },
+      }}
+    >
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -443,16 +455,15 @@ export default function IncomePage() {
           onAction={openCreate}
         />
       ) : (
-        // ВНЕШНИЙ КОНТЕЙНЕР БЕЗ ГРАНИЦ И СКРУГЛЕНИЙ
-        <Box sx={{ overflowX: "auto", borderRadius: 0, bgcolor: "transparent" }}>
+        <Box sx={{ overflowX: "auto" }}>
           <Table
             size="small"
             sx={{
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-              bgcolor: "transparent",        // таблица без собственного фона
-              borderRadius: 0,               // убираем скругления
+              bgcolor: "transparent",
+              borderRadius: 0,
               overflow: "visible",
               border: "none",
               "& th, & td": {
@@ -553,7 +564,6 @@ export default function IncomePage() {
           }}
         >
           <Stack spacing={2.2} sx={{ mt: 1 }}>
-            {/* Сумма */}
             <TextField
               variant="standard"
               label="Сумма"
@@ -567,7 +577,6 @@ export default function IncomePage() {
               InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
-            {/* Категория */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -591,7 +600,6 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Источник */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -615,7 +623,6 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: ручной ввод + календарь */}
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
               <TextField
                 variant="standard"
@@ -682,7 +689,6 @@ export default function IncomePage() {
                 }}
               />
 
-              {/* Popover с календарём в светлых тонах */}
               <Popover
                 open={calOpen}
                 anchorEl={calAnchorEl}
