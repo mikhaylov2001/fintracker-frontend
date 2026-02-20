@@ -67,7 +67,15 @@ export default function LoginPage() {
   };
 
   return (
-    <AppBackground sx={{ display: "grid", placeItems: "center", px: 2, py: { xs: 3, md: 0 } }}>
+    <AppBackground
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: 2,
+        py: 2,
+      }}
+    >
       <Box
         sx={{
           width: "100%",
