@@ -463,10 +463,14 @@ export default function IncomePage() {
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
                 verticalAlign: "middle",
+                textAlign: "left",
               },
               "& th": { fontWeight: 900, color: bankingColors.text, bgcolor: bankingColors.card2 },
               "& td": { color: bankingColors.text },
               "& .MuiTableRow-root:hover td": { backgroundColor: "rgba(34, 197, 94, 0.14)" },
+              "& th:last-child, & td:last-child": {
+                textAlign: "center",
+              },
             }}
           >
             <TableHead>
@@ -701,11 +705,8 @@ export default function IncomePage() {
                       closeCalendar();
                     }}
                     sx={{
-                      // Белый фон календаря
                       bgcolor: "#FFFFFF",
                       color: "#1F2937",
-
-                      // Заголовок месяца/года
                       "& .MuiPickersCalendarHeader-root": {
                         color: "#1F2937",
                         bgcolor: "#FFFFFF",
@@ -714,19 +715,13 @@ export default function IncomePage() {
                         color: "#1F2937",
                         fontWeight: 700,
                       },
-
-                      // Кнопки переключения месяца
                       "& .MuiIconButton-root": {
                         color: "#1F2937",
                       },
-
-                      // Названия дней недели
                       "& .MuiDayCalendar-weekDayLabel": {
                         color: "#6B7280",
                         fontWeight: 600,
                       },
-
-                      // Дни (обычные)
                       "& .MuiPickersDay-root": {
                         color: "#1F2937",
                         bgcolor: "transparent",
@@ -734,8 +729,6 @@ export default function IncomePage() {
                           bgcolor: "rgba(34, 197, 94, 0.1)",
                         },
                       },
-
-                      // Выбранный день (зелёный акцент)
                       "& .MuiPickersDay-root.Mui-selected": {
                         bgcolor: "#22C55E",
                         color: "#FFFFFF",
@@ -744,14 +737,10 @@ export default function IncomePage() {
                           bgcolor: "#16A34A",
                         },
                       },
-
-                      // Сегодня (обводка зелёная)
                       "& .MuiPickersDay-today": {
                         border: "2px solid #22C55E !important",
                         bgcolor: "transparent",
                       },
-
-                      // Дни другого месяца (приглушённые)
                       "& .MuiPickersDay-root.Mui-disabled": {
                         color: "#D1D5DB",
                       },
