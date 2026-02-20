@@ -345,7 +345,7 @@ export default function ExpensesPage() {
         toast.error(msg);
       }
     } finally {
-      setSaving(false);
+        setSaving(false);
     }
   };
 
@@ -376,6 +376,7 @@ export default function ExpensesPage() {
         msUserSelect: "none",
       }}
     >
+      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
@@ -477,6 +478,7 @@ export default function ExpensesPage() {
         </Typography>
       ) : null}
 
+      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -491,7 +493,8 @@ export default function ExpensesPage() {
             sx={{
               width: "100%",
               minWidth: { xs: "100%", sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" },
+              // на мобиле auto, чтобы браузер ровнее раскидал колонки
+              tableLayout: { xs: "auto", sm: "auto" },
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
@@ -508,7 +511,6 @@ export default function ExpensesPage() {
                 fontWeight: 900,
                 color: bankingColors.text,
                 bgcolor: "transparent",
-                textAlign: "left",
               },
               "& td": {
                 color: bankingColors.text,
@@ -520,11 +522,11 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "24%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 160 } }}>Дата</TableCell>
                 <TableCell
                   align="center"
                   sx={{
-                    width: { xs: "26%", sm: 160 },
+                    width: { xs: "30%", sm: 160 },
                     textAlign: "center",
                   }}
                 >
@@ -532,7 +534,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "50%", sm: 420 },
+                    width: { xs: "40%", sm: 400 },
                     textAlign: "left",
                   }}
                 >
@@ -657,6 +659,7 @@ export default function ExpensesPage() {
         </Box>
       )}
 
+      {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"
