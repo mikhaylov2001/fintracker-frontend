@@ -460,7 +460,7 @@ export default function IncomePage() {
             alignItems={{ xs: "stretch", sm: "center" }}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            {/* переключатель месяца оставлен как был */}
+            {/* оставляем как было */}
             <Stack
               direction="row"
               spacing={1}
@@ -500,7 +500,6 @@ export default function IncomePage() {
               </IconButton>
             </Stack>
 
-            {/* кнопка "Добавить" тоже без изменений */}
             <Button
               onClick={openCreate}
               variant="contained"
@@ -532,18 +531,15 @@ export default function IncomePage() {
           </Typography>
         ) : null}
 
-        {/* Список: без рамок, нераздвижной, по центру */}
+        {/* Список — никаких рамок вообще */}
         {!loading && items.length === 0 ? (
           <Box
             sx={{
-              ...surfaceSx,
+              maxWidth: 960,
+              mx: "auto",
               p: 4,
               textAlign: "center",
               color: bankingColors.muted,
-              border: "0",
-              boxShadow: "none",
-              maxWidth: 960,
-              mx: "auto",
             }}
           >
             <EmptyState
@@ -556,121 +552,114 @@ export default function IncomePage() {
         ) : (
           <Box
             sx={{
-              ...surfaceSx,
-              border: "0",
-              boxShadow: "none",
               maxWidth: 960,
               mx: "auto",
               overflow: "hidden",
             }}
           >
-            <Box sx={{ overflowX: "hidden" }}>
-              <Table
-                sx={{
-                  width: "100%",
-                  tableLayout: "fixed",
-                  "& th": {
-                    fontWeight: 800,
-                    color: bankingColors.muted,
-                    whiteSpace: "nowrap",
-                    borderBottom: `1px solid ${alpha(bankingColors.border, 0.5)}`,
-                    bgcolor: alpha("#000", 0.2),
-                    py: 2,
-                    px: 2,
-                  },
-                  "& td": {
-                    color: bankingColors.text,
-                    borderBottom: `1px solid ${alpha(bankingColors.border, 0.15)}`,
-                    py: 1.5,
-                    px: 2,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  },
-                  "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
-                  "& .MuiTableRow-root:hover": {
-                    bgcolor: alpha(bankingColors.primary, 0.05),
-                  },
-                }}
-              >
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Дата</TableCell>
-                    <TableCell>Сумма</TableCell>
-                    <TableCell>Категория</TableCell>
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                      Источник
+            <Table
+              sx={{
+                width: "100%",
+                tableLayout: "fixed",
+                "& th, & td": {
+                  px: 2,
+                  py: 1.5,
+                  fontSize: 14,
+                  fontWeight: 600,
+                },
+                "& th": {
+                  fontWeight: 800,
+                  color: bankingColors.muted,
+                  whiteSpace: "nowrap",
+                  bgcolor: alpha("#000", 0.2),
+                },
+                "& td": {
+                  color: bankingColors.text,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                },
+                // убираем все линии таблицы
+                "& .MuiTableCell-root": {
+                  borderBottom: "none",
+                },
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>Дата</TableCell>
+                  <TableCell>Сумма</TableCell>
+                  <TableCell>Категория</TableCell>
+                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                    Источник
+                  </TableCell>
+                  <TableCell align="right">Действия</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {items.map((x) => (
+                  <TableRow key={x.id}>
+                    <TableCell sx={{ whiteSpace: "nowrap" }}>
+                      {isMobile
+                        ? formatDateRuShort(x.date)
+                        : formatDateRu(x.date)}
                     </TableCell>
-                    <TableCell align="right">Действия</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {items.map((x) => (
-                    <TableRow key={x.id}>
-                      <TableCell sx={{ whiteSpace: "nowrap" }}>
-                        {isMobile
-                          ? formatDateRuShort(x.date)
-                          : formatDateRu(x.date)}
-                      </TableCell>
-                      <TableCell
-                        sx={{
-                          fontWeight: 900,
-                          color: bankingColors.primary,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {formatAmount(Number(x.amount || 0))}
-                      </TableCell>
-                      <TableCell>
-                        <Box>
+                    <TableCell
+                      sx={{
+                        fontWeight: 900,
+                        color: bankingColors.primary,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {formatAmount(Number(x.amount || 0))}
+                    </TableCell>
+                    <TableCell>
+                      <Box>
+                        <Typography
+                          component="span"
+                          sx={{ fontWeight: 700, fontSize: 14 }}
+                        >
+                          {x.category}
+                        </Typography>
+                        {isMobile && x.source && (
                           <Typography
-                            component="span"
-                            sx={{ fontWeight: 700, fontSize: 14 }}
+                            variant="caption"
+                            display="block"
+                            sx={{ color: bankingColors.muted }}
                           >
-                            {x.category}
+                            {x.source}
                           </Typography>
-                          {isMobile && x.source && (
-                            <Typography
-                              variant="caption"
-                              display="block"
-                              sx={{ color: bankingColors.muted }}
-                            >
-                              {x.source}
-                            </Typography>
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell
-                        sx={{ display: { xs: "none", sm: "table-cell" } }}
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                    >
+                      {x.source}
+                    </TableCell>
+                    <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                      <IconButton
+                        onClick={() => openEdit(x)}
+                        size="small"
+                        sx={{ color: bankingColors.muted, "&:hover": { color: "#fff" } }}
                       >
-                        {x.source}
-                      </TableCell>
-                      <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                        <IconButton
-                          onClick={() => openEdit(x)}
-                          size="small"
-                          sx={{ color: bankingColors.muted, "&:hover": { color: "#fff" } }}
-                        >
-                          <EditOutlinedIcon fontSize="small" />
-                        </IconButton>
-                        <IconButton
-                          onClick={() => remove(x)}
-                          size="small"
-                          sx={{ color: alpha(bankingColors.danger, 0.7), "&:hover": { color: bankingColors.danger } }}
-                        >
-                          <DeleteOutlineIcon fontSize="small" />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+                        <EditOutlinedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => remove(x)}
+                        size="small"
+                        sx={{ color: alpha(bankingColors.danger, 0.7), "&:hover": { color: bankingColors.danger } }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </Box>
         )}
 
-        {/* Dialog: без рамки */}
+        {/* Dialog — без рамки и без лишней карточности */}
         <Dialog
           open={open}
           onClose={() => (!saving ? setOpen(false) : null)}
@@ -678,8 +667,9 @@ export default function IncomePage() {
           maxWidth="sm"
           PaperProps={{
             sx: {
-              ...surfaceSx,
-              backgroundImage: "none",
+              borderRadius: 3,
+              bgcolor: bankingColors.card,
+              boxShadow: "0 22px 60px rgba(0,0,0,0.7)",
               border: "0",
             },
           }}
