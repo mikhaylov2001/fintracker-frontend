@@ -122,29 +122,53 @@ export default function LoginPage() {
             FinTrackerPro
           </Typography>
           <Typography sx={{ mt: 1.25, color: "rgba(255,255,255,0.72)", fontSize: 15, maxWidth: 420 }}>
-            Войди и следи за динамикой по месяцам — баланс, доходы, расходы и норма сбережений.
+            Войдите и следите за динамикой по месяцам.
           </Typography>
         </Box>
 
-        {/* Form */}
+        {/* Card */}
         <Paper
-          elevation={0}
+          elevation={8}
           sx={{
-            p: 4,
+            p: { xs: 3, md: 4 },
             width: "100%",
+            maxWidth: 420,
+            mx: "auto",
             borderRadius: 5,
-            border: "1px solid rgba(255,255,255,0.10)",
-            backgroundColor: "rgba(255,255,255,0.92)",
-            backdropFilter: "blur(10px)",
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
+            boxShadow:
+              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
           }}
         >
-          <Typography variant="h5" component="h1" gutterBottom align="center" sx={{ fontWeight: 950 }}>
-            Вход
-          </Typography>
+          {/* Шапка */}
+          <Box sx={{ mb: 2.5, textAlign: "center" }}>
+            <Typography
+              component="h1"
+              sx={{
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: 0.3,
+                color: "#111827",
+              }}
+            >
+              Вход
+            </Typography>
+            <Typography
+              sx={{
+                mt: 0.8,
+                fontSize: 13,
+                color: "rgba(15,23,42,0.6)",
+              }}
+            >
+              Войдите в аккаунт, чтобы продолжить.
+            </Typography>
+          </Box>
 
-          <Box component="form" onSubmit={handleSubmit} noValidate>
+          {/* Поля */}
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
             <TextField
-              margin="normal"
+              margin="dense"
               fullWidth
               label="Email"
               type="email"
@@ -155,7 +179,7 @@ export default function LoginPage() {
               autoComplete="email"
             />
             <TextField
-              margin="normal"
+              margin="dense"
               fullWidth
               label="Пароль"
               type="password"
@@ -177,19 +201,67 @@ export default function LoginPage() {
               fullWidth
               variant="contained"
               color="primary"
-              sx={{ mt: 3, mb: 2, borderRadius: 999, py: 1.1, fontWeight: 800 }}
+              sx={{
+                mt: 2.5,
+                mb: 1.5,
+                borderRadius: 999,
+                py: 1.1,
+                fontWeight: 800,
+                textTransform: "none",
+                fontSize: 15,
+              }}
             >
               Войти
             </Button>
           </Box>
 
-          <Box sx={{ mt: 2, mb: 2, textAlign: "center" }}>
-            <div ref={googleDivRef} />
+          {/* Разделитель */}
+          <Box
+            sx={{
+              mt: 1.5,
+              mb: 1.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+            }}
+          >
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(15,23,42,0.5)", textTransform: "uppercase" }}
+            >
+              или
+            </Typography>
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
-          <Typography variant="body2" align="center">
+          {/* Google */}
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 340,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div ref={googleDivRef} />
+            </Box>
+          </Box>
+
+          {/* Низ */}
+          <Typography
+            variant="body2"
+            align="center"
+            sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
+          >
             Нет аккаунта?{" "}
-            <Link component="button" type="button" onClick={() => navigate("/register")}>
+            <Link
+              component="button"
+              type="button"
+              onClick={() => navigate("/register")}
+              sx={{ fontWeight: 600 }}
+            >
               Зарегистрироваться
             </Link>
           </Typography>
