@@ -31,8 +31,8 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-// Импорт базовых стилей без границ
-import { surfaceSx, pillSx } from "../../styles/bankingStyles";
+// Импорт базовых стилей без границ из bankingTokens.js
+import { surfaceSx, pillSx } from "../../styles/bankingTokens";
 
 const COLORS = { income: "#22C55E" };
 
@@ -380,10 +380,7 @@ export default function IncomePage() {
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={1}
-        alignItems={{ xs: "stretch", sm: "center" }}
-        sx={{ mb: 2.5 }}
-      >
+        spacing={1>
         <Box sx={{ flexGrow: 1 }}>
           <Typography
             variant="h5"
@@ -410,7 +407,6 @@ export default function IncomePage() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1}
-          alignItems={{ xs: "stretch", sm: "center" }}
           sx={{ width: { xs: "100%", sm: "auto" } }}
         >
           <Stack
@@ -431,7 +427,7 @@ export default function IncomePage() {
             </Button>
 
             <Chip
-              label={ ymLabel(ym) }
+              label={ymLabel(ym)}
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
@@ -461,6 +457,7 @@ export default function IncomePage() {
               px: 2.2,
               bgcolor: COLORS.income,
               "&:hover": { bgcolor: "#16A34A" },
+              // можно дополнительно убрать границы вокруг кнопки, если нужно
             }}
           >
             Добавить доход
@@ -698,8 +695,7 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, category: newValue ?? "" }))
               }
               onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
+                setForm((s) => ({ ...s, category: newInput }))}
               renderInput={(params) => (
                 <TextField {...params} label="Категория" fullWidth />
               )}
