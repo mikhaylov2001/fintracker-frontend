@@ -183,8 +183,7 @@ const KpiCard = memo(function KpiCard({
                   fontSize: { xs: 17, md: 18 },
                   color: alpha(accent, 0.98),
                 },
-              })
-            : null}
+              })}
         </Box>
 
         <Typography
@@ -252,6 +251,9 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         px: { xs: 1.5, sm: 2 },
         borderRadius: 14,
         bgcolor: alpha("#FFFFFF", 0.04),
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
@@ -317,7 +319,13 @@ const HistoryAccordion = memo(function HistoryAccordion({
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
+        sx={{
+          px: 2,
+          "& .MuiAccordionSummary-content": { my: 1 },
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MsUserSelect: "none",
+        }}
       >
         <Stack
           direction="row"
@@ -347,7 +355,16 @@ const HistoryAccordion = memo(function HistoryAccordion({
         </Stack>
       </AccordionSummary>
 
-      <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
+      <AccordionDetails
+        sx={{
+          pt: 0,
+          px: 2,
+          pb: 2,
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MsUserSelect: "none",
+        }}
+      >
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
           <Typography variant="body2">
             Доходы:{" "}
@@ -677,7 +694,14 @@ export default function DashboardPage() {
           spacing={2}
           alignItems={{ md: "center" }}
         >
-          <Box sx={{ flexGrow: 1 }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              userSelect: "none",
+              WebkitUserSelect: "none",
+              MsUserSelect: "none",
+            }}
+          >
             <Typography
               variant="h5"
               sx={{
@@ -850,7 +874,13 @@ export default function DashboardPage() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={{ xs: 0.25, sm: 1.25 }}
-          sx={{ mt: 2, color: colors.muted }}
+          sx={{
+            mt: 2,
+            color: colors.muted,
+            userSelect: "none",
+            WebkitUserSelect: "none",
+            MsUserSelect: "none",
+          }}
         >
           <Typography variant="caption" sx={{ fontWeight: 800 }}>
             История сохранена: {historyDesc.length} месяцев
@@ -862,7 +892,15 @@ export default function DashboardPage() {
 
         <Box sx={{ mt: 1.25 }}>
           {historyDesc.length === 0 ? (
-            <Typography variant="body2" sx={{ color: colors.muted }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: colors.muted,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+                MsUserSelect: "none",
+              }}
+            >
               Пока нет сохранённых месяцев.
             </Typography>
           ) : (
