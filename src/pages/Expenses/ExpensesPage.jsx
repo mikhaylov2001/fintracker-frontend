@@ -491,8 +491,7 @@ export default function ExpensesPage() {
             size="small"
             sx={{
               width: "100%",
-              // десктоп — как было: minWidth только с sm, мобилка — ширина 100% без скролла
-              minWidth: { sm: 720 },
+              minWidth: { sm: 720 }, // десктоп как был, мобилка без горизонтального скролла
               tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
@@ -527,28 +526,9 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                {/* мобильная сетка: 3 колонки по ~1/3, на десктопе фикс как раньше */}
-                <TableCell
-                  sx={{
-                    width: { xs: "30%", sm: 140 },
-                  }}
-                >
-                  Дата
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "30%", sm: 160 },
-                  }}
-                >
-                  Сумма
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "40%", sm: 200 },
-                  }}
-                >
-                  Категория
-                </TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "40%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
                     width: 200,
@@ -557,9 +537,11 @@ export default function ExpensesPage() {
                 >
                   Описание
                 </TableCell>
+                {/* Заголовок "Действия" только на десктопе */}
                 <TableCell
                   sx={{
                     width: { xs: "auto", sm: 120 },
+                    display: { xs: "none", sm: "table-cell" },
                   }}
                 >
                   Действия
@@ -626,11 +608,16 @@ export default function ExpensesPage() {
                       {x.description}
                     </TableCell>
 
-                    <TableCell>
+                    <TableCell
+                      sx={{
+                        textAlign: "center",
+                        px: { xs: 0.5, sm: 2 },
+                      }}
+                    >
                       <IconButton
                         onClick={() => openEdit(x)}
                         size="small"
-                        sx={{ userSelect: "none" }}
+                        sx={{ userSelect: "none", mr: 0.5 }}
                       >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
