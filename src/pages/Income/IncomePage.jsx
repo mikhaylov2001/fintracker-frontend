@@ -32,7 +32,7 @@ import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
 // Импорт базовых стилей без границ из bankingTokens.js
-import { surfaceSx, pillSx } from "../../styles/bankingTokens";
+import { surfaceSx } from "../../styles/bankingTokens";
 
 const COLORS = { income: "#22C55E" };
 
@@ -41,6 +41,7 @@ const CATEGORY_OPTIONS = [
   "Подработка",
   "Вклады",
   "Инвестиции",
+  "Налоги",
   "Подарки",
   "Другое",
 ];
