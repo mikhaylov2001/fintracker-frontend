@@ -42,8 +42,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 import { bankingColors } from "../../styles/bankingTokens";
 
-// ----------------- вспомогательные вещи -----------------
-
 const COLORS = { expenses: "#F97316" };
 
 const CATEGORY_OPTIONS = [
@@ -136,8 +134,6 @@ const ymLabel = ({ year, month }) => `${String(month).padStart(2, "0")}.${year}`
 
 const getExpenseDateLike = (x) =>
   x?.date ?? x?.operationDate ?? x?.expenseDate ?? x?.createdAt ?? x?.created_at ?? x?.timestamp ?? "";
-
-// ----------------- компонент -----------------
 
 export default function ExpensesPage() {
   const toast = useToast();
@@ -374,15 +370,12 @@ export default function ExpensesPage() {
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
-
-        // глобально: текст не выделяется
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         msUserSelect: "none",
       }}
     >
-      {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={1}
@@ -558,7 +551,11 @@ export default function ExpensesPage() {
                       <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
-                      <IconButton onClick={() => remove(x)} size="small" sx={{ color: bankingColors.danger, userSelect: "none" }}>
+                      <IconButton
+                        onClick={() => remove(x)}
+                        size="small"
+                        sx={{ color: bankingColors.danger, userSelect: "none" }}
+                      >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
                     </TableCell>
@@ -570,7 +567,6 @@ export default function ExpensesPage() {
         </Box>
       )}
 
-      {/* Dialog */}
       <Dialog
         fullScreen={fullScreen}
         scroll="paper"
@@ -579,7 +575,7 @@ export default function ExpensesPage() {
         fullWidth
         maxWidth="sm"
         PaperProps={{
-          sx={{
+          sx: {
             backgroundColor: "#111827",
             borderRadius: 2,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
@@ -812,7 +808,12 @@ export default function ExpensesPage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ bgcolor: COLORS.expenses, color: bankingColors.bg0, "&:hover": { bgcolor: "#EA580C" }, userSelect: "none" }}
+            sx={{
+              bgcolor: COLORS.expenses,
+              color: bankingColors.bg0,
+              "&:hover": { bgcolor: "#EA580C" },
+              userSelect: "none",
+            }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
