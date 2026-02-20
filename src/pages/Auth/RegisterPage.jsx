@@ -51,6 +51,7 @@ export default function RegisterPage() {
       theme: "outline",
       size: "large",
       text: "signup_with",
+      width: 400, // можно регулировать ширину кнопки
     });
   }, [handleGoogleCallback]);
 
@@ -140,7 +141,6 @@ export default function RegisterPage() {
           sx={{
             p: { xs: 3, md: 4 },
             width: "100%",
-            maxWidth: 420,
             mx: "auto",
             borderRadius: 5,
             background:
@@ -263,12 +263,11 @@ export default function RegisterPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
-          {/* Google */}
+          {/* Google — на всю ширину карточки */}
           <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
             <Box
               sx={{
                 width: "100%",
-                maxWidth: 420,
                 display: "flex",
                 justifyContent: "center",
               }}
