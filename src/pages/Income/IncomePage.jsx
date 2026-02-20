@@ -102,6 +102,7 @@ const CATEGORY_OPTIONS = [
   "Подработка",
   "Вклады",
   "Инвестиции",
+  "Налоги",
   "Подарки",
   "Другое",
 ];
@@ -190,7 +191,6 @@ export default function IncomePage() {
   const { user } = useAuth();
   const userId = user?.id;
 
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const incomeApi = useIncomeApi();
