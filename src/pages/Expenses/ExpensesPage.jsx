@@ -491,7 +491,7 @@ export default function ExpensesPage() {
             sx={{
               width: "100%",
               minWidth: { xs: "100%", sm: 720 },
-              tableLayout: { xs: "auto", sm: "auto" },
+              tableLayout: { xs: "fixed", sm: "auto" },
               bgcolor: "transparent",
               borderRadius: 0,
               border: "none",
@@ -520,21 +520,28 @@ export default function ExpensesPage() {
               <TableRow>
                 <TableCell
                   sx={{
-                    width: { xs: "22%", sm: 120 },
-                    textAlign: { xs: "left", sm: "center" },
+                    width: { xs: "33.33%", sm: 120 },
+                    textAlign: { xs: "center", sm: "center" }, // моб центр, десктоп центр
                   }}
                 >
                   Дата
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "28%", sm: 140 },
-                    textAlign: "center",
+                    width: { xs: "33.33%", sm: 140 },
+                    textAlign: { xs: "center", sm: "center" }, // моб и десктоп центр
                   }}
                 >
                   Сумма
                 </TableCell>
-                <TableCell sx={{ width: { xs: "35%", sm: 200 } }}>Категория</TableCell>
+                <TableCell
+                  sx={{
+                    width: { xs: "33.33%", sm: 200 },
+                    textAlign: { xs: "center", sm: "left" }, // моб центр, десктоп слева
+                  }}
+                >
+                  Категория
+                </TableCell>
                 <TableCell
                   sx={{
                     width: 220,
@@ -545,7 +552,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "15%", sm: 120 },
+                    width: { xs: "auto", sm: 120 },
                     textAlign: "center",
                   }}
                 >
@@ -559,16 +566,14 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    {/* Дата: слева на мобиле, по центру на десктопе */}
                     <TableCell
                       sx={{
-                        textAlign: { xs: "left", sm: "center" },
+                        textAlign: { xs: "center", sm: "center" },
                       }}
                     >
                       {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
                     </TableCell>
 
-                    {/* Сумма: по центру везде */}
                     <TableCell
                       sx={{
                         fontWeight: 900,
@@ -580,8 +585,12 @@ export default function ExpensesPage() {
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    {/* Категория (+ описание на мобиле под ней) */}
-                    <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
+                    <TableCell
+                      sx={{
+                        pr: { xs: 0.5, sm: 2 },
+                        textAlign: { xs: "center", sm: "left" },
+                      }}
+                    >
                       <Typography
                         component="div"
                         sx={{
@@ -619,7 +628,6 @@ export default function ExpensesPage() {
                       ) : null}
                     </TableCell>
 
-                    {/* Описание только на десктопе в отдельной колонке */}
                     <TableCell
                       sx={{ display: { xs: "none", sm: "table-cell" } }}
                       title={x.description || ""}
@@ -627,7 +635,6 @@ export default function ExpensesPage() {
                       {x.description}
                     </TableCell>
 
-                    {/* Действия */}
                     <TableCell sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
                       <IconButton
                         onClick={() => openEdit(x)}
