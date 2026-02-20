@@ -40,7 +40,7 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-import { bankingColors, pageBackgroundSx } from "../../styles/bankingTokens";
+import { bankingColors } from "../../styles/bankingTokens";
 
 // ----------------- вспомогательные вещи -----------------
 
@@ -366,15 +366,10 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
-        ...pageBackgroundSx,
-        // убираем эффект вложенной "карточки-страницы"
-        maxWidth: "100%",
-        borderRadius: 0,
-        boxShadow: "none",
-        border: "none",
-        bgcolor: "transparent",
+        // просто внутренние отступы страницы, БЕЗ pageBackgroundSx
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
+        width: "100%",
       }}
     >
       {/* Header */}
