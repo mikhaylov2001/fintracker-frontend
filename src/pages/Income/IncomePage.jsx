@@ -34,7 +34,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import {
   bankingColors,
   pageBackgroundSx,
-  surfaceSx,
 } from "../../styles/bankingTokens";
 
 const COLORS = { income: bankingColors.primary };
@@ -365,7 +364,6 @@ export default function IncomePage() {
     <Box
       sx={{
         ...pageBackgroundSx,
-        // контент сразу на всём экране, без доп. Box
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
       }}
@@ -660,13 +658,14 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            ...surfaceSx,
-            bgcolor: bankingColors.card,
-            color: bankingColors.text,
+            backgroundColor: bankingColors.card2,
+            borderRadius: 0,
+            boxShadow: "none",
+            border: "none",
           },
         }}
       >
-        <DialogTitle>
+        <DialogTitle sx={{ color: bankingColors.text }}>
           {editing ? "Редактировать доход" : "Добавить доход"}
         </DialogTitle>
 
@@ -680,7 +679,9 @@ export default function IncomePage() {
           }}
         >
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {/* Сумма */}
             <TextField
+              variant="standard"
               label="Сумма"
               inputRef={amountRef}
               value={form.amount}
@@ -692,10 +693,18 @@ export default function IncomePage() {
               fullWidth
               InputLabelProps={{ style: { color: bankingColors.muted } }}
               InputProps={{
-                style: { color: bankingColors.text },
+                disableUnderline: true,
+                sx: {
+                  bgcolor: bankingColors.card,
+                  borderRadius: 1.5,
+                  px: 1.5,
+                  py: 1.2,
+                  color: bankingColors.text,
+                },
               }}
             />
 
+            {/* Категория */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -710,17 +719,26 @@ export default function IncomePage() {
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  variant="standard"
                   label="Категория"
                   fullWidth
                   InputLabelProps={{ style: { color: bankingColors.muted } }}
                   InputProps={{
                     ...params.InputProps,
-                    style: { color: bankingColors.text },
+                    disableUnderline: true,
+                    sx: {
+                      bgcolor: bankingColors.card,
+                      borderRadius: 1.5,
+                      px: 1.5,
+                      py: 1.2,
+                      color: bankingColors.text,
+                    },
                   }}
                 />
               )}
             />
 
+            {/* Источник */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -735,18 +753,28 @@ export default function IncomePage() {
               renderInput={(params) => (
                 <TextField
                   {...params}
+                  variant="standard"
                   label="Источник"
                   fullWidth
                   InputLabelProps={{ style: { color: bankingColors.muted } }}
                   InputProps={{
                     ...params.InputProps,
-                    style: { color: bankingColors.text },
+                    disableUnderline: true,
+                    sx: {
+                      bgcolor: bankingColors.card,
+                      borderRadius: 1.5,
+                      px: 1.5,
+                      py: 1.2,
+                      color: bankingColors.text,
+                    },
                   }}
                 />
               )}
             />
 
+            {/* Дата */}
             <TextField
+              variant="standard"
               label="Дата"
               value={form.dateRu || ""}
               onChange={(e) => {
@@ -778,7 +806,14 @@ export default function IncomePage() {
               error={Boolean(dateErr)}
               InputLabelProps={{ style: { color: bankingColors.muted } }}
               InputProps={{
-                style: { color: bankingColors.text },
+                disableUnderline: true,
+                sx: {
+                  bgcolor: bankingColors.card,
+                  borderRadius: 1.5,
+                  px: 1.5,
+                  py: 1.2,
+                  color: bankingColors.text,
+                },
               }}
             />
           </Stack>
