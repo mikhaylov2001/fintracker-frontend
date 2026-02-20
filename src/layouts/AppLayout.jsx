@@ -49,7 +49,12 @@ export default function AppLayout() {
 
   const navItems = useMemo(
     () => [
-      { label: "Состояние финансов", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") || p === "/" },
+      {
+        label: "Состояние финансов",
+        icon: <DashboardIcon />,
+        to: dashTo,
+        match: (p) => p.startsWith("/u/") || p === "/",
+      },
       { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
       { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
       { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },
@@ -153,26 +158,27 @@ export default function AppLayout() {
     touchRef.current = { x: t.clientX, y: t.clientY };
   }, []);
 
-  const handleTouchMove = useCallback(
-    (e) => {
-      if (e.touches.length !== 1) return;
-      const t = e.touches[0];
-      const { x, y } = touchRef.current || {};
-      if (x == null || y == null) return;
+  const handleTouchMove = useCallback((e) => {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    const { x, y } = touchRef.current || {};
+    if (x == null || y == null) return;
 
-      const dx = Math.abs(t.clientX - x);
-      const dy = Math.abs(t.clientY - y);
+    const dx = Math.abs(t.clientX - x);
+    const dy = Math.abs(t.clientY - y);
 
-      if (dx > dy && dx > 8) {
-        e.preventDefault();
-      }
-    },
-    []
-  );
+    if (dx > dy && dx > 8) {
+      e.preventDefault();
+    }
+  }, []);
 
   const handleTouchEnd = useCallback(() => {
     touchRef.current = { x: null, y: null };
   }, []);
+
+  // ===== ключ: разные контейнеры для широких страниц (доходы/расходы) и остальных =====
+  const pathname = location.pathname;
+  const isWidePage = pathname.startsWith("/income") || pathname.startsWith("/expenses");
 
   return (
     <AppBackground>
@@ -223,19 +229,42 @@ export default function AppLayout() {
         <Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <TopNavBar onMenuClick={openMobile} />
 
-          {/* главный контент БЕЗ внутренних отступов, на всю ширину */}
-          <Box
-            sx={{
-              flex: 1,
-              width: "100%",
-              minHeight: "calc(100vh - 64px)",
-              py: 0,
-              px: 0,
-              overflowX: "hidden",
-            }}
-          >
-            <Outlet />
-          </Box>
+          {isWidePage ? (
+            // Для доходов и расходов оставляем «на всю ширину без паддингов»
+            <Box
+              sx={{
+                flex: 1,
+                width: "100%",
+                minHeight: "calc(100vh - 64px)",
+                py: 0,
+                px: 0,
+                overflowX: "hidden",
+              }}
+            >
+              <Outlet />
+            </Box>
+          ) : (
+            // Для логина, регистрации, дашборда, аналитики и т.д. — нормальные отступы
+            <Box
+              sx={{
+                flex: 1,
+                width: "100%",
+                minHeight: "calc(100vh - 64px)",
+                px: { xs: 2, sm: 3, md: 4 },
+                py: { xs: 2.5, sm: 3 },
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "flex-start",
+                boxSizing: "border-box",
+                overflowX: "hidden",
+              }}
+            >
+              {/* Вложенный контейнер, чтобы формы/страницы не растягивались на всю огромную ширину на десктопе */}
+              <Box sx={{ width: "100%", maxWidth: 960 }}>
+                <Outlet />
+              </Box>
+            </Box>
+          )}
         </Box>
       </Box>
     </AppBackground>
