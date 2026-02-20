@@ -367,8 +367,6 @@ export default function IncomePage() {
 
   return (
     <Box sx={pageBackgroundSx}>
-      {/* можно при желании добавить gridOverlaySx поверх, как на дефолтной странице */}
-
       <Box
         sx={{
           ...surfaceSx,
@@ -506,7 +504,7 @@ export default function IncomePage() {
                 width: "100%",
                 minWidth: { sm: 720 },
                 tableLayout: { xs: "fixed", sm: "auto" },
-                bgcolor: bankingColors.card2, // потемнее внутри списка
+                bgcolor: bankingColors.card2,
                 borderRadius: 2,
                 overflow: "hidden",
                 border: 0,
@@ -518,20 +516,18 @@ export default function IncomePage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   verticalAlign: "top",
-                  borderBottomColor: "rgba(15, 23, 42, 0.45)",
+                  borderBottom: "none", // убрать все внутренние линии
                 },
                 "& th": {
                   fontWeight: 900,
                   color: bankingColors.text,
                   whiteSpace: "nowrap",
                   bgcolor: bankingColors.card,
-                  borderBottom: "1px solid rgba(15, 23, 42, 0.75)",
                 },
                 "& td": {
                   whiteSpace: { xs: "normal", sm: "nowrap" },
                   color: bankingColors.text,
                 },
-                "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
                 "& .MuiTableRow-root:hover td": {
                   backgroundColor: "rgba(34, 197, 94, 0.14)",
                 },
@@ -672,7 +668,7 @@ export default function IncomePage() {
           PaperProps={{
             sx: {
               ...surfaceSx,
-              bgcolor: bankingColors.card, // темная карточка
+              bgcolor: bankingColors.card,
               color: bankingColors.text,
             },
           }}
