@@ -17,12 +17,21 @@ import {
   TableRow,
   IconButton,
   Chip,
+  Popover,
+  InputAdornment,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import Autocomplete from "@mui/material/Autocomplete";
+
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
 
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
@@ -30,6 +39,10 @@ import { useToast } from "../../contexts/ToastContext";
 import { useExpensesApi } from "../../api/expensesApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
+
+import { bankingColors } from "../../styles/bankingTokens";
+
+// ----------------- вспомогательные вещи -----------------
 
 const COLORS = { expenses: "#F97316" };
 
@@ -42,25 +55,42 @@ const CATEGORY_OPTIONS = [
   "Другое",
 ];
 
+const PILL_INPUT_SX = {
+  bgcolor: "rgba(255,255,255,0.10)",
+  borderRadius: 999,
+  px: 2,
+  height: 56,
+  display: "flex",
+  alignItems: "center",
+  color: bankingColors.text,
+  "& input": {
+    padding: 0,
+    height: "100%",
+    boxSizing: "border-box",
+  },
+};
+
 const toAmountString = (v) => String(v ?? "").trim().replace(",", ".");
 
 const normalizeDateOnly = (d) => {
-  if (!d) return new Date().toISOString().slice(0, 10);
+  if (!d) return "";
   const s = String(d);
-  return s.includes("T") ? s.slice(0, 10) : s;
+  if (s.includes("T")) return s.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return s;
 };
 
 const formatDateRu = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
-  const [y, m, d] = s.split("-");
-  if (!y || !m || !d) return s;
+  const [y, m, d] = String(s || "").split("-");
+  if (!y || !m || !d) return "";
   return `${d}.${m}.${y}`;
 };
 
 const formatDateRuShort = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
-  const [y, m, d] = s.split("-");
-  if (!y || !m || !d) return s;
+  const [y, m, d] = String(s || "").split("-");
+  if (!y || !m || !d) return "";
   return `${d}.${m}`;
 };
 
@@ -92,23 +122,22 @@ const isValidIsoDate = (iso) => {
   const mo = Number(m[2]);
   const d = Number(m[3]);
   const dt = new Date(y, mo - 1, d);
-  return (
-    dt.getFullYear() === y &&
-    dt.getMonth() === mo - 1 &&
-    dt.getDate() === d
-  );
+  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
 };
+
+const isProxySerialization500 = (msg) => String(msg || "").includes("ByteBuddyInterceptor");
 
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-const ymLabel = ({ year, month }) =>
-  `${String(month).padStart(2, "0")}.${year}`;
+const ymLabel = ({ year, month }) => `${String(month).padStart(2, "0")}.${year}`;
 
-const isProxySerialization500 = (msg) =>
-  String(msg || "").includes("ByteBuddyInterceptor");
+const getExpenseDateLike = (x) =>
+  x?.date ?? x?.operationDate ?? x?.expenseDate ?? x?.createdAt ?? x?.created_at ?? x?.timestamp ?? "";
+
+// ----------------- компонент -----------------
 
 export default function ExpensesPage() {
   const toast = useToast();
@@ -123,14 +152,11 @@ export default function ExpensesPage() {
   const expensesApi = useExpensesApi();
   const getMyExpensesByMonthRef = useRef(expensesApi.getMyExpensesByMonth);
 
-  // ---------- ПЕРСИСТЕНТНЫЙ МЕСЯЦ ДЛЯ РАСХОДОВ ----------
   const [ym, setYm] = useState(() => {
     const now = new Date();
     try {
       const raw = window.localStorage.getItem("fintracker:expenseMonth");
-      if (!raw) {
-        return { year: now.getFullYear(), month: now.getMonth() + 1 };
-      }
+      if (!raw) return { year: now.getFullYear(), month: now.getMonth() + 1 };
       const parsed = JSON.parse(raw);
       const y = Number(parsed?.year);
       const m = Number(parsed?.month);
@@ -147,35 +173,37 @@ export default function ExpensesPage() {
     setYm((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       try {
-        window.localStorage.setItem(
-          "fintracker:expenseMonth",
-          JSON.stringify(next)
-        );
+        window.localStorage.setItem("fintracker:expenseMonth", JSON.stringify(next));
       } catch {}
       return next;
     });
   }, []);
-  // ------------------------------------------------------
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
   const [dateErr, setDateErr] = useState("");
+  const [dateInput, setDateInput] = useState("");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+
   const [form, setForm] = useState({
     amount: "",
     category: "Продукты",
     description: "",
     date: new Date().toISOString().slice(0, 10),
-    dateRu: "",
   });
+
+  const [calAnchorEl, setCalAnchorEl] = useState(null);
+  const calOpen = Boolean(calAnchorEl);
+  const openCalendar = (e) => setCalAnchorEl(e.currentTarget);
+  const closeCalendar = () => setCalAnchorEl(null);
 
   const amountRef = useRef(null);
 
-  // СБРОС локального состояния при смене пользователя
   useEffect(() => {
     setItems([]);
     setError("");
@@ -185,7 +213,6 @@ export default function ExpensesPage() {
     setLoading(true);
   }, [userId]);
 
-  // загрузка при смене ym / userId
   useEffect(() => {
     let cancelled = false;
 
@@ -206,9 +233,7 @@ export default function ExpensesPage() {
         const res = await getMyExpensesByMonth(ym.year, ym.month, 0, 50);
         const data = res.data;
 
-        if (!cancelled) {
-          setItems(data?.content ?? []);
-        }
+        if (!cancelled) setItems(data?.content ?? []);
       } catch (e) {
         const msg = e?.message || "Ошибка загрузки расходов";
         if (!cancelled) {
@@ -257,16 +282,15 @@ export default function ExpensesPage() {
       category: "Продукты",
       description: "",
       date: iso,
-      dateRu: formatDateRu(iso),
     });
+    setDateInput(formatDateRu(iso));
     setOpen(true);
-    setTimeout(() => {
-      amountRef.current?.focus?.();
-    }, 150);
+    setTimeout(() => amountRef.current?.focus?.(), 150);
   };
 
   const openEdit = (expense) => {
-    const iso = normalizeDateOnly(expense?.date);
+    const iso = normalizeDateOnly(getExpenseDateLike(expense)) || new Date().toISOString().slice(0, 10);
+
     setEditing(expense);
     setDateErr("");
     setForm({
@@ -274,12 +298,10 @@ export default function ExpensesPage() {
       category: expense?.category ?? "Продукты",
       description: expense?.description ?? "",
       date: iso,
-      dateRu: formatDateRu(iso),
     });
+    setDateInput(formatDateRu(iso));
     setOpen(true);
-    setTimeout(() => {
-      amountRef.current?.focus?.();
-    }, 150);
+    setTimeout(() => amountRef.current?.focus?.(), 150);
   };
 
   const save = async () => {
@@ -289,7 +311,8 @@ export default function ExpensesPage() {
       setSaving(true);
       setError("");
 
-      if (dateErr) throw new Error(dateErr);
+      if (dateErr) throw new Error("Неверная дата");
+      if (!form.date || !isValidIsoDate(form.date)) throw new Error("Введите корректную дату");
 
       const payload = {
         amount: toAmountString(form.amount),
@@ -299,10 +322,8 @@ export default function ExpensesPage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01)
-        throw new Error("Сумма должна быть больше 0");
+      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error("Сумма должна быть больше 0");
       if (!payload.category) throw new Error("Категория обязательна");
-      if (!payload.date) throw new Error("Дата обязательна");
 
       attempted = true;
 
@@ -345,20 +366,16 @@ export default function ExpensesPage() {
     }
   };
 
-  const total = useMemo(
-    () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
-    [items]
-  );
+  const total = useMemo(() => items.reduce((acc, x) => acc + Number(x.amount || 0), 0), [items]);
 
   return (
     <Box
       sx={{
-        // такие же отступы и ширина, как у доходов
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
 
-        // глобальный запрет выделения текста
+        // глобально: текст не выделяется
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
@@ -376,38 +393,35 @@ export default function ExpensesPage() {
           <Typography
             variant="h5"
             sx={{
-              fontWeight: 900,
-              color: "#0F172A",
+              fontWeight: 980,
+              color: bankingColors.text,
+              letterSpacing: -0.3,
             }}
           >
             Расходы
           </Typography>
           <Typography
             variant="body2"
-            sx={{ color: "#64748B", mt: 0.5 }}
+            sx={{
+              color: bankingColors.muted,
+              mt: 0.5,
+              fontWeight: 600,
+            }}
           >
             {ymLabel(ym)} · Итого: {formatAmount(total)}
           </Typography>
         </Box>
 
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          alignItems={{ xs: "stretch", sm: "center" }}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
-        >
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ width: { xs: "100%", sm: "auto" } }}
-          >
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: "100%", sm: "auto" } }}>
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, -1))}
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: bankingColors.border,
+                color: bankingColors.muted,
                 userSelect: "none",
                 WebkitUserSelect: "none",
               }}
@@ -420,7 +434,8 @@ export default function ExpensesPage() {
               sx={{
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
-                bgcolor: "#FFFFFF",
+                bgcolor: bankingColors.card2,
+                color: bankingColors.text,
                 userSelect: "none",
                 WebkitUserSelect: "none",
               }}
@@ -432,6 +447,8 @@ export default function ExpensesPage() {
               sx={{
                 minWidth: 44,
                 px: 1.2,
+                borderColor: bankingColors.border,
+                color: bankingColors.muted,
                 userSelect: "none",
                 WebkitUserSelect: "none",
               }}
@@ -449,6 +466,8 @@ export default function ExpensesPage() {
               borderRadius: 999,
               px: 2.2,
               bgcolor: COLORS.expenses,
+              color: bankingColors.bg0,
+              fontWeight: 700,
               "&:hover": { bgcolor: "#EA580C" },
               userSelect: "none",
               WebkitUserSelect: "none",
@@ -459,17 +478,12 @@ export default function ExpensesPage() {
         </Stack>
       </Stack>
 
-      {/* Error */}
       {error ? (
-        <Typography
-          variant="body2"
-          sx={{ mb: 2, color: "#EF4444", fontWeight: 600 }}
-        >
+        <Typography variant="body2" sx={{ mb: 2, color: bankingColors.danger, fontWeight: 600 }}>
           {error}
         </Typography>
       ) : null}
 
-      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -485,13 +499,10 @@ export default function ExpensesPage() {
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-
-              // как в доходах — прозрачный фон, без карточки
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
               border: "none",
-
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
                 py: { xs: 1, sm: 1.1 },
@@ -504,18 +515,15 @@ export default function ExpensesPage() {
               },
               "& th": {
                 fontWeight: 900,
-                color: "#0F172A",
+                color: bankingColors.text,
                 bgcolor: "transparent",
               },
               "& td": {
-                color: "#0F172A",
+                color: bankingColors.text,
               },
-
-              // hover как у доходов
               "& .MuiTableRow-root:hover td": {
-                backgroundColor: "rgba(249, 115, 22, 0.12)",
+                backgroundColor: "rgba(249, 115, 22, 0.14)",
               },
-
               "& th:last-child, & td:last-child": {
                 textAlign: "center",
               },
@@ -526,105 +534,37 @@ export default function ExpensesPage() {
                 <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
                 <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
                 <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
-                <TableCell
-                  sx={{
-                    width: 260,
-                    display: { xs: "none", sm: "table-cell" },
-                  }}
-                >
-                  Описание
-                </TableCell>
-                <TableCell
-                  sx={{
-                    width: { xs: "14%", sm: 120 },
-                  }}
-                >
-                  Действия
-                </TableCell>
+                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Описание</TableCell>
+                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {items.map((x) => (
-                <TableRow key={x.id} hover>
-                  <TableCell>
-                    {isMobile
-                      ? formatDateRuShort(x.date)
-                      : formatDateRu(x.date)}
-                  </TableCell>
+              {items.map((x) => {
+                const dateLike = getExpenseDateLike(x);
+                return (
+                  <TableRow key={x.id} hover>
+                    <TableCell>{isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}</TableCell>
 
-                  <TableCell
-                    sx={{
-                      fontWeight: 900,
-                      color: "#0F172A",
-                    }}
-                  >
-                    {formatAmount(Number(x.amount || 0))}
-                  </TableCell>
+                    <TableCell sx={{ fontWeight: 900, color: COLORS.expenses }}>
+                      {formatAmount(Number(x.amount || 0))}
+                    </TableCell>
 
-                  <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
-                    <Typography
-                      component="div"
-                      sx={{
-                        fontSize: { xs: 12, sm: 13 },
-                        fontWeight: 800,
-                        color: "#0F172A",
-                        lineHeight: 1.15,
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        display: "-webkit-box",
-                        WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: { xs: 2, sm: 1 },
-                      }}
-                      title={x.category || ""}
-                    >
-                      {x.category}
-                    </Typography>
+                    <TableCell>{x.category}</TableCell>
 
-                    {isMobile ? (
-                      <Typography
-                        component="div"
-                        sx={{
-                          mt: 0.2,
-                          fontSize: 11,
-                          color: "#64748B",
-                          lineHeight: 1.15,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                        title={x.description || ""}
-                      >
-                        {x.description}
-                      </Typography>
-                    ) : null}
-                  </TableCell>
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{x.description}</TableCell>
 
-                  <TableCell
-                    sx={{ display: { xs: "none", sm: "table-cell" } }}
-                    title={x.description || ""}
-                  >
-                    {x.description}
-                  </TableCell>
-
-                  <TableCell sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
-                    <IconButton
-                      onClick={() => openEdit(x)}
-                      size="small"
-                      sx={{ userSelect: "none", WebkitUserSelect: "none" }}
-                    >
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => remove(x)}
-                      size="small"
-                      sx={{ color: "#EF4444", userSelect: "none", WebkitUserSelect: "none" }}
-                    >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    <TableCell>
+                      <IconButton onClick={() => openEdit(x)} size="small" sx={{ userSelect: "none" }}>
+                        <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
+                      </IconButton>
+                      <IconButton onClick={() => remove(x)} size="small" sx={{ color: bankingColors.danger, userSelect: "none" }}>
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Box>
@@ -638,8 +578,16 @@ export default function ExpensesPage() {
         onClose={() => (!saving ? setOpen(false) : null)}
         fullWidth
         maxWidth="sm"
+        PaperProps={{
+          sx={{
+            backgroundColor: "#111827",
+            borderRadius: 2,
+            boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
+            border: "1px solid rgba(255,255,255,0.08)",
+          },
+        }}
       >
-        <DialogTitle sx={{ userSelect: "none", WebkitUserSelect: "none" }}>
+        <DialogTitle sx={{ color: bankingColors.text, userSelect: "none", WebkitUserSelect: "none" }}>
           {editing ? "Редактировать расход" : "Добавить расход"}
         </DialogTitle>
 
@@ -649,19 +597,21 @@ export default function ExpensesPage() {
             maxHeight: fullScreen ? "calc(100vh - 140px)" : 520,
             overflowY: "auto",
             WebkitOverflowScrolling: "touch",
+            bgcolor: "#111827",
           }}
         >
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2.2} sx={{ mt: 1 }}>
             <TextField
+              variant="standard"
               label="Сумма"
               inputRef={amountRef}
               value={form.amount}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, amount: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
               placeholder="1500.00"
               inputProps={{ inputMode: "decimal" }}
               fullWidth
+              InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+              InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
             <Autocomplete
@@ -669,66 +619,183 @@ export default function ExpensesPage() {
               disablePortal
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) =>
-                setForm((s) => ({ ...s, category: newValue ?? "" }))
-              }
-              onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))
-              }
+              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? "" }))}
+              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
               renderInput={(params) => (
-                <TextField {...params} label="Категория" fullWidth />
+                <TextField
+                  {...params}
+                  variant="standard"
+                  label="Категория"
+                  fullWidth
+                  InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+                  InputProps={{
+                    ...params.InputProps,
+                    disableUnderline: true,
+                    sx: PILL_INPUT_SX,
+                  }}
+                />
               )}
             />
 
             <TextField
+              variant="standard"
               label="Описание"
               value={form.description}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, description: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, description: e.target.value }))}
               fullWidth
+              InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+              InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
-            <TextField
-              label="Дата"
-              value={form.dateRu || ""}
-              onChange={(e) => {
-                const ru = formatRuDateTyping(e.target.value);
-                const iso = ruToIsoStrict(ru);
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+              <TextField
+                variant="standard"
+                label="Дата"
+                fullWidth
+                value={dateInput}
+                onChange={(e) => {
+                  const ru = formatRuDateTyping(e.target.value);
+                  setDateInput(ru);
 
-                let nextErr = "";
-                if (ru.length === 10) {
-                  if (!iso) nextErr = "Неверный формат даты";
-                  else if (!isValidIsoDate(iso))
-                    nextErr = "Такой даты не существует";
+                  if (!ru) {
+                    setDateErr("");
+                    setForm((s) => ({ ...s, date: "" }));
+                    return;
+                  }
+
+                  const iso = ruToIsoStrict(ru);
+
+                  let nextErr = "";
+                  if (ru.length === 10) {
+                    if (!iso) nextErr = "Неверный формат даты";
+                    else if (!isValidIsoDate(iso)) nextErr = "Такой даты не существует";
+                  }
+                  setDateErr(nextErr);
+
+                  if (ru.length === 10 && iso && isValidIsoDate(iso)) {
+                    setForm((s) => ({ ...s, date: iso }));
+                  }
+                }}
+                placeholder="20.02.2026"
+                inputProps={{ inputMode: "numeric" }}
+                helperText={
+                  dateErr ||
+                  "Введите вручную 8 цифр (например: 20022026 → 20.02.2026) или нажмите на значок календаря справа"
                 }
+                error={Boolean(dateErr)}
+                InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+                InputProps={{
+                  disableUnderline: true,
+                  sx: PILL_INPUT_SX,
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCalendar(e);
+                        }}
+                        size="small"
+                        sx={{ color: bankingColors.muted, userSelect: "none" }}
+                        aria-label="Открыть календарь"
+                      >
+                        <CalendarMonthOutlinedIcon fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+                FormHelperTextProps={{
+                  sx: {
+                    color: dateErr ? bankingColors.danger : bankingColors.muted,
+                    fontSize: "0.75rem",
+                    mt: 0.5,
+                    mx: 0,
+                  },
+                }}
+              />
 
-                setDateErr(nextErr);
-
-                setForm((s) => ({
-                  ...s,
-                  dateRu: ru,
-                  date: iso && isValidIsoDate(iso) ? iso : s.date,
-                }));
-              }}
-              placeholder="16.02.2026"
-              inputProps={{ inputMode: "numeric" }}
-              fullWidth
-              helperText={
-                dateErr ||
-                "Введите цифры: ДДММГГГГ (точки добавятся сами)"
-              }
-              error={Boolean(dateErr)}
-            />
+              <Popover
+                open={calOpen}
+                anchorEl={calAnchorEl}
+                onClose={closeCalendar}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                PaperProps={{
+                  sx: {
+                    bgcolor: "#FFFFFF",
+                    border: "1px solid rgba(0,0,0,0.12)",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+                  },
+                }}
+              >
+                <Box sx={{ p: 1 }}>
+                  <DateCalendar
+                    value={form.date ? dayjs(form.date) : dayjs()}
+                    onChange={(newValue) => {
+                      if (!newValue) return;
+                      const d = dayjs(newValue);
+                      if (!d.isValid()) return;
+                      const iso = d.format("YYYY-MM-DD");
+                      setForm((s) => ({ ...s, date: iso }));
+                      setDateInput(formatDateRu(iso));
+                      setDateErr("");
+                      closeCalendar();
+                    }}
+                    sx={{
+                      bgcolor: "#FFFFFF",
+                      color: "#1F2937",
+                      "& .MuiPickersCalendarHeader-root": {
+                        color: "#1F2937",
+                        bgcolor: "#FFFFFF",
+                      },
+                      "& .MuiPickersCalendarHeader-label": {
+                        color: "#1F2937",
+                        fontWeight: 700,
+                      },
+                      "& .MuiIconButton-root": {
+                        color: "#1F2937",
+                      },
+                      "& .MuiDayCalendar-weekDayLabel": {
+                        color: "#6B7280",
+                        fontWeight: 600,
+                      },
+                      "& .MuiPickersDay-root": {
+                        color: "#1F2937",
+                        bgcolor: "transparent",
+                        "&:hover": {
+                          bgcolor: "rgba(249, 115, 22, 0.1)",
+                        },
+                      },
+                      "& .MuiPickersDay-root.Mui-selected": {
+                        bgcolor: COLORS.expenses,
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                        "&:hover": {
+                          bgcolor: "#EA580C",
+                        },
+                      },
+                      "& .MuiPickersDay-today": {
+                        border: `2px solid ${COLORS.expenses} !important`,
+                        bgcolor: "transparent",
+                      },
+                      "& .MuiPickersDay-root.Mui-disabled": {
+                        color: "#D1D5DB",
+                      },
+                    }}
+                  />
+                </Box>
+              </Popover>
+            </LocalizationProvider>
           </Stack>
         </DialogContent>
 
         <DialogActions
           sx={{
             px: 3,
-            pb: 2,
+            pb: 2.4,
             flexDirection: fullScreen ? "column" : "row",
-            gap: 1,
+            gap: 1.2,
           }}
         >
           <Button
@@ -736,7 +803,7 @@ export default function ExpensesPage() {
             variant="outlined"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ userSelect: "none", WebkitUserSelect: "none" }}
+            sx={{ borderColor: bankingColors.border, color: bankingColors.muted, userSelect: "none" }}
           >
             Отмена
           </Button>
@@ -745,12 +812,7 @@ export default function ExpensesPage() {
             variant="contained"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{
-              bgcolor: COLORS.expenses,
-              "&:hover": { bgcolor: "#EA580C" },
-              userSelect: "none",
-              WebkitUserSelect: "none",
-            }}
+            sx={{ bgcolor: COLORS.expenses, color: bankingColors.bg0, "&:hover": { bgcolor: "#EA580C" }, userSelect: "none" }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
           </Button>
