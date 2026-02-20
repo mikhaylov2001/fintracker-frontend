@@ -38,7 +38,6 @@ export default function AppLayout() {
   const openMobile = useCallback(() => setMobileOpen(true), []);
   const closeMobile = useCallback(() => setMobileOpen(false), []);
 
-  // Имя в меню: Имя Фамилия → userName → email
   const userLabel = useMemo(() => {
     if (user?.firstName && user?.lastName) {
       return `${user.firstName} ${user.lastName}`;
@@ -59,7 +58,6 @@ export default function AppLayout() {
     [dashTo]
   );
 
-  // ✅ async: сначала бэкенд удаляет cookies, потом редиректим
   const handleLogout = useCallback(async () => {
     await logout();
     navigate("/login");
@@ -100,13 +98,11 @@ export default function AppLayout() {
                 borderRadius: 3,
                 mb: 0.75,
                 py: { xs: 1.15, sm: 1 },
-                color: alpha(bankingColors.text, 0.90),
-
+                color: alpha(bankingColors.text, 0.9),
                 "& .MuiListItemIcon-root": {
                   minWidth: 38,
-                  color: alpha(bankingColors.text, 0.70),
+                  color: alpha(bankingColors.text, 0.7),
                 },
-
                 "&.Mui-selected": {
                   bgcolor: alpha("#FFFFFF", 0.06),
                   border: `1px solid ${alpha("#FFFFFF", 0.12)}`,
@@ -114,7 +110,6 @@ export default function AppLayout() {
                 "&.Mui-selected .MuiListItemIcon-root": {
                   color: bankingColors.primary,
                 },
-
                 "&:hover": { bgcolor: alpha("#FFFFFF", 0.05) },
               }}
             >
@@ -172,7 +167,7 @@ export default function AppLayout() {
         e.preventDefault();
       }
     },
-    [touchRef]
+    []
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -225,15 +220,17 @@ export default function AppLayout() {
           </Drawer>
         </Box>
 
-        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <TopNavBar onMenuClick={openMobile} />
 
+          {/* главный контент БЕЗ внутренних отступов, на всю ширину */}
           <Box
             sx={{
+              flex: 1,
               width: "100%",
               minHeight: "calc(100vh - 64px)",
-              py: 2.25,
-              px: { xs: 1, sm: 2, md: 3 },
+              py: 0,
+              px: 0,
               overflowX: "hidden",
             }}
           >
