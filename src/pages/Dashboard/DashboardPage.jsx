@@ -75,12 +75,7 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
       direction="row"
       alignItems="baseline"
       justifyContent="space-between"
-      sx={{
-        mb: 1,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MsUserSelect: "none",
-      }}
+      sx={{ mb: 1 }}
     >
       <Typography
         variant="h6"
@@ -259,9 +254,6 @@ const SummaryRow = memo(function SummaryRow({ label, value, color }) {
         px: { xs: 1.5, sm: 2 },
         borderRadius: 14,
         bgcolor: alpha("#FFFFFF", 0.04),
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MsUserSelect: "none",
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
@@ -327,13 +319,7 @@ const HistoryAccordion = memo(function HistoryAccordion({
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{
-          px: 2,
-          "& .MuiAccordionSummary-content": { my: 1 },
-          userSelect: "none",
-          WebkitUserSelect: "none",
-          MsUserSelect: "none",
-        }}
+        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
       >
         <Stack
           direction="row"
@@ -363,16 +349,7 @@ const HistoryAccordion = memo(function HistoryAccordion({
         </Stack>
       </AccordionSummary>
 
-      <AccordionDetails
-        sx={{
-          pt: 0,
-          px: 2,
-          pb: 2,
-          userSelect: "none",
-          WebkitUserSelect: "none",
-          MsUserSelect: "none",
-        }}
-      >
+      <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
         <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
           <Typography variant="body2">
             Доходы:{" "}
@@ -560,9 +537,9 @@ export default function DashboardPage() {
         for (const item of list) {
           if (!item || typeof item !== "object") continue;
           const y = Number(item.year);
-          const м = Number(item.month);
-          if (!Number.isFinite(y) || !Number.isFinite(м)) continue;
-          map.set(ymKey(y, м), item);
+          const m = Number(item.month);
+          if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
+          map.set(ymKey(y, m), item);
         }
 
         const missing = used.filter(
@@ -682,7 +659,15 @@ export default function DashboardPage() {
   if (loading) return <DashboardSkeleton />;
 
   return (
-    <Box sx={{ width: "100%", color: colors.text }}>
+    <Box
+      sx={{
+        width: "100%",
+        color: colors.text,
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
+      }}
+    >
       {/* TOP */}
       <Box
         sx={{
@@ -694,21 +679,14 @@ export default function DashboardPage() {
           backdropFilter: "none",
           filter: "none",
           "&::before, &::after": { content: "none", display: "none" },
-        }}
+      }}
       >
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
           alignItems={{ md: "center" }}
         >
-          <Box
-            sx={{
-              flexGrow: 1,
-              userSelect: "none",
-              WebkitUserSelect: "none",
-              MsUserSelect: "none",
-            }}
-          >
+          <Box sx={{ flexGrow: 1 }}>
             <Typography
               variant="h5"
               sx={{
@@ -757,7 +735,7 @@ export default function DashboardPage() {
             alignItems={{ sm: "center" }}
             sx={{ width: { xs: "100%", md: "auto" } }}
           >
-            {/* Chip "Актуально" полностью не кликабелен */}
+            {/* Актуально — не кликабельно, но и так Chip без onClick и без href */}
             <Chip
               label="Актуально"
               clickable={false}
@@ -766,7 +744,6 @@ export default function DashboardPage() {
                 width: { xs: "100%", sm: "auto" },
                 borderColor: alpha(colors.primary, 0.18),
                 cursor: "default",
-                pointerEvents: "none",
               }}
             />
 
@@ -828,7 +805,7 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        {/* Баланс — НЕ кликабелен (onClick не передаём) */}
+        {/* Баланс — НЕ кликабелен */}
         <KpiCard
           label="Баланс"
           value={formatAmount(displayBalance)}
@@ -889,13 +866,7 @@ export default function DashboardPage() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={{ xs: 0.25, sm: 1.25 }}
-          sx={{
-            mt: 2,
-            color: colors.muted,
-            userSelect: "none",
-            WebkitUserSelect: "none",
-            MsUserSelect: "none",
-          }}
+          sx={{ mt: 2, color: colors.muted }}
         >
           <Typography variant="caption" sx={{ fontWeight: 800 }}>
             История сохранена: {historyDesc.length} месяцев
@@ -907,15 +878,7 @@ export default function DashboardPage() {
 
         <Box sx={{ mt: 1.25 }}>
           {historyDesc.length === 0 ? (
-            <Typography
-              variant="body2"
-              sx={{
-                color: colors.muted,
-                userSelect: "none",
-                WebkitUserSelect: "none",
-                MsUserSelect: "none",
-              }}
-            >
+            <Typography variant="body2" sx={{ color: colors.muted }}>
               Пока нет сохранённых месяцев.
             </Typography>
           ) : (
