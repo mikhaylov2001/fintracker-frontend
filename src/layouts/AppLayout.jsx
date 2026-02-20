@@ -50,7 +50,7 @@ export default function AppLayout() {
 
   const navItems = useMemo(
     () => [
-      { label: "Дашборд", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") || p === "/" },
+      { label: "Состояние финансов", icon: <DashboardIcon />, to: dashTo, match: (p) => p.startsWith("/u/") || p === "/" },
       { label: "Доходы", icon: <PaidIcon />, to: "/income", match: (p) => p.startsWith("/income") },
       { label: "Расходы", icon: <ReceiptLongIcon />, to: "/expenses", match: (p) => p.startsWith("/expenses") },
       { label: "Аналитика", icon: <QueryStatsIcon />, to: "/analytics", match: (p) => p.startsWith("/analytics") },

@@ -686,7 +686,7 @@ export default function DashboardPage() {
                 letterSpacing: -0.25,
               }}
             >
-              Дашборд
+              Состояние финансов
             </Typography>
             <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5 }}>
               Привет, {displayName} • Сегодня: {todayLabel}
