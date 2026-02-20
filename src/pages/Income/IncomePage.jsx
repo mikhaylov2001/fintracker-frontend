@@ -366,24 +366,22 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
-        // контент: нет выделения текста и кликов по пустым областям
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
 
-        // запрет выделения текста
+        // глобально: нельзя выделять текст и кликать по фону
         userSelect: "none",
         WebkitUserSelect: "none",
         MozUserSelect: "none",
         msUserSelect: "none",
-
-        // по умолчанию клики не обрабатываются
         pointerEvents: "none",
 
-        // но внутри разрешаем интерактивность для контролов и кнопок
+        // интерактивные элементы работают нормально
         "& button, & a, & input, & textarea, & select, & label, & .MuiIconButton-root, & .MuiChip-root": {
           pointerEvents: "auto",
           userSelect: "auto",
+          WebkitUserSelect: "auto",
         },
       }}
     >
@@ -422,7 +420,14 @@ export default function IncomePage() {
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, -1))}
-              sx={{ minWidth: 44, px: 1.2, borderColor: bankingColors.border, color: bankingColors.muted }}
+              sx={{
+                minWidth: 44,
+                px: 1.2,
+                borderColor: bankingColors.border,
+                color: bankingColors.muted,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
             >
               ←
             </Button>
@@ -434,13 +439,22 @@ export default function IncomePage() {
                 fontWeight: 800,
                 bgcolor: bankingColors.card2,
                 color: bankingColors.text,
+                userSelect: "none",
+                WebkitUserSelect: "none",
               }}
             />
 
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, +1))}
-              sx={{ minWidth: 44, px: 1.2, borderColor: bankingColors.border, color: bankingColors.muted }}
+              sx={{
+                minWidth: 44,
+                px: 1.2,
+                borderColor: bankingColors.border,
+                color: bankingColors.muted,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
             >
               →
             </Button>
@@ -458,6 +472,8 @@ export default function IncomePage() {
               color: bankingColors.bg0,
               fontWeight: 700,
               "&:hover": { bgcolor: "#16A34A" },
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           >
             Добавить доход
