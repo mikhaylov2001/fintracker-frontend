@@ -161,7 +161,6 @@ export default function IncomePage() {
   const { user } = useAuth();
   const userId = user?.id;
 
-  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const incomeApi = useIncomeApi();
@@ -442,7 +441,7 @@ export default function IncomePage() {
             alignItems={{ xs: "stretch", sm: "center" }}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
-            {/* переключатель месяца: компактный, без «карточной» рамки страницы */}
+            {/* переключатель месяца */}
             <Stack
               direction="row"
               spacing={1}
@@ -550,7 +549,7 @@ export default function IncomePage() {
               maxWidth: 960,
               mx: "auto",
               mt: 1,
-              overflowX: "hidden", // не выдвигается на мобиле
+              overflowX: "hidden",
             }}
           >
             <Table
@@ -567,7 +566,7 @@ export default function IncomePage() {
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   verticalAlign: "top",
-                  borderBottom: "none", // никаких линий
+                  borderBottom: "none",
                 },
                 "& th": {
                   fontWeight: 900,
