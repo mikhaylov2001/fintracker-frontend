@@ -82,41 +82,6 @@ const formatDateRuShort = (dateLike) => {
   return `${d}.${m}`;
 };
 
-const digitsOnly = (s) => String(s || "").replace(/\D/g, "");
-
-const formatRuDateTyping = (input) => {
-  const d = digitsOnly(input).slice(0, 8);
-  const p1 = d.slice(0, 2);
-  const p2 = d.slice(2, 4);
-  const p3 = d.slice(4, 8);
-  let out = p1;
-  if (p2) out += "." + p2;
-  if (p3) out += "." + p3;
-  return out;
-};
-
-const ruToIsoStrict = (ru) => {
-  const v = String(ru || "").trim();
-  const m = v.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (!m) return "";
-  const [, dd, mm, yyyy] = m;
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const isValidIsoDate = (iso) => {
-  const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) return false;
-  const y = Number(m[1]);
-  const mo = Number(m[2]);
-  const d = Number(m[3]);
-  const dt = new Date(y, mo - 1, d);
-  return (
-    dt.getFullYear() === y &&
-    dt.getMonth() === mo - 1 &&
-    dt.getDate() === d
-  );
-};
-
 const isProxySerialization500 = (msg) =>
   String(msg || "").includes("ByteBuddyInterceptor");
 
@@ -657,8 +622,8 @@ export default function IncomePage() {
         PaperProps={{
           sx: {
             backgroundColor: bankingColors.card2,
-            borderRadius: 2,                // чуть мягче
-            boxShadow: "0 18px 40px rgba(0,0,0,0.45)", // подчёркиваем форму
+            borderRadius: 2,
+            boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.08)",
           },
         }}
@@ -693,7 +658,7 @@ export default function IncomePage() {
               InputProps={{
                 disableUnderline: true,
                 sx: {
-                  bgcolor: "rgba(255,255,255,0.10)", // светлее
+                  bgcolor: "rgba(255,255,255,0.10)",
                   borderRadius: 1.8,
                   px: 1.8,
                   py: 1.4,
@@ -770,7 +735,7 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: один инпут и календарь вместе */}
+            {/* Дата: один инпут (ручной ввод + календарь) */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Дата"
@@ -794,32 +759,10 @@ export default function IncomePage() {
                   textField: {
                     variant: "standard",
                     fullWidth: true,
-                    // ручной ввод ДД.ММ.ГГГГ
-                    value: formatDateRu(form.date),
-                    onChange: (e) => {
-                      const ru = formatRuDateTyping(e.target.value);
-                      const iso = ruToIsoStrict(ru);
-
-                      let nextErr = "";
-                      if (ru.length === 10) {
-                        if (!iso) nextErr = "Неверный формат даты";
-                        else if (!isValidIsoDate(iso))
-                          nextErr = "Такой даты не существует";
-                      }
-
-                      setDateErr(nextErr);
-
-                      setForm((s) => ({
-                        ...s,
-                        date:
-                          iso && isValidIsoDate(iso) ? iso : s.date,
-                      }));
-                    },
                     placeholder: "16.02.2026",
-                    inputProps: { inputMode: "numeric" },
                     helperText:
                       dateErr ||
-                      "Можно выбрать дату в календаре или ввести ДДММГГГГ, точки добавятся сами",
+                      "Можно напечатать дату или выбрать в календаре",
                     error: Boolean(dateErr),
                     InputLabelProps: {
                       style: { color: bankingColors.muted },
@@ -827,7 +770,7 @@ export default function IncomePage() {
                     InputProps: {
                       disableUnderline: true,
                       sx: {
-                        bgcolor: "rgba(255,255,255,0.10)", // ещё светлее
+                        bgcolor: "rgba(255,255,255,0.10)",
                         borderRadius: 1.8,
                         px: 1.8,
                         py: 1.4,
