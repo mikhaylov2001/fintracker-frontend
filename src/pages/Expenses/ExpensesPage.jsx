@@ -522,9 +522,10 @@ export default function ExpensesPage() {
               <TableRow>
                 <TableCell sx={{ width: { xs: "24%", sm: 140 } }}>Дата</TableCell>
                 <TableCell
+                  align="center"
                   sx={{
                     width: { xs: "26%", sm: 160 },
-                    textAlign: { xs: "center", sm: "left" },
+                    textAlign: "center",
                   }}
                 >
                   Сумма
@@ -546,24 +547,22 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    {/* Дата слева */}
                     <TableCell>
                       {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
                     </TableCell>
 
-                    {/* Сумма по центру */}
                     <TableCell
+                      align="center"
                       sx={{
                         fontWeight: 900,
                         color: COLORS.expenses,
-                        textAlign: { xs: "center", sm: "left" },
+                        textAlign: "center",
                         whiteSpace: "nowrap",
                       }}
                     >
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    {/* Справа: категория + описание (на мобиле) + действия в одну линию */}
                     <TableCell sx={{ pr: { xs: 0.5, sm: 2 } }}>
                       <Stack
                         direction="row"
