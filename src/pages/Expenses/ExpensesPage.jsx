@@ -7,7 +7,7 @@ import {
   Button,
   Dialog,
   DialogTitle,
-  DialogContent,
+DialogContent,
   DialogActions,
   TextField,
   Table,
@@ -478,7 +478,6 @@ export default function ExpensesPage() {
         </Typography>
       ) : null}
 
-      {/* Table */}
       {!loading && items.length === 0 ? (
         <EmptyState
           title="Пока нет записей"
@@ -493,7 +492,7 @@ export default function ExpensesPage() {
             sx={{
               width: "100%",
               minWidth: { sm: 720 },
-              tableLayout: { xs: "fixed", sm: "auto" }, // как в IncomePage
+              tableLayout: { xs: "fixed", sm: "auto" }, // desktop как в доходах
               bgcolor: "transparent",
               borderRadius: 0,
               overflow: "visible",
