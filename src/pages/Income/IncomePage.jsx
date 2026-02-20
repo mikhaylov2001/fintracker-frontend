@@ -367,9 +367,6 @@ export default function IncomePage() {
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MsUserSelect: "none",
       }}
     >
       {/* Header */}
