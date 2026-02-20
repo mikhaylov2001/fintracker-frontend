@@ -520,24 +520,24 @@ export default function ExpensesPage() {
               <TableRow>
                 <TableCell
                   sx={{
-                    width: { xs: "33.33%", sm: 120 },
-                    textAlign: { xs: "center", sm: "center" }, // моб центр, десктоп центр
+                    width: { xs: "25%", sm: 120 },
+                    textAlign: { xs: "center", sm: "center" },
                   }}
                 >
                   Дата
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "33.33%", sm: 140 },
-                    textAlign: { xs: "center", sm: "center" }, // моб и десктоп центр
+                    width: { xs: "25%", sm: 140 },
+                    textAlign: { xs: "center", sm: "center" },
                   }}
                 >
                   Сумма
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "33.33%", sm: 200 },
-                    textAlign: { xs: "center", sm: "left" }, // моб центр, десктоп слева
+                    width: { xs: "25%", sm: 200 },
+                    textAlign: { xs: "center", sm: "left" },
                   }}
                 >
                   Категория
@@ -552,7 +552,7 @@ export default function ExpensesPage() {
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: "auto", sm: 120 },
+                    width: { xs: "25%", sm: 120 },
                     textAlign: "center",
                   }}
                 >
@@ -640,6 +640,7 @@ export default function ExpensesPage() {
                         onClick={() => openEdit(x)}
                         size="small"
                         sx={{ userSelect: "none" }}
+                        aria-label="Редактировать"
                       >
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
@@ -647,6 +648,7 @@ export default function ExpensesPage() {
                         onClick={() => remove(x)}
                         size="small"
                         sx={{ color: bankingColors.danger, userSelect: "none" }}
+                        aria-label="Удалить"
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
