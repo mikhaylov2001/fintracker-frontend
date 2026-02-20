@@ -31,10 +31,7 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 
-import {
-  bankingColors,
-  pageBackgroundSx,
-} from "../../styles/bankingTokens";
+import { bankingColors, pageBackgroundSx } from "../../styles/bankingTokens";
 
 // ----------------- вспомогательные вещи -----------------
 
@@ -60,21 +57,25 @@ const SOURCE_OPTIONS = [
 const toAmountString = (v) => String(v ?? "").trim().replace(",", ".");
 
 const normalizeDateOnly = (d) => {
-  if (!d) return new Date().toISOString().slice(0, 10);
+  if (!d) return "";
   const s = String(d);
-  return s.includes("T") ? s.slice(0, 10) : s;
+  // "2026-02-16T00:00:00" -> "2026-02-16"
+  if (s.includes("T")) return s.slice(0, 10);
+  // уже "YYYY-MM-DD"
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return s;
 };
 
 const formatDateRu = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
-  const [y, m, d] = s.split("-");
+  const [y, m, d] = String(s || "").split("-");
   if (!y || !m || !d) return "";
   return `${d}.${m}.${y}`;
 };
 
 const formatDateRuShort = (dateLike) => {
   const s = normalizeDateOnly(dateLike);
-  const [y, m, d] = s.split("-");
+  const [y, m, d] = String(s || "").split("-");
   if (!y || !m || !d) return "";
   return `${d}.${m}`;
 };
@@ -126,6 +127,16 @@ const addMonthsYM = ({ year, month }, delta) => {
 const ymLabel = ({ year, month }) =>
   `${String(month).padStart(2, "0")}.${year}`;
 
+// если бэкенд присылает не "date", а "createdAt"/"operationDate" и т.п.
+const getIncomeDateLike = (x) =>
+  x?.date ??
+  x?.operationDate ??
+  x?.incomeDate ??
+  x?.createdAt ??
+  x?.created_at ??
+  x?.timestamp ??
+  "";
+
 // ----------------- компонент -----------------
 
 export default function IncomePage() {
@@ -164,10 +175,7 @@ export default function IncomePage() {
     setYm((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       try {
-        window.localStorage.setItem(
-          "fintracker:incomeMonth",
-          JSON.stringify(next)
-        );
+        window.localStorage.setItem("fintracker:incomeMonth", JSON.stringify(next));
       } catch {}
       return next;
     });
@@ -181,12 +189,17 @@ export default function IncomePage() {
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+
+  // form.date — ISO "YYYY-MM-DD"
   const [form, setForm] = useState({
     amount: "",
     category: "Работа",
     source: "Зарплата",
-    date: new Date().toISOString().slice(0, 10), // ISO
+    date: new Date().toISOString().slice(0, 10),
   });
+
+  // ВАЖНО: отдельное состояние для ручного ввода "ДД.ММ.ГГГГ"
+  const [dateInput, setDateInput] = useState(() => formatDateRu(form.date));
 
   const amountRef = useRef(null);
 
@@ -273,6 +286,7 @@ export default function IncomePage() {
       source: "Зарплата",
       date: iso,
     });
+    setDateInput(formatDateRu(iso));
     setOpen(true);
     setTimeout(() => {
       amountRef.current?.focus?.();
@@ -280,7 +294,7 @@ export default function IncomePage() {
   };
 
   const openEdit = (income) => {
-    const iso = normalizeDateOnly(income?.date);
+    const iso = normalizeDateOnly(getIncomeDateLike(income)) || new Date().toISOString().slice(0, 10);
     setEditing(income);
     setDateErr("");
     setForm({
@@ -289,6 +303,7 @@ export default function IncomePage() {
       source: income?.source ?? "Зарплата",
       date: iso,
     });
+    setDateInput(formatDateRu(iso));
     setOpen(true);
     setTimeout(() => {
       amountRef.current?.focus?.();
@@ -363,8 +378,6 @@ export default function IncomePage() {
     () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
     [items]
   );
-
-  // ----------------- разметка -----------------
 
   return (
     <Box
@@ -506,10 +519,10 @@ export default function IncomePage() {
                 py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
-                textAlign: "center",
-                verticalAlign: "middle",
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
+                textAlign: "center",
+                verticalAlign: "middle", // вертикальное выравнивание делается стилем [web:284]
               },
               "& th": {
                 fontWeight: 900,
@@ -526,16 +539,17 @@ export default function IncomePage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>
+                <TableCell align="center" sx={{ width: { xs: "20%", sm: 140 } }}>
                   Дата
                 </TableCell>
-                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>
+                <TableCell align="center" sx={{ width: { xs: "28%", sm: 160 } }}>
                   Сумма
                 </TableCell>
-                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>
+                <TableCell align="center" sx={{ width: { xs: "38%", sm: 200 } }}>
                   Категория
                 </TableCell>
                 <TableCell
+                  align="center"
                   sx={{
                     width: 200,
                     display: { xs: "none", sm: "table-cell" },
@@ -543,53 +557,58 @@ export default function IncomePage() {
                 >
                   Источник
                 </TableCell>
-                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>
+                <TableCell align="center" sx={{ width: { xs: "14%", sm: 120 } }}>
                   Действия
                 </TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {items.map((x) => (
-                <TableRow key={x.id} hover>
-                  <TableCell>
-                    {isMobile
-                      ? formatDateRuShort(x.date)
-                      : formatDateRu(x.date)}
-                  </TableCell>
+              {items.map((x) => {
+                const dateLike = getIncomeDateLike(x);
+                return (
+                  <TableRow key={x.id} hover>
+                    <TableCell align="center">
+                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
+                    </TableCell>
 
-                  <TableCell
-                    sx={{
-                      fontWeight: 900,
-                      color: bankingColors.accent,
-                    }}
-                  >
-                    {formatAmount(Number(x.amount || 0))}
-                  </TableCell>
-
-                  <TableCell>{x.category}</TableCell>
-
-                  <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                    {x.source}
-                  </TableCell>
-
-                  <TableCell>
-                    <IconButton onClick={() => openEdit(x)} size="small">
-                      <EditOutlinedIcon
-                        fontSize="small"
-                        sx={{ color: bankingColors.text }}
-                      />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => remove(x)}
-                      size="small"
-                      sx={{ color: bankingColors.danger }}
+                    <TableCell
+                      align="center"
+                      sx={{
+                        fontWeight: 900,
+                        color: bankingColors.accent,
+                      }}
                     >
-                      <DeleteOutlineIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                      {formatAmount(Number(x.amount || 0))}
+                    </TableCell>
+
+                    <TableCell align="center">{x.category}</TableCell>
+
+                    <TableCell
+                      align="center"
+                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                    >
+                      {x.source}
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <IconButton onClick={() => openEdit(x)} size="small">
+                        <EditOutlinedIcon
+                          fontSize="small"
+                          sx={{ color: bankingColors.text }}
+                        />
+                      </IconButton>
+                      <IconButton
+                        onClick={() => remove(x)}
+                        size="small"
+                        sx={{ color: bankingColors.danger }}
+                      >
+                        <DeleteOutlineIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Box>
@@ -632,9 +651,7 @@ export default function IncomePage() {
               label="Сумма"
               inputRef={amountRef}
               value={form.amount}
-              onChange={(e) =>
-                setForm((s) => ({ ...s, amount: e.target.value }))
-              }
+              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
               placeholder="50000.00"
               inputProps={{ inputMode: "decimal" }}
               fullWidth
@@ -728,35 +745,42 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: только ручной ввод с автоточками */}
+            {/* Дата: ручной ввод с автоточками (теперь реально вводится) */}
             <TextField
               variant="standard"
               label="Дата"
               fullWidth
-              value={formatRuDateTyping(formatDateRu(form.date))}
+              value={dateInput}
               onChange={(e) => {
                 const ru = formatRuDateTyping(e.target.value);
+                setDateInput(ru);
+
+                // дали стереть поле
+                if (!ru) {
+                  setDateErr("");
+                  setForm((s) => ({ ...s, date: "" }));
+                  return;
+                }
+
                 const iso = ruToIsoStrict(ru);
 
                 let nextErr = "";
                 if (ru.length === 10) {
                   if (!iso) nextErr = "Неверный формат даты";
-                  else if (!isValidIsoDate(iso))
-                    nextErr = "Такой даты не существует";
+                  else if (!isValidIsoDate(iso)) nextErr = "Такой даты не существует";
                 }
 
                 setDateErr(nextErr);
 
-                setForm((s) => ({
-                  ...s,
-                  date: iso && isValidIsoDate(iso) ? iso : s.date,
-                }));
+                if (ru.length === 10 && iso && isValidIsoDate(iso)) {
+                  setForm((s) => ({ ...s, date: iso }));
+                }
               }}
               placeholder="16.02.2026"
               inputProps={{ inputMode: "numeric" }}
               helperText={
                 dateErr ||
-                "Введите дату: ДДММГГГГ — точки добавятся сами (например 16022026 → 16.02.2026)"
+                "Введите дату: ДДММГГГГ — точки добавятся сами (пример: 16022026 → 16.02.2026)"
               }
               error={Boolean(dateErr)}
               InputLabelProps={{
