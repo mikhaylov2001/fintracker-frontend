@@ -486,7 +486,7 @@ export default function IncomePage() {
             size="small"
             sx={{
               width: "100%",
-              minWidth: { sm: 720 }, // десктоп как был
+              minWidth: { sm: 720 },
               tableLayout: "fixed",
               bgcolor: "transparent",
               borderRadius: 0,
@@ -500,15 +500,16 @@ export default function IncomePage() {
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
                 verticalAlign: "middle",
-                textAlign: "left",
               },
               "& th": {
                 fontWeight: 900,
                 color: bankingColors.text,
                 bgcolor: "transparent",
+                textAlign: "left",
               },
               "& td": {
                 color: bankingColors.text,
+                textAlign: "left",
               },
               "& .MuiTableRow-root:hover td": {
                 backgroundColor: "rgba(34, 197, 94, 0.14)",
@@ -528,7 +529,6 @@ export default function IncomePage() {
                 >
                   Источник
                 </TableCell>
-                {/* заголовок "Действия" только на десктопе */}
                 <TableCell
                   sx={{
                     width: { xs: "20%", sm: 120 },
@@ -554,9 +554,49 @@ export default function IncomePage() {
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    <TableCell>{x.category}</TableCell>
+                    <TableCell>
+                      <Stack spacing={0.3}>
+                        <Typography
+                          component="div"
+                          sx={{
+                            fontSize: { xs: 12, sm: 13 },
+                            fontWeight: 800,
+                            color: bankingColors.text,
+                            lineHeight: 1.15,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitBoxOrient: "vertical",
+                            WebkitLineClamp: 1,
+                          }}
+                          title={x.category || ""}
+                        >
+                          {x.category}
+                        </Typography>
 
-                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>
+                        {isMobile ? (
+                          <Typography
+                            component="div"
+                            sx={{
+                              fontSize: 11,
+                              color: bankingColors.muted,
+                              lineHeight: 1.15,
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                            title={x.source || ""}
+                          >
+                            {x.source}
+                          </Typography>
+                        ) : null}
+                      </Stack>
+                    </TableCell>
+
+                    <TableCell
+                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                      title={x.source || ""}
+                    >
                       {x.source}
                     </TableCell>
 
