@@ -353,14 +353,16 @@ export default function ExpensesPage() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: "#F8FAFC",
+        // такие же отступы и ширина, как у доходов
         px: { xs: 2, md: 3, lg: 4 },
         py: { xs: 2, md: 3 },
         width: "100%",
+
+        // глобальный запрет выделения текста
         userSelect: "none",
         WebkitUserSelect: "none",
-        MsUserSelect: "none",
+        MozUserSelect: "none",
+        msUserSelect: "none",
       }}
     >
       {/* Header */}
@@ -403,7 +405,12 @@ export default function ExpensesPage() {
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, -1))}
-              sx={{ minWidth: 44, px: 1.2 }}
+              sx={{
+                minWidth: 44,
+                px: 1.2,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
             >
               ←
             </Button>
@@ -414,13 +421,20 @@ export default function ExpensesPage() {
                 width: { xs: "100%", sm: "auto" },
                 fontWeight: 800,
                 bgcolor: "#FFFFFF",
+                userSelect: "none",
+                WebkitUserSelect: "none",
               }}
             />
 
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, +1))}
-              sx={{ minWidth: 44, px: 1.2 }}
+              sx={{
+                minWidth: 44,
+                px: 1.2,
+                userSelect: "none",
+                WebkitUserSelect: "none",
+              }}
             >
               →
             </Button>
@@ -436,6 +450,8 @@ export default function ExpensesPage() {
               px: 2.2,
               bgcolor: COLORS.expenses,
               "&:hover": { bgcolor: "#EA580C" },
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           >
             Добавить расход
@@ -469,45 +485,47 @@ export default function ExpensesPage() {
               width: "100%",
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
-              bgcolor: "#FFFFFF",
+
+              // как в доходах — прозрачный фон, без карточки
+              bgcolor: "transparent",
+              borderRadius: 0,
+              overflow: "visible",
+              border: "none",
+
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
-                py: { xs: 0.6, sm: 1 },
+                py: { xs: 1, sm: 1.1 },
                 fontSize: { xs: 12, sm: 13 },
-                lineHeight: 1.15,
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                verticalAlign: "top",
-                borderBottomColor: "#E2E8F0",
+                lineHeight: 1.3,
+                borderBottom: "none !important",
+                whiteSpace: "nowrap",
+                verticalAlign: "middle",
+                textAlign: "left",
               },
               "& th": {
                 fontWeight: 900,
                 color: "#0F172A",
-                whiteSpace: "nowrap",
-                bgcolor: "#F8FAFC",
+                bgcolor: "transparent",
               },
               "& td": {
-                whiteSpace: { xs: "normal", sm: "nowrap" },
                 color: "#0F172A",
               },
-              "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
+
+              // hover как у доходов
+              "& .MuiTableRow-root:hover td": {
+                backgroundColor: "rgba(249, 115, 22, 0.12)",
+              },
+
+              "& th:last-child, & td:last-child": {
+                textAlign: "center",
+              },
             }}
           >
             <TableHead>
               <TableRow>
-                <TableCell
-                  sx={{ width: { xs: "20%", sm: 140 }, whiteSpace: "nowrap" }}
-                >
-                  Дата
-                </TableCell>
-                <TableCell
-                  sx={{ width: { xs: "28%", sm: 160 }, whiteSpace: "nowrap" }}
-                >
-                  Сумма
-                </TableCell>
-                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>
-                  Категория
-                </TableCell>
+                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
                 <TableCell
                   sx={{
                     width: 260,
@@ -517,16 +535,11 @@ export default function ExpensesPage() {
                   Описание
                 </TableCell>
                 <TableCell
-                  align="right"
                   sx={{
                     width: { xs: "14%", sm: 120 },
-                    pr: { xs: 0.5, sm: 2 },
-                    whiteSpace: "nowrap",
                   }}
                 >
-                  <Box sx={{ display: { xs: "none", sm: "block" } }}>
-                    Действия
-                  </Box>
+                  Действия
                 </TableCell>
               </TableRow>
             </TableHead>
@@ -534,7 +547,7 @@ export default function ExpensesPage() {
             <TableBody>
               {items.map((x) => (
                 <TableRow key={x.id} hover>
-                  <TableCell sx={{ whiteSpace: "nowrap" }}>
+                  <TableCell>
                     {isMobile
                       ? formatDateRuShort(x.date)
                       : formatDateRu(x.date)}
@@ -544,7 +557,6 @@ export default function ExpensesPage() {
                     sx={{
                       fontWeight: 900,
                       color: "#0F172A",
-                      whiteSpace: "nowrap",
                     }}
                   >
                     {formatAmount(Number(x.amount || 0))}
@@ -595,14 +607,18 @@ export default function ExpensesPage() {
                     {x.description}
                   </TableCell>
 
-                  <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
-                    <IconButton onClick={() => openEdit(x)} size="small">
+                  <TableCell sx={{ textAlign: "center", whiteSpace: "nowrap" }}>
+                    <IconButton
+                      onClick={() => openEdit(x)}
+                      size="small"
+                      sx={{ userSelect: "none", WebkitUserSelect: "none" }}
+                    >
                       <EditOutlinedIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       onClick={() => remove(x)}
                       size="small"
-                      color="error"
+                      sx={{ color: "#EF4444", userSelect: "none", WebkitUserSelect: "none" }}
                     >
                       <DeleteOutlineIcon fontSize="small" />
                     </IconButton>
@@ -623,7 +639,7 @@ export default function ExpensesPage() {
         fullWidth
         maxWidth="sm"
       >
-        <DialogTitle>
+        <DialogTitle sx={{ userSelect: "none", WebkitUserSelect: "none" }}>
           {editing ? "Редактировать расход" : "Добавить расход"}
         </DialogTitle>
 
@@ -720,6 +736,7 @@ export default function ExpensesPage() {
             variant="outlined"
             disabled={saving}
             fullWidth={fullScreen}
+            sx={{ userSelect: "none", WebkitUserSelect: "none" }}
           >
             Отмена
           </Button>
@@ -731,6 +748,8 @@ export default function ExpensesPage() {
             sx={{
               bgcolor: COLORS.expenses,
               "&:hover": { bgcolor: "#EA580C" },
+              userSelect: "none",
+              WebkitUserSelect: "none",
             }}
           >
             {saving ? "Сохранение…" : "Сохранить"}
