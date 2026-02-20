@@ -129,7 +129,6 @@ const addMonthsYM = ({ year, month }, delta) => {
 
 const ymLabel = ({ year, month }) => `${String(month).padStart(2, "0")}.${year}`;
 
-// fallback на разные названия поля даты
 const getIncomeDateLike = (x) =>
   x?.date ?? x?.operationDate ?? x?.incomeDate ?? x?.createdAt ?? x?.created_at ?? x?.timestamp ?? "";
 
@@ -180,14 +179,12 @@ export default function IncomePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // дата
   const [dateErr, setDateErr] = useState("");
-  const [dateInput, setDateInput] = useState(""); // ДД.ММ.ГГГГ (то, что видит пользователь)
+  const [dateInput, setDateInput] = useState("");
 
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
-  // form.date — ISO "YYYY-MM-DD"
   const [form, setForm] = useState({
     amount: "",
     category: "Работа",
@@ -195,7 +192,6 @@ export default function IncomePage() {
     date: new Date().toISOString().slice(0, 10),
   });
 
-  // календарь в поповере (кнопка внутри поля)
   const [calAnchorEl, setCalAnchorEl] = useState(null);
   const calOpen = Boolean(calAnchorEl);
   const openCalendar = (e) => setCalAnchorEl(e.currentTarget);
@@ -203,7 +199,6 @@ export default function IncomePage() {
 
   const amountRef = useRef(null);
 
-  // сброс при смене юзера
   useEffect(() => {
     setItems([]);
     setError("");
@@ -213,7 +208,6 @@ export default function IncomePage() {
     setLoading(true);
   }, [userId]);
 
-  // загрузка доходов
   useEffect(() => {
     let cancelled = false;
 
@@ -290,8 +284,7 @@ export default function IncomePage() {
   };
 
   const openEdit = (income) => {
-    const iso =
-      normalizeDateOnly(getIncomeDateLike(income)) || new Date().toISOString().slice(0, 10);
+    const iso = normalizeDateOnly(getIncomeDateLike(income)) || new Date().toISOString().slice(0, 10);
 
     setEditing(income);
     setDateErr("");
@@ -369,10 +362,7 @@ export default function IncomePage() {
     }
   };
 
-  const total = useMemo(
-    () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
-    [items]
-  );
+  const total = useMemo(() => items.reduce((acc, x) => acc + Number(x.amount || 0), 0), [items]);
 
   return (
     <Box sx={{ ...pageBackgroundSx, px: { xs: 2, md: 3, lg: 4 }, py: { xs: 2, md: 3 } }}>
@@ -404,7 +394,12 @@ export default function IncomePage() {
 
             <Chip
               label={ymLabel(ym)}
-              sx={{ width: { xs: "100%", sm: "auto" }, fontWeight: 800, bgcolor: bankingColors.card2, color: bankingColors.text }}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                fontWeight: 800,
+                bgcolor: bankingColors.card2,
+                color: bankingColors.text,
+              }}
             />
 
             <Button
@@ -467,7 +462,6 @@ export default function IncomePage() {
                 lineHeight: 1.3,
                 borderBottom: "none !important",
                 whiteSpace: "nowrap",
-                textAlign: "center",
                 verticalAlign: "middle",
               },
               "& th": { fontWeight: 900, color: bankingColors.text, bgcolor: bankingColors.card2 },
@@ -477,11 +471,11 @@ export default function IncomePage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
-                <TableCell align="center" sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell align="center" sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
-                <TableCell align="center" sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Источник</TableCell>
-                <TableCell align="center" sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
+                <TableCell sx={{ width: { xs: "20%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "28%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "38%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: 200, display: { xs: "none", sm: "table-cell" } }}>Источник</TableCell>
+                <TableCell sx={{ width: { xs: "14%", sm: 120 } }}>Действия</TableCell>
               </TableRow>
             </TableHead>
 
@@ -490,21 +484,17 @@ export default function IncomePage() {
                 const dateLike = getIncomeDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell align="center">
-                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
-                    </TableCell>
+                    <TableCell>{isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}</TableCell>
 
-                    <TableCell align="center" sx={{ fontWeight: 900, color: bankingColors.accent }}>
+                    <TableCell sx={{ fontWeight: 900, color: bankingColors.accent }}>
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    <TableCell align="center">{x.category}</TableCell>
+                    <TableCell>{x.category}</TableCell>
 
-                    <TableCell align="center" sx={{ display: { xs: "none", sm: "table-cell" } }}>
-                      {x.source}
-                    </TableCell>
+                    <TableCell sx={{ display: { xs: "none", sm: "table-cell" } }}>{x.source}</TableCell>
 
-                    <TableCell align="center">
+                    <TableCell>
                       <IconButton onClick={() => openEdit(x)} size="small">
                         <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
                       </IconButton>
@@ -530,7 +520,7 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            backgroundColor: "#111827", // форма чуть светлее
+            backgroundColor: "#111827",
             borderRadius: 2,
             boxShadow: "0 18px 40px rgba(0,0,0,0.45)",
             border: "1px solid rgba(255,255,255,0.08)",
@@ -551,6 +541,7 @@ export default function IncomePage() {
           }}
         >
           <Stack spacing={2.2} sx={{ mt: 1 }}>
+            {/* Сумма */}
             <TextField
               variant="standard"
               label="Сумма"
@@ -564,6 +555,7 @@ export default function IncomePage() {
               InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
+            {/* Категория */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -587,6 +579,7 @@ export default function IncomePage() {
               )}
             />
 
+            {/* Источник */}
             <Autocomplete
               freeSolo
               disablePortal
@@ -610,7 +603,7 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: ручной ввод + календарь в одном поле */}
+            {/* Дата: ручной ввод + календарь */}
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
               <TextField
                 variant="standard"
@@ -644,7 +637,7 @@ export default function IncomePage() {
                 inputProps={{ inputMode: "numeric" }}
                 helperText={
                   dateErr ||
-                  "Можно ввести вручную: ДДММГГГГ (пример 20022026 → 20.02.2026) или выбрать в календаре справа"
+                  "Введите вручную 8 цифр (например: 20022026 → 20.02.2026) или нажмите на значок календаря справа"
                 }
                 error={Boolean(dateErr)}
                 InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
@@ -667,8 +660,17 @@ export default function IncomePage() {
                     </InputAdornment>
                   ),
                 }}
+                FormHelperTextProps={{
+                  sx: {
+                    color: dateErr ? bankingColors.danger : bankingColors.muted,
+                    fontSize: "0.75rem",
+                    mt: 0.5,
+                    mx: 0,
+                  },
+                }}
               />
 
+              {/* Popover с календарём в светлых тонах */}
               <Popover
                 open={calOpen}
                 anchorEl={calAnchorEl}
@@ -677,10 +679,11 @@ export default function IncomePage() {
                 transformOrigin={{ vertical: "top", horizontal: "right" }}
                 PaperProps={{
                   sx: {
-                    bgcolor: bankingColors.card2,
-                    border: "1px solid rgba(255,255,255,0.10)",
+                    bgcolor: "#FFFFFF",
+                    border: "1px solid rgba(0,0,0,0.12)",
                     borderRadius: 2,
                     overflow: "hidden",
+                    boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
                   },
                 }}
               >
@@ -696,6 +699,62 @@ export default function IncomePage() {
                       setDateInput(formatDateRu(iso));
                       setDateErr("");
                       closeCalendar();
+                    }}
+                    sx={{
+                      // Белый фон календаря
+                      bgcolor: "#FFFFFF",
+                      color: "#1F2937",
+
+                      // Заголовок месяца/года
+                      "& .MuiPickersCalendarHeader-root": {
+                        color: "#1F2937",
+                        bgcolor: "#FFFFFF",
+                      },
+                      "& .MuiPickersCalendarHeader-label": {
+                        color: "#1F2937",
+                        fontWeight: 700,
+                      },
+
+                      // Кнопки переключения месяца
+                      "& .MuiIconButton-root": {
+                        color: "#1F2937",
+                      },
+
+                      // Названия дней недели
+                      "& .MuiDayCalendar-weekDayLabel": {
+                        color: "#6B7280",
+                        fontWeight: 600,
+                      },
+
+                      // Дни (обычные)
+                      "& .MuiPickersDay-root": {
+                        color: "#1F2937",
+                        bgcolor: "transparent",
+                        "&:hover": {
+                          bgcolor: "rgba(34, 197, 94, 0.1)",
+                        },
+                      },
+
+                      // Выбранный день (зелёный акцент)
+                      "& .MuiPickersDay-root.Mui-selected": {
+                        bgcolor: "#22C55E",
+                        color: "#FFFFFF",
+                        fontWeight: 700,
+                        "&:hover": {
+                          bgcolor: "#16A34A",
+                        },
+                      },
+
+                      // Сегодня (обводка зелёная)
+                      "& .MuiPickersDay-today": {
+                        border: "2px solid #22C55E !important",
+                        bgcolor: "transparent",
+                      },
+
+                      // Дни другого месяца (приглушённые)
+                      "& .MuiPickersDay-root.Mui-disabled": {
+                        color: "#D1D5DB",
+                      },
                     }}
                   />
                 </Box>
