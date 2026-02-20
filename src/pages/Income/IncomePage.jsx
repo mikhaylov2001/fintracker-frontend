@@ -300,7 +300,7 @@ export default function IncomePage() {
       setSaving(true);
       setError("");
 
-      if (dateErr) throw new Error(dateErr);
+      if (dateErr) throw new Error("Неверная дата");
 
       const payload = {
         amount: toAmountString(form.amount),
@@ -365,7 +365,6 @@ export default function IncomePage() {
   return (
     <Box
       sx={{
-        // применяем базовый стиль без границ
         ...surfaceSx,
         minHeight: "100vh",
         bgcolor: "transparent",
@@ -380,7 +379,10 @@ export default function IncomePage() {
       {/* Header */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={1>
+        spacing={1}
+        alignItems={{ xs: "stretch", sm: "center" }}
+        sx={{ mb: 2.5 }}
+      >
         <Box sx={{ flexGrow: 1 }}>
           <Typography
             variant="h5"
@@ -457,7 +459,6 @@ export default function IncomePage() {
               px: 2.2,
               bgcolor: COLORS.income,
               "&:hover": { bgcolor: "#16A34A" },
-              // можно дополнительно убрать границы вокруг кнопки, если нужно
             }}
           >
             Добавить доход
@@ -496,7 +497,6 @@ export default function IncomePage() {
               minWidth: { sm: 720 },
               tableLayout: { xs: "fixed", sm: "auto" },
               bgcolor: "#FFFFFF",
-              // Убираем рамку таблицы и границы ячеек
               border: 0,
               "& th, & td": {
                 px: { xs: 0.75, sm: 2 },
@@ -653,11 +653,10 @@ export default function IncomePage() {
         maxWidth="sm"
         PaperProps={{
           sx: {
-            // убираем границу и лишние тени внутри диалога
             border: 0,
             boxShadow: "none",
             borderRadius: 2,
-            ...surfaceSx, // сохранить базовую поверхность, но без границ
+            ...surfaceSx,
           },
         }}
       >
@@ -695,7 +694,8 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, category: newValue ?? "" }))
               }
               onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, category: newInput }))}
+                setForm((s) => ({ ...s, category: newInput }))
+              }
               renderInput={(params) => (
                 <TextField {...params} label="Категория" fullWidth />
               )}
@@ -710,7 +710,8 @@ export default function IncomePage() {
                 setForm((s) => ({ ...s, source: newValue ?? "" }))
               }
               onInputChange={(_e, newInput) =>
-                setForm((s) => ({ ...s, source: newInput }))}
+                setForm((s) => ({ ...s, source: newInput }))
+              }
               renderInput={(params) => (
                 <TextField {...params} label="Источник" fullWidth />
               )}
