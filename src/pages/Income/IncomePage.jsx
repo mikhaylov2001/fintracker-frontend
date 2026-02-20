@@ -77,7 +77,7 @@ const gridOverlaySx = {
 
 const surfaceSx = {
   borderRadius: 4.5,
-  border: "0", // рамок нет
+  border: "0",
   backgroundColor: alpha(bankingColors.card, 0.96),
   boxShadow: "0 16px 44px rgba(0,0,0,0.48)",
 };
@@ -460,12 +460,13 @@ export default function IncomePage() {
             alignItems={{ xs: "stretch", sm: "center" }}
             sx={{ width: { xs: "100%", sm: "auto" } }}
           >
+            {/* переключатель месяца оставлен как был */}
             <Stack
               direction="row"
               spacing={1}
               alignItems="center"
               sx={{
-                bgcolor: "transparent", // CHANGED: фон переключателя прозрачен
+                bgcolor: alpha(bankingColors.card, 0.5),
                 p: 0.5,
                 borderRadius: 99,
                 border: `1px solid ${bankingColors.border}`,
@@ -499,6 +500,7 @@ export default function IncomePage() {
               </IconButton>
             </Stack>
 
+            {/* кнопка "Добавить" тоже без изменений */}
             <Button
               onClick={openCreate}
               variant="contained"
@@ -530,7 +532,7 @@ export default function IncomePage() {
           </Typography>
         ) : null}
 
-        {/* Card with Table */}
+        {/* Список: без рамок, нераздвижной, по центру */}
         {!loading && items.length === 0 ? (
           <Box
             sx={{
@@ -538,8 +540,10 @@ export default function IncomePage() {
               p: 4,
               textAlign: "center",
               color: bankingColors.muted,
-              borderRadius: 0, // CHANGED: «на всю ширину», без отдельной карточки
-              boxShadow: "none", // CHANGED: без тени = без ощущения рамки
+              border: "0",
+              boxShadow: "none",
+              maxWidth: 960,
+              mx: "auto",
             }}
           >
             <EmptyState
@@ -553,16 +557,18 @@ export default function IncomePage() {
           <Box
             sx={{
               ...surfaceSx,
+              border: "0",
+              boxShadow: "none",
+              maxWidth: 960,
+              mx: "auto",
               overflow: "hidden",
-              borderRadius: 0,   // CHANGED: во всю ширину страницы
-              boxShadow: "none", // CHANGED: без тени/рамы
             }}
           >
-            <Box sx={{ overflowX: "auto" }}>
+            <Box sx={{ overflowX: "hidden" }}>
               <Table
                 sx={{
                   width: "100%",
-                  minWidth: { sm: 720 },
+                  tableLayout: "fixed",
                   "& th": {
                     fontWeight: 800,
                     color: bankingColors.muted,
@@ -579,6 +585,8 @@ export default function IncomePage() {
                     px: 2,
                     fontSize: 14,
                     fontWeight: 600,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   },
                   "& .MuiTableRow-root:last-of-type td": { borderBottom: 0 },
                   "& .MuiTableRow-root:hover": {
@@ -662,7 +670,7 @@ export default function IncomePage() {
           </Box>
         )}
 
-        {/* Dialog */}
+        {/* Dialog: без рамки */}
         <Dialog
           open={open}
           onClose={() => (!saving ? setOpen(false) : null)}
@@ -672,7 +680,7 @@ export default function IncomePage() {
             sx: {
               ...surfaceSx,
               backgroundImage: "none",
-              border: "0",           // CHANGED: без рамки
+              border: "0",
             },
           }}
         >
@@ -710,9 +718,9 @@ export default function IncomePage() {
                       bgcolor: bankingColors.card2,
                       color: bankingColors.text,
                       "& .MuiAutocomplete-option": {
-                         "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                         "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) }
-                      }
+                        "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
+                        "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) },
+                      },
                     }}
                   />
                 )}
@@ -734,9 +742,9 @@ export default function IncomePage() {
                       bgcolor: bankingColors.card2,
                       color: bankingColors.text,
                       "& .MuiAutocomplete-option": {
-                         "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
-                         "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) }
-                      }
+                        "&:hover": { bgcolor: alpha(bankingColors.primary, 0.15) },
+                        "&[aria-selected='true']": { bgcolor: alpha(bankingColors.primary, 0.25) },
+                      },
                     }}
                   />
                 )}
