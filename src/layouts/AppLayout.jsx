@@ -178,7 +178,6 @@ export default function AppLayout() {
 
   const pathname = location.pathname;
   const isWidePage = pathname.startsWith("/income") || pathname.startsWith("/expenses");
-  const isAuthPage = pathname === "/login" || pathname === "/register";
 
   return (
     <AppBackground>
@@ -192,7 +191,6 @@ export default function AppLayout() {
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Сайдбар */}
         <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>
           <Drawer
             variant="temporary"
@@ -227,12 +225,10 @@ export default function AppLayout() {
           </Drawer>
         </Box>
 
-        {/* Контент */}
         <Box sx={{ flexGrow: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
           <TopNavBar onMenuClick={openMobile} />
 
           {isWidePage ? (
-            // Доходы/расходы — широкие страницы
             <Box
               sx={{
                 flex: 1,
@@ -246,7 +242,6 @@ export default function AppLayout() {
               <Outlet />
             </Box>
           ) : (
-            // Все остальные, включая логин/регистрацию
             <Box
               sx={{
                 flex: 1,
@@ -256,12 +251,12 @@ export default function AppLayout() {
                 py: { xs: 2.5, sm: 3 },
                 display: "flex",
                 justifyContent: "center",
-                alignItems: isAuthPage ? "center" : "flex-start",
+                alignItems: "flex-start",
                 boxSizing: "border-box",
                 overflowX: "hidden",
               }}
             >
-              <Box sx={{ width: "100%", maxWidth: isAuthPage ? 520 : 960 }}>
+              <Box sx={{ width: "100%", maxWidth: 960 }}>
                 <Outlet />
               </Box>
             </Box>
