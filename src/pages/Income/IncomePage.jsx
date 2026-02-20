@@ -28,7 +28,6 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
-// import "dayjs/locale/ru";
 
 import EmptyState from "../../components/EmptyState";
 import { useToast } from "../../contexts/ToastContext";
@@ -186,7 +185,7 @@ export default function IncomePage() {
     amount: "",
     category: "Работа",
     source: "Зарплата",
-    date: new Date().toISOString().slice(0, 10), // только ISO
+    date: new Date().toISOString().slice(0, 10), // ISO
   });
 
   const amountRef = useRef(null);
@@ -487,11 +486,7 @@ export default function IncomePage() {
           onAction={openCreate}
         />
       ) : (
-        <Box
-          sx={{
-            overflowX: "auto",
-          }}
-        >
+        <Box sx={{ overflowX: "auto" }}>
           <Table
             size="small"
             sx={{
@@ -662,9 +657,9 @@ export default function IncomePage() {
         PaperProps={{
           sx: {
             backgroundColor: bankingColors.card2,
-            borderRadius: 0,
-            boxShadow: "none",
-            border: "none",
+            borderRadius: 2,                // чуть мягче
+            boxShadow: "0 18px 40px rgba(0,0,0,0.45)", // подчёркиваем форму
+            border: "1px solid rgba(255,255,255,0.08)",
           },
         }}
       >
@@ -681,7 +676,7 @@ export default function IncomePage() {
             bgcolor: bankingColors.card2,
           }}
         >
-          <Stack spacing={2} sx={{ mt: 1 }}>
+          <Stack spacing={2.2} sx={{ mt: 1 }}>
             {/* Сумма */}
             <TextField
               variant="standard"
@@ -698,10 +693,10 @@ export default function IncomePage() {
               InputProps={{
                 disableUnderline: true,
                 sx: {
-                  bgcolor: "rgba(255,255,255,0.06)",
-                  borderRadius: 1.5,
-                  px: 1.5,
-                  py: 1.2,
+                  bgcolor: "rgba(255,255,255,0.10)", // светлее
+                  borderRadius: 1.8,
+                  px: 1.8,
+                  py: 1.4,
                   color: bankingColors.text,
                 },
               }}
@@ -730,10 +725,10 @@ export default function IncomePage() {
                     ...params.InputProps,
                     disableUnderline: true,
                     sx: {
-                      bgcolor: "rgba(255,255,255,0.06)",
-                      borderRadius: 1.5,
-                      px: 1.5,
-                      py: 1.2,
+                      bgcolor: "rgba(255,255,255,0.10)",
+                      borderRadius: 1.8,
+                      px: 1.8,
+                      py: 1.4,
                       color: bankingColors.text,
                     },
                   }}
@@ -764,10 +759,10 @@ export default function IncomePage() {
                     ...params.InputProps,
                     disableUnderline: true,
                     sx: {
-                      bgcolor: "rgba(255,255,255,0.06)",
-                      borderRadius: 1.5,
-                      px: 1.5,
-                      py: 1.2,
+                      bgcolor: "rgba(255,255,255,0.10)",
+                      borderRadius: 1.8,
+                      px: 1.8,
+                      py: 1.4,
                       color: bankingColors.text,
                     },
                   }}
@@ -775,7 +770,7 @@ export default function IncomePage() {
               )}
             />
 
-            {/* Дата: календарь */}
+            {/* Дата: один инпут и календарь вместе */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <DatePicker
                 label="Дата"
@@ -799,10 +794,32 @@ export default function IncomePage() {
                   textField: {
                     variant: "standard",
                     fullWidth: true,
+                    // ручной ввод ДД.ММ.ГГГГ
+                    value: formatDateRu(form.date),
+                    onChange: (e) => {
+                      const ru = formatRuDateTyping(e.target.value);
+                      const iso = ruToIsoStrict(ru);
+
+                      let nextErr = "";
+                      if (ru.length === 10) {
+                        if (!iso) nextErr = "Неверный формат даты";
+                        else if (!isValidIsoDate(iso))
+                          nextErr = "Такой даты не существует";
+                      }
+
+                      setDateErr(nextErr);
+
+                      setForm((s) => ({
+                        ...s,
+                        date:
+                          iso && isValidIsoDate(iso) ? iso : s.date,
+                      }));
+                    },
                     placeholder: "16.02.2026",
+                    inputProps: { inputMode: "numeric" },
                     helperText:
                       dateErr ||
-                      "Выберите дату в календаре или введите ниже вручную",
+                      "Можно выбрать дату в календаре или ввести ДДММГГГГ, точки добавятся сами",
                     error: Boolean(dateErr),
                     InputLabelProps: {
                       style: { color: bankingColors.muted },
@@ -810,10 +827,10 @@ export default function IncomePage() {
                     InputProps: {
                       disableUnderline: true,
                       sx: {
-                        bgcolor: "rgba(255,255,255,0.06)",
-                        borderRadius: 1.5,
-                        px: 1.5,
-                        py: 1.2,
+                        bgcolor: "rgba(255,255,255,0.10)", // ещё светлее
+                        borderRadius: 1.8,
+                        px: 1.8,
+                        py: 1.4,
                         color: bankingColors.text,
                       },
                     },
@@ -821,59 +838,15 @@ export default function IncomePage() {
                 }}
               />
             </LocalizationProvider>
-
-            {/* Дата: ручной ввод DD.MM.ГГГГ */}
-            <TextField
-              variant="standard"
-              label="Дата (вручную)"
-              value={formatDateRu(form.date)}
-              onChange={(e) => {
-                const ru = formatRuDateTyping(e.target.value);
-                const iso = ruToIsoStrict(ru);
-
-                let nextErr = "";
-                if (ru.length === 10) {
-                  if (!iso) nextErr = "Неверный формат даты";
-                  else if (!isValidIsoDate(iso))
-                    nextErr = "Такой даты не существует";
-                }
-
-                setDateErr(nextErr);
-
-                setForm((s) => ({
-                  ...s,
-                  date: iso && isValidIsoDate(iso) ? iso : s.date,
-                }));
-              }}
-              placeholder="16.02.2026"
-              inputProps={{ inputMode: "numeric" }}
-              fullWidth
-              helperText={
-                dateErr ||
-                "Введите цифры: ДДММГГГГ (точки добавятся сами)"
-              }
-              error={Boolean(dateErr)}
-              InputLabelProps={{ style: { color: bankingColors.muted } }}
-              InputProps={{
-                disableUnderline: true,
-                sx: {
-                  bgcolor: "rgba(255,255,255,0.06)",
-                  borderRadius: 1.5,
-                  px: 1.5,
-                  py: 1.2,
-                  color: bankingColors.text,
-                },
-              }}
-            />
           </Stack>
         </DialogContent>
 
         <DialogActions
           sx={{
             px: 3,
-            pb: 2,
+            pb: 2.4,
             flexDirection: fullScreen ? "column" : "row",
-            gap: 1,
+            gap: 1.2,
           }}
         >
           <Button
