@@ -76,8 +76,8 @@ const gridOverlaySx = {
 };
 
 const surfaceSx = {
-  borderRadius: 4.5, // чуть скруглим как на карточках
-  border: "0",
+  borderRadius: 4.5,
+  border: "0", // рамок нет
   backgroundColor: alpha(bankingColors.card, 0.96),
   boxShadow: "0 16px 44px rgba(0,0,0,0.48)",
 };
@@ -465,7 +465,7 @@ export default function IncomePage() {
               spacing={1}
               alignItems="center"
               sx={{
-                bgcolor: alpha(bankingColors.card, 0.5),
+                bgcolor: "transparent", // CHANGED: фон переключателя прозрачен
                 p: 0.5,
                 borderRadius: 99,
                 border: `1px solid ${bankingColors.border}`,
@@ -538,6 +538,8 @@ export default function IncomePage() {
               p: 4,
               textAlign: "center",
               color: bankingColors.muted,
+              borderRadius: 0, // CHANGED: «на всю ширину», без отдельной карточки
+              boxShadow: "none", // CHANGED: без тени = без ощущения рамки
             }}
           >
             <EmptyState
@@ -548,7 +550,14 @@ export default function IncomePage() {
             />
           </Box>
         ) : (
-          <Box sx={{ ...surfaceSx, overflow: "hidden" }}>
+          <Box
+            sx={{
+              ...surfaceSx,
+              overflow: "hidden",
+              borderRadius: 0,   // CHANGED: во всю ширину страницы
+              boxShadow: "none", // CHANGED: без тени/рамы
+            }}
+          >
             <Box sx={{ overflowX: "auto" }}>
               <Table
                 sx={{
@@ -663,7 +672,7 @@ export default function IncomePage() {
             sx: {
               ...surfaceSx,
               backgroundImage: "none",
-              border: `1px solid ${alpha(bankingColors.border, 0.3)}`,
+              border: "0",           // CHANGED: без рамки
             },
           }}
         >
