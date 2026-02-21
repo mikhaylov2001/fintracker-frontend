@@ -32,36 +32,12 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
-// Оставляем, вдруг пригодится где-то ещё
-const isTokenAlive = (jwt) => {
-  try {
-    const t = normalizeToken(jwt);
-    if (!t) return false;
-
-    const payloadB64 = t.split(".")[1];
-    if (!payloadB64) return false;
-
-    const b64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(b64);
-    const payload = JSON.parse(json);
-
-    const expSec = Number(payload?.exp || 0);
-    if (!expSec) return false;
-
-    const expMs = expSec * 1000;
-    return expMs > Date.now() + 5000;
-  } catch {
-    return false;
-  }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
-  // Инициализация из localStorage
   useEffect(() => {
     let savedToken = null;
     let savedUser = null;
@@ -86,7 +62,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // Синхронизация токена с localStorage, который обновляет apiFetch/refresh
   useEffect(() => {
     const sync = () => {
       try {
@@ -97,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     sync();
-    const id = setInterval(sync, 10000); // каждые 10 секунд
+    const id = setInterval(sync, 10000);
     return () => clearInterval(id);
   }, []);
 
@@ -216,13 +191,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  // Больше не решаем сами, жив токен или нет — это делает apiFetch через refresh
   const authFetch = useCallback(async (url, options = {}) => {
     const data = await apiFetch(url, options);
     return { ok: true, status: 200, json: async () => data, data };
   }, []);
 
-  // isAuthenticated — по наличию user и токена в localStorage
   const hasStoredToken = (() => {
     try {
       return Boolean(localStorage.getItem("authToken"));
