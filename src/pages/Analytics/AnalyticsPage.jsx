@@ -353,7 +353,7 @@ export default function AnalyticsPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { formatAmount } = useCurrency();
 
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const userId = user?.id;
 
   const summaryApi = useSummaryApi();
@@ -413,7 +413,7 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // СБРОС локального стейта при смене пользователя
+  // Сброс стейта при смене пользователя
   useEffect(() => {
     setHistory([]);
     setError("");
@@ -421,15 +421,14 @@ export default function AnalyticsPage() {
   }, [userId]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated || !userId) return;
+
     let cancelled = false;
 
     const run = async () => {
       try {
         setLoading(true);
         setError("");
-
-        if (!userId)
-          throw new Error("Нет user.id (проверь authUser в localStorage).");
 
         const getMonthlySummary = getMonthlySummaryRef.current;
 
@@ -471,7 +470,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, year, month]);
+  }, [userId, year, month, authLoading, isAuthenticated]);
 
   const last12 = useMemo(() => {
     const base = { year, month };
@@ -573,11 +572,11 @@ export default function AnalyticsPage() {
   }, [userId]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated || !userId) return;
+
     let cancelled = false;
 
     const run = async () => {
-      if (!userId) return;
-
       try {
         setCatsLoading(true);
 
@@ -632,7 +631,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, monthsForCats]);
+  }, [userId, monthsForCats, authLoading, isAuthenticated]);
 
   const PageWrap = ({ children }) => (
     <Box
@@ -650,8 +649,16 @@ export default function AnalyticsPage() {
     </Box>
   );
 
+  // Пока не знаем статус авторизации — можно показать пустой контейнер или спиннер
+  if (authLoading) return <PageWrap><Typography sx={{ color: colors.muted }}>Загрузка…</Typography></PageWrap>;
+
+  // Если не авторизован (через PrivateRoutes сюда обычно не попадём),
+  // то просто ничего не рендерим и не дёргаем API
+  if (!isAuthenticated) return null;
+
   return (
     <PageWrap>
+      {/* дальше твой JSX без логических изменений */}
       {/* Header */}
       <Box
         sx={{

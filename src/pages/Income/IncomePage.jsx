@@ -1,5 +1,10 @@
-// src/pages/Income/IncomePage.jsx
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Box,
   Stack,
@@ -44,8 +49,22 @@ import { bankingColors } from "../../styles/bankingTokens";
 
 const COLORS = { income: bankingColors.primary };
 
-const CATEGORY_OPTIONS = ["Работа", "Подработка", "Вклады", "Инвестиции", "Подарки", "Другое"];
-const SOURCE_OPTIONS = ["Зарплата", "Премия", "Проценты", "Дивиденды", "Бизнес", "Другое"];
+const CATEGORY_OPTIONS = [
+  "Работа",
+  "Подработка",
+  "Вклады",
+  "Инвестиции",
+  "Подарки",
+  "Другое",
+];
+const SOURCE_OPTIONS = [
+  "Зарплата",
+  "Премия",
+  "Проценты",
+  "Дивиденды",
+  "Бизнес",
+  "Другое",
+];
 
 const PILL_INPUT_SX = {
   bgcolor: "rgba(255,255,255,0.10)",
@@ -114,26 +133,49 @@ const isValidIsoDate = (iso) => {
   const mo = Number(m[2]);
   const d = Number(m[3]);
   const dt = new Date(y, mo - 1, d);
-  return dt.getFullYear() === y && dt.getMonth() === mo - 1 && dt.getDate() === d;
+  return (
+    dt.getFullYear() === y &&
+    dt.getMonth() === mo - 1 &&
+    dt.getDate() === d
+  );
 };
 
-const isProxySerialization500 = (msg) => String(msg || "").includes("ByteBuddyInterceptor");
+const isProxySerialization500 = (msg) =>
+  String(msg || "").includes("ByteBuddyInterceptor");
 
 const addMonthsYM = ({ year, month }, delta) => {
   const d = new Date(year, month - 1 + delta, 1);
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
-const ymLabel = ({ year, month }) => `${String(month).padStart(2, "0")}.${year}`;
+const ymLabel = ({ year, month }) =>
+  `${String(month).padStart(2, "0")}.${year}`;
 
 const getIncomeDateLike = (x) =>
-  x?.date ?? x?.operationDate ?? x?.incomeDate ?? x?.createdAt ?? x?.created_at ?? x?.timestamp ?? "";
+  x?.date ??
+  x?.operationDate ??
+  x?.incomeDate ??
+  x?.createdAt ??
+  x?.created_at ??
+  x?.timestamp ??
+  "";
+
+const unwrapList = (raw) => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  if (raw.data && typeof raw.data === "object") {
+    if (Array.isArray(raw.data.content)) return raw.data.content;
+    if (Array.isArray(raw.data)) return raw.data;
+  }
+  if (Array.isArray(raw.content)) return raw.content;
+  return [];
+};
 
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
   const { formatAmount } = useCurrency();
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const userId = user?.id;
 
   const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
@@ -146,7 +188,8 @@ export default function IncomePage() {
     const now = new Date();
     try {
       const raw = window.localStorage.getItem("fintracker:incomeMonth");
-      if (!raw) return { year: now.getFullYear(), month: now.getMonth() + 1 };
+      if (!raw)
+        return { year: now.getFullYear(), month: now.getMonth() + 1 };
       const parsed = JSON.parse(raw);
       const y = Number(parsed?.year);
       const m = Number(parsed?.month);
@@ -163,7 +206,10 @@ export default function IncomePage() {
     setYm((prev) => {
       const next = typeof updater === "function" ? updater(prev) : updater;
       try {
-        window.localStorage.setItem("fintracker:incomeMonth", JSON.stringify(next));
+        window.localStorage.setItem(
+          "fintracker:incomeMonth",
+          JSON.stringify(next)
+        );
       } catch {}
       return next;
     });
@@ -204,6 +250,12 @@ export default function IncomePage() {
   }, [userId]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated || !userId) {
+      setItems([]);
+      setLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     const run = async () => {
@@ -211,19 +263,11 @@ export default function IncomePage() {
         setLoading(true);
         setError("");
 
-        if (!userId) {
-          if (!cancelled) {
-            setItems([]);
-            setLoading(false);
-          }
-          return;
-        }
-
         const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
         const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-        const data = res.data;
+        const data = unwrapList(res?.data ?? res);
 
-        if (!cancelled) setItems(data?.content ?? []);
+        if (!cancelled) setItems(data);
       } catch (e) {
         const msg = e?.message || "Ошибка загрузки доходов";
         if (!cancelled) {
@@ -239,21 +283,21 @@ export default function IncomePage() {
     return () => {
       cancelled = true;
     };
-  }, [toast, ym.year, ym.month, userId]);
+  }, [toast, ym.year, ym.month, userId, authLoading, isAuthenticated]);
 
   const reload = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      if (!userId) {
+      if (!userId || !isAuthenticated) {
         setItems([]);
         setLoading(false);
         return;
       }
       const getMyIncomesByMonth = getMyIncomesByMonthRef.current;
       const res = await getMyIncomesByMonth(ym.year, ym.month, 0, 50);
-      const data = res.data;
-      setItems(data?.content ?? []);
+      const data = unwrapList(res?.data ?? res);
+      setItems(data);
     } catch (e) {
       const msg = e?.message || "Ошибка загрузки доходов";
       setError(msg);
@@ -261,7 +305,7 @@ export default function IncomePage() {
     } finally {
       setLoading(false);
     }
-  }, [toast, ym.year, ym.month, userId]);
+  }, [toast, ym.year, ym.month, userId, isAuthenticated]);
 
   const openCreate = () => {
     const iso = new Date().toISOString().slice(0, 10);
@@ -279,7 +323,9 @@ export default function IncomePage() {
   };
 
   const openEdit = (income) => {
-    const iso = normalizeDateOnly(getIncomeDateLike(income)) || new Date().toISOString().slice(0, 10);
+    const iso =
+      normalizeDateOnly(getIncomeDateLike(income)) ||
+      new Date().toISOString().slice(0, 10);
 
     setEditing(income);
     setDateErr("");
@@ -302,7 +348,8 @@ export default function IncomePage() {
       setError("");
 
       if (dateErr) throw new Error("Неверная дата");
-      if (!form.date || !isValidIsoDate(form.date)) throw new Error("Введите корректную дату");
+      if (!form.date || !isValidIsoDate(form.date))
+        throw new Error("Введите корректную дату");
 
       const payload = {
         amount: toAmountString(form.amount),
@@ -312,7 +359,8 @@ export default function IncomePage() {
       };
 
       const amountNum = Number(payload.amount);
-      if (!Number.isFinite(amountNum) || amountNum < 0.01) throw new Error("Сумма должна быть больше 0");
+      if (!Number.isFinite(amountNum) || amountNum < 0.01)
+        throw new Error("Сумма должна быть больше 0");
       if (!payload.category) throw new Error("Категория обязательна");
       if (!payload.source) throw new Error("Источник обязателен");
 
@@ -357,7 +405,28 @@ export default function IncomePage() {
     }
   };
 
-  const total = useMemo(() => items.reduce((acc, x) => acc + Number(x.amount || 0), 0), [items]);
+  const total = useMemo(
+    () => items.reduce((acc, x) => acc + Number(x.amount || 0), 0),
+    [items]
+  );
+
+  if (authLoading) {
+    return (
+      <Box
+        sx={{
+          px: { xs: 2, md: 3, lg: 4 },
+          py: { xs: 2, md: 3 },
+          width: "100%",
+        }}
+      >
+        <Typography sx={{ color: bankingColors.muted }}>
+          Загрузка…
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <Box
@@ -401,8 +470,17 @@ export default function IncomePage() {
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: "100%", sm: "auto" } }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             <Button
               variant="outlined"
               onClick={() => changeYm((s) => addMonthsYM(s, -1))}
@@ -468,7 +546,14 @@ export default function IncomePage() {
       </Stack>
 
       {error ? (
-        <Typography variant="body2" sx={{ mb: 2, color: bankingColors.danger, fontWeight: 600 }}>
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 2,
+            color: bankingColors.danger,
+            fontWeight: 600,
+          }}
+        >
           {error}
         </Typography>
       ) : null}
@@ -518,9 +603,15 @@ export default function IncomePage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>Категория</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>
+                  Дата
+                </TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>
+                  Сумма
+                </TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>
+                  Категория
+                </TableCell>
                 <TableCell
                   sx={{
                     width: 200,
@@ -547,10 +638,14 @@ export default function IncomePage() {
                 return (
                   <TableRow key={x.id} hover>
                     <TableCell>
-                      {isMobile ? formatDateRuShort(dateLike) : formatDateRu(dateLike)}
+                      {isMobile
+                        ? formatDateRuShort(dateLike)
+                        : formatDateRu(dateLike)}
                     </TableCell>
 
-                    <TableCell sx={{ fontWeight: 900, color: bankingColors.accent }}>
+                    <TableCell
+                      sx={{ fontWeight: 900, color: bankingColors.accent }}
+                    >
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
@@ -612,12 +707,18 @@ export default function IncomePage() {
                         size="small"
                         sx={{ userSelect: "none", mr: 0.25 }}
                       >
-                        <EditOutlinedIcon fontSize="small" sx={{ color: bankingColors.text }} />
+                        <EditOutlinedIcon
+                          fontSize="small"
+                          sx={{ color: bankingColors.text }}
+                        />
                       </IconButton>
                       <IconButton
                         onClick={() => remove(x)}
                         size="small"
-                        sx={{ color: bankingColors.danger, userSelect: "none" }}
+                        sx={{
+                          color: bankingColors.danger,
+                          userSelect: "none",
+                        }}
                       >
                         <DeleteOutlineIcon fontSize="small" />
                       </IconButton>
@@ -647,7 +748,13 @@ export default function IncomePage() {
           },
         }}
       >
-        <DialogTitle sx={{ color: bankingColors.text, userSelect: "none", WebkitUserSelect: "none" }}>
+        <DialogTitle
+          sx={{
+            color: bankingColors.text,
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }}
+        >
           {editing ? "Редактировать доход" : "Добавить доход"}
         </DialogTitle>
 
@@ -666,11 +773,16 @@ export default function IncomePage() {
               label="Сумма"
               inputRef={amountRef}
               value={form.amount}
-              onChange={(e) => setForm((s) => ({ ...s, amount: e.target.value }))}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, amount: e.target.value }))
+              }
               placeholder="50000.00"
               inputProps={{ inputMode: "decimal" }}
               fullWidth
-              InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+              InputLabelProps={{
+                style: { color: bankingColors.muted },
+                shrink: true,
+              }}
               InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
@@ -679,15 +791,22 @@ export default function IncomePage() {
               disablePortal
               options={CATEGORY_OPTIONS}
               value={form.category}
-              onChange={(_e, newValue) => setForm((s) => ({ ...s, category: newValue ?? "" }))}
-              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, category: newInput }))}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, category: newValue ?? "" }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, category: newInput }))
+              }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   variant="standard"
                   label="Категория"
                   fullWidth
-                  InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+                  InputLabelProps={{
+                    style: { color: bankingColors.muted },
+                    shrink: true,
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     disableUnderline: true,
@@ -702,15 +821,22 @@ export default function IncomePage() {
               disablePortal
               options={SOURCE_OPTIONS}
               value={form.source}
-              onChange={(_e, newValue) => setForm((s) => ({ ...s, source: newValue ?? "" }))}
-              onInputChange={(_e, newInput) => setForm((s) => ({ ...s, source: newInput }))}
+              onChange={(_e, newValue) =>
+                setForm((s) => ({ ...s, source: newValue ?? "" }))
+              }
+              onInputChange={(_e, newInput) =>
+                setForm((s) => ({ ...s, source: newInput }))
+              }
               renderInput={(params) => (
                 <TextField
                   {...params}
                   variant="standard"
                   label="Источник"
                   fullWidth
-                  InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+                  InputLabelProps={{
+                    style: { color: bankingColors.muted },
+                    shrink: true,
+                  }}
                   InputProps={{
                     ...params.InputProps,
                     disableUnderline: true,
@@ -720,7 +846,10 @@ export default function IncomePage() {
               )}
             />
 
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+            <LocalizationProvider
+              dateAdapter={AdapterDayjs}
+              adapterLocale="ru"
+            >
               <TextField
                 variant="standard"
                 label="Дата"
@@ -741,7 +870,8 @@ export default function IncomePage() {
                   let nextErr = "";
                   if (ru.length === 10) {
                     if (!iso) nextErr = "Неверный формат даты";
-                    else if (!isValidIsoDate(iso)) nextErr = "Такой даты не существует";
+                    else if (!isValidIsoDate(iso))
+                      nextErr = "Такой даты не существует";
                   }
                   setDateErr(nextErr);
 
@@ -756,7 +886,10 @@ export default function IncomePage() {
                   "Введите вручную 8 цифр (например: 20022026 → 20.02.2026) или нажмите на значок календаря справа"
                 }
                 error={Boolean(dateErr)}
-                InputLabelProps={{ style: { color: bankingColors.muted }, shrink: true }}
+                InputLabelProps={{
+                  style: { color: bankingColors.muted },
+                  shrink: true,
+                }}
                 InputProps={{
                   disableUnderline: true,
                   sx: PILL_INPUT_SX,
@@ -768,7 +901,10 @@ export default function IncomePage() {
                           openCalendar(e);
                         }}
                         size="small"
-                        sx={{ color: bankingColors.muted, userSelect: "none" }}
+                        sx={{
+                          color: bankingColors.muted,
+                          userSelect: "none",
+                        }}
                         aria-label="Открыть календарь"
                       >
                         <CalendarMonthOutlinedIcon fontSize="small" />
@@ -778,7 +914,9 @@ export default function IncomePage() {
                 }}
                 FormHelperTextProps={{
                   sx: {
-                    color: dateErr ? bankingColors.danger : bankingColors.muted,
+                    color: dateErr
+                      ? bankingColors.danger
+                      : bankingColors.muted,
                     fontSize: "0.75rem",
                     mt: 0.5,
                     mx: 0,
@@ -790,8 +928,14 @@ export default function IncomePage() {
                 open={calOpen}
                 anchorEl={calAnchorEl}
                 onClose={closeCalendar}
-                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "right",
+                }}
+                transformOrigin={{
+                  vertical: "top",
+                  horizontal: "right",
+                }}
                 PaperProps={{
                   sx: {
                     bgcolor: "#FFFFFF",
@@ -849,7 +993,8 @@ export default function IncomePage() {
                         },
                       },
                       "& .MuiPickersDay-today": {
-                        border: "2px solid #22C55E !important",
+                        border:
+                          "2px solid #22C55E !important",
                         bgcolor: "transparent",
                       },
                       "& .MuiPickersDay-root.Mui-disabled": {
@@ -876,7 +1021,11 @@ export default function IncomePage() {
             variant="outlined"
             disabled={saving}
             fullWidth={fullScreen}
-            sx={{ borderColor: bankingColors.border, color: bankingColors.muted, userSelect: "none" }}
+            sx={{
+              borderColor: bankingColors.border,
+              color: bankingColors.muted,
+              userSelect: "none",
+            }}
           >
             Отмена
           </Button>

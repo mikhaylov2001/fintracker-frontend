@@ -1,4 +1,3 @@
-// src/pages/Dashboard/DashboardPage.jsx
 import React, {
   useEffect,
   useMemo,
@@ -34,7 +33,6 @@ import {
 
 import { useCurrency } from "../../contexts/CurrencyContext";
 
-/* те же цвета, что в AnalyticsPage */
 const COLORS = {
   income: colors.primary,
   expenses: colors.warning,
@@ -42,7 +40,6 @@ const COLORS = {
   rate: "#A78BFA",
 };
 
-/* helpers */
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
@@ -68,7 +65,6 @@ const chunk = (arr, size) => {
   return out;
 };
 
-/* UI */
 const SectionTitle = memo(function SectionTitle({ title, right }) {
   return (
     <Stack
@@ -99,7 +95,6 @@ const SectionTitle = memo(function SectionTitle({ title, right }) {
   );
 });
 
-/* KPI card */
 const KpiCard = memo(function KpiCard({
   label,
   value,
@@ -426,7 +421,7 @@ function DashboardSkeleton() {
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { formatAmount } = useCurrency();
   const summaryApi = useSummaryApi();
 
@@ -508,6 +503,8 @@ export default function DashboardPage() {
   }, [user?.id]);
 
   useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
+
     let cancelled = false;
 
     const run = async () => {
@@ -585,7 +582,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [year, month, user?.id]);
+  }, [year, month, user?.id, authLoading, isAuthenticated]);
 
   const historyDesc = useMemo(() => {
     return usedMonths.map(({ year: y, month: m }) => {
@@ -655,6 +652,13 @@ export default function DashboardPage() {
 
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
+
+  // Пока не знаем статус auth — показываем скелет
+  if (authLoading) return <DashboardSkeleton />;
+
+  // Если не авторизован (теоретически через PrivateRoutes сюда не попадём),
+  // то ничего не рендерим и не дёргаем API
+  if (!isAuthenticated) return null;
 
   if (loading) return <DashboardSkeleton />;
 

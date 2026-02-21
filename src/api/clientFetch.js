@@ -24,7 +24,7 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", t);
 };
 
-// Railway напрямую: фиксируем базу (можешь заменить на env, но НЕ пустой)
+// Всегда Railway как база (можешь заменить на env, но не оставляй пустым)
 const API_BASE = String(
   process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
 )
@@ -62,7 +62,6 @@ async function refreshToken() {
     const data = await parseBody(res);
     if (!res.ok) return null;
 
-    // твой бэк отдаёт { token, user }
     const newAccess = data?.token || data?.accessToken || data?.jwt || null;
 
     if (newAccess) writeToken(newAccess);
@@ -84,10 +83,7 @@ export async function apiFetch(path, options = {}) {
   const doRequest = async () => {
     const token = readToken();
 
-    // ВАЖНО: всегда используем Headers (а не object spread),
-    // чтобы корректно работало и с options.headers = Headers
     const headers = new Headers(options.headers || {});
-
     const isFormData =
       typeof FormData !== "undefined" && options.body instanceof FormData;
 
@@ -95,7 +91,6 @@ export async function apiFetch(path, options = {}) {
       headers.set("Content-Type", "application/json");
     }
 
-    // Не перетираем, если кто-то уже передал Authorization
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }

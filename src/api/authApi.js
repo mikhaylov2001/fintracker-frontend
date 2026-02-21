@@ -24,7 +24,7 @@ export const refresh = () =>
     method: "POST",
   });
 
-export const logout = async () =>
+export const logout = () =>
   apiFetch("/api/auth/logout", {
     method: "POST",
   });

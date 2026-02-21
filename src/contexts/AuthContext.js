@@ -19,7 +19,6 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
-// Проверка exp у JWT (не проверяет подпись, только срок жизни)
 const isTokenAlive = (jwt) => {
   try {
     const t = normalizeToken(jwt);
@@ -28,7 +27,6 @@ const isTokenAlive = (jwt) => {
     const payloadB64 = t.split(".")[1];
     if (!payloadB64) return false;
 
-    // base64url -> base64
     const b64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
     const json = atob(b64);
     const payload = JSON.parse(json);
@@ -37,7 +35,7 @@ const isTokenAlive = (jwt) => {
     if (!expSec) return false;
 
     const expMs = expSec * 1000;
-    return expMs > Date.now() + 5000; // запас 5 сек
+    return expMs > Date.now() + 5000;
   } catch {
     return false;
   }
@@ -187,10 +185,22 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  const authFetch = useCallback(async (url, options = {}) => {
-    const data = await apiFetch(url, options);
-    return { ok: true, status: 200, json: async () => data, data };
-  }, []);
+  const authFetch = useCallback(
+    async (url, options = {}) => {
+      if (!isTokenAlive(token)) {
+        return {
+          ok: false,
+          status: 401,
+          json: async () => ({ error: "Not authenticated" }),
+          data: { error: "Not authenticated" },
+        };
+      }
+
+      const data = await apiFetch(url, options);
+      return { ok: true, status: 200, json: async () => data, data };
+    },
+    [token]
+  );
 
   const value = {
     user,

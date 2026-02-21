@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+// src/pages/Settings/SettingsPage.jsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -25,25 +26,25 @@ import {
   Stack,
   Chip,
   InputAdornment,
-} from '@mui/material';
-import { alpha } from '@mui/material/styles';
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
-import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
-import CurrencyRubleOutlinedIcon from '@mui/icons-material/CurrencyRubleOutlined';
-import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
-import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import CalendarMonthOutlinedIcon from '@mui/icons-material/CalendarMonthOutlined';
+import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
+import CurrencyRubleOutlinedIcon from "@mui/icons-material/CurrencyRubleOutlined";
+import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
+import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
-import { useAuth } from '../../contexts/AuthContext';
-import { bankingColors as colors } from '../../styles/bankingTokens';
-import { useCurrency } from '../../contexts/CurrencyContext';
+import { useAuth } from "../../contexts/AuthContext";
+import { bankingColors as colors } from "../../styles/bankingTokens";
+import { useCurrency } from "../../contexts/CurrencyContext";
 
-// ─── helpers ───
+// helpers
 const parseYearMonth = (str) => {
-  const m = String(str || '').trim().match(/^(\d{4})-(\d{1,2})$/);
+  const m = String(str || "").trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
   const y = Number(m[1]);
   const mo = Number(m[2]);
@@ -52,20 +53,20 @@ const parseYearMonth = (str) => {
 };
 
 const ymValue = (year, month) =>
-  `${year}-${String(month).padStart(2, '0')}`;
+  `${year}-${String(month).padStart(2, "0")}`;
 
 const ymLabel = (year, month) =>
-  new Date(year, month - 1, 1).toLocaleDateString('ru-RU', {
-    month: 'long',
-    year: 'numeric',
+  new Date(year, month - 1, 1).toLocaleDateString("ru-RU", {
+    month: "long",
+    year: "numeric",
   });
 
-// ─── MonthPicker ───
+// MonthPicker
 function MonthPicker({ value, onChange }) {
-  const [inputVal, setInputVal] = useState(value || '');
+  const [inputVal, setInputVal] = useState(value || "");
 
   useEffect(() => {
-    setInputVal(value || '');
+    setInputVal(value || "");
   }, [value]);
 
   const months = useMemo(() => {
@@ -96,7 +97,20 @@ function MonthPicker({ value, onChange }) {
     if (parsed) onChange(ymValue(parsed.year, parsed.month));
   };
 
-  const MONTH_NAMES = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  const MONTH_NAMES = [
+    "Янв",
+    "Фев",
+    "Мар",
+    "Апр",
+    "Май",
+    "Июн",
+    "Июл",
+    "Авг",
+    "Сен",
+    "Окт",
+    "Ноя",
+    "Дек",
+  ];
 
   return (
     <Box>
@@ -116,8 +130,11 @@ function MonthPicker({ value, onChange }) {
         }}
         helperText={
           value && parseYearMonth(value)
-            ? ymLabel(parseYearMonth(value).year, parseYearMonth(value).month)
-            : 'Введите в формате ГГГГ-ММ или выберите ниже'
+            ? ymLabel(
+                parseYearMonth(value).year,
+                parseYearMonth(value).month
+              )
+            : "Введите в формате ГГГГ-ММ или выберите ниже"
         }
         sx={{ mb: 2 }}
       />
@@ -128,11 +145,18 @@ function MonthPicker({ value, onChange }) {
           <Box key={year} sx={{ mb: 1.5 }}>
             <Typography
               variant="caption"
-              sx={{ fontWeight: 900, color: alpha('#000', 0.5), mb: 0.75, display: 'block' }}
+              sx={{
+                fontWeight: 900,
+                color: alpha("#000", 0.5),
+                mb: 0.75,
+                display: "block",
+              }}
             >
               {year}
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+            <Box
+              sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}
+            >
               {monthList.map((m) => {
                 const v = ymValue(Number(year), m);
                 const selected = value === v;
@@ -141,19 +165,23 @@ function MonthPicker({ value, onChange }) {
                     key={m}
                     label={MONTH_NAMES[m - 1]}
                     size="small"
-                    onClick={() => handleChipClick(Number(year), m)}
+                    onClick={() =>
+                      handleChipClick(Number(year), m)
+                    }
                     sx={{
                       fontWeight: 900,
-                      cursor: 'pointer',
-                      bgcolor: selected ? colors.primary : alpha('#000', 0.07),
-                      color: selected ? '#05140C' : 'inherit',
+                      cursor: "pointer",
+                      bgcolor: selected
+                        ? colors.primary
+                        : alpha("#000", 0.07),
+                      color: selected ? "#05140C" : "inherit",
                       border: selected
                         ? `1px solid ${colors.primary}`
-                        : '1px solid transparent',
-                      '&:hover': {
+                        : "1px solid transparent",
+                      "&:hover": {
                         bgcolor: selected
                           ? colors.primary
-                          : alpha('#000', 0.13),
+                          : alpha("#000", 0.13),
                       },
                     }}
                   />
@@ -166,16 +194,16 @@ function MonthPicker({ value, onChange }) {
   );
 }
 
-// ─── Layout helpers ───
+// layout helpers
 const PageWrap = ({ children }) => (
   <Box
     sx={{
-      width: '100%',
-      mx: 'auto',
-      maxWidth: { xs: '100%', sm: 720, md: 900, lg: 1040 },
-      userSelect: 'none',
-      WebkitUserSelect: 'none',
-      MsUserSelect: 'none',
+      width: "100%",
+      mx: "auto",
+      maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 },
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      MsUserSelect: "none",
     }}
   >
     {children}
@@ -188,8 +216,8 @@ const SectionTitle = ({ children }) => (
       fontSize: { xs: 13, md: 14 },
       fontWeight: 950,
       letterSpacing: 0.6,
-      textTransform: 'uppercase',
-      color: alpha('#fff', 0.55),
+      textTransform: "uppercase",
+      color: alpha("#fff", 0.55),
       mb: 1.5,
       mt: 3,
     }}
@@ -204,22 +232,31 @@ const RowItem = ({ children, noDivider }) => (
       sx={{
         py: { xs: 2, md: 2.25 },
         px: { xs: 2, md: 3 },
-        display: 'flex',
-        alignItems: 'center',
+        display: "flex",
+        alignItems: "center",
         gap: 2,
-        bgcolor: 'transparent',
+        bgcolor: "transparent",
       }}
     >
       {children}
     </Box>
-    {!noDivider && <Divider sx={{ borderColor: alpha('#fff', 0.08) }} />}
+    {!noDivider && (
+      <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />
+    )}
   </>
 );
 
-// ─── Main ───
+// main
 export default function SettingsPage() {
-  const { user, authFetch, updateUserInState } = useAuth();
-  const { currency, hideAmounts, setCurrency, setHideAmounts } = useCurrency();
+  const {
+    user,
+    authFetch,
+    updateUserInState,
+    isAuthenticated,
+    loading: authLoading,
+  } = useAuth();
+  const { currency, hideAmounts, setCurrency, setHideAmounts } =
+    useCurrency();
 
   const [tab, setTab] = useState(0);
 
@@ -228,30 +265,34 @@ export default function SettingsPage() {
   const [editPasswordOpen, setEditPasswordOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
 
-  const [firstName, setFirstName] = useState(user?.firstName || '');
-  const [lastName, setLastName] = useState(user?.lastName || '');
+  const [firstName, setFirstName] = useState(user?.firstName || "");
+  const [lastName, setLastName] = useState(user?.lastName || "");
 
-  const [newEmail, setNewEmail] = useState('');
-  const [emailPassword, setEmailPassword] = useState('');
+  const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
 
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-  const [deleteMonth, setDeleteMonth] = useState('');
+  const [deleteMonth, setDeleteMonth] = useState("");
   const [deleteIncome, setDeleteIncome] = useState(false);
   const [deleteExpenses, setDeleteExpenses] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [snack, setSnack] = useState({ open: false, severity: 'success', message: '' });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: "success",
+    message: "",
+  });
 
   const showSnack = useCallback((severity, message) => {
     setSnack({ open: true, severity, message });
   }, []);
 
   useEffect(() => {
-    setFirstName(user?.firstName || '');
-    setLastName(user?.lastName || '');
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
   }, [user]);
 
   const allChecked = deleteIncome && deleteExpenses;
@@ -261,113 +302,128 @@ export default function SettingsPage() {
     setDeleteExpenses(e.target.checked);
   };
 
+  const safeAuthCall = useCallback(
+    async (url, options = {}) => {
+      if (!isAuthenticated || authLoading) {
+        throw new Error("Не авторизован");
+      }
+      const res = await authFetch(url, options);
+      // authFetch возвращает { ok, status, data }
+      if (!res.ok) {
+        const d = res.data || {};
+        throw new Error(
+          d.message || d.error || "Ошибка запроса"
+        );
+      }
+      return res.data;
+    },
+    [authFetch, isAuthenticated, authLoading]
+  );
+
   const handleSaveName = async () => {
     try {
-      const res = await authFetch('/api/account/profile', {
-        method: 'PUT',
+      const data = await safeAuthCall("/api/account/profile", {
+        method: "PUT",
         body: JSON.stringify({ firstName, lastName }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'Не удалось обновить профиль');
-      }
-      const updatedUser = await res.json();
-      updateUserInState(updatedUser);
-      showSnack('success', 'Имя и фамилия обновлены');
+      updateUserInState(data);
+      showSnack("success", "Имя и фамилия обновлены");
       setEditNameOpen(false);
     } catch (e) {
-      showSnack('error', e.message || 'Не удалось обновить профиль');
+      showSnack(
+        "error",
+        e.message || "Не удалось обновить профиль"
+      );
     }
   };
 
   const handleSaveEmail = async () => {
     try {
-      const res = await authFetch('/api/account/email', {
-        method: 'PUT',
-        body: JSON.stringify({ newEmail, password: emailPassword }),
+      const data = await safeAuthCall("/api/account/email", {
+        method: "PUT",
+        body: JSON.stringify({
+          newEmail,
+          password: emailPassword,
+        }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'Не удалось изменить email');
-      }
-      const updatedUser = await res.json();
-      updateUserInState(updatedUser);
-      showSnack('success', 'Email обновлён');
+      updateUserInState(data);
+      showSnack("success", "Email обновлён");
       setEditEmailOpen(false);
-      setNewEmail('');
-      setEmailPassword('');
+      setNewEmail("");
+      setEmailPassword("");
     } catch (e) {
-      showSnack('error', e.message || 'Не удалось изменить email');
+      showSnack(
+        "error",
+        e.message || "Не удалось изменить email"
+      );
     }
   };
 
   const handleSavePassword = async () => {
     if (newPassword !== confirmPassword) {
-      showSnack('error', 'Пароли не совпадают');
+      showSnack("error", "Пароли не совпадают");
       return;
     }
     try {
-      const res = await authFetch('/api/account/change-password', {
-        method: 'POST',
+      await safeAuthCall("/api/account/change-password", {
+        method: "POST",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'Не удалось изменить пароль');
-      }
-      showSnack('success', 'Пароль изменён');
+      showSnack("success", "Пароль изменён");
       setEditPasswordOpen(false);
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
     } catch (e) {
-      showSnack('error', e.message || 'Не удалось изменить пароль');
+      showSnack(
+        "error",
+        e.message || "Не удалось изменить пароль"
+      );
     }
   };
 
   const handleDeleteData = async () => {
-    if (!deleteMonth || !parseYearMonth(deleteMonth)) {
-      showSnack('error', 'Выберите корректный месяц');
+    const parsed = parseYearMonth(deleteMonth);
+    if (!parsed) {
+      showSnack("error", "Выберите корректный месяц");
       return;
     }
     if (!deleteIncome && !deleteExpenses) {
-      showSnack('error', 'Выберите что удалить');
+      showSnack("error", "Выберите что удалить");
       return;
     }
 
     let type;
-    if (deleteIncome && deleteExpenses) type = 'all';
-    else if (deleteIncome) type = 'income';
-    else type = 'expenses';
+    if (deleteIncome && deleteExpenses) type = "all";
+    else if (deleteIncome) type = "income";
+    else type = "expenses";
 
-    const { year, month } = parseYearMonth(deleteMonth);
+    const { year, month } = parsed;
 
     try {
       setDeleting(true);
-      const res = await authFetch(
+      await safeAuthCall(
         `/api/data/me/month/${year}/${month}?type=${type}`,
-        { method: 'DELETE' }
+        { method: "DELETE" }
       );
-
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'Ошибка при удалении');
-      }
 
       const what = [];
-      if (deleteIncome) what.push('доходы');
-      if (deleteExpenses) what.push('расходы');
+      if (deleteIncome) what.push("доходы");
+      if (deleteExpenses) what.push("расходы");
 
       showSnack(
-        'success',
-        `Удалены ${what.join(' и ')} за ${ymLabel(year, month)}`
+        "success",
+        `Удалены ${what.join(" и ")} за ${ymLabel(year, month)}`
       );
       setDeleteDataOpen(false);
-      setDeleteMonth('');
+      setDeleteMonth("");
       setDeleteIncome(false);
       setDeleteExpenses(false);
     } catch (e) {
-      showSnack('error', e.message || 'Ошибка при удалении');
+      showSnack(
+        "error",
+        e.message || "Ошибка при удалении"
+      );
     } finally {
       setDeleting(false);
     }
@@ -375,23 +431,25 @@ export default function SettingsPage() {
 
   const handleUpdateSettings = async (nextCurrency, nextHide) => {
     try {
-      const res = await authFetch('/api/settings/me', {
-        method: 'PUT',
+      const data = await safeAuthCall("/api/settings/me", {
+        method: "PUT",
         body: JSON.stringify({
           displayCurrency: nextCurrency ?? currency,
-          hideAmounts: typeof nextHide === 'boolean' ? nextHide : hideAmounts,
+          hideAmounts:
+            typeof nextHide === "boolean"
+              ? nextHide
+              : hideAmounts,
         }),
       });
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}));
-        throw new Error(d.message || d.error || 'Не удалось обновить настройки');
-      }
-      const data = await res.json();
-      setCurrency(data.displayCurrency || 'RUB');
+      setCurrency(data.displayCurrency || "RUB");
       setHideAmounts(!!data.hideAmounts);
-      showSnack('success', 'Настройки интерфейса обновлены');
+      showSnack("success", "Настройки интерфейса обновлены");
     } catch (e) {
-      showSnack('error', e.message || 'Не удалось обновить настройки интерфейса');
+      showSnack(
+        "error",
+        e.message ||
+          "Не удалось обновить настройки интерфейса"
+      );
     }
   };
 
@@ -405,38 +463,68 @@ export default function SettingsPage() {
     handleUpdateSettings(val, undefined);
   };
 
+  if (authLoading) {
+    return (
+      <PageWrap>
+        <Typography sx={{ color: alpha("#fff", 0.6), mt: 2 }}>
+          Загрузка…
+        </Typography>
+      </PageWrap>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
   return (
     <PageWrap>
-      <Box sx={{ mb: { xs: 2, md: 2.5 }, pt: { xs: 0.5, md: 1 } }}>
+      <Box
+        sx={{
+          mb: { xs: 2, md: 2.5 },
+          pt: { xs: 0.5, md: 1 },
+        }}
+      >
         <Typography
           variant="h4"
           sx={{
             fontWeight: 980,
             color: colors.text,
             letterSpacing: -0.4,
-            fontSize: { xs: '1.65rem', sm: '1.85rem', md: '2.1rem' },
+            fontSize: {
+              xs: "1.65rem",
+              sm: "1.85rem",
+              md: "2.1rem",
+            },
           }}
         >
           Настройки
         </Typography>
       </Box>
 
-      <Box sx={{ borderBottom: 1, borderColor: alpha('#fff', 0.1), mb: 0 }}>
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: alpha("#fff", 0.1),
+          mb: 0,
+        }}
+      >
         <Tabs
           value={tab}
-          onChange={(e, v) => setTab(v)}
+          onChange={(_e, v) => setTab(v)}
           variant="scrollable"
           scrollButtons="auto"
           sx={{
-            '& .MuiTab-root': {
-              color: alpha('#fff', 0.65),
+            "& .MuiTab-root": {
+              color: alpha("#fff", 0.65),
               fontWeight: 900,
-              textTransform: 'none',
+              textTransform: "none",
               fontSize: { xs: 14, md: 15 },
               minHeight: 48,
             },
-            '& .Mui-selected': { color: '#fff' },
-            '& .MuiTabs-indicator': { bgcolor: colors.primary, height: 3 },
+            "& .Mui-selected": { color: "#fff" },
+            "& .MuiTabs-indicator": {
+              bgcolor: colors.primary,
+              height: 3,
+            },
           }}
         >
           <Tab label="Аккаунт" />
@@ -451,31 +539,61 @@ export default function SettingsPage() {
           <RowItem>
             <Avatar
               sx={{
-                width: 56, height: 56,
+                width: 56,
+                height: 56,
                 bgcolor: alpha(colors.primary, 0.18),
-                color: '#fff', fontSize: 22, fontWeight: 900,
+                color: "#fff",
+                fontSize: 22,
+                fontWeight: 900,
               }}
             >
-              {(user?.firstName?.[0] || user?.userName?.[0] || 'U').toUpperCase()}
+              {(
+                user?.firstName?.[0] ||
+                user?.userName?.[0] ||
+                "U"
+              )
+                .toUpperCase()
+                .slice(0, 1)}
             </Avatar>
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontWeight: 950, color: colors.text, fontSize: { xs: 16, md: 17 } }}>
+              <Typography
+                sx={{
+                  fontWeight: 950,
+                  color: colors.text,
+                  fontSize: { xs: 16, md: 17 },
+                }}
+              >
                 {user?.firstName && user?.lastName
                   ? `${user.firstName} ${user.lastName}`
-                  : user?.userName || user?.email || 'Пользователь'}
+                  : user?.userName ||
+                    user?.email ||
+                    "Пользователь"}
               </Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
-                {user?.email || 'Не указан email'}
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                {user?.email || "Не указан email"}
               </Typography>
             </Box>
             <Button
-              variant="outlined" size="small"
+              variant="outlined"
+              size="small"
               startIcon={<EditOutlinedIcon />}
               onClick={() => setEditNameOpen(true)}
               sx={{
-                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
-                borderColor: alpha('#fff', 0.16), color: '#fff',
-                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
               }}
             >
               Изменить
@@ -484,20 +602,43 @@ export default function SettingsPage() {
 
           <SectionTitle>Безопасность</SectionTitle>
           <RowItem>
-            <EmailOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <EmailOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Email</Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
-                {user?.email || 'Не указан'}
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Email
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                {user?.email || "Не указан"}
               </Typography>
             </Box>
             <Button
-              variant="outlined" size="small"
+              variant="outlined"
+              size="small"
               onClick={() => setEditEmailOpen(true)}
               sx={{
-                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
-                borderColor: alpha('#fff', 0.16), color: '#fff',
-                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
               }}
             >
               Изменить
@@ -505,20 +646,43 @@ export default function SettingsPage() {
           </RowItem>
 
           <RowItem>
-            <LockOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <LockOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Пароль</Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Пароль
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
                 ••••••••
               </Typography>
             </Box>
             <Button
-              variant="outlined" size="small"
+              variant="outlined"
+              size="small"
               onClick={() => setEditPasswordOpen(true)}
               sx={{
-                borderRadius: 2.5, textTransform: 'none', fontWeight: 900,
-                borderColor: alpha('#fff', 0.16), color: '#fff',
-                '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
               }}
             >
               Изменить
@@ -527,13 +691,38 @@ export default function SettingsPage() {
 
           <SectionTitle>О приложении</SectionTitle>
           <RowItem noDivider>
-            <InfoOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <InfoOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>FinTrackerPro</Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
-                Версия {process.env.REACT_APP_VERSION || '1.0.0'}
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                FinTrackerPro
               </Typography>
-              <Typography variant="caption" sx={{ color: alpha('#fff', 0.5), fontWeight: 700, display: 'block', mt: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                Версия{" "}
+                {process.env.REACT_APP_VERSION || "1.0.0"}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: alpha("#fff", 0.5),
+                  fontWeight: 700,
+                  display: "block",
+                  mt: 0.5,
+                }}
+              >
                 Создатель: Дмитрий Михайлов
               </Typography>
             </Box>
@@ -545,64 +734,118 @@ export default function SettingsPage() {
         <Box>
           <SectionTitle>Отображение</SectionTitle>
           <RowItem>
-            <PaletteOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <PaletteOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15 }}>Скрывать суммы</Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700 }}>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Скрывать суммы
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
                 Полезно при показе экрана другим
               </Typography>
             </Box>
             <Switch
               checked={hideAmounts}
-              onChange={(e) => handleToggleHideAmounts(e.target.checked)}
+              onChange={(e) =>
+                handleToggleHideAmounts(e.target.checked)
+              }
             />
           </RowItem>
 
           <SectionTitle>Валюта</SectionTitle>
           <RowItem noDivider>
-            <CurrencyRubleOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <CurrencyRubleOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
               <FormControl fullWidth size="small">
-                <InputLabel id="currency-label">Валюта</InputLabel>
+                <InputLabel id="currency-label">
+                  Валюта
+                </InputLabel>
                 <Select
                   labelId="currency-label"
                   value={currency}
                   label="Валюта"
-                  onChange={(e) => handleChangeCurrency(e.target.value)}
+                  onChange={(e) =>
+                    handleChangeCurrency(e.target.value)
+                  }
                   sx={{
-                    borderRadius: 2.5, color: '#fff',
-                    '.MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.16) },
-                    '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: alpha('#fff', 0.26) },
-                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: alpha(colors.primary, 0.65) },
-                    '.MuiSvgIcon-root': { color: alpha('#fff', 0.8) },
+                    borderRadius: 2.5,
+                    color: "#fff",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: alpha("#fff", 0.16),
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: alpha("#fff", 0.26),
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: alpha(
+                          colors.primary,
+                          0.65
+                        ),
+                      },
+                    ".MuiSvgIcon-root": {
+                      color: alpha("#fff", 0.8),
+                    },
                   }}
                 >
-                  <MenuItem value="RUB">RUB — ₽</MenuItem>
-                  <MenuItem value="USD">USD — $</MenuItem>
-                  <MenuItem value="EUR">EUR — €</MenuItem>
+                  <MenuItem value="RUB">
+                    RUB — ₽
+                  </MenuItem>
+                  <MenuItem value="USD">
+                    USD — $
+                  </MenuItem>
+                  <MenuItem value="EUR">
+                    EUR — €
+                  </MenuItem>
                 </Select>
               </FormControl>
-              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: alpha('#fff', 0.55), fontWeight: 700 }}>
-                Данные хранятся в базовой валюте, здесь только отображение и конвертация.
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  mt: 1,
+                  color: alpha("#fff", 0.55),
+                  fontWeight: 700,
+                }}
+              >
+                Данные хранятся в базовой валюте, здесь только
+                отображение и конвертация.
               </Typography>
 
-              {/* Информационный блок о курсах */}
               <Box
                 sx={{
                   mt: 1.5,
                   p: 1.25,
                   borderRadius: 2,
-                  bgcolor: alpha('#000', 0.22),
-                  border: `1px solid ${alpha('#fff', 0.12)}`,
+                  bgcolor: alpha("#000", 0.22),
+                  border: `1px solid ${alpha(
+                    "#fff",
+                    0.12
+                  )}`,
                 }}
               >
                 <Typography
                   sx={{
                     fontSize: 12,
                     fontWeight: 900,
-                    textTransform: 'uppercase',
+                    textTransform: "uppercase",
                     letterSpacing: 0.5,
-                    color: alpha('#fff', 0.7),
+                    color: alpha("#fff", 0.7),
                     mb: 0.75,
                   }}
                 >
@@ -611,22 +854,36 @@ export default function SettingsPage() {
 
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: 13, color: alpha('#fff', 0.85), fontWeight: 700 }}
+                  sx={{
+                    fontSize: 13,
+                    color: alpha("#fff", 0.85),
+                    fontWeight: 700,
+                  }}
                 >
                   1 USD ≈ 90 ₽
                 </Typography>
                 <Typography
                   variant="body2"
-                  sx={{ fontSize: 13, color: alpha('#fff', 0.85), fontWeight: 700 }}
+                  sx={{
+                    fontSize: 13,
+                    color: alpha("#fff", 0.85),
+                    fontWeight: 700,
+                  }}
                 >
                   1 EUR ≈ 100 ₽
                 </Typography>
 
                 <Typography
                   variant="caption"
-                  sx={{ display: 'block', mt: 0.75, color: alpha('#fff', 0.55), fontWeight: 700 }}
+                  sx={{
+                    display: "block",
+                    mt: 0.75,
+                    color: alpha("#fff", 0.55),
+                    fontWeight: 700,
+                  }}
                 >
-                  Курс указан для ориентира, реальные значения могут отличаться.
+                  Курс указан для ориентира, реальные значения
+                  могут отличаться.
                 </Typography>
               </Box>
             </Box>
@@ -638,21 +895,45 @@ export default function SettingsPage() {
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
           <RowItem noDivider>
-            <DeleteOutlineOutlinedIcon sx={{ color: alpha('#fff', 0.75) }} />
+            <DeleteOutlineOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: colors.text, fontSize: 15, mb: 0.5 }}>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                  mb: 0.5,
+                }}
+              >
                 Удалить данные за месяц
               </Typography>
-              <Typography variant="body2" sx={{ color: alpha('#fff', 0.6), fontWeight: 700, mb: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                  mb: 2,
+                }}
+              >
                 Выберите месяц и тип данных для удаления
               </Typography>
               <Button
-                fullWidth variant="outlined"
+                fullWidth
+                variant="outlined"
                 onClick={() => setDeleteDataOpen(true)}
                 sx={{
-                  borderRadius: 2.5, py: 1.2, fontWeight: 950, textTransform: 'none',
-                  borderColor: alpha('#fff', 0.16), color: '#fff',
-                  '&:hover': { borderColor: alpha('#fff', 0.28), bgcolor: alpha('#fff', 0.04) },
+                  borderRadius: 2.5,
+                  py: 1.2,
+                  fontWeight: 950,
+                  textTransform: "none",
+                  borderColor: alpha("#fff", 0.16),
+                  color: "#fff",
+                  "&:hover": {
+                    borderColor: alpha("#fff", 0.28),
+                    bgcolor: alpha("#fff", 0.04),
+                  },
                 }}
               >
                 Открыть выбор
@@ -663,48 +944,142 @@ export default function SettingsPage() {
       )}
 
       {/* Диалог: Имя */}
-      <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ fontWeight: 950 }}>Редактировать профиль</DialogTitle>
+      <Dialog
+        open={editNameOpen}
+        onClose={() => setEditNameOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Редактировать профиль
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Имя" value={firstName} onChange={(e) => setFirstName(e.target.value)} fullWidth autoComplete="given-name" />
-            <TextField label="Фамилия" value={lastName} onChange={(e) => setLastName(e.target.value)} fullWidth autoComplete="family-name" />
+            <TextField
+              label="Имя"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              fullWidth
+              autoComplete="given-name"
+            />
+            <TextField
+              label="Фамилия"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              fullWidth
+              autoComplete="family-name"
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditNameOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveName}>Сохранить</Button>
+          <Button onClick={() => setEditNameOpen(false)}>
+            Отмена
+          </Button>
+          <Button variant="contained" onClick={handleSaveName}>
+            Сохранить
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Диалог: Email */}
-      <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ fontWeight: 950 }}>Изменить email</DialogTitle>
+      <Dialog
+        open={editEmailOpen}
+        onClose={() => setEditEmailOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Изменить email
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Новый email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} fullWidth autoComplete="email" />
-            <TextField label="Текущий пароль" type="password" value={emailPassword} onChange={(e) => setEmailPassword(e.target.value)} fullWidth autoComplete="current-password" />
+            <TextField
+              label="Новый email"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              fullWidth
+              autoComplete="email"
+            />
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={emailPassword}
+              onChange={(e) =>
+                setEmailPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="current-password"
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveEmail}>Изменить</Button>
+          <Button onClick={() => setEditEmailOpen(false)}>
+            Отмена
+          </Button>
+          <Button variant="contained" onClick={handleSaveEmail}>
+            Изменить
+          </Button>
         </DialogActions>
       </Dialog>
 
       {/* Диалог: Пароль */}
-      <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} maxWidth="xs" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-        <DialogTitle sx={{ fontWeight: 950 }}>Изменить пароль</DialogTitle>
+      <Dialog
+        open={editPasswordOpen}
+        onClose={() => setEditPasswordOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Изменить пароль
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Текущий пароль" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} fullWidth autoComplete="current-password" />
-            <TextField label="Новый пароль" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} fullWidth autoComplete="new-password" />
-            <TextField label="Подтвердите новый пароль" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} fullWidth autoComplete="new-password" />
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={currentPassword}
+              onChange={(e) =>
+                setCurrentPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="current-password"
+            />
+            <TextField
+              label="Новый пароль"
+              type="password"
+              value={newPassword}
+              onChange={(e) =>
+                setNewPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="new-password"
+            />
+            <TextField
+              label="Подтвердите новый пароль"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) =>
+                setConfirmPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="new-password"
+            />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditPasswordOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSavePassword}>Изменить</Button>
+          <Button onClick={() => setEditPasswordOpen(false)}>
+            Отмена
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSavePassword}
+          >
+            Изменить
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -716,44 +1091,87 @@ export default function SettingsPage() {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle sx={{ fontWeight: 950 }}>Удалить данные</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Удалить данные
+        </DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ pt: 1 }}>
-
-            <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
+            <MonthPicker
+              value={deleteMonth}
+              onChange={setDeleteMonth}
+            />
 
             <Box>
-              <Typography sx={{ fontWeight: 900, mb: 1, fontSize: 14 }}>Что удалить:</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  mb: 1,
+                  fontSize: 14,
+                }}
+              >
+                Что удалить:
+              </Typography>
               <FormGroup>
                 <FormControlLabel
                   control={
                     <Checkbox
                       checked={allChecked}
-                      indeterminate={someChecked && !allChecked}
+                      indeterminate={
+                        someChecked && !allChecked
+                      }
                       onChange={handleToggleAll}
                     />
                   }
-                  label={<Typography sx={{ fontWeight: 900 }}>Всё</Typography>}
+                  label={
+                    <Typography sx={{ fontWeight: 900 }}>
+                      Всё
+                    </Typography>
+                  }
                 />
                 <Divider sx={{ my: 0.5 }} />
                 <FormControlLabel
-                  control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} />}
+                  control={
+                    <Checkbox
+                      checked={deleteIncome}
+                      onChange={(e) =>
+                        setDeleteIncome(
+                          e.target.checked
+                        )
+                      }
+                    />
+                  }
                   label="Доходы"
                 />
                 <FormControlLabel
-                  control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} />}
+                  control={
+                    <Checkbox
+                      checked={deleteExpenses}
+                      onChange={(e) =>
+                        setDeleteExpenses(
+                          e.target.checked
+                        )
+                      }
+                    />
+                  }
                   label="Расходы"
                 />
               </FormGroup>
             </Box>
 
-            <Alert severity="warning" sx={{ fontWeight: 700 }}>
-              Это действие необратимо. Данные будут удалены безвозвратно.
+            <Alert
+              severity="warning"
+              sx={{ fontWeight: 700 }}
+            >
+              Это действие необратимо. Данные будут
+              удалены безвозвратно.
             </Alert>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDataOpen(false)} disabled={deleting}>
+          <Button
+            onClick={() => setDeleteDataOpen(false)}
+            disabled={deleting}
+          >
             Отмена
           </Button>
           <Button
@@ -762,19 +1180,29 @@ export default function SettingsPage() {
             onClick={handleDeleteData}
             disabled={deleting}
           >
-            {deleting ? 'Удаление...' : 'Удалить'}
+            {deleting ? "Удаление..." : "Удалить"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snack.open}
         autoHideDuration={3500}
-        onClose={() => setSnack((s) => ({ ...s, open: false }))}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        onClose={() =>
+          setSnack((s) => ({ ...s, open: false }))
+        }
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
       >
-        <Alert severity={snack.severity} variant="filled" onClose={() => setSnack((s) => ({ ...s, open: false }))}>
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          onClose={() =>
+            setSnack((s) => ({ ...s, open: false }))
+          }
+        >
           {snack.message}
         </Alert>
       </Snackbar>

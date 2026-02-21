@@ -1,47 +1,41 @@
 // src/api/incomeApi.js
 import { useApiClient } from "./client";
 
-// ===== чистые функции без хуков =====
-export const fetchMyIncomesByMonth = (asAxios, year, month, page = 0, size = 50) =>
-  asAxios(`/api/incomes/me/month/${year}/${month}?page=${page}&size=${size}`);
+export const fetchMyIncomesByMonth = (apiFetch, year, month, page = 0, size = 50) =>
+  apiFetch(`/api/incomes/me/month/${year}/${month}?page=${page}&size=${size}`);
 
-export const fetchMyIncomes = (asAxios, page = 0, size = 10) =>
-  asAxios(`/api/incomes/me?page=${page}&size=${size}`);
+export const fetchMyIncomes = (apiFetch, page = 0, size = 10) =>
+  apiFetch(`/api/incomes/me?page=${page}&size=${size}`);
 
-export const fetchIncomesByMonth = (asAxios, userId, year, month, page = 0, size = 50) =>
-  asAxios(`/api/incomes/user/${userId}/month/${year}/${month}?page=${page}&size=${size}`);
+export const fetchIncomesByMonth = (apiFetch, userId, year, month, page = 0, size = 50) =>
+  apiFetch(`/api/incomes/user/${userId}/month/${year}/${month}?page=${page}&size=${size}`);
 
-export const fetchCreateIncome = (asAxios, payload) =>
-  asAxios("/api/incomes", { method: "POST", body: JSON.stringify(payload) });
+export const fetchCreateIncome = (apiFetch, payload) =>
+  apiFetch("/api/incomes", { method: "POST", body: JSON.stringify(payload) });
 
-export const fetchUpdateIncome = (asAxios, incomeId, payload) =>
-  asAxios(`/api/incomes/${incomeId}`, { method: "PUT", body: JSON.stringify(payload) });
+export const fetchUpdateIncome = (apiFetch, incomeId, payload) =>
+  apiFetch(`/api/incomes/${incomeId}`, { method: "PUT", body: JSON.stringify(payload) });
 
-export const fetchDeleteIncome = (asAxios, incomeId) =>
-  asAxios(`/api/incomes/${incomeId}`, { method: "DELETE" });
+export const fetchDeleteIncome = (apiFetch, incomeId) =>
+  apiFetch(`/api/incomes/${incomeId}`, { method: "DELETE" });
 
-// ===== хук =====
 export const useIncomeApi = () => {
-  const { asAxios } = useApiClient();
+  const { apiFetch } = useApiClient();
 
   const getMyIncomesByMonth = (year, month, page = 0, size = 50) =>
-    fetchMyIncomesByMonth(asAxios, year, month, page, size);
+    fetchMyIncomesByMonth(apiFetch, year, month, page, size);
 
   const getMyIncomes = (page = 0, size = 10) =>
-    fetchMyIncomes(asAxios, page, size);
+    fetchMyIncomes(apiFetch, page, size);
 
   const getIncomesByMonth = (userId, year, month, page = 0, size = 50) =>
-    fetchIncomesByMonth(asAxios, userId, year, month, page, size);
+    fetchIncomesByMonth(apiFetch, userId, year, month, page, size);
 
   const getIncomes = getIncomesByMonth;
 
-  const createIncome = (payload) => fetchCreateIncome(asAxios, payload);
-
-  const updateIncome = (incomeId, payload) =>
-    fetchUpdateIncome(asAxios, incomeId, payload);
-
-  const deleteIncome = (incomeId) =>
-    fetchDeleteIncome(asAxios, incomeId);
+  const createIncome = (payload) => fetchCreateIncome(apiFetch, payload);
+  const updateIncome = (incomeId, payload) => fetchUpdateIncome(apiFetch, incomeId, payload);
+  const deleteIncome = (incomeId) => fetchDeleteIncome(apiFetch, incomeId);
 
   return {
     getMyIncomesByMonth,
