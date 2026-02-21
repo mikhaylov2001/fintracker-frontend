@@ -28,9 +28,9 @@ const writeToken = (token) => {
   } catch {}
 };
 
-// ВАЖНО:
-// - В проде на Vercel лучше ходить относительным /api/*, чтобы cookie была first-party.
-// - Если задан REACT_APP_API_BASE_URL, используем его (удобно для локалки/дебага).
+// В проде на Vercel лучше ходить относительным /api/*,
+// чтобы cookie была first-party. Если задан REACT_APP_API_BASE_URL,
+// используем его (для локалки).
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
@@ -57,6 +57,16 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
+    // текущий пользователь до refresh
+    let currentUserId = null;
+    try {
+      const raw = localStorage.getItem("authUser");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.id) currentUserId = parsed.id;
+      }
+    } catch {}
+
     const res = await fetch(buildUrl("/api/auth/refresh"), {
       method: "POST",
       credentials: "include",
@@ -66,11 +76,26 @@ async function refreshToken() {
     const data = await parseBody(res);
     if (!res.ok) return null;
 
+    const newUser = data?.user || null;
     const newAccess = data?.token || data?.accessToken || data?.jwt || null;
+
+    // Защита от "подмены" пользователя:
+    // если до refresh был юзер, а после пришёл другой id — не принимаем такой refresh.
+    if (currentUserId && newUser && newUser.id && newUser.id !== currentUserId) {
+      console.error("[AUTH] Refresh returned different user, ignoring", {
+        currentUserId,
+        newUserId: newUser.id,
+      });
+      try {
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+      } catch {}
+      return null;
+    }
 
     if (newAccess) writeToken(newAccess);
     try {
-      if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
+      if (newUser) localStorage.setItem("authUser", JSON.stringify(newUser));
     } catch {}
 
     return normalizeToken(newAccess) || null;
