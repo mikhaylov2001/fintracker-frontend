@@ -1,173 +1,237 @@
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Stack,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import { Link as RouterLink, Navigate, useLocation } from "react-router-dom";
-
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { bankingColors as colors } from "../../styles/bankingTokens";
+import AppBackground from "../../layouts/AppBackground";
+
+const GOOGLE_CLIENT_ID =
+  process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+  "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 export default function LoginPage() {
-  const { login, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const location = useLocation();
+  const { login, loginWithGoogle, isAuthenticated, loading, user } = useAuth();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const googleDivRef = useRef(null);
 
-  const from = (location.state && location.state.from) || { pathname: "/" };
+  const afterLoginPath = location.state?.from?.pathname || "/";
 
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      if (submitting) return;
-      setError("");
+  // callback объявляем как хук на верхнем уровне (не условно)
+  const handleGoogleCallback = useCallback(
+    async (response) => {
       try {
-        setSubmitting(true);
-        await login(email.trim(), password);
+        setError("");
+        await loginWithGoogle(response.credential);
+        navigate(afterLoginPath, { replace: true });
       } catch (err) {
-        setError(
-          err?.message || "Не удалось войти. Проверьте логин и пароль."
-        );
-      } finally {
-        setSubmitting(false);
+        console.error(err);
+        setError("Ошибка входа через Google");
       }
     },
-    [email, password, submitting, login]
+    [loginWithGoogle, navigate, afterLoginPath]
   );
 
-  // Если уже авторизованы — редирект, НО хук вызываем всегда выше
   useEffect(() => {
-    // никаких действий тут не обязательно, главное — не вызывать хуки условно
-  }, []);
+    // не инициализируем Google, пока грузимся или уже авторизованы
+    if (loading || isAuthenticated) return;
+    if (!window.google?.accounts?.id) return;
+    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
+      return;
 
-  if (isAuthenticated && !authLoading) {
-    return <Navigate to={from} replace />;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCallback,
+    });
+
+    window.google.accounts.id.renderButton(googleDivRef.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "continue_with",
+    });
+  }, [handleGoogleCallback, loading, isAuthenticated]);
+
+  const handleChange = (e) =>
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await login({ email: form.email, password: form.password });
+      navigate(afterLoginPath, { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError("Неверный email или пароль");
+    }
+  };
+
+  // редирект делаем уже ПОСЛЕ всех хуков
+  if (!loading && isAuthenticated) {
+    const userName = user?.userName;
+    return (
+      <Navigate
+        to={userName ? `/u/${encodeURIComponent(userName)}` : "/u/me"}
+        replace
+      />
+    );
   }
 
   return (
-    <Box
+    <AppBackground
       sx={{
-        minHeight: "100vh",
-        bgcolor: "#020617",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         px: 2,
+        py: 2,
       }}
     >
-      <Paper
-        elevation={8}
+      <Box
         sx={{
           width: "100%",
-          maxWidth: 420,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          bgcolor: "#020617",
-          border: `1px solid ${alpha("#fff", 0.06)}`,
+          maxWidth: 980,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1.25fr 0.9fr" },
+          gap: { xs: 2, md: 3 },
+          alignItems: "stretch",
         }}
       >
-        <Typography
-          variant="h5"
+        {/* Mobile hero */}
+        <Box
           sx={{
-            fontWeight: 980,
-            color: colors.text,
-            letterSpacing: -0.5,
-            mb: 0.5,
+            display: { xs: "block", md: "none" },
+            borderRadius: 5,
+            p: 2.5,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
           }}
         >
-          Вход в аккаунт
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: alpha("#fff", 0.6), mb: 3, fontWeight: 600 }}
-        >
-          Введите email и пароль, чтобы продолжить
-        </Typography>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.92)",
+              fontWeight: 950,
+              fontSize: 22,
+              lineHeight: 1.15,
+            }}
+          >
+            FinTrackerPro
+          </Typography>
+          <Typography
+            sx={{
+              mt: 0.8,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 13.5,
+              lineHeight: 1.35,
+            }}
+          >
+            Доходы, расходы и норма сбережений — в одном месте.
+          </Typography>
+        </Box>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Stack spacing={2.2}>
+        {/* Desktop hero */}
+        <Box
+          sx={{
+            display: { xs: "none", md: "flex" },
+            flexDirection: "column",
+            justifyContent: "center",
+            borderRadius: 5,
+            p: 4,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
+          }}
+        >
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.9)",
+              fontWeight: 950,
+              fontSize: 34,
+              lineHeight: 1.1,
+            }}
+          >
+            FinTrackerPro
+          </Typography>
+          <Typography
+            sx={{
+              mt: 1.25,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 15,
+              maxWidth: 420,
+            }}
+          >
+            Войдите и следите за динамикой по месяцам.
+          </Typography>
+        </Box>
+
+        {/* Card */}
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 3, md: 4 },
+            width: "100%",
+            maxWidth: 420,
+            mx: "auto",
+            borderRadius: 5,
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
+            boxShadow:
+              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
+          }}
+        >
+          <Box sx={{ mb: 2.5, textAlign: "center" }}>
+            <Typography
+              component="h1"
+              sx={{
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: 0.3,
+                color: "#111827",
+              }}
+            >
+              Вход
+            </Typography>
+            <Typography
+              sx={{
+                mt: 0.8,
+                fontSize: 13,
+                color: "rgba(15,23,42,0.6)",
+              }}
+            >
+              Войдите в аккаунт, чтобы продолжить.
+            </Typography>
+          </Box>
+
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
             <TextField
+              margin="dense"
+              fullWidth
               label="Email"
               type="email"
-              fullWidth
+              name="email"
+              value={form.email}
+              onChange={handleChange}
               required
               autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
             />
-
             <TextField
-              label="Пароль"
-              type={showPass ? "text" : "password"}
+              margin="dense"
               fullWidth
+              label="Пароль"
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
               required
               autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setShowPass((s) => !s)}
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    >
-                      {showPass ? (
-                        <VisibilityOffOutlinedIcon fontSize="small" />
-                      ) : (
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
             />
 
             {error && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: colors.danger,
-                  fontWeight: 600,
-                  mt: -0.5,
-                }}
-              >
+              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
               </Typography>
             )}
@@ -176,50 +240,71 @@ export default function LoginPage() {
               type="submit"
               fullWidth
               variant="contained"
-              disabled={submitting || authLoading}
+              color="primary"
               sx={{
-                mt: 1,
+                mt: 2.5,
+                mb: 1.5,
                 borderRadius: 999,
                 py: 1.1,
-                fontWeight: 900,
+                fontWeight: 800,
                 textTransform: "none",
-                bgcolor: colors.primary,
-                "&:hover": { bgcolor: "#16A34A" },
+                fontSize: 15,
               }}
             >
-              {submitting || authLoading ? (
-                <CircularProgress size={22} sx={{ color: "#02120A" }} />
-              ) : (
-                "Войти"
-              )}
+              Войти
             </Button>
-          </Stack>
-        </Box>
+          </Box>
 
-        <Typography
-          variant="body2"
-          sx={{
-            color: alpha("#fff", 0.7),
-            mt: 3,
-            textAlign: "center",
-            fontWeight: 600,
-          }}
-        >
-          Нет аккаунта?{" "}
-          <Button
-            component={RouterLink}
-            to="/register"
+          <Box
             sx={{
-              textTransform: "none",
-              fontWeight: 900,
-              color: colors.primary,
-              px: 0.5,
+              mt: 1.5,
+              mb: 1.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
             }}
           >
-            Зарегистрироваться
-          </Button>
-        </Typography>
-      </Paper>
-    </Box>
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(15,23,42,0.5)", textTransform: "uppercase" }}
+            >
+              или
+            </Typography>
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
+          </Box>
+
+          {/* Google */}
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 420,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div ref={googleDivRef} />
+            </Box>
+          </Box>
+
+          <Typography
+            variant="body2"
+            align="center"
+            sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
+          >
+            Нет аккаунта?{" "}
+            <Link
+              component="button"
+              type="button"
+              onClick={() => navigate("/register")}
+              sx={{ fontWeight: 600 }}
+            >
+              Зарегистрироваться
+            </Link>
+          </Typography>
+        </Paper>
+      </Box>
+    </AppBackground>
   );
 }

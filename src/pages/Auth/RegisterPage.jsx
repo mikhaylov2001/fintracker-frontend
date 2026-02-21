@@ -1,241 +1,269 @@
-import React, { useCallback, useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Stack,
-  InputAdornment,
-  IconButton,
-  CircularProgress,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
-import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
-import { Link as RouterLink, Navigate, useLocation } from "react-router-dom";
-
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import { bankingColors as colors } from "../../styles/bankingTokens";
+import AppBackground from "../../layouts/AppBackground";
+
+const GOOGLE_CLIENT_ID =
+  process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+  "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 export default function RegisterPage() {
-  const { register, isAuthenticated, loading: authLoading } = useAuth();
-  const location = useLocation();
+  const navigate = useNavigate();
+  const { register, loginWithGoogle, isAuthenticated, loading, user } =
+    useAuth();
 
-  const [firstName, setFirstName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [showPass2, setShowPass2] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+
   const [error, setError] = useState("");
+  const googleDivRef = useRef(null);
 
-  const from = (location.state && location.state.from) || { pathname: "/" };
-
-  const handleSubmit = useCallback(
-    async (e) => {
-      e.preventDefault();
-      if (submitting) return;
-      setError("");
-
-      if (password !== password2) {
-        setError("Пароли не совпадают");
-        return;
-      }
-
+  const handleGoogleCallback = useCallback(
+    async (response) => {
       try {
-        setSubmitting(true);
-        await register({
-          firstName: firstName.trim(),
-          email: email.trim(),
-          password,
-        });
+        setError("");
+        await loginWithGoogle(response.credential);
+        navigate("/", { replace: true });
       } catch (err) {
-        setError(
-          err?.message || "Не удалось зарегистрироваться. Попробуйте ещё раз."
-        );
-      } finally {
-        setSubmitting(false);
+        console.error(err);
+        setError("Ошибка регистрации через Google");
       }
     },
-    [firstName, email, password, password2, register, submitting]
+    [loginWithGoogle, navigate]
   );
 
   useEffect(() => {
-    // хук вызывается всегда, логика редиректа ниже в раннем return
-  }, []);
+    if (loading || isAuthenticated) return;
+    if (!window.google?.accounts?.id) return;
+    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
+      return;
 
-  if (isAuthenticated && !authLoading) {
-    return <Navigate to={from} replace />;
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCallback,
+    });
+
+    window.google.accounts.id.renderButton(googleDivRef.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      text: "signup_with",
+    });
+  }, [handleGoogleCallback, loading, isAuthenticated]);
+
+  const handleChange = (e) =>
+    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await register({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+      });
+      navigate("/login", { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError("Ошибка при регистрации. Попробуйте ещё раз.");
+    }
+  };
+
+  if (!loading && isAuthenticated) {
+    const userName = user?.userName;
+    return (
+      <Navigate
+        to={userName ? `/u/${encodeURIComponent(userName)}` : "/u/me"}
+        replace
+      />
+    );
   }
 
   return (
-    <Box
+    <AppBackground
       sx={{
-        minHeight: "100vh",
-        bgcolor: "#020617",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         px: 2,
+        py: 2,
       }}
     >
-      <Paper
-        elevation={8}
+      <Box
         sx={{
           width: "100%",
-          maxWidth: 450,
-          p: { xs: 3, sm: 4 },
-          borderRadius: 3,
-          bgcolor: "#020617",
-          border: `1px solid ${alpha("#fff", 0.06)}`,
+          maxWidth: 980,
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1.25fr 0.9fr" },
+          gap: { xs: 2, md: 3 },
+          alignItems: "stretch",
         }}
       >
-        <Typography
-          variant="h5"
+        {/* Mobile hero */}
+        <Box
           sx={{
-            fontWeight: 980,
-            color: colors.text,
-            letterSpacing: -0.5,
-            mb: 0.5,
+            display: { xs: "block", md: "none" },
+            borderRadius: 5,
+            p: 2.5,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
           }}
         >
-          Регистрация
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ color: alpha("#fff", 0.6), mb: 3, fontWeight: 600 }}
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.92)",
+              fontWeight: 950,
+              fontSize: 22,
+              lineHeight: 1.15,
+            }}
+          >
+            FinTrackerPro
+          </Typography>
+          <Typography
+            sx={{
+              mt: 0.8,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 13.5,
+              lineHeight: 1.35,
+            }}
+          >
+            Создай аккаунт и начни вести финансы уже сегодня.
+          </Typography>
+        </Box>
+
+        {/* Desktop hero */}
+        <Box
+          sx={{
+            display: { xs: "none", md: "flex" },
+            flexDirection: "column",
+            justifyContent: "center",
+            borderRadius: 5,
+            p: 4,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
+          }}
         >
-          Создайте аккаунт, чтобы отслеживать доходы и расходы
-        </Typography>
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.9)",
+              fontWeight: 950,
+              fontSize: 34,
+              lineHeight: 1.1,
+            }}
+          >
+            Создай аккаунт
+          </Typography>
+          <Typography
+            sx={{
+              mt: 1.25,
+              color: "rgba(255,255,255,0.72)",
+              fontSize: 15,
+              maxWidth: 420,
+            }}
+          >
+            Регистрация займёт минуту. Дальше — история по месяцам, баланс и
+            норма сбережений.
+          </Typography>
+        </Box>
 
-        <Box component="form" onSubmit={handleSubmit} noValidate>
-          <Stack spacing={2.2}>
-            <TextField
-              label="Имя"
-              fullWidth
-              autoComplete="given-name"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <PersonOutlineOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
+        {/* Card */}
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 3, md: 4 },
+            width: "100%",
+            maxWidth: 420,
+            mx: "auto",
+            borderRadius: 5,
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
+            boxShadow:
+              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
+          }}
+        >
+          <Box sx={{ mb: 2.5, textAlign: "center" }}>
+            <Typography
+              component="h1"
+              sx={{
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: 0.3,
+                color: "#111827",
               }}
-            />
+            >
+              Регистрация
+            </Typography>
+            <Typography
+              sx={{
+                mt: 0.8,
+                fontSize: 13,
+                color: "rgba(15,23,42,0.6)",
+              }}
+            >
+              Создайте аккаунт, чтобы отслеживать финансы.
+            </Typography>
+          </Box>
 
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ mt: 0.5 }}
+          >
             <TextField
+              margin="dense"
+              fullWidth
+              label="Имя"
+              name="firstName"
+              value={form.firstName}
+              onChange={handleChange}
+              required
+              autoComplete="given-name"
+            />
+            <TextField
+              margin="dense"
+              fullWidth
+              label="Фамилия"
+              name="lastName"
+              value={form.lastName}
+              onChange={handleChange}
+              required
+              autoComplete="family-name"
+            />
+            <TextField
+              margin="dense"
+              fullWidth
               label="Email"
               type="email"
-              fullWidth
+              name="email"
+              value={form.email}
+              onChange={handleChange}
               required
               autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <EmailOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
-              }}
             />
-
             <TextField
+              margin="dense"
+              fullWidth
               label="Пароль"
-              type={showPass ? "text" : "password"}
-              fullWidth
+              type="password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
               required
               autoComplete="new-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setShowPass((s) => !s)}
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    >
-                      {showPass ? (
-                        <VisibilityOffOutlinedIcon fontSize="small" />
-                      ) : (
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            <TextField
-              label="Подтвердите пароль"
-              type={showPass2 ? "text" : "password"}
-              fullWidth
-              required
-              autoComplete="new-password"
-              value={password2}
-              onChange={(e) => setPassword2(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LockOutlinedIcon
-                      fontSize="small"
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      edge="end"
-                      onClick={() => setShowPass2((s) => !s)}
-                      sx={{ color: alpha("#fff", 0.7) }}
-                    >
-                      {showPass2 ? (
-                        <VisibilityOffOutlinedIcon fontSize="small" />
-                      ) : (
-                        <VisibilityOutlinedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
             />
 
             {error && (
-              <Typography
-                variant="body2"
-                sx={{
-                  color: colors.danger,
-                  fontWeight: 600,
-                  mt: -0.5,
-                }}
-              >
+              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
               </Typography>
             )}
@@ -244,50 +272,71 @@ export default function RegisterPage() {
               type="submit"
               fullWidth
               variant="contained"
-              disabled={submitting || authLoading}
+              color="primary"
               sx={{
-                mt: 1,
+                mt: 2.5,
+                mb: 1.5,
                 borderRadius: 999,
                 py: 1.1,
-                fontWeight: 900,
+                fontWeight: 800,
                 textTransform: "none",
-                bgcolor: colors.primary,
-                "&:hover": { bgcolor: "#16A34A" },
+                fontSize: 15,
               }}
             >
-              {submitting || authLoading ? (
-                <CircularProgress size={22} sx={{ color: "#02120A" }} />
-              ) : (
-                "Зарегистрироваться"
-              )}
+              Зарегистрироваться
             </Button>
-          </Stack>
-        </Box>
+          </Box>
 
-        <Typography
-          variant="body2"
-          sx={{
-            color: alpha("#fff", 0.7),
-            mt: 3,
-            textAlign: "center",
-            fontWeight: 600,
-          }}
-        >
-          Уже есть аккаунт?{" "}
-          <Button
-            component={RouterLink}
-            to="/login"
+          <Box
             sx={{
-              textTransform: "none",
-              fontWeight: 900,
-              color: colors.primary,
-              px: 0.5,
+              mt: 1.5,
+              mb: 1.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
             }}
           >
-            Войти
-          </Button>
-        </Typography>
-      </Paper>
-    </Box>
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(15,23,42,0.5)", textTransform: "uppercase" }}
+            >
+              или
+            </Typography>
+            <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
+          </Box>
+
+          {/* Google */}
+          <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 420,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div ref={googleDivRef} />
+            </Box>
+          </Box>
+
+          <Typography
+            variant="body2"
+            align="center"
+            sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
+          >
+            Уже есть аккаунт?{" "}
+            <Link
+              component="button"
+              type="button"
+              onClick={() => navigate("/login")}
+              sx={{ fontWeight: 600 }}
+            >
+              Войти
+            </Link>
+          </Typography>
+        </Paper>
+      </Box>
+    </AppBackground>
   );
 }
