@@ -1,16 +1,29 @@
 // src/contexts/AuthContext.jsx
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
 import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
 const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
+  process.env.REACT_APP_API_BASE_URL ||
+  "https://fintrackerpro-production.up.railway.app"
 ).trim();
 
 const API_AUTH_BASE = "/api/auth";
-const AUTH_STORAGE_KEYS = ["authToken", "token", "accessToken", "jwt", "authUser"];
+const AUTH_STORAGE_KEYS = [
+  "authToken",
+  "token",
+  "accessToken",
+  "jwt",
+  "authUser",
+];
 
 const normalizeToken = (t) => {
   if (!t) return null;
@@ -19,6 +32,7 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
+// Оставляем, вдруг пригодится где-то ещё
 const isTokenAlive = (jwt) => {
   try {
     const t = normalizeToken(jwt);
@@ -47,6 +61,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
+  // Инициализация из localStorage
   useEffect(() => {
     let savedToken = null;
     let savedUser = null;
@@ -71,6 +86,21 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Синхронизация токена с localStorage, который обновляет apiFetch/refresh
+  useEffect(() => {
+    const sync = () => {
+      try {
+        const savedToken = localStorage.getItem("authToken");
+        const t = normalizeToken(savedToken);
+        setToken(t);
+      } catch {}
+    };
+
+    sync();
+    const id = setInterval(sync, 10000); // каждые 10 секунд
+    return () => clearInterval(id);
+  }, []);
+
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
@@ -86,7 +116,8 @@ export const AuthProvider = ({ children }) => {
 
   const saveAuthData = useCallback(
     (data) => {
-      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextTokenRaw =
+        data?.token ?? data?.accessToken ?? data?.jwt ?? null;
       const nextToken = normalizeToken(nextTokenRaw);
       const nextUser = data?.user ?? null;
 
@@ -185,22 +216,20 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  const authFetch = useCallback(
-    async (url, options = {}) => {
-      if (!isTokenAlive(token)) {
-        return {
-          ok: false,
-          status: 401,
-          json: async () => ({ error: "Not authenticated" }),
-          data: { error: "Not authenticated" },
-        };
-      }
+  // Больше не решаем сами, жив токен или нет — это делает apiFetch через refresh
+  const authFetch = useCallback(async (url, options = {}) => {
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, json: async () => data, data };
+  }, []);
 
-      const data = await apiFetch(url, options);
-      return { ok: true, status: 200, json: async () => data, data };
-    },
-    [token]
-  );
+  // isAuthenticated — по наличию user и токена в localStorage
+  const hasStoredToken = (() => {
+    try {
+      return Boolean(localStorage.getItem("authToken"));
+    } catch {
+      return false;
+    }
+  })();
 
   const value = {
     user,
@@ -209,7 +238,7 @@ export const AuthProvider = ({ children }) => {
     register,
     loginWithGoogle,
     logout,
-    isAuthenticated: isTokenAlive(token),
+    isAuthenticated: !!user && hasStoredToken,
     loading,
     updateUserInState,
     authFetch,
