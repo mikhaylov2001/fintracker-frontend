@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.jsx
 import React, {
   createContext,
   useState,
@@ -50,8 +49,12 @@ export const AuthProvider = ({ children }) => {
       if (t) setToken(t);
 
       if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        if (parsed && parsed.id) setUser(parsed);
+        try {
+          const parsed = JSON.parse(savedUser);
+          if (parsed && parsed.id) setUser(parsed);
+        } catch {
+          setUser(null);
+        }
       }
     } catch (e) {
       console.error("[AUTH] Init error", e);
@@ -75,7 +78,7 @@ export const AuthProvider = ({ children }) => {
       const nextToken = normalizeToken(nextTokenRaw);
       const nextUser = data?.user ?? null;
 
-      // Проверка на подмену пользователя
+      // Проверка на подмену пользователя (Security Check)
       setUser((prevUser) => {
         if (prevUser && nextUser && prevUser.id !== nextUser.id) {
           console.error("[AUTH] Security: User ID mismatch!", { prevUser, nextUser });
@@ -123,6 +126,17 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, [saveAuthData]);
 
+  // Восстановленный метод Google Auth
+  const loginWithGoogle = useCallback(async (idToken) => {
+    const data = await apiFetch("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
+
   const logout = useCallback(async () => {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" });
@@ -134,17 +148,34 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
+  const updateUserInState = useCallback((partialUser) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partialUser || {}) };
+      try {
+        localStorage.setItem("authUser", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Удобная обертка для запросов через контекст
+  const authFetch = useCallback(async (url, options = {}) => {
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, json: async () => data, data };
+  }, []);
+
   const value = {
     user,
     token,
     login,
     register,
+    loginWithGoogle, // Добавлено обратно
     logout,
     isAuthenticated: !!user && !!token,
     loading,
     authError,
-    authFetch: apiFetch, // Можно использовать напрямую
-    updateUserInState: (partial) => setUser(p => ({ ...p, ...partial }))
+    authFetch,
+    updateUserInState,
   };
 
   if (authError) {
