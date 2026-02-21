@@ -1,5 +1,3 @@
-// src/api/clientFetch.js
-
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
 
 const normalizeToken = (t) => {
@@ -28,9 +26,8 @@ const writeToken = (token) => {
   } catch {}
 };
 
-// ВАЖНО:
-// - В проде на Vercel лучше ходить относительным /api/*, чтобы cookie была first-party.
-// - Если задан REACT_APP_API_BASE_URL, используем его (удобно для локалки/дебага).
+// В проде на Vercel НЕ задавай REACT_APP_API_BASE_URL.
+// Тогда все запросы пойдут на относительный /api/* и попадут под rewrites.
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
@@ -83,6 +80,11 @@ async function refreshToken() {
   }
 }
 
+const isAuthEndpoint = (path) => {
+  const p = String(path || "");
+  return p.startsWith("/api/auth/");
+};
+
 export async function apiFetch(path, options = {}) {
   const url = buildUrl(path);
 
@@ -113,13 +115,13 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  if (res.status === 401) {
+  // Пробуем refresh при 401/403 для НЕ auth-эндпоинтов
+  if (!isAuthEndpoint(path) && (res.status === 401 || res.status === 403)) {
     const newToken = await refreshToken();
     if (newToken) ({ res, data } = await doRequest());
   }
 
-  if (res.status === 401) {
-    // Если refresh не сработал, значит реально сессии нет
+  if (res.status === 401 || res.status === 403) {
     try {
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");

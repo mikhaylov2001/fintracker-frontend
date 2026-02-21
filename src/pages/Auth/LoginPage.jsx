@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
-import { useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
 
@@ -8,34 +8,36 @@ const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { login, loginWithGoogle, isAuthenticated, loading, user } = useAuth();
+  const { register, loginWithGoogle, isAuthenticated, loading, user } =
+    useAuth();
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+
   const [error, setError] = useState("");
   const googleDivRef = useRef(null);
 
-  const afterLoginPath = location.state?.from?.pathname || "/";
-
-  // callback объявляем как хук на верхнем уровне (не условно)
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError("");
         await loginWithGoogle(response.credential);
-        navigate(afterLoginPath, { replace: true });
+        navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError("Ошибка входа через Google");
+        setError("Ошибка регистрации через Google");
       }
     },
-    [loginWithGoogle, navigate, afterLoginPath]
+    [loginWithGoogle, navigate]
   );
 
   useEffect(() => {
-    // не инициализируем Google, пока грузимся или уже авторизованы
     if (loading || isAuthenticated) return;
     if (!window.google?.accounts?.id) return;
     if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
@@ -50,7 +52,7 @@ export default function LoginPage() {
       type: "standard",
       theme: "outline",
       size: "large",
-      text: "continue_with",
+      text: "signup_with",
     });
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
@@ -61,15 +63,19 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     try {
-      await login({ email: form.email, password: form.password });
-      navigate(afterLoginPath, { replace: true });
+      await register({
+        firstName: form.firstName,
+        lastName: form.lastName,
+        email: form.email,
+        password: form.password,
+      });
+      navigate("/login", { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Неверный email или пароль");
+      setError("Ошибка при регистрации. Попробуйте ещё раз.");
     }
   };
 
-  // редирект делаем уже ПОСЛЕ всех хуков
   if (!loading && isAuthenticated) {
     const userName = user?.userName;
     return (
@@ -129,7 +135,7 @@ export default function LoginPage() {
               lineHeight: 1.35,
             }}
           >
-            Доходы, расходы и норма сбережений — в одном месте.
+            Создай аккаунт и начни вести финансы уже сегодня.
           </Typography>
         </Box>
 
@@ -154,7 +160,7 @@ export default function LoginPage() {
               lineHeight: 1.1,
             }}
           >
-            FinTrackerPro
+            Создай аккаунт
           </Typography>
           <Typography
             sx={{
@@ -164,7 +170,8 @@ export default function LoginPage() {
               maxWidth: 420,
             }}
           >
-            Войдите и следите за динамикой по месяцам.
+            Регистрация займёт минуту. Дальше — история по месяцам, баланс и
+            норма сбережений.
           </Typography>
         </Box>
 
@@ -193,7 +200,7 @@ export default function LoginPage() {
                 color: "#111827",
               }}
             >
-              Вход
+              Регистрация
             </Typography>
             <Typography
               sx={{
@@ -202,11 +209,36 @@ export default function LoginPage() {
                 color: "rgba(15,23,42,0.6)",
               }}
             >
-              Войдите в аккаунт, чтобы продолжить.
+              Создайте аккаунт, чтобы отслеживать финансы.
             </Typography>
           </Box>
 
-          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            sx={{ mt: 0.5 }}
+          >
+            <TextField
+              margin="dense"
+              fullWidth
+              label="Имя"
+              name="firstName"
+              value={form.firstName}
+              onChange={handleChange}
+              required
+              autoComplete="given-name"
+            />
+            <TextField
+              margin="dense"
+              fullWidth
+              label="Фамилия"
+              name="lastName"
+              value={form.lastName}
+              onChange={handleChange}
+              required
+              autoComplete="family-name"
+            />
             <TextField
               margin="dense"
               fullWidth
@@ -227,7 +259,7 @@ export default function LoginPage() {
               value={form.password}
               onChange={handleChange}
               required
-              autoComplete="current-password"
+              autoComplete="new-password"
             />
 
             {error && (
@@ -251,7 +283,7 @@ export default function LoginPage() {
                 fontSize: 15,
               }}
             >
-              Войти
+              Зарегистрироваться
             </Button>
           </Box>
 
@@ -293,14 +325,14 @@ export default function LoginPage() {
             align="center"
             sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
           >
-            Нет аккаунта?{" "}
+            Уже есть аккаунт?{" "}
             <Link
               component="button"
               type="button"
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/login")}
               sx={{ fontWeight: 600 }}
             >
-              Зарегистрироваться
+              Войти
             </Link>
           </Typography>
         </Paper>
