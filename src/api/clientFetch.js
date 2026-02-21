@@ -24,7 +24,7 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", t);
 };
 
-// Railway напрямую: ставим дефолт, чтобы не зависеть от env
+// Railway напрямую: фиксируем базу (можешь заменить на env, но НЕ пустой)
 const API_BASE = String(
   process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
 )
@@ -56,7 +56,7 @@ async function refreshToken() {
     const res = await fetch(buildUrl("/api/auth/refresh"), {
       method: "POST",
       credentials: "include",
-      headers: { "Content-Type": "application/json" },
+      headers: new Headers({ "Content-Type": "application/json" }),
     });
 
     const data = await parseBody(res);
@@ -83,16 +83,22 @@ export async function apiFetch(path, options = {}) {
 
   const doRequest = async () => {
     const token = readToken();
-    const headers = { ...(options.headers || {}) };
+
+    // ВАЖНО: всегда используем Headers (а не object spread),
+    // чтобы корректно работало и с options.headers = Headers
+    const headers = new Headers(options.headers || {});
 
     const isFormData =
       typeof FormData !== "undefined" && options.body instanceof FormData;
 
-    if (!isFormData && options.body && !headers["Content-Type"]) {
-      headers["Content-Type"] = "application/json";
+    if (!isFormData && options.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
 
-    if (token) headers.Authorization = `Bearer ${token}`;
+    // Не перетираем, если кто-то уже передал Authorization
+    if (token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
 
     const res = await fetch(url, {
       ...options,
