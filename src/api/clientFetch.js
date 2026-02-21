@@ -2,6 +2,9 @@
 
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
 
+// Ключ события для уведомления AuthContext о потере авторизации
+export const AUTH_LOGOUT_EVENT = "app_force_logout";
+
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
@@ -28,8 +31,7 @@ const writeToken = (token) => {
   } catch {}
 };
 
-// В проде на Vercel НЕ задавай REACT_APP_API_BASE_URL,
-// тогда запросы пойдут на относительный /api/* и попадут под rewrites.
+// Если REACT_APP_API_BASE_URL пустой, запросы идут на текущий домен (для Rewrites)
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
@@ -56,23 +58,30 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
-    const res = await fetch(buildUrl("/api/auth/refresh"), {
-      method: "POST",
-      credentials: "include",
-      headers: new Headers({ "Content-Type": "application/json" }),
-    });
-
-    const data = await parseBody(res);
-    if (!res.ok) return null;
-
-    const newAccess = data?.token || data?.accessToken || data?.jwt || null;
-
-    if (newAccess) writeToken(newAccess);
     try {
-      if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
-    } catch {}
+      const res = await fetch(buildUrl("/api/auth/refresh"), {
+        method: "POST",
+        credentials: "include", // Обязательно для HttpOnly cookies
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
 
-    return normalizeToken(newAccess) || null;
+      const data = await parseBody(res);
+      if (!res.ok) return null;
+
+      const newAccess = data?.token || data?.accessToken || data?.jwt || null;
+
+      if (newAccess) writeToken(newAccess);
+      if (data?.user) {
+        try {
+          localStorage.setItem("authUser", JSON.stringify(data.user));
+        } catch {}
+      }
+
+      return normalizeToken(newAccess) || null;
+    } catch (e) {
+      console.error("[AUTH] Refresh fetch error:", e);
+      return null;
+    }
   })();
 
   try {
@@ -87,10 +96,8 @@ export async function apiFetch(path, options = {}) {
 
   const doRequest = async () => {
     const token = readToken();
-
     const headers = new Headers(options.headers || {});
-    const isFormData =
-      typeof FormData !== "undefined" && options.body instanceof FormData;
+    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
 
     if (!isFormData && options.body && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
@@ -112,32 +119,29 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
+  // Если 401 — пытаемся обновить токен
   if (res.status === 401) {
     const newToken = await refreshToken();
-    if (newToken) ({ res, data } = await doRequest());
+    if (newToken) {
+      ({ res, data } = await doRequest());
+    }
   }
 
+  // Если все еще 401 — сессия окончательно мертва
   if (res.status === 401) {
-    // Если refresh не сработал, значит реально сессии нет
     try {
       localStorage.removeItem("authToken");
       localStorage.removeItem("authUser");
+      // Сообщаем контексту, что нужно разлогинить пользователя
+      window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
     } catch {}
 
-    const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || res.statusText;
-
+    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 
   if (!res.ok) {
-    const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || res.statusText;
-
+    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 

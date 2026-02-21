@@ -7,16 +7,10 @@ import React, {
   useCallback,
 } from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
-import { apiFetch } from "../api/clientFetch";
+import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL ||
-  "https://fintrackerpro-production.up.railway.app"
-).trim();
-
-const API_AUTH_BASE = "/api/auth";
 const AUTH_STORAGE_KEYS = [
   "authToken",
   "token",
@@ -28,7 +22,6 @@ const AUTH_STORAGE_KEYS = [
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
-  if (!s) return null;
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
@@ -38,71 +31,54 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
-  useEffect(() => {
-    let savedToken = null;
-    let savedUser = null;
-
-    try {
-      savedToken = localStorage.getItem("authToken");
-      savedUser = localStorage.getItem("authUser");
-    } catch {}
-
-    const t = normalizeToken(savedToken);
-    if (t) setToken(t);
-
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed && parsed.id ? parsed : null);
-      } catch {
-        setUser(null);
-      }
-    }
-
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    const sync = () => {
-      try {
-        const savedToken = localStorage.getItem("authToken");
-        const t = normalizeToken(savedToken);
-        setToken(t);
-      } catch {}
-    };
-
-    sync();
-    const id = setInterval(sync, 10000);
-    return () => clearInterval(id);
-  }, []);
-
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
-
     try {
-      for (const k of AUTH_STORAGE_KEYS) localStorage.removeItem(k);
-    } catch {}
-
-    try {
+      AUTH_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k));
       sessionStorage.clear();
     } catch {}
   }, []);
 
+  // 1. Инициализация при загрузке
+  useEffect(() => {
+    try {
+      const savedToken = localStorage.getItem("authToken");
+      const savedUser = localStorage.getItem("authUser");
+
+      const t = normalizeToken(savedToken);
+      if (t) setToken(t);
+
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && parsed.id) setUser(parsed);
+      }
+    } catch (e) {
+      console.error("[AUTH] Init error", e);
+    }
+    setLoading(false);
+  }, []);
+
+  // 2. Слушатель принудительного разлогина (от 401 ошибок в apiFetch)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      console.warn("[AUTH] Force logout event received");
+      hardResetState();
+    };
+    window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
+    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
+  }, [hardResetState]);
+
   const saveAuthData = useCallback(
     (data) => {
-      const nextTokenRaw =
-        data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
       const nextToken = normalizeToken(nextTokenRaw);
       const nextUser = data?.user ?? null;
 
+      // Проверка на подмену пользователя
       setUser((prevUser) => {
         if (prevUser && nextUser && prevUser.id !== nextUser.id) {
-          console.error("[AUTH] User switch detected in one session", {
-            prevUser,
-            nextUser,
-            time: new Date().toISOString(),
-          });
+          console.error("[AUTH] Security: User ID mismatch!", { prevUser, nextUser });
           hardResetState();
           setAuthError(true);
           return null;
@@ -114,7 +90,6 @@ export const AuthProvider = ({ children }) => {
           } catch {}
           return nextUser;
         }
-
         return prevUser;
       });
 
@@ -128,61 +103,29 @@ export const AuthProvider = ({ children }) => {
     [hardResetState]
   );
 
-  const updateUserInState = useCallback((partialUser) => {
-    setUser((prev) => {
-      const next = { ...(prev || {}), ...(partialUser || {}) };
-      try {
-        localStorage.setItem("authUser", JSON.stringify(next));
-      } catch {}
-      return next;
+  const login = useCallback(async (credentials) => {
+    const data = await apiFetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
     });
-  }, []);
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
 
-  const login = useCallback(
-    async ({ email, password }) => {
-      const data = await apiFetch(`${API_AUTH_BASE}/login`, {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-      setAuthError(false);
-      saveAuthData(data);
-      return data;
-    },
-    [saveAuthData]
-  );
-
-  const register = useCallback(
-    async ({ firstName, lastName, email, password }) => {
-      const data = await apiFetch(`${API_AUTH_BASE}/register`, {
-        method: "POST",
-        body: JSON.stringify({ firstName, lastName, email, password }),
-      });
-      setAuthError(false);
-      saveAuthData(data);
-      return data;
-    },
-    [saveAuthData]
-  );
-
-  const loginWithGoogle = useCallback(
-    async (idToken) => {
-      const data = await apiFetch(`${API_AUTH_BASE}/google`, {
-        method: "POST",
-        body: JSON.stringify({ idToken }),
-      });
-      setAuthError(false);
-      saveAuthData(data);
-      return data;
-    },
-    [saveAuthData]
-  );
+  const register = useCallback(async (form) => {
+    const data = await apiFetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(form),
+    });
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
+      await apiFetch("/api/auth/logout", { method: "POST" });
     } catch (e) {
       console.warn("Logout request failed:", e);
     } finally {
@@ -191,31 +134,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  const authFetch = useCallback(async (url, options = {}) => {
-    const data = await apiFetch(url, options);
-    return { ok: true, status: 200, json: async () => data, data };
-  }, []);
-
-  const hasStoredToken = (() => {
-    try {
-      return Boolean(localStorage.getItem("authToken"));
-    } catch {
-      return false;
-    }
-  })();
-
   const value = {
     user,
     token,
     login,
     register,
-    loginWithGoogle,
     logout,
-    isAuthenticated: !!user && hasStoredToken,
+    isAuthenticated: !!user && !!token,
     loading,
-    updateUserInState,
-    authFetch,
     authError,
+    authFetch: apiFetch, // Можно использовать напрямую
+    updateUserInState: (partial) => setUser(p => ({ ...p, ...partial }))
   };
 
   if (authError) {
