@@ -10,31 +10,35 @@ const normalizeToken = (t) => {
 };
 
 const readToken = () => {
-  for (const k of TOKEN_KEYS) {
-    const v = localStorage.getItem(k);
-    const t = normalizeToken(v);
-    if (t) return t;
-  }
+  try {
+    for (const k of TOKEN_KEYS) {
+      const v = localStorage.getItem(k);
+      const t = normalizeToken(v);
+      if (t) return t;
+    }
+  } catch {}
   return null;
 };
 
 const writeToken = (token) => {
   const t = normalizeToken(token);
   if (!t) return;
-  localStorage.setItem("authToken", t);
+  try {
+    localStorage.setItem("authToken", t);
+  } catch {}
 };
 
-// Всегда Railway как база (можешь заменить на env, но не оставляй пустым)
-const API_BASE = String(
-  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
-)
+// ВАЖНО:
+// - В проде на Vercel лучше ходить относительным /api/*, чтобы cookie была first-party.
+// - Если задан REACT_APP_API_BASE_URL, используем его (удобно для локалки/дебага).
+const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  return `${API_BASE}${p}`;
+  return API_BASE ? `${API_BASE}${p}` : p;
 };
 
 const parseBody = async (res) => {
@@ -65,7 +69,9 @@ async function refreshToken() {
     const newAccess = data?.token || data?.accessToken || data?.jwt || null;
 
     if (newAccess) writeToken(newAccess);
-    if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
+    try {
+      if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
+    } catch {}
 
     return normalizeToken(newAccess) || null;
   })();
@@ -113,16 +119,26 @@ export async function apiFetch(path, options = {}) {
   }
 
   if (res.status === 401) {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("authUser");
+    // Если refresh не сработал, значит реально сессии нет
+    try {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("authUser");
+    } catch {}
+
     const msg =
-      typeof data === "string" ? data : data?.message || data?.error || res.statusText;
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || res.statusText;
+
     throw new Error(`${res.status}: ${msg}`);
   }
 
   if (!res.ok) {
     const msg =
-      typeof data === "string" ? data : data?.message || data?.error || res.statusText;
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || res.statusText;
+
     throw new Error(`${res.status}: ${msg}`);
   }
 
