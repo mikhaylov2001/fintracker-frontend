@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
 
@@ -8,33 +8,29 @@ const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
-export default function RegisterPage() {
+export default function LoginPage() {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, isAuthenticated, loading, user } =
-    useAuth();
+  const location = useLocation();
+  const { login, loginWithGoogle, isAuthenticated, loading, user } = useAuth();
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-  });
-
+  const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const googleDivRef = useRef(null);
+
+  const afterLoginPath = location.state?.from?.pathname || "/";
 
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError("");
         await loginWithGoogle(response.credential);
-        navigate("/", { replace: true });
+        navigate(afterLoginPath, { replace: true });
       } catch (err) {
         console.error(err);
-        setError("Ошибка регистрации через Google");
+        setError("Ошибка входа через Google");
       }
     },
-    [loginWithGoogle, navigate]
+    [loginWithGoogle, navigate, afterLoginPath]
   );
 
   useEffect(() => {
@@ -52,7 +48,7 @@ export default function RegisterPage() {
       type: "standard",
       theme: "outline",
       size: "large",
-      text: "signup_with",
+      text: "continue_with",
     });
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
@@ -63,16 +59,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     try {
-      await register({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        password: form.password,
-      });
-      navigate("/login", { replace: true });
+      await login({ email: form.email, password: form.password });
+      navigate(afterLoginPath, { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Ошибка при регистрации. Попробуйте ещё раз.");
+      setError("Неверный email или пароль");
     }
   };
 
@@ -135,7 +126,7 @@ export default function RegisterPage() {
               lineHeight: 1.35,
             }}
           >
-            Создай аккаунт и начни вести финансы уже сегодня.
+            Доходы, расходы и норма сбережений — в одном месте.
           </Typography>
         </Box>
 
@@ -160,7 +151,7 @@ export default function RegisterPage() {
               lineHeight: 1.1,
             }}
           >
-            Создай аккаунт
+            FinTrackerPro
           </Typography>
           <Typography
             sx={{
@@ -170,8 +161,7 @@ export default function RegisterPage() {
               maxWidth: 420,
             }}
           >
-            Регистрация займёт минуту. Дальше — история по месяцам, баланс и
-            норма сбережений.
+            Войдите и следите за динамикой по месяцам.
           </Typography>
         </Box>
 
@@ -200,7 +190,7 @@ export default function RegisterPage() {
                 color: "#111827",
               }}
             >
-              Регистрация
+              Вход
             </Typography>
             <Typography
               sx={{
@@ -209,36 +199,11 @@ export default function RegisterPage() {
                 color: "rgba(15,23,42,0.6)",
               }}
             >
-              Создайте аккаунт, чтобы отслеживать финансы.
+              Войдите в аккаунт, чтобы продолжить.
             </Typography>
           </Box>
 
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            noValidate
-            sx={{ mt: 0.5 }}
-          >
-            <TextField
-              margin="dense"
-              fullWidth
-              label="Имя"
-              name="firstName"
-              value={form.firstName}
-              onChange={handleChange}
-              required
-              autoComplete="given-name"
-            />
-            <TextField
-              margin="dense"
-              fullWidth
-              label="Фамилия"
-              name="lastName"
-              value={form.lastName}
-              onChange={handleChange}
-              required
-              autoComplete="family-name"
-            />
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
             <TextField
               margin="dense"
               fullWidth
@@ -259,7 +224,7 @@ export default function RegisterPage() {
               value={form.password}
               onChange={handleChange}
               required
-              autoComplete="new-password"
+              autoComplete="current-password"
             />
 
             {error && (
@@ -283,7 +248,7 @@ export default function RegisterPage() {
                 fontSize: 15,
               }}
             >
-              Зарегистрироваться
+              Войти
             </Button>
           </Box>
 
@@ -325,14 +290,14 @@ export default function RegisterPage() {
             align="center"
             sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
           >
-            Уже есть аккаунт?{" "}
+            Нет аккаунта?{" "}
             <Link
               component="button"
               type="button"
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/register")}
               sx={{ fontWeight: 600 }}
             >
-              Войти
+              Зарегистрироваться
             </Link>
           </Typography>
         </Paper>
