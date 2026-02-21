@@ -1,9 +1,30 @@
 // src/api/authApi.js
-import { api } from './http';
+import { apiFetch } from "./clientFetch";
 
-export const login = (payload) => api.post('/auth/login', payload);
+export const login = (payload) =>
+  apiFetch("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
-export const register = (payload) => api.post('/auth/register', payload);
+export const register = (payload) =>
+  apiFetch("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 
 export const googleAuth = (idToken) =>
-  api.post('/auth/google', { idToken }); // GoogleTokenRequest.idToken [file:7211]
+  apiFetch("/api/auth/google", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
+
+export const refresh = () =>
+  apiFetch("/api/auth/refresh", {
+    method: "POST",
+  });
+
+export const logout = async () =>
+  apiFetch("/api/auth/logout", {
+    method: "POST",
+  });

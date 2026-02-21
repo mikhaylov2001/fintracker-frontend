@@ -1,26 +1,18 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  useCallback,
-} from "react";
+// src/contexts/AuthContext.jsx
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
 import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-// В prod на Vercel оставляем пустым, чтобы был same-origin /api/...
-const API_BASE_URL = (process.env.REACT_APP_API_BASE_URL || "").trim();
+// ВАЖНО: в проде на Vercel НЕ оставляй пустым, если API на Railway напрямую.
+const API_BASE_URL = (
+  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
+).trim();
+
 const API_AUTH_BASE = "/api/auth";
 
-const AUTH_STORAGE_KEYS = [
-  "authToken",
-  "token",
-  "accessToken",
-  "jwt",
-  "authUser",
-];
+const AUTH_STORAGE_KEYS = ["authToken", "token", "accessToken", "jwt", "authUser"];
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -66,6 +58,7 @@ export const AuthProvider = ({ children }) => {
 
   const saveAuthData = useCallback(
     (data) => {
+      // твой бэк отдаёт { token, user }
       const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
       const nextUser = data?.user ?? null;
 
@@ -117,7 +110,6 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         body: JSON.stringify({ email, password }),
       });
-
       setAuthError(false);
       saveAuthData(data);
       return data;
@@ -131,7 +123,6 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         body: JSON.stringify({ firstName, lastName, email, password }),
       });
-
       setAuthError(false);
       saveAuthData(data);
       return data;
@@ -145,7 +136,6 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         body: JSON.stringify({ idToken }),
       });
-
       setAuthError(false);
       saveAuthData(data);
       return data;
@@ -155,7 +145,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      // этот запрос не критичен — даже если 401, мы всё равно чистим локально
+      // запрос не критичен — даже если 401, чистим локально
       await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
         method: "POST",
         credentials: "include",
@@ -165,15 +155,13 @@ export const AuthProvider = ({ children }) => {
     } finally {
       hardResetState();
       setAuthError(false);
-      // редирект пусть делает AppLayout
     }
   }, [hardResetState]);
 
-  // Совместимость со старым кодом страниц: они ожидают authFetch -> Response
+  // Совместимость: старые страницы ожидают authFetch -> Response-подобный объект
   const authFetch = useCallback(async (url, options = {}) => {
-    const path = url.startsWith("http") ? url : `${API_BASE_URL}${url}`;
+    const path = url.startsWith("http") ? url : url; // apiFetch сам соберёт baseURL из env
     const data = await apiFetch(path, options);
-    // делаем Response-подобный объект: минимум .ok/.status/.json()
     return {
       ok: true,
       status: 200,
@@ -204,9 +192,7 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

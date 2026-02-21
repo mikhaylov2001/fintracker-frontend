@@ -1,3 +1,5 @@
+// src/api/clientFetch.js
+
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
 
 const normalizeToken = (t) => {
@@ -22,14 +24,17 @@ const writeToken = (token) => {
   localStorage.setItem("authToken", t);
 };
 
-const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
+// Railway напрямую: ставим дефолт, чтобы не зависеть от env
+const API_BASE = String(
+  process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
+)
   .trim()
-  .replace(/\/+$/, ""); // "" в prod
+  .replace(/\/+$/, "");
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  return API_BASE ? `${API_BASE}${p}` : p;
+  return `${API_BASE}${p}`;
 };
 
 const parseBody = async (res) => {
@@ -57,12 +62,8 @@ async function refreshToken() {
     const data = await parseBody(res);
     if (!res.ok) return null;
 
-    const newAccess =
-      data?.accessToken ||
-      data?.token ||
-      data?.jwt ||
-      data?.access_token ||
-      data?.access_token_value;
+    // твой бэк отдаёт { token, user }
+    const newAccess = data?.token || data?.accessToken || data?.jwt || null;
 
     if (newAccess) writeToken(newAccess);
     if (data?.user) localStorage.setItem("authUser", JSON.stringify(data.user));
@@ -82,7 +83,6 @@ export async function apiFetch(path, options = {}) {
 
   const doRequest = async () => {
     const token = readToken();
-
     const headers = { ...(options.headers || {}) };
 
     const isFormData =
@@ -115,17 +115,13 @@ export async function apiFetch(path, options = {}) {
     localStorage.removeItem("authToken");
     localStorage.removeItem("authUser");
     const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || res.statusText;
+      typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 
   if (!res.ok) {
     const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || res.statusText;
+      typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 
