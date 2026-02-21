@@ -5,14 +5,43 @@ import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-// ВАЖНО: в проде на Vercel НЕ оставляй пустым, если API на Railway напрямую.
 const API_BASE_URL = (
   process.env.REACT_APP_API_BASE_URL || "https://fintrackerpro-production.up.railway.app"
 ).trim();
 
 const API_AUTH_BASE = "/api/auth";
-
 const AUTH_STORAGE_KEYS = ["authToken", "token", "accessToken", "jwt", "authUser"];
+
+const normalizeToken = (t) => {
+  if (!t) return null;
+  const s = String(t).trim();
+  if (!s) return null;
+  return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
+};
+
+// Проверка exp у JWT (не проверяет подпись, только срок жизни)
+const isTokenAlive = (jwt) => {
+  try {
+    const t = normalizeToken(jwt);
+    if (!t) return false;
+
+    const payloadB64 = t.split(".")[1];
+    if (!payloadB64) return false;
+
+    // base64url -> base64
+    const b64 = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const json = atob(b64);
+    const payload = JSON.parse(json);
+
+    const expSec = Number(payload?.exp || 0);
+    if (!expSec) return false;
+
+    const expMs = expSec * 1000;
+    return expMs > Date.now() + 5000; // запас 5 сек
+  } catch {
+    return false;
+  }
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -29,7 +58,8 @@ export const AuthProvider = ({ children }) => {
       savedUser = localStorage.getItem("authUser");
     } catch {}
 
-    if (savedToken) setToken(savedToken);
+    const t = normalizeToken(savedToken);
+    if (t) setToken(t);
 
     if (savedUser) {
       try {
@@ -58,8 +88,8 @@ export const AuthProvider = ({ children }) => {
 
   const saveAuthData = useCallback(
     (data) => {
-      // твой бэк отдаёт { token, user }
-      const nextToken = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextToken = normalizeToken(nextTokenRaw);
       const nextUser = data?.user ?? null;
 
       setUser((prevUser) => {
@@ -145,7 +175,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      // запрос не критичен — даже если 401, чистим локально
       await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
         method: "POST",
         credentials: "include",
@@ -158,16 +187,9 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  // Совместимость: старые страницы ожидают authFetch -> Response-подобный объект
   const authFetch = useCallback(async (url, options = {}) => {
-    const path = url.startsWith("http") ? url : url; // apiFetch сам соберёт baseURL из env
-    const data = await apiFetch(path, options);
-    return {
-      ok: true,
-      status: 200,
-      json: async () => data,
-      data,
-    };
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, json: async () => data, data };
   }, []);
 
   const value = {
@@ -177,7 +199,7 @@ export const AuthProvider = ({ children }) => {
     register,
     loginWithGoogle,
     logout,
-    isAuthenticated: !!token,
+    isAuthenticated: isTokenAlive(token),
     loading,
     updateUserInState,
     authFetch,
