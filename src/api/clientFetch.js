@@ -1,162 +1,180 @@
-// src/api/clientFetch.js
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
+import { AuthErrorScreen } from "./AuthErrorScreen";
+import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
-const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
+const AuthContext = createContext(null);
 
-// Ключ события для уведомления AuthContext о потере авторизации
-export const AUTH_LOGOUT_EVENT = "app_force_logout";
+const AUTH_STORAGE_KEYS = ["authToken", "authUser"];
 
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
-  if (!s) return null;
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
-const readToken = () => {
-  try {
-    for (const k of TOKEN_KEYS) {
-      const v = localStorage.getItem(k);
-      const t = normalizeToken(v);
-      if (t) return t;
-    }
-  } catch {}
-  return null;
-};
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
-const writeToken = (token) => {
-  const t = normalizeToken(token);
-  if (!t) return;
-  try {
-    localStorage.setItem("authToken", t);
-  } catch {}
-};
-
-const clearAuthData = () => {
-  try {
-    TOKEN_KEYS.forEach(k => localStorage.removeItem(k));
-    localStorage.removeItem("authUser");
-  } catch {}
-};
-
-// Если REACT_APP_API_BASE_URL пустой, запросы идут на текущий домен (через Vercel Rewrites)
-const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
-  .trim()
-  .replace(/\/+$/, "");
-
-const buildUrl = (path) => {
-  if (/^https?:\/\//i.test(path)) return path;
-  const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  return API_BASE ? `${API_BASE}${p}` : p;
-};
-
-const parseBody = async (res) => {
-  const text = await res.text();
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
-  }
-};
-
-let refreshPromise = null;
-
-async function refreshToken() {
-  if (refreshPromise) return refreshPromise;
-
-  refreshPromise = (async () => {
+  const hardResetState = useCallback(() => {
+    setUser(null);
+    setToken(null);
     try {
-      const res = await fetch(buildUrl("/api/auth/refresh"), {
-        method: "POST",
-        credentials: "include", // Обязательно для передачи refresh-кук
-        headers: new Headers({ "Content-Type": "application/json" }),
-      });
+      AUTH_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k));
+      sessionStorage.clear();
+    } catch {}
+  }, []);
 
-      const data = await parseBody(res);
-      if (!res.ok) return null;
+  // 1. Инициализация при загрузке
+  useEffect(() => {
+    try {
+      const savedToken = localStorage.getItem("authToken");
+      const savedUser = localStorage.getItem("authUser");
 
-      const newAccess = data?.token || data?.accessToken || data?.jwt || null;
+      const t = normalizeToken(savedToken);
+      if (t) setToken(t);
 
-      if (newAccess) writeToken(newAccess);
-      if (data?.user) {
+      if (savedUser) {
         try {
-          localStorage.setItem("authUser", JSON.stringify(data.user));
+          const parsed = JSON.parse(savedUser);
+          if (parsed && (parsed.id || parsed.email)) setUser(parsed);
+        } catch {
+          setUser(null);
+        }
+      }
+    } catch (e) {
+      console.error("[AUTH] Init error", e);
+    }
+    setLoading(false);
+  }, []);
+
+  // 2. Слушатель принудительного разлогина (теперь он точно сработает при 403)
+  useEffect(() => {
+    const handleForceLogout = () => {
+      console.warn("[AUTH] Force logout event received. Cleaning state...");
+      hardResetState();
+      // Если ты хочешь показывать экран ошибки вместо редиректа на логин, раскомментируй:
+      // setAuthError(true);
+    };
+    window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
+    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
+  }, [hardResetState]);
+
+  const saveAuthData = useCallback((data) => {
+      if (!data) return;
+
+      const nextTokenRaw = data.token || data.accessToken || data.jwt;
+      const nextToken = normalizeToken(nextTokenRaw);
+      const nextUser = data.user;
+
+      if (nextUser) {
+        setUser(nextUser);
+        try {
+          localStorage.setItem("authUser", JSON.stringify(nextUser));
         } catch {}
       }
 
-      return normalizeToken(newAccess) || null;
-    } catch (e) {
-      console.error("[AUTH] Refresh fetch error:", e);
-      return null;
-    }
-  })();
+      if (nextToken) {
+        setToken(nextToken);
+        try {
+          localStorage.setItem("authToken", nextToken);
+        } catch {}
+      }
+    }, []);
 
-  try {
-    return await refreshPromise;
-  } finally {
-    refreshPromise = null;
-  }
-}
-
-export async function apiFetch(path, options = {}) {
-  const url = buildUrl(path);
-
-  const doRequest = async () => {
-    const token = readToken();
-    const headers = new Headers(options.headers || {});
-    const isFormData = typeof FormData !== "undefined" && options.body instanceof FormData;
-
-    if (!isFormData && options.body && !headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
-
-    if (token && !headers.has("Authorization")) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
-
-    const res = await fetch(url, {
-      ...options,
-      credentials: options.credentials ?? "include",
-      headers,
+  const login = useCallback(async (credentials) => {
+    const data = await apiFetch("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
     });
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
 
-    const data = await parseBody(res);
-    return { res, data };
+  const register = useCallback(async (form) => {
+    const data = await apiFetch("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(form),
+    });
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
+
+  const loginWithGoogle = useCallback(async (idToken) => {
+    const data = await apiFetch("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken }),
+    });
+    setAuthError(false);
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
+
+  const logout = useCallback(async () => {
+    try {
+      // Пытаемся уведомить бэкенд, но не ждем его, если он упал
+      await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+    } finally {
+      hardResetState();
+      setAuthError(false);
+    }
+  }, [hardResetState]);
+
+  const updateUserInState = useCallback((partialUser) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partialUser || {}) };
+      try {
+        localStorage.setItem("authUser", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  const authFetch = useCallback(async (url, options = {}) => {
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, data };
+  }, []);
+
+  const value = {
+    user,
+    token,
+    login,
+    register,
+    loginWithGoogle,
+    logout,
+    isAuthenticated: !!user && !!token,
+    loading,
+    authError,
+    authFetch,
+    updateUserInState,
   };
 
-  let { res, data } = await doRequest();
-
-  // 1. Если 401 или 403 — пробуем один раз обновить токен
-  if (res.status === 401 || res.status === 403) {
-    const newToken = await refreshToken();
-    if (newToken) {
-      ({ res, data } = await doRequest());
-    }
+  if (authError) {
+    return (
+      <AuthContext.Provider value={value}>
+        <AuthErrorScreen onRetry={() => {
+            setAuthError(false);
+            window.location.href = '/login';
+        }} />
+      </AuthContext.Provider>
+    );
   }
 
-  // 2. Если после попытки рефреша всё еще 401/403 — сессия мертва
-  if (res.status === 401 || res.status === 403) {
-    console.warn(`[AUTH] Session expired or forbidden (${res.status}). Forcing logout...`);
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
 
-    clearAuthData();
-
-    // Уведомляем React-контекст
-    window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
-
-    // Если мы не на логине — принудительно перекидываем
-    if (!window.location.pathname.includes('/login')) {
-        window.location.replace('/login');
-    }
-
-    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
-    throw new Error(`${res.status}: ${msg}`);
-  }
-
-  // Обработка остальных ошибок (500, 400 и т.д.)
-  if (!res.ok) {
-    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
-    throw new Error(`${res.status}: ${msg}`);
-  }
-
-  return data;
-}
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};

@@ -1,15 +1,8 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  useCallback,
-} from "react";
+import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
 import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
-
 const AUTH_STORAGE_KEYS = ["authToken", "authUser"];
 
 const normalizeToken = (t) => {
@@ -33,88 +26,58 @@ export const AuthProvider = ({ children }) => {
     } catch {}
   }, []);
 
-  // 1. Инициализация при загрузке
   useEffect(() => {
     try {
       const savedToken = localStorage.getItem("authToken");
       const savedUser = localStorage.getItem("authUser");
-
-      const t = normalizeToken(savedToken);
-      if (t) setToken(t);
-
+      if (savedToken) setToken(normalizeToken(savedToken));
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
           if (parsed && (parsed.id || parsed.email)) setUser(parsed);
-        } catch {
-          setUser(null);
-        }
+        } catch { setUser(null); }
       }
-    } catch (e) {
-      console.error("[AUTH] Init error", e);
-    }
+    } catch (e) { console.error("[AUTH] Init error", e); }
     setLoading(false);
   }, []);
 
-  // 2. Слушатель принудительного разлогина (теперь он точно сработает при 403)
   useEffect(() => {
     const handleForceLogout = () => {
-      console.warn("[AUTH] Force logout event received. Cleaning state...");
       hardResetState();
-      // Если ты хочешь показывать экран ошибки вместо редиректа на логин, раскомментируй:
-      // setAuthError(true);
     };
     window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
     return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
   }, [hardResetState]);
 
   const saveAuthData = useCallback((data) => {
-      if (!data) return;
-
-      const nextTokenRaw = data.token || data.accessToken || data.jwt;
-      const nextToken = normalizeToken(nextTokenRaw);
-      const nextUser = data.user;
-
-      if (nextUser) {
-        setUser(nextUser);
-        try {
-          localStorage.setItem("authUser", JSON.stringify(nextUser));
-        } catch {}
-      }
-
-      if (nextToken) {
-        setToken(nextToken);
-        try {
-          localStorage.setItem("authToken", nextToken);
-        } catch {}
-      }
-    }, []);
+    if (!data) return;
+    const nextToken = normalizeToken(data.token || data.accessToken || data.jwt);
+    if (data.user) {
+      setUser(data.user);
+      localStorage.setItem("authUser", JSON.stringify(data.user));
+    }
+    if (nextToken) {
+      setToken(nextToken);
+      localStorage.setItem("authToken", nextToken);
+    }
+  }, []);
 
   const login = useCallback(async (credentials) => {
-    const data = await apiFetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
+    const data = await apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) });
     setAuthError(false);
     saveAuthData(data);
     return data;
   }, [saveAuthData]);
 
   const register = useCallback(async (form) => {
-    const data = await apiFetch("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(form),
-    });
+    const data = await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(form) });
     setAuthError(false);
     saveAuthData(data);
     return data;
   }, [saveAuthData]);
 
   const loginWithGoogle = useCallback(async (idToken) => {
-    const data = await apiFetch("/api/auth/google", {
-      method: "POST",
-      body: JSON.stringify({ idToken }),
-    });
+    const data = await apiFetch("/api/auth/google", { method: "POST", body: JSON.stringify({ idToken }) });
     setAuthError(false);
     saveAuthData(data);
     return data;
@@ -122,7 +85,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      // Пытаемся уведомить бэкенд, но не ждем его, если он упал
       await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     } finally {
       hardResetState();
@@ -130,51 +92,19 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
-  const updateUserInState = useCallback((partialUser) => {
-    setUser((prev) => {
-      const next = { ...(prev || {}), ...(partialUser || {}) };
-      try {
-        localStorage.setItem("authUser", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  }, []);
-
-  const authFetch = useCallback(async (url, options = {}) => {
-    const data = await apiFetch(url, options);
-    return { ok: true, status: 200, data };
-  }, []);
-
   const value = {
-    user,
-    token,
-    login,
-    register,
-    loginWithGoogle,
-    logout,
+    user, token, login, register, loginWithGoogle, logout,
     isAuthenticated: !!user && !!token,
-    loading,
-    authError,
-    authFetch,
-    updateUserInState,
+    loading, authError,
+    authFetch: useCallback(async (url, opts) => {
+      const data = await apiFetch(url, opts);
+      return { ok: true, status: 200, data };
+    }, [])
   };
 
-  if (authError) {
-    return (
-      <AuthContext.Provider value={value}>
-        <AuthErrorScreen onRetry={() => {
-            setAuthError(false);
-            window.location.href = '/login';
-        }} />
-      </AuthContext.Provider>
-    );
-  }
+  if (authError) return <AuthContext.Provider value={value}><AuthErrorScreen onRetry={() => { setAuthError(false); window.location.href='/login'; }} /></AuthContext.Provider>;
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);
