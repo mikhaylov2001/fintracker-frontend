@@ -54,20 +54,28 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     try {
+      console.log("[AUTH] Попытка обновления токена...");
       const res = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
-        credentials: "include",
+        credentials: "include", // КРИТИЧНО для Safari
         headers: new Headers({ "Content-Type": "application/json" }),
       });
+
       const data = await parseBody(res);
+      console.log("[AUTH] Ответ рефреша:", res.status, data);
+
       if (!res.ok) return null;
+
       const newAccess = data?.token || data?.accessToken || data?.jwt || null;
-      if (newAccess) writeToken(newAccess);
-      if (data?.user) {
-        try { localStorage.setItem("authUser", JSON.stringify(data.user)); } catch {}
+      if (newAccess) {
+        writeToken(newAccess);
+        console.log("[AUTH] Токен успешно обновлен");
       }
       return normalizeToken(newAccess) || null;
-    } catch (e) { return null; }
+    } catch (e) {
+      console.error("[AUTH] Ошибка сети при рефреше:", e);
+      return null;
+    }
   })();
   try { return await refreshPromise; } finally { refreshPromise = null; }
 }
@@ -75,6 +83,9 @@ async function refreshToken() {
 export async function apiFetch(path, options = {}) {
   const url = buildUrl(path);
   const doRequest = async () => {
+    // Ждем, если в этот момент другой запрос обновляет токен
+    if (refreshPromise) await refreshPromise;
+
     const token = readToken();
     const headers = new Headers(options.headers || {});
     if (!(options.body instanceof FormData) && options.body && !headers.has("Content-Type")) {
