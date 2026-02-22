@@ -34,21 +34,14 @@ export const AuthProvider = ({ children }) => {
         try {
           const parsed = JSON.parse(savedUser);
           if (parsed && (parsed.id || parsed.email)) setUser(parsed);
-        } catch {
-          localStorage.removeItem("authUser");
-        }
+        } catch { localStorage.removeItem("authUser"); }
       }
-    } catch (e) {
-      console.error("[AUTH] Init error", e);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e) { console.error("[AUTH] Init error", e); }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    const handleForceLogout = () => {
-      hardResetState();
-    };
+    const handleForceLogout = () => hardResetState();
     window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
     return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
   }, [hardResetState]);
@@ -72,6 +65,22 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, [saveAuthData]);
 
+  const register = useCallback(async (form) => {
+    const data = await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify(form) });
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
+
+  const loginWithGoogle = useCallback(async (idToken) => {
+    // Отправляем ID токен, полученный от Google, на наш бэкенд
+    const data = await apiFetch("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ idToken })
+    });
+    saveAuthData(data);
+    return data;
+  }, [saveAuthData]);
+
   const logout = useCallback(async () => {
     try {
       await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
@@ -81,11 +90,17 @@ export const AuthProvider = ({ children }) => {
     }
   }, [hardResetState]);
 
+  const updateUserInState = useCallback((partialUser) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partialUser || {}) };
+      try { localStorage.setItem("authUser", JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, []);
+
   const value = {
-    user,
-    token,
-    login,
-    logout,
+    user, token, login, register, loginWithGoogle, logout,
+    updateUserInState,
     isAuthenticated: !!user && !!token,
     loading
   };
