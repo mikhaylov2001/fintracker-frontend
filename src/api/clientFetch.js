@@ -40,7 +40,6 @@ const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "").trim().replace
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
-  // Если API_BASE пустой, вернет относительный путь (например, "/api/auth/login")
   return API_BASE ? `${API_BASE}${p}` : p;
 };
 
@@ -56,7 +55,6 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     try {
-      // Запрос идет на "/api/auth/refresh", который Vercel проксирует на Railway
       const res = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
         credentials: "include",
@@ -64,7 +62,6 @@ async function refreshToken() {
       });
 
       const data = await parseBody(res);
-
       if (!res.ok) return null;
 
       const newAccess = data?.token || data?.accessToken || data?.jwt || null;
@@ -81,6 +78,7 @@ async function refreshToken() {
 
 export async function apiFetch(path, options = {}) {
   const url = buildUrl(path);
+
   const doRequest = async () => {
     if (refreshPromise) await refreshPromise;
 
@@ -92,7 +90,7 @@ export async function apiFetch(path, options = {}) {
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
-    // credentials: "include" заставляет браузер отправлять куки
+
     const res = await fetch(url, { ...options, credentials: "include", headers });
     const data = await parseBody(res);
     return { res, data };
@@ -100,7 +98,7 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  // Если получили 401/403, пробуем обновить токен один раз
+  // 1. Попытка рефреша при 401/403
   if (res.status === 401 || res.status === 403) {
     const newToken = await refreshToken();
     if (newToken) {
@@ -108,26 +106,23 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  // Если всё еще 401/403 — разлогиниваем
+  // 2. Если всё еще 401/403 после попытки рефреша — разлогин
   if (res.status === 401 || res.status === 403) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
-    const isLoginPage = window.location.pathname.includes('/login');
-        if (!isLoginPage) {
-            window.location.replace('/login?expired=true');
-        }
-        throw new Error("Session expired");
-    }
 
-    if (!window.location.pathname.includes('/login')) {
+    const isLoginPage = window.location.pathname.includes('/login');
+    if (!isLoginPage) {
         window.location.replace('/login?expired=true');
     }
     throw new Error("Session expired");
   }
 
+  // 3. Обработка остальных ошибок
   if (!res.ok) {
     const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
+
   return data;
 }
