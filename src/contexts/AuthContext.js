@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
@@ -8,6 +14,16 @@ const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
+};
+
+// Функция-"переводчик" технических ошибок в понятные слова
+const getHumanErrorMessage = (error) => {
+  const message = error.message || "";
+  if (message.includes("500")) return "Ошибка на сервере. Попробуйте позже.";
+  if (message.includes("403") || message.includes("401")) return "Сессия истекла. Войдите в аккаунт снова.";
+  if (message.includes("404")) return "Данные не найдены.";
+  if (message.includes("Failed to fetch")) return "Нет связи с сервером. Проверьте интернет.";
+  return message || "Произошла непредвиденная ошибка";
 };
 
 export const AuthProvider = ({ children }) => {
@@ -31,12 +47,12 @@ export const AuthProvider = ({ children }) => {
       const t = normalizeToken(savedToken);
       if (t) setToken(t);
       if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (parsed && (parsed.id || parsed.email)) setUser(parsed);
-        } catch { localStorage.removeItem("authUser"); }
+        const parsed = JSON.parse(savedUser);
+        if (parsed && (parsed.id || parsed.email)) setUser(parsed);
       }
-    } catch (e) { console.error("[AUTH] Init error", e); }
+    } catch (e) {
+      console.error("[AUTH] Init error", e);
+    }
     setLoading(false);
   }, []);
 
@@ -59,6 +75,49 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * ОБНОВЛЕНИЕ ПРОФИЛЯ / ВАЛЮТЫ / СКРЫТИЯ СУММ
+   */
+  const updateProfile = useCallback(async (updatedFields) => {
+    try {
+      const data = await apiFetch("/api/users/me", {
+        method: "PATCH",
+        body: JSON.stringify(updatedFields),
+      });
+
+      if (data) {
+        setUser((prev) => {
+          const next = { ...(prev || {}), ...data };
+          localStorage.setItem("authUser", JSON.stringify(next));
+          return next;
+        });
+        return { success: true };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: getHumanErrorMessage(error)
+      };
+    }
+  }, []);
+
+  /**
+   * УДАЛЕНИЕ ДАННЫХ
+   */
+  const deleteDataByMonth = useCallback(async (month, type) => {
+    try {
+      await apiFetch(`/api/data/delete?month=${month}&type=${type}`, {
+        method: "DELETE",
+      });
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: getHumanErrorMessage(error)
+      };
+    }
+  }, []);
+
   const login = useCallback(async (credentials) => {
     const data = await apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) });
     saveAuthData(data);
@@ -72,11 +131,7 @@ export const AuthProvider = ({ children }) => {
   }, [saveAuthData]);
 
   const loginWithGoogle = useCallback(async (idToken) => {
-    // Отправляем ID токен, полученный от Google, на наш бэкенд
-    const data = await apiFetch("/api/auth/google", {
-      method: "POST",
-      body: JSON.stringify({ idToken })
-    });
+    const data = await apiFetch("/api/auth/google", { method: "POST", body: JSON.stringify({ idToken }) });
     saveAuthData(data);
     return data;
   }, [saveAuthData]);
@@ -86,23 +141,21 @@ export const AuthProvider = ({ children }) => {
       await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     } finally {
       hardResetState();
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
   }, [hardResetState]);
 
-  const updateUserInState = useCallback((partialUser) => {
-    setUser((prev) => {
-      const next = { ...(prev || {}), ...(partialUser || {}) };
-      try { localStorage.setItem("authUser", JSON.stringify(next)); } catch {}
-      return next;
-    });
-  }, []);
-
   const value = {
-    user, token, login, register, loginWithGoogle, logout,
-    updateUserInState,
+    user,
+    token,
+    login,
+    register,
+    loginWithGoogle,
+    logout,
+    updateProfile,
+    deleteDataByMonth,
     isAuthenticated: !!user && !!token,
-    loading
+    loading,
   };
 
   return (
