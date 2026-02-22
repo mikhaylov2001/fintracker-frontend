@@ -26,8 +26,8 @@ const AUTH_STORAGE_KEYS = [
 
 const getRuError = (err) => {
   const msg = err?.message || String(err);
-  if (msg.includes("409")) return "Ошибка: Неверный пароль или данные уже заняты";
-  return "Ошибка при сохранении";
+  if (msg.includes("409")) return "Ошибка: Неверный текущий пароль или данные уже заняты";
+  return "Ошибка сохранения";
 };
 
 const normalizeToken = (t) => {
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       try {
         const parsed = JSON.parse(savedUser);
-        setUser(parsed && parsed.id ? parsed : null);
+        setUser(parsed && (parsed.id || parsed.email) ? parsed : null);
       } catch {
         setUser(null);
       }
@@ -120,30 +120,26 @@ export const AuthProvider = ({ children }) => {
     [hardResetState]
   );
 
-  const updateUserInState = useCallback((next) => {
-    if (!next) return;
-    setUser(next);
-    try {
-      localStorage.setItem("authUser", JSON.stringify(next));
-    } catch {}
-  }, []);
-
-  // --- ФУНКЦИЯ ИЗ БЭКА (ИМЯ И ФАМИЛИЯ) ---
+  // --- ФУНКЦИЯ ДЛЯ ОБНОВЛЕНИЯ ПРОФИЛЯ (ИЗ БЭКА) ---
   const updateProfile = useCallback(async (data) => {
     try {
-      // Отправляем на бэк
+      // Отправляем PUT запрос на бэкенд
       const res = await apiFetch("/api/account/profile", {
         method: "PUT",
-        body: JSON.stringify(data), // тут firstName и lastName
+        body: JSON.stringify(data),
       });
 
-      // СРАЗУ ОБНОВЛЯЕМ USER ОБЪЕКТ ПОЛНОСТЬЮ
-      updateUserInState(res);
+      // КЛЮЧЕВОЙ МОМЕНТ:
+      // Бэкенд возвращает обновленного юзера. Мы сохраняем его ПОВЕРХ старого.
+      if (res) {
+        setUser(res);
+        localStorage.setItem("authUser", JSON.stringify(res));
+      }
       return res;
     } catch (e) {
       throw new Error(getRuError(e));
     }
-  }, [updateUserInState]);
+  }, []);
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     try {
@@ -197,7 +193,6 @@ export const AuthProvider = ({ children }) => {
     changePassword,
     isAuthenticated: !!user && !!localStorage.getItem("authToken"),
     loading,
-    updateUserInState,
     authFetch,
     authError,
   };
