@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react"; // Убрал useCallback
 import {
-  Box, Typography, Tabs, Tab, Switch, FormControl, InputLabel, Select, MenuItem,
+  Box, Typography, Tabs, Tab, Switch, FormControl, Select, MenuItem, // Убрал InputLabel
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
   Snackbar, Alert, Divider, Checkbox, FormControlLabel, FormGroup, Avatar, Stack, Chip, InputAdornment,
 } from "@mui/material";
@@ -12,7 +12,7 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+// Убрал InfoOutlinedIcon
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
@@ -105,8 +105,8 @@ const PageWrap = ({ children }) => (
   </Box>
 );
 
-const SectionTitle = ({ children }) => (
-  <Typography sx={{ fontSize: 14, fontWeight: 950, color: alpha("#fff", 0.55), mb: 1.5, mt: 3, textTransform: "uppercase", letterSpacing: 0.5 }}>
+const SectionTitle = ({ children, sx }) => (
+  <Typography sx={{ fontSize: 14, fontWeight: 950, color: alpha("#fff", 0.55), mb: 1.5, mt: 3, textTransform: "uppercase", letterSpacing: 0.5, ...sx }}>
     {children}
   </Typography>
 );
@@ -191,7 +191,8 @@ export default function SettingsPage() {
     const type = deleteIncome && deleteExpenses ? "all" : deleteIncome ? "income" : "expenses";
     const res = await deleteDataByMonth(deleteMonth, type);
     if (res.success) {
-      showSnack("success", "Данные за " + ymLabel(...Object.values(parseYearMonth(deleteMonth))) + " удалены");
+      const p = parseYearMonth(deleteMonth);
+      showSnack("success", "Данные за " + ymLabel(p.year, p.month) + " удалены");
       setDeleteDataOpen(false);
     } else {
       showSnack("error", res.error);
@@ -288,7 +289,7 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* Модалки (Используют все переменные) */}
+      {/* Модалки */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#1a1a1a", color: "#fff" } }}>
         <DialogTitle sx={{ fontWeight: 900 }}>Имя профиля</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
