@@ -1,139 +1,251 @@
-// src/contexts/AuthContext.jsx
-import React, { createContext, useState, useContext, useEffect, useCallback } from "react";
-import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
+import { AuthErrorScreen } from "./AuthErrorScreen";
+import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
-const AUTH_STORAGE_KEYS = ["authToken", "authUser"];
 
-const getHumanErrorMessage = (error) => {
-  if (typeof error === 'string') return error;
-  const message = error?.message || "";
-  if (message.includes("500")) return "Ошибка на сервере. Попробуйте позже.";
-  if (message.includes("403") || message.includes("401")) return "Сессия истекла. Войдите снова.";
-  if (message.includes("Failed to fetch")) return "Нет связи с сервером. Проверьте интернет.";
-  return message || "Произошла ошибка";
+const API_BASE_URL = (
+  process.env.REACT_APP_API_BASE_URL ||
+  "https://fintrackerpro-production.up.railway.app"
+).trim();
+
+const API_AUTH_BASE = "/api/auth";
+const AUTH_STORAGE_KEYS = [
+  "authToken",
+  "token",
+  "accessToken",
+  "jwt",
+  "authUser",
+];
+
+const normalizeToken = (t) => {
+  if (!t) return null;
+  const s = String(t).trim();
+  if (!s) return null;
+  return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem("authToken"));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
-  // Инициализация
   useEffect(() => {
-    const savedUser = localStorage.getItem("authUser");
-    if (savedUser && savedUser !== "undefined") {
-      try { setUser(JSON.parse(savedUser)); } catch (e) { console.error(e); }
+    let savedToken = null;
+    let savedUser = null;
+
+    try {
+      savedToken = localStorage.getItem("authToken");
+      savedUser = localStorage.getItem("authUser");
+    } catch {}
+
+    const t = normalizeToken(savedToken);
+    if (t) setToken(t);
+
+    if (savedUser) {
+      try {
+        const parsed = JSON.parse(savedUser);
+        setUser(parsed && (parsed.id || parsed.email) ? parsed : null);
+      } catch {
+        setUser(null);
+      }
     }
+
     setLoading(false);
   }, []);
 
-  // Слушатель принудительного выхода
   useEffect(() => {
-    const handleForceLogout = () => {
-      AUTH_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
-      setUser(null);
-      setToken(null);
-      window.location.href = "/login";
+    const sync = () => {
+      try {
+        const savedToken = localStorage.getItem("authToken");
+        const t = normalizeToken(savedToken);
+        setToken(t);
+      } catch {}
     };
-    window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
-    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
+
+    sync();
+    const id = setInterval(sync, 10000);
+    return () => clearInterval(id);
   }, []);
 
-  /**
-   * 1. ПРОФИЛЬ (Имя, Фамилия) -> AccountController PUT /api/account/profile
-   */
-  const updateProfile = useCallback(async (profileData) => {
-    try {
-      const res = await apiFetch("/api/account/profile", {
-        method: "PUT",
-        body: JSON.stringify(profileData),
-      });
-      // Обновляем локальное состояние пользователя
-      const updatedUser = { ...user, ...res };
-      setUser(updatedUser);
-      localStorage.setItem("authUser", JSON.stringify(updatedUser));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: getHumanErrorMessage(err) };
-    }
-  }, [user]);
-
-  /**
-   * 2. НАСТРОЙКИ (Валюта, Скрытие) -> UserSettingsController PUT /api/settings/me
-   */
-  const updateSettings = useCallback(async (settingsData) => {
-    try {
-      const res = await apiFetch("/api/settings/me", {
-        method: "PUT",
-        body: JSON.stringify(settingsData),
-      });
-      // Настройки в твоем бэкенде обычно лежат в поле settings или приходят отдельным DTO
-      const updatedUser = { ...user, settings: res };
-      setUser(updatedUser);
-      localStorage.setItem("authUser", JSON.stringify(updatedUser));
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: getHumanErrorMessage(err) };
-    }
-  }, [user]);
-
-  /**
-   * 3. БЕЗОПАСНОСТЬ -> AccountController POST /api/account/change-password
-   */
-  const changePassword = useCallback(async (currentPassword, newPassword) => {
-    try {
-      await apiFetch("/api/account/change-password", {
-        method: "POST",
-        body: JSON.stringify({ currentPassword, newPassword }),
-      });
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: getHumanErrorMessage(err) };
-    }
-  }, []);
-
-  /**
-   * 4. УДАЛЕНИЕ -> DataController DELETE /api/data/me/month/{year}/{month}
-   */
-  const deleteData = useCallback(async (year, month, type = 'all') => {
-    try {
-      await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
-        method: "DELETE",
-      });
-      return { success: true };
-    } catch (err) {
-      return { success: false, error: getHumanErrorMessage(err) };
-    }
-  }, []);
-
-  const login = useCallback(async (credentials) => {
-    const data = await apiFetch("/api/auth/login", { method: "POST", body: JSON.stringify(credentials) });
-    if (data.token) {
-      localStorage.setItem("authToken", data.token);
-      localStorage.setItem("authUser", JSON.stringify(data.user));
-      setToken(data.token);
-      setUser(data.user);
-    }
-    return data;
-  }, []);
-
-  const logout = useCallback(() => {
-    AUTH_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+  const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
-    window.location.href = "/login";
+    try {
+      for (const k of AUTH_STORAGE_KEYS) localStorage.removeItem(k);
+    } catch {}
+    try {
+      sessionStorage.clear();
+    } catch {}
   }, []);
 
-  return (
-    <AuthContext.Provider value={{
-      user, token, login, logout, updateProfile,
-      updateSettings, changePassword, deleteData,
-      isAuthenticated: !!token, loading
-    }}>
-      {!loading && children}
-    </AuthContext.Provider>
+  const saveAuthData = useCallback(
+    (data) => {
+      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextToken = normalizeToken(nextTokenRaw);
+      const nextUser = data?.user ?? null;
+
+      setUser((prevUser) => {
+        if (prevUser && nextUser && prevUser.id && nextUser.id && prevUser.id !== nextUser.id) {
+          hardResetState();
+          setAuthError(true);
+          return null;
+        }
+
+        if (nextUser) {
+          try {
+            localStorage.setItem("authUser", JSON.stringify(nextUser));
+          } catch {}
+          return nextUser;
+        }
+        return prevUser;
+      });
+
+      if (nextToken) {
+        setToken(nextToken);
+        try {
+          localStorage.setItem("authToken", nextToken);
+        } catch {}
+      }
+    },
+    [hardResetState]
   );
+
+  const updateUserInState = useCallback((partialUser) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...(partialUser || {}) };
+      try {
+        localStorage.setItem("authUser", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // --- МЕТОДЫ ДЛЯ SETTINGS PAGE ---
+
+  const updateProfile = useCallback(async (data) => {
+    const res = await apiFetch("/api/account/profile", {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    updateUserInState(res);
+    return res;
+  }, [updateUserInState]);
+
+  const updateSettings = useCallback(async (settings) => {
+    const res = await apiFetch("/api/settings/me", {
+      method: "PUT",
+      body: JSON.stringify(settings),
+    });
+    updateUserInState({ settings: res });
+    return res;
+  }, [updateUserInState]);
+
+  const changePassword = useCallback(async (currentPassword, newPassword) => {
+    return await apiFetch("/api/account/change-password", {
+      method: "POST",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+  }, []);
+
+  const deleteData = useCallback(async (year, month, type = 'all') => {
+    return await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
+      method: "DELETE",
+    });
+  }, []);
+
+  // --- СТАНДАРТНЫЕ МЕТОДЫ ---
+
+  const login = useCallback(
+    async ({ email, password }) => {
+      const data = await apiFetch(`${API_AUTH_BASE}/login`, {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      setAuthError(false);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
+
+  const register = useCallback(
+    async ({ firstName, lastName, email, password }) => {
+      const data = await apiFetch(`${API_AUTH_BASE}/register`, {
+        method: "POST",
+        body: JSON.stringify({ firstName, lastName, email, password }),
+      });
+      setAuthError(false);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    } finally {
+      hardResetState();
+      setAuthError(false);
+    }
+  }, [hardResetState]);
+
+  const authFetch = useCallback(async (url, options = {}) => {
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, json: async () => data, data };
+  }, []);
+
+  const hasStoredToken = (() => {
+    try {
+      return Boolean(localStorage.getItem("authToken"));
+    } catch {
+      return false;
+    }
+  })();
+
+  const value = {
+    user,
+    token,
+    login,
+    register,
+    logout,
+    updateProfile,
+    updateSettings,
+    changePassword,
+    deleteData,
+    isAuthenticated: !!user && hasStoredToken,
+    loading,
+    updateUserInState,
+    authFetch,
+    authError,
+  };
+
+  if (authError) {
+    return (
+      <AuthContext.Provider value={value}>
+        <AuthErrorScreen />
+      </AuthContext.Provider>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};
