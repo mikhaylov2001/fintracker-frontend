@@ -1,8 +1,31 @@
-import React, { useEffect, useMemo, useState } from "react";
+// src/pages/Settings/SettingsPage.jsx
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
-  Box, Typography, Tabs, Tab, Switch, FormControl, Select, MenuItem,
-  Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
-  Snackbar, Alert, Divider, Checkbox, FormControlLabel, FormGroup, Avatar, Stack, Chip, InputAdornment,
+  Box,
+  Typography,
+  Tabs,
+  Tab,
+  Switch,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Button,
+  TextField,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
+  Divider,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Avatar,
+  Stack,
+  Chip,
+  InputAdornment,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -17,19 +40,34 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 
 import { useAuth } from "../../contexts/AuthContext";
 import { bankingColors as colors } from "../../styles/bankingTokens";
+import { useCurrency } from "../../contexts/CurrencyContext";
 
-// --- Вспомогательные функции ---
+// helpers
 const parseYearMonth = (str) => {
   const m = String(str || "").trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
-  return { year: Number(m[1]), month: Number(m[2]) };
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  if (mo < 1 || mo > 12) return null;
+  return { year: y, month: mo };
 };
-const ymValue = (year, month) => `${year}-${String(month).padStart(2, "0")}`;
-const ymLabel = (year, month) => new Date(year, month - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 
+const ymValue = (year, month) =>
+  `${year}-${String(month).padStart(2, "0")}`;
+
+const ymLabel = (year, month) =>
+  new Date(year, month - 1, 1).toLocaleDateString("ru-RU", {
+    month: "long",
+    year: "numeric",
+  });
+
+// MonthPicker
 function MonthPicker({ value, onChange }) {
   const [inputVal, setInputVal] = useState(value || "");
-  useEffect(() => setInputVal(value || ""), [value]);
+
+  useEffect(() => {
+    setInputVal(value || "");
+  }, [value]);
 
   const months = useMemo(() => {
     const now = new Date();
@@ -46,17 +84,43 @@ function MonthPicker({ value, onChange }) {
     return grouped;
   }, []);
 
-  const MONTH_NAMES = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
+  const handleChipClick = (year, month) => {
+    const v = ymValue(year, month);
+    setInputVal(v);
+    onChange(v);
+  };
+
+  const handleInputChange = (e) => {
+    const v = e.target.value;
+    setInputVal(v);
+    const parsed = parseYearMonth(v);
+    if (parsed) onChange(ymValue(parsed.year, parsed.month));
+  };
+
+  const MONTH_NAMES = [
+    "Янв",
+    "Фев",
+    "Мар",
+    "Апр",
+    "Май",
+    "Июн",
+    "Июл",
+    "Авг",
+    "Сен",
+    "Окт",
+    "Ноя",
+    "Дек",
+  ];
 
   return (
     <Box>
       <TextField
-        fullWidth size="small" label="Месяц (ГГГГ-ММ)" value={inputVal}
-        onChange={(e) => {
-          setInputVal(e.target.value);
-          const p = parseYearMonth(e.target.value);
-          if (p) onChange(ymValue(p.year, p.month));
-        }}
+        fullWidth
+        size="small"
+        label="Месяц (ГГГГ-ММ)"
+        placeholder="2026-02"
+        value={inputVal}
+        onChange={handleInputChange}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -64,55 +128,138 @@ function MonthPicker({ value, onChange }) {
             </InputAdornment>
           ),
         }}
+        helperText={
+          value && parseYearMonth(value)
+            ? ymLabel(
+                parseYearMonth(value).year,
+                parseYearMonth(value).month
+              )
+            : "Введите в формате ГГГГ-ММ или выберите ниже"
+        }
         sx={{ mb: 2 }}
       />
-      {Object.entries(months).sort(([a], [b]) => Number(b) - Number(a)).map(([year, monthList]) => (
-        <Box key={year} sx={{ mb: 1.5 }}>
-          <Typography variant="caption" sx={{ fontWeight: 900, color: alpha("#000", 0.5), mb: 0.75, display: "block" }}>{year}</Typography>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-            {monthList.map((m) => {
-              const v = ymValue(Number(year), m);
-              const selected = value === v;
-              return (
-                <Chip key={m} label={MONTH_NAMES[m - 1]} size="small" onClick={() => onChange(v)}
-                  sx={{
-                    fontWeight: 900,
-                    bgcolor: selected ? colors.primary : alpha("#000", 0.07),
-                    color: selected ? "#fff" : "inherit",
-                  }}
-                />
-              );
-            })}
+
+      {Object.entries(months)
+        .sort(([a], [b]) => Number(b) - Number(a))
+        .map(([year, monthList]) => (
+          <Box key={year} sx={{ mb: 1.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 900,
+                color: alpha("#000", 0.5),
+                mb: 0.75,
+                display: "block",
+              }}
+            >
+              {year}
+            </Typography>
+            <Box
+              sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}
+            >
+              {monthList.map((m) => {
+                const v = ymValue(Number(year), m);
+                const selected = value === v;
+                return (
+                  <Chip
+                    key={m}
+                    label={MONTH_NAMES[m - 1]}
+                    size="small"
+                    onClick={() =>
+                      handleChipClick(Number(year), m)
+                    }
+                    sx={{
+                      fontWeight: 900,
+                      cursor: "pointer",
+                      bgcolor: selected
+                        ? colors.primary
+                        : alpha("#000", 0.07),
+                      color: selected ? "#05140C" : "inherit",
+                      border: selected
+                        ? `1px solid ${colors.primary}`
+                        : "1px solid transparent",
+                      "&:hover": {
+                        bgcolor: selected
+                          ? colors.primary
+                          : alpha("#000", 0.13),
+                      },
+                    }}
+                  />
+                );
+              })}
+            </Box>
           </Box>
-        </Box>
-      ))}
+        ))}
     </Box>
   );
 }
 
+// layout helpers
 const PageWrap = ({ children }) => (
-  <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>
+  <Box
+    sx={{
+      width: "100%",
+      mx: "auto",
+      maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 },
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      MsUserSelect: "none",
+    }}
+  >
     {children}
   </Box>
 );
 
-const SectionTitle = ({ children, sx }) => (
-  <Typography sx={{ fontSize: 13, fontWeight: 950, color: alpha("#fff", 0.45), mb: 1.5, mt: 3, textTransform: "uppercase", letterSpacing: 1, ...sx }}>
+const SectionTitle = ({ children }) => (
+  <Typography
+    sx={{
+      fontSize: { xs: 13, md: 14 },
+      fontWeight: 950,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+      color: alpha("#fff", 0.55),
+      mb: 1.5,
+      mt: 3,
+    }}
+  >
     {children}
   </Typography>
 );
 
 const RowItem = ({ children, noDivider }) => (
   <>
-    <Box sx={{ py: 2.25, px: 2, display: "flex", alignItems: "center", gap: 2.5 }}>{children}</Box>
-    {!noDivider && <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />}
+    <Box
+      sx={{
+        py: { xs: 2, md: 2.25 },
+        px: { xs: 2, md: 3 },
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        bgcolor: "transparent",
+      }}
+    >
+      {children}
+    </Box>
+    {!noDivider && (
+      <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />
+    )}
   </>
 );
 
+// main
 export default function SettingsPage() {
-  const { user, updateProfile, deleteDataByMonth, isAuthenticated, loading: authLoading } = useAuth();
+  const {
+    user,
+    authFetch,
+    updateUserInState,
+    isAuthenticated,
+    loading: authLoading,
+  } = useAuth();
+  const { currency, hideAmounts, setCurrency, setHideAmounts } =
+    useCurrency();
 
   const [tab, setTab] = useState(0);
+
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editEmailOpen, setEditEmailOpen] = useState(false);
   const [editPasswordOpen, setEditPasswordOpen] = useState(false);
@@ -120,7 +267,10 @@ export default function SettingsPage() {
 
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
+
   const [newEmail, setNewEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -130,146 +280,611 @@ export default function SettingsPage() {
   const [deleteExpenses, setDeleteExpenses] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const [snack, setSnack] = useState({ open: false, severity: "success", message: "" });
-  const showSnack = (severity, message) => setSnack({ open: true, severity, message });
+  const [snack, setSnack] = useState({
+    open: false,
+    severity: "success",
+    message: "",
+  });
+
+  const showSnack = useCallback((severity, message) => {
+    setSnack({ open: true, severity, message });
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName || "");
-      setLastName(user.lastName || "");
-    }
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
   }, [user]);
 
+  const allChecked = deleteIncome && deleteExpenses;
+  const someChecked = deleteIncome || deleteExpenses;
+  const handleToggleAll = (e) => {
+    setDeleteIncome(e.target.checked);
+    setDeleteExpenses(e.target.checked);
+  };
+
+  const safeAuthCall = useCallback(
+    async (url, options = {}) => {
+      if (!isAuthenticated || authLoading) {
+        throw new Error("Не авторизован");
+      }
+      const res = await authFetch(url, options);
+      // authFetch возвращает { ok, status, data }
+      if (!res.ok) {
+        const d = res.data || {};
+        throw new Error(
+          d.message || d.error || "Ошибка запроса"
+        );
+      }
+      return res.data;
+    },
+    [authFetch, isAuthenticated, authLoading]
+  );
+
   const handleSaveName = async () => {
-    const res = await updateProfile({ firstName, lastName });
-    if (res.success) {
-      showSnack("success", "Имя обновлено");
+    try {
+      const data = await safeAuthCall("/api/account/profile", {
+        method: "PUT",
+        body: JSON.stringify({ firstName, lastName }),
+      });
+      updateUserInState(data);
+      showSnack("success", "Имя и фамилия обновлены");
       setEditNameOpen(false);
-    } else {
-      showSnack("error", res.error);
+    } catch (e) {
+      showSnack(
+        "error",
+        e.message || "Не удалось обновить профиль"
+      );
     }
   };
 
   const handleSaveEmail = async () => {
-    const res = await updateProfile({ email: newEmail });
-    if (res.success) {
-      showSnack("success", "Email успешно изменен");
+    try {
+      const data = await safeAuthCall("/api/account/email", {
+        method: "PUT",
+        body: JSON.stringify({
+          newEmail,
+          password: emailPassword,
+        }),
+      });
+      updateUserInState(data);
+      showSnack("success", "Email обновлён");
       setEditEmailOpen(false);
-    } else {
-      showSnack("error", res.error);
+      setNewEmail("");
+      setEmailPassword("");
+    } catch (e) {
+      showSnack(
+        "error",
+        e.message || "Не удалось изменить email"
+      );
     }
   };
 
   const handleSavePassword = async () => {
-    if (newPassword !== confirmPassword) return showSnack("error", "Пароли не совпадают");
-    const res = await updateProfile({ currentPassword, newPassword });
-    if (res.success) {
-      showSnack("success", "Пароль успешно изменен");
+    if (newPassword !== confirmPassword) {
+      showSnack("error", "Пароли не совпадают");
+      return;
+    }
+    try {
+      await safeAuthCall("/api/account/change-password", {
+        method: "POST",
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      showSnack("success", "Пароль изменён");
       setEditPasswordOpen(false);
-    } else {
-      showSnack("error", res.error);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (e) {
+      showSnack(
+        "error",
+        e.message || "Не удалось изменить пароль"
+      );
     }
   };
 
   const handleDeleteData = async () => {
-    if (!deleteMonth) return showSnack("error", "Выберите месяц");
-    setDeleting(true);
-    const type = deleteIncome && deleteExpenses ? "all" : deleteIncome ? "income" : "expenses";
-    const res = await deleteDataByMonth(deleteMonth, type);
-    if (res.success) {
-      const p = parseYearMonth(deleteMonth);
-      showSnack("success", `Данные за ${ymLabel(p.year, p.month)} удалены`);
-      setDeleteDataOpen(false);
-    } else {
-      showSnack("error", res.error);
+    const parsed = parseYearMonth(deleteMonth);
+    if (!parsed) {
+      showSnack("error", "Выберите корректный месяц");
+      return;
     }
-    setDeleting(false);
+    if (!deleteIncome && !deleteExpenses) {
+      showSnack("error", "Выберите что удалить");
+      return;
+    }
+
+    let type;
+    if (deleteIncome && deleteExpenses) type = "all";
+    else if (deleteIncome) type = "income";
+    else type = "expenses";
+
+    const { year, month } = parsed;
+
+    try {
+      setDeleting(true);
+      await safeAuthCall(
+        `/api/data/me/month/${year}/${month}?type=${type}`,
+        { method: "DELETE" }
+      );
+
+      const what = [];
+      if (deleteIncome) what.push("доходы");
+      if (deleteExpenses) what.push("расходы");
+
+      showSnack(
+        "success",
+        `Удалены ${what.join(" и ")} за ${ymLabel(year, month)}`
+      );
+      setDeleteDataOpen(false);
+      setDeleteMonth("");
+      setDeleteIncome(false);
+      setDeleteExpenses(false);
+    } catch (e) {
+      showSnack(
+        "error",
+        e.message || "Ошибка при удалении"
+      );
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  if (authLoading || !isAuthenticated) return null;
+  const handleUpdateSettings = async (nextCurrency, nextHide) => {
+    try {
+      const data = await safeAuthCall("/api/settings/me", {
+        method: "PUT",
+        body: JSON.stringify({
+          displayCurrency: nextCurrency ?? currency,
+          hideAmounts:
+            typeof nextHide === "boolean"
+              ? nextHide
+              : hideAmounts,
+        }),
+      });
+      setCurrency(data.displayCurrency || "RUB");
+      setHideAmounts(!!data.hideAmounts);
+      showSnack("success", "Настройки интерфейса обновлены");
+    } catch (e) {
+      showSnack(
+        "error",
+        e.message ||
+          "Не удалось обновить настройки интерфейса"
+      );
+    }
+  };
+
+  const handleToggleHideAmounts = (checked) => {
+    setHideAmounts(checked);
+    handleUpdateSettings(undefined, checked);
+  };
+
+  const handleChangeCurrency = (val) => {
+    setCurrency(val);
+    handleUpdateSettings(val, undefined);
+  };
+
+  if (authLoading) {
+    return (
+      <PageWrap>
+        <Typography sx={{ color: alpha("#fff", 0.6), mt: 2 }}>
+          Загрузка…
+        </Typography>
+      </PageWrap>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <PageWrap>
-      <Box sx={{ mb: 4, pt: 1 }}>
-        <Typography variant="h4" sx={{ fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>Настройки</Typography>
+      <Box
+        sx={{
+          mb: { xs: 2, md: 2.5 },
+          pt: { xs: 0.5, md: 1 },
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 980,
+            color: colors.text,
+            letterSpacing: -0.4,
+            fontSize: {
+              xs: "1.65rem",
+              sm: "1.85rem",
+              md: "2.1rem",
+            },
+          }}
+        >
+          Настройки
+        </Typography>
       </Box>
 
-      <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 3, "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3 } }}>
-        <Tab label="Аккаунт" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
-        <Tab label="Интерфейс" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
-        <Tab label="Данные" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
-      </Tabs>
+      <Box
+        sx={{
+          borderBottom: 1,
+          borderColor: alpha("#fff", 0.1),
+          mb: 0,
+        }}
+      >
+        <Tabs
+          value={tab}
+          onChange={(_e, v) => setTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{
+            "& .MuiTab-root": {
+              color: alpha("#fff", 0.65),
+              fontWeight: 900,
+              textTransform: "none",
+              fontSize: { xs: 14, md: 15 },
+              minHeight: 48,
+            },
+            "& .Mui-selected": { color: "#fff" },
+            "& .MuiTabs-indicator": {
+              bgcolor: colors.primary,
+              height: 3,
+            },
+          }}
+        >
+          <Tab label="Аккаунт" />
+          <Tab label="Интерфейс" />
+          <Tab label="Данные" />
+        </Tabs>
+      </Box>
 
       {tab === 0 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
+        <Box>
           <SectionTitle>Профиль</SectionTitle>
           <RowItem>
-            <Avatar sx={{ width: 60, height: 60, bgcolor: alpha(colors.primary, 0.2), color: colors.primary, fontWeight: 900, fontSize: 22 }}>{user?.firstName?.[0]}</Avatar>
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff", fontSize: 18 }}>{user?.firstName} {user?.lastName}</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), fontWeight: 700 }}>{user?.email}</Typography>
+            <Avatar
+              sx={{
+                width: 56,
+                height: 56,
+                bgcolor: alpha(colors.primary, 0.18),
+                color: "#fff",
+                fontSize: 22,
+                fontWeight: 900,
+              }}
+            >
+              {(
+                user?.firstName?.[0] ||
+                user?.userName?.[0] ||
+                "U"
+              )
+                .toUpperCase()
+                .slice(0, 1)}
+            </Avatar>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                sx={{
+                  fontWeight: 950,
+                  color: colors.text,
+                  fontSize: { xs: 16, md: 17 },
+                }}
+              >
+                {user?.firstName && user?.lastName
+                  ? `${user.firstName} ${user.lastName}`
+                  : user?.userName ||
+                    user?.email ||
+                    "Пользователь"}
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                {user?.email || "Не указан email"}
+              </Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditNameOpen(true)} startIcon={<EditOutlinedIcon />} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Изменить</Button>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<EditOutlinedIcon />}
+              onClick={() => setEditNameOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
+              }}
+            >
+              Изменить
+            </Button>
           </RowItem>
 
           <SectionTitle>Безопасность</SectionTitle>
           <RowItem>
-            <EmailOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <EmailOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email почта</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>{user?.email}</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Email
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                {user?.email || "Не указан"}
+              </Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Сменить</Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setEditEmailOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
+              }}
+            >
+              Изменить
+            </Button>
           </RowItem>
+
           <RowItem>
-            <LockOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <LockOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Пароль</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Обновлен недавно</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Пароль
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                ••••••••
+              </Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditPasswordOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Сменить</Button>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setEditPasswordOpen(true)}
+              sx={{
+                borderRadius: 2.5,
+                textTransform: "none",
+                fontWeight: 900,
+                borderColor: alpha("#fff", 0.16),
+                color: "#fff",
+                "&:hover": {
+                  borderColor: alpha("#fff", 0.28),
+                  bgcolor: alpha("#fff", 0.04),
+                },
+              }}
+            >
+              Изменить
+            </Button>
           </RowItem>
 
           <SectionTitle>О приложении</SectionTitle>
           <RowItem noDivider>
-            <InfoOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <InfoOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>FinTracker Pro</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Версия 1.0.0 (Stable)</Typography>
-              <Typography variant="caption" sx={{ color: alpha("#fff", 0.3), display: "block", mt: 0.5 }}>Разработчик: Дмитрий Михайлов</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                FinTrackerPro
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                Версия{" "}
+                {process.env.REACT_APP_VERSION || "1.0.0"}
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: alpha("#fff", 0.5),
+                  fontWeight: 700,
+                  display: "block",
+                  mt: 0.5,
+                }}
+              >
+                Создатель: Дмитрий Михайлов
+              </Typography>
             </Box>
           </RowItem>
         </Box>
       )}
 
       {tab === 1 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
-          <SectionTitle>Вид</SectionTitle>
+        <Box>
+          <SectionTitle>Отображение</SectionTitle>
           <RowItem>
-            <PaletteOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <PaletteOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Скрывать суммы</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Показывает **** вместо чисел</Typography>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                }}
+              >
+                Скрывать суммы
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                }}
+              >
+                Полезно при показе экрана другим
+              </Typography>
             </Box>
-            <Switch checked={user?.hideAmounts || false} onChange={(e) => updateProfile({ hideAmounts: e.target.checked })} />
+            <Switch
+              checked={hideAmounts}
+              onChange={(e) =>
+                handleToggleHideAmounts(e.target.checked)
+              }
+            />
           </RowItem>
 
           <SectionTitle>Валюта</SectionTitle>
           <RowItem noDivider>
-            <CurrencyRubleOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <CurrencyRubleOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff", mb: 1 }}>Основная валюта</Typography>
               <FormControl fullWidth size="small">
-                <Select value={user?.currency || "RUB"} onChange={(e) => updateProfile({ currency: e.target.value })} sx={{ color: "#fff", bgcolor: alpha("#fff", 0.05), borderRadius: 2 }}>
-                  <MenuItem value="RUB">RUB — ₽ (Рубль)</MenuItem>
-                  <MenuItem value="USD">USD — $ (Доллар)</MenuItem>
-                  <MenuItem value="EUR">EUR — € (Евро)</MenuItem>
+                <InputLabel id="currency-label">
+                  Валюта
+                </InputLabel>
+                <Select
+                  labelId="currency-label"
+                  value={currency}
+                  label="Валюта"
+                  onChange={(e) =>
+                    handleChangeCurrency(e.target.value)
+                  }
+                  sx={{
+                    borderRadius: 2.5,
+                    color: "#fff",
+                    ".MuiOutlinedInput-notchedOutline": {
+                      borderColor: alpha("#fff", 0.16),
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: alpha("#fff", 0.26),
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: alpha(
+                          colors.primary,
+                          0.65
+                        ),
+                      },
+                    ".MuiSvgIcon-root": {
+                      color: alpha("#fff", 0.8),
+                    },
+                  }}
+                >
+                  <MenuItem value="RUB">
+                    RUB — ₽
+                  </MenuItem>
+                  <MenuItem value="USD">
+                    USD — $
+                  </MenuItem>
+                  <MenuItem value="EUR">
+                    EUR — €
+                  </MenuItem>
                 </Select>
               </FormControl>
-              <Box sx={{ mt: 2, p: 2, bgcolor: alpha("#fff", 0.05), borderRadius: 3, border: `1px solid ${alpha("#fff", 0.05)}` }}>
-                <Typography variant="caption" sx={{ fontWeight: 900, color: alpha("#fff", 0.4), textTransform: "uppercase", mb: 1, display: "block" }}>Текущие курсы</Typography>
-                <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>1 USD ≈ 90.00 RUB</Typography>
-                <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>1 EUR ≈ 100.00 RUB</Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  mt: 1,
+                  color: alpha("#fff", 0.55),
+                  fontWeight: 700,
+                }}
+              >
+                Данные хранятся в базовой валюте, здесь только
+                отображение и конвертация.
+              </Typography>
+
+              <Box
+                sx={{
+                  mt: 1.5,
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: alpha("#000", 0.22),
+                  border: `1px solid ${alpha(
+                    "#fff",
+                    0.12
+                  )}`,
+                }}
+              >
+                <Typography
+                  sx={{
+                    fontSize: 12,
+                    fontWeight: 900,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                    color: alpha("#fff", 0.7),
+                    mb: 0.75,
+                  }}
+                >
+                  Текущие курсы (пример)
+                </Typography>
+
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: 13,
+                    color: alpha("#fff", 0.85),
+                    fontWeight: 700,
+                  }}
+                >
+                  1 USD ≈ 90 ₽
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontSize: 13,
+                    color: alpha("#fff", 0.85),
+                    fontWeight: 700,
+                  }}
+                >
+                  1 EUR ≈ 100 ₽
+                </Typography>
+
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    mt: 0.75,
+                    color: alpha("#fff", 0.55),
+                    fontWeight: 700,
+                  }}
+                >
+                  Курс указан для ориентира, реальные значения
+                  могут отличаться.
+                </Typography>
               </Box>
             </Box>
           </RowItem>
@@ -277,77 +892,319 @@ export default function SettingsPage() {
       )}
 
       {tab === 2 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
-          <SectionTitle>Управление данными</SectionTitle>
+        <Box>
+          <SectionTitle>Удаление данных</SectionTitle>
           <RowItem noDivider>
-            <DeleteOutlineOutlinedIcon sx={{ color: colors.danger }} />
+            <DeleteOutlineOutlinedIcon
+              sx={{ color: alpha("#fff", 0.75) }}
+            />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Очистить историю</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), mb: 2 }}>Удаление транзакций за определенный месяц</Typography>
-              <Button variant="contained" color="error" onClick={() => setDeleteDataOpen(true)} sx={{ borderRadius: 10, fontWeight: 900, px: 4, textTransform: "none" }}>Выбрать период</Button>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  color: colors.text,
+                  fontSize: 15,
+                  mb: 0.5,
+                }}
+              >
+                Удалить данные за месяц
+              </Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: alpha("#fff", 0.6),
+                  fontWeight: 700,
+                  mb: 2,
+                }}
+              >
+                Выберите месяц и тип данных для удаления
+              </Typography>
+              <Button
+                fullWidth
+                variant="outlined"
+                onClick={() => setDeleteDataOpen(true)}
+                sx={{
+                  borderRadius: 2.5,
+                  py: 1.2,
+                  fontWeight: 950,
+                  textTransform: "none",
+                  borderColor: alpha("#fff", 0.16),
+                  color: "#fff",
+                  "&:hover": {
+                    borderColor: alpha("#fff", 0.28),
+                    bgcolor: alpha("#fff", 0.04),
+                  },
+                }}
+              >
+                Открыть выбор
+              </Button>
             </Box>
           </RowItem>
         </Box>
       )}
 
-      {/* Модальные окна */}
-      <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff", width: "100%", maxWidth: 400 } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Профиль</DialogTitle>
-        <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
+      {/* Диалог: Имя */}
+      <Dialog
+        open={editNameOpen}
+        onClose={() => setEditNameOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Редактировать профиль
+        </DialogTitle>
+        <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 1 }}>
-            <TextField label="Имя" fullWidth value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <TextField label="Фамилия" fullWidth value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <TextField
+              label="Имя"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              fullWidth
+              autoComplete="given-name"
+            />
+            <TextField
+              label="Фамилия"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              fullWidth
+              autoComplete="family-name"
+            />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setEditNameOpen(false)} sx={{ color: alpha("#fff", 0.5) }}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveName} sx={{ bgcolor: colors.primary, fontWeight: 900 }}>Сохранить</Button>
+        <DialogActions>
+          <Button onClick={() => setEditNameOpen(false)}>
+            Отмена
+          </Button>
+          <Button variant="contained" onClick={handleSaveName}>
+            Сохранить
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Новый Email</DialogTitle>
-        <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <TextField label="Email почта" fullWidth value={newEmail} onChange={(e) => setNewEmail(e.target.value)} sx={{ mt: 1 }} />
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSaveEmail}>Обновить</Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Смена пароля</DialogTitle>
-        <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <TextField type="password" label="Текущий пароль" fullWidth value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
-            <TextField type="password" label="Новый пароль" fullWidth value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <TextField type="password" label="Повторите пароль" fullWidth value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+      {/* Диалог: Email */}
+      <Dialog
+        open={editEmailOpen}
+        onClose={() => setEditEmailOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Изменить email
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Новый email"
+              type="email"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              fullWidth
+              autoComplete="email"
+            />
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={emailPassword}
+              onChange={(e) =>
+                setEmailPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="current-password"
+            />
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setEditPasswordOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSavePassword}>Сменить</Button>
+        <DialogActions>
+          <Button onClick={() => setEditEmailOpen(false)}>
+            Отмена
+          </Button>
+          <Button variant="contained" onClick={handleSaveEmail}>
+            Изменить
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteDataOpen} onClose={() => !deleting && setDeleteDataOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Удаление данных</DialogTitle>
-        <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
-          <FormGroup sx={{ mt: 2 }}>
-            <FormControlLabel control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} sx={{ color: "#fff" }} />} label="Удалить доходы" />
-            <FormControlLabel control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} sx={{ color: "#fff" }} />} label="Удалить расходы" />
-          </FormGroup>
+      {/* Диалог: Пароль */}
+      <Dialog
+        open={editPasswordOpen}
+        onClose={() => setEditPasswordOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Изменить пароль
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Текущий пароль"
+              type="password"
+              value={currentPassword}
+              onChange={(e) =>
+                setCurrentPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="current-password"
+            />
+            <TextField
+              label="Новый пароль"
+              type="password"
+              value={newPassword}
+              onChange={(e) =>
+                setNewPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="new-password"
+            />
+            <TextField
+              label="Подтвердите новый пароль"
+              type="password"
+              value={confirmPassword}
+              onChange={(e) =>
+                setConfirmPassword(e.target.value)
+              }
+              fullWidth
+              autoComplete="new-password"
+            />
+          </Stack>
         </DialogContent>
-        <DialogActions sx={{ p: 2.5 }}>
-          <Button onClick={() => setDeleteDataOpen(false)} disabled={deleting}>Отмена</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteData} disabled={deleting}>{deleting ? "Удаление..." : "Удалить навсегда"}</Button>
+        <DialogActions>
+          <Button onClick={() => setEditPasswordOpen(false)}>
+            Отмена
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleSavePassword}
+          >
+            Изменить
+          </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
-        <Alert severity={snack.severity} variant="filled">{snack.message}</Alert>
+      {/* Диалог: Удаление данных */}
+      <Dialog
+        open={deleteDataOpen}
+        onClose={() => !deleting && setDeleteDataOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 950 }}>
+          Удалить данные
+        </DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2.5} sx={{ pt: 1 }}>
+            <MonthPicker
+              value={deleteMonth}
+              onChange={setDeleteMonth}
+            />
+
+            <Box>
+              <Typography
+                sx={{
+                  fontWeight: 900,
+                  mb: 1,
+                  fontSize: 14,
+                }}
+              >
+                Что удалить:
+              </Typography>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={allChecked}
+                      indeterminate={
+                        someChecked && !allChecked
+                      }
+                      onChange={handleToggleAll}
+                    />
+                  }
+                  label={
+                    <Typography sx={{ fontWeight: 900 }}>
+                      Всё
+                    </Typography>
+                  }
+                />
+                <Divider sx={{ my: 0.5 }} />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deleteIncome}
+                      onChange={(e) =>
+                        setDeleteIncome(
+                          e.target.checked
+                        )
+                      }
+                    />
+                  }
+                  label="Доходы"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={deleteExpenses}
+                      onChange={(e) =>
+                        setDeleteExpenses(
+                          e.target.checked
+                        )
+                      }
+                    />
+                  }
+                  label="Расходы"
+                />
+              </FormGroup>
+            </Box>
+
+            <Alert
+              severity="warning"
+              sx={{ fontWeight: 700 }}
+            >
+              Это действие необратимо. Данные будут
+              удалены безвозвратно.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setDeleteDataOpen(false)}
+            disabled={deleting}
+          >
+            Отмена
+          </Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleDeleteData}
+            disabled={deleting}
+          >
+            {deleting ? "Удаление..." : "Удалить"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={3500}
+        onClose={() =>
+          setSnack((s) => ({ ...s, open: false }))
+        }
+        anchorOrigin={{
+          vertical: "bottom",
+          horizontal: "center",
+        }}
+      >
+        <Alert
+          severity={snack.severity}
+          variant="filled"
+          onClose={() =>
+            setSnack((s) => ({ ...s, open: false }))
+          }
+        >
+          {snack.message}
+        </Alert>
       </Snackbar>
     </PageWrap>
   );
