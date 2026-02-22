@@ -24,13 +24,13 @@ const AUTH_STORAGE_KEYS = [
   "authUser",
 ];
 
-// Хелпер для ошибок (на русском)
+// Хелпер для нормализации ошибок
 const getRuError = (err) => {
   const msg = err?.message || String(err);
-  if (msg.includes("409")) return "Неверный текущий пароль или данные уже заняты";
-  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла, войдите заново";
-  if (msg.includes("Failed to fetch")) return "Нет связи с сервером";
-  return "Произошла ошибка. Попробуйте еще раз";
+  if (msg.includes("409")) return "Ошибка: Неверный текущий пароль или данные уже заняты.";
+  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла. Войдите заново.";
+  if (msg.includes("Failed to fetch")) return "Нет связи с сервером.";
+  return "Произошла ошибка. Попробуйте еще раз.";
 };
 
 const normalizeToken = (t) => {
@@ -70,6 +70,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // Твоя старая синхронизация токена
   useEffect(() => {
     const sync = () => {
       try {
@@ -136,7 +137,7 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // --- НОВЫЕ ФУНКЦИИ (ДЛЯ ТВОЕЙ СТРАНИЦЫ) ---
+  // --- ДОБАВЛЕННЫЕ ФУНКЦИИ ДЛЯ РАБОТЫ ВАШЕГО БЭКЕНДА ---
 
   const updateProfile = useCallback(async (data) => {
     try {
@@ -185,7 +186,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // --- ОСТАЛЬНОЕ КАК БЫЛО ---
+  // --- ОРИГИНАЛЬНЫЕ МЕТОДЫ ---
 
   const login = useCallback(
     async ({ email, password }) => {
