@@ -1,16 +1,5 @@
-import React, {
-  createContext,
-  useState,
-  useContext,
-  useEffect,
-  useCallback,
-} from "react";
-import { AuthErrorScreen } from "./AuthErrorScreen";
-import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
-
-const AuthContext = createContext(null);
-
-const AUTH_STORAGE_KEYS = ["authToken", "authUser"];
+const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
+export const AUTH_LOGOUT_EVENT = "app_force_logout";
 
 const normalizeToken = (t) => {
   if (!t) return null;
@@ -18,163 +7,108 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(false);
-
-  const hardResetState = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    try {
-      AUTH_STORAGE_KEYS.forEach((k) => localStorage.removeItem(k));
-      sessionStorage.clear();
-    } catch {}
-  }, []);
-
-  // 1. Инициализация при загрузке
-  useEffect(() => {
-    try {
-      const savedToken = localStorage.getItem("authToken");
-      const savedUser = localStorage.getItem("authUser");
-
-      const t = normalizeToken(savedToken);
-      if (t) setToken(t);
-
-      if (savedUser) {
-        try {
-          const parsed = JSON.parse(savedUser);
-          if (parsed && (parsed.id || parsed.email)) setUser(parsed);
-        } catch {
-          setUser(null);
-        }
-      }
-    } catch (e) {
-      console.error("[AUTH] Init error", e);
+const readToken = () => {
+  try {
+    for (const k of TOKEN_KEYS) {
+      const v = localStorage.getItem(k);
+      const t = normalizeToken(v);
+      if (t) return t;
     }
-    setLoading(false);
-  }, []);
+  } catch {}
+  return null;
+};
 
-  // 2. Слушатель принудительного разлогина (теперь он точно сработает при 403)
-  useEffect(() => {
-    const handleForceLogout = () => {
-      console.warn("[AUTH] Force logout event received. Cleaning state...");
-      hardResetState();
-      // Если ты хочешь показывать экран ошибки вместо редиректа на логин, раскомментируй:
-      // setAuthError(true);
-    };
-    window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
-    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
-  }, [hardResetState]);
+const writeToken = (token) => {
+  const t = normalizeToken(token);
+  if (!t) return;
+  try {
+    localStorage.setItem("authToken", t);
+  } catch {}
+};
 
-  const saveAuthData = useCallback((data) => {
-      if (!data) return;
+const clearAuthData = () => {
+  try {
+    TOKEN_KEYS.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem("authUser");
+    sessionStorage.clear();
+  } catch {}
+};
 
-      const nextTokenRaw = data.token || data.accessToken || data.jwt;
-      const nextToken = normalizeToken(nextTokenRaw);
-      const nextUser = data.user;
+const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
-      if (nextUser) {
-        setUser(nextUser);
-        try {
-          localStorage.setItem("authUser", JSON.stringify(nextUser));
-        } catch {}
-      }
+const buildUrl = (path) => {
+  if (/^https?:\/\//i.test(path)) return path;
+  const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+  return API_BASE ? `${API_BASE}${p}` : p;
+};
 
-      if (nextToken) {
-        setToken(nextToken);
-        try {
-          localStorage.setItem("authToken", nextToken);
-        } catch {}
-      }
-    }, []);
+const parseBody = async (res) => {
+  const text = await res.text();
+  if (!text) return null;
+  try { return JSON.parse(text); } catch { return text; }
+};
 
-  const login = useCallback(async (credentials) => {
-    const data = await apiFetch("/api/auth/login", {
-      method: "POST",
-      body: JSON.stringify(credentials),
-    });
-    setAuthError(false);
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
+let refreshPromise = null;
 
-  const register = useCallback(async (form) => {
-    const data = await apiFetch("/api/auth/register", {
-      method: "POST",
-      body: JSON.stringify(form),
-    });
-    setAuthError(false);
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
-
-  const loginWithGoogle = useCallback(async (idToken) => {
-    const data = await apiFetch("/api/auth/google", {
-      method: "POST",
-      body: JSON.stringify({ idToken }),
-    });
-    setAuthError(false);
-    saveAuthData(data);
-    return data;
-  }, [saveAuthData]);
-
-  const logout = useCallback(async () => {
+async function refreshToken() {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
     try {
-      // Пытаемся уведомить бэкенд, но не ждем его, если он упал
-      await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    } finally {
-      hardResetState();
-      setAuthError(false);
+      const res = await fetch(buildUrl("/api/auth/refresh"), {
+        method: "POST",
+        credentials: "include",
+        headers: new Headers({ "Content-Type": "application/json" }),
+      });
+      const data = await parseBody(res);
+      if (!res.ok) return null;
+      const newAccess = data?.token || data?.accessToken || data?.jwt || null;
+      if (newAccess) writeToken(newAccess);
+      if (data?.user) {
+        try { localStorage.setItem("authUser", JSON.stringify(data.user)); } catch {}
+      }
+      return normalizeToken(newAccess) || null;
+    } catch (e) { return null; }
+  })();
+  try { return await refreshPromise; } finally { refreshPromise = null; }
+}
+
+export async function apiFetch(path, options = {}) {
+  const url = buildUrl(path);
+  const doRequest = async () => {
+    const token = readToken();
+    const headers = new Headers(options.headers || {});
+    if (!(options.body instanceof FormData) && options.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
-  }, [hardResetState]);
-
-  const updateUserInState = useCallback((partialUser) => {
-    setUser((prev) => {
-      const next = { ...(prev || {}), ...(partialUser || {}) };
-      try {
-        localStorage.setItem("authUser", JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-  }, []);
-
-  const authFetch = useCallback(async (url, options = {}) => {
-    const data = await apiFetch(url, options);
-    return { ok: true, status: 200, data };
-  }, []);
-
-  const value = {
-    user,
-    token,
-    login,
-    register,
-    loginWithGoogle,
-    logout,
-    isAuthenticated: !!user && !!token,
-    loading,
-    authError,
-    authFetch,
-    updateUserInState,
+    if (token && !headers.has("Authorization")) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+    const res = await fetch(url, { ...options, credentials: "include", headers });
+    const data = await parseBody(res);
+    return { res, data };
   };
 
-  if (authError) {
-    return (
-      <AuthContext.Provider value={value}>
-        <AuthErrorScreen onRetry={() => {
-            setAuthError(false);
-            window.location.href = '/login';
-        }} />
-      </AuthContext.Provider>
-    );
+  let { res, data } = await doRequest();
+
+  if (res.status === 401 || res.status === 403) {
+    const newToken = await refreshToken();
+    if (newToken) {
+      ({ res, data } = await doRequest());
+    }
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  if (res.status === 401 || res.status === 403) {
+    clearAuthData();
+    window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+    if (!window.location.pathname.includes('/login')) {
+        window.location.replace('/login?expired=true');
+    }
+    throw new Error("Session expired");
+  }
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+  if (!res.ok) {
+    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
+    throw new Error(`${res.status}: ${msg}`);
+  }
+  return data;
+}

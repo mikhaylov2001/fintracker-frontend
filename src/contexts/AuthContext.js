@@ -14,7 +14,6 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(false);
 
   const hardResetState = useCallback(() => {
     setUser(null);
@@ -35,10 +34,15 @@ export const AuthProvider = ({ children }) => {
         try {
           const parsed = JSON.parse(savedUser);
           if (parsed && (parsed.id || parsed.email)) setUser(parsed);
-        } catch { setUser(null); }
+        } catch {
+          localStorage.removeItem("authUser");
+        }
       }
-    } catch (e) { console.error("[AUTH] Init error", e); }
-    setLoading(false);
+    } catch (e) {
+      console.error("[AUTH] Init error", e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -78,22 +82,19 @@ export const AuthProvider = ({ children }) => {
   }, [hardResetState]);
 
   const value = {
-    user, token, login, logout,
+    user,
+    token,
+    login,
+    logout,
     isAuthenticated: !!user && !!token,
-    loading, authError
+    loading
   };
 
-  // Простая заглушка вместо AuthErrorScreen для успешной сборки
-  if (authError) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: '50px' }}>
-        <h2>Ошибка сессии</h2>
-        <button onClick={() => window.location.href = '/login'}>Войти заново</button>
-      </div>
-    );
-  }
-
-  return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
