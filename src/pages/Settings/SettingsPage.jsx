@@ -12,13 +12,13 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"; // Вернул для блока "О приложении"
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { bankingColors as colors } from "../../styles/bankingTokens";
 
-// --- Helpers ---
+// --- Вспомогательные функции ---
 const parseYearMonth = (str) => {
   const m = String(str || "").trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
@@ -75,7 +75,11 @@ function MonthPicker({ value, onChange }) {
               const selected = value === v;
               return (
                 <Chip key={m} label={MONTH_NAMES[m - 1]} size="small" onClick={() => onChange(v)}
-                  sx={{ fontWeight: 900, bgcolor: selected ? colors.primary : alpha("#000", 0.07), color: selected ? "#fff" : "inherit" }}
+                  sx={{
+                    fontWeight: 900,
+                    bgcolor: selected ? colors.primary : alpha("#000", 0.07),
+                    color: selected ? "#fff" : "inherit",
+                  }}
                 />
               );
             })}
@@ -86,17 +90,21 @@ function MonthPicker({ value, onChange }) {
   );
 }
 
-const PageWrap = ({ children }) => <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>{children}</PageWrap>;
+const PageWrap = ({ children }) => (
+  <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>
+    {children}
+  </Box>
+);
 
 const SectionTitle = ({ children, sx }) => (
-  <Typography sx={{ fontSize: 13, fontWeight: 950, color: alpha("#fff", 0.45), mb: 2, mt: 4, textTransform: "uppercase", letterSpacing: 1, ...sx }}>
+  <Typography sx={{ fontSize: 13, fontWeight: 950, color: alpha("#fff", 0.45), mb: 1.5, mt: 3, textTransform: "uppercase", letterSpacing: 1, ...sx }}>
     {children}
   </Typography>
 );
 
 const RowItem = ({ children, noDivider }) => (
   <>
-    <Box sx={{ py: 2.5, px: 1, display: "flex", alignItems: "center", gap: 2.5 }}>{children}</Box>
+    <Box sx={{ py: 2.25, px: 2, display: "flex", alignItems: "center", gap: 2.5 }}>{children}</Box>
     {!noDivider && <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />}
   </>
 );
@@ -135,7 +143,7 @@ export default function SettingsPage() {
   const handleSaveName = async () => {
     const res = await updateProfile({ firstName, lastName });
     if (res.success) {
-      showSnack("success", "Профиль обновлен");
+      showSnack("success", "Имя обновлено");
       setEditNameOpen(false);
     } else {
       showSnack("error", res.error);
@@ -156,7 +164,7 @@ export default function SettingsPage() {
     if (newPassword !== confirmPassword) return showSnack("error", "Пароли не совпадают");
     const res = await updateProfile({ currentPassword, newPassword });
     if (res.success) {
-      showSnack("success", "Пароль изменен");
+      showSnack("success", "Пароль успешно изменен");
       setEditPasswordOpen(false);
     } else {
       showSnack("error", res.error);
@@ -178,8 +186,7 @@ export default function SettingsPage() {
     setDeleting(false);
   };
 
-  if (authLoading) return null;
-  if (!isAuthenticated) return null;
+  if (authLoading || !isAuthenticated) return null;
 
   return (
     <PageWrap>
@@ -187,110 +194,105 @@ export default function SettingsPage() {
         <Typography variant="h4" sx={{ fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>Настройки</Typography>
       </Box>
 
-      <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 4, "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3 } }}>
-        <Tab label="Аккаунт" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16, mr: 2 }} />
-        <Tab label="Интерфейс" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16, mr: 2 }} />
+      <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 3, "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3 } }}>
+        <Tab label="Аккаунт" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
+        <Tab label="Интерфейс" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
         <Tab label="Данные" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
       </Tabs>
 
       {tab === 0 && (
-        <Box>
+        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
           <SectionTitle>Профиль</SectionTitle>
           <RowItem>
-            <Avatar sx={{ width: 64, height: 64, bgcolor: alpha(colors.primary, 0.15), color: colors.primary, fontWeight: 900, fontSize: 24 }}>{user?.firstName?.[0] || "M"}</Avatar>
+            <Avatar sx={{ width: 60, height: 60, bgcolor: alpha(colors.primary, 0.2), color: colors.primary, fontWeight: 900, fontSize: 22 }}>{user?.firstName?.[0]}</Avatar>
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff", fontSize: 18 }}>{user?.firstName} {user?.lastName}</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), fontWeight: 600 }}>{user?.email}</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), fontWeight: 700 }}>{user?.email}</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditNameOpen(true)} startIcon={<EditOutlinedIcon />} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
+            <Button variant="outlined" onClick={() => setEditNameOpen(true)} startIcon={<EditOutlinedIcon />} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Изменить</Button>
           </RowItem>
 
           <SectionTitle>Безопасность</SectionTitle>
           <RowItem>
             <EmailOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email</Typography>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email почта</Typography>
               <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>{user?.email}</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
+            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Сменить</Button>
           </RowItem>
           <RowItem>
             <LockOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Пароль</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>••••••••</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Обновлен недавно</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditPasswordOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
+            <Button variant="outlined" onClick={() => setEditPasswordOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900, textTransform: "none" }}>Сменить</Button>
           </RowItem>
 
           <SectionTitle>О приложении</SectionTitle>
           <RowItem noDivider>
             <InfoOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>FinTrackerPro</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Версия 1.0.0</Typography>
-              <Typography variant="caption" sx={{ color: alpha("#fff", 0.35), display: "block", mt: 0.5 }}>Создатель: Дмитрий Михайлов</Typography>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>FinTracker Pro</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Версия 1.0.0 (Stable)</Typography>
+              <Typography variant="caption" sx={{ color: alpha("#fff", 0.3), display: "block", mt: 0.5 }}>Разработчик: Дмитрий Михайлов</Typography>
             </Box>
           </RowItem>
         </Box>
       )}
 
       {tab === 1 && (
-        <Box>
-          <SectionTitle>Отображение</SectionTitle>
+        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
+          <SectionTitle>Вид</SectionTitle>
           <RowItem>
             <PaletteOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Скрывать суммы</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.4) }}>Полезно при показе экрана другим</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Показывает **** вместо чисел</Typography>
             </Box>
-            <Switch checked={user?.hideAmounts || false} onChange={(e) => updateProfile({ hideAmounts: e.target.checked })} color="primary" />
+            <Switch checked={user?.hideAmounts || false} onChange={(e) => updateProfile({ hideAmounts: e.target.checked })} />
           </RowItem>
 
           <SectionTitle>Валюта</SectionTitle>
-          <Box sx={{ p: 1 }}>
-            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
-              <Select 
-                value={user?.currency || "RUB"} 
-                onChange={(e) => updateProfile({ currency: e.target.value })}
-                sx={{ bgcolor: alpha("#fff", 0.05), color: "#fff", borderRadius: 3, ".MuiOutlinedInput-notchedOutline": { borderColor: alpha("#fff", 0.1) } }}
-              >
-                <MenuItem value="RUB">RUB — ₽</MenuItem>
-                <MenuItem value="USD">USD — $</MenuItem>
-                <MenuItem value="EUR">EUR — €</MenuItem>
-              </Select>
-            </FormControl>
-            <Typography variant="caption" sx={{ color: alpha("#fff", 0.4), display: "block", mb: 3 }}>
-              Данные хранятся в базовой валюте, здесь только отображение и конвертация.
-            </Typography>
-
-            <Box sx={{ p: 2.5, borderRadius: 4, border: `1px solid ${alpha("#fff", 0.1)}`, bgcolor: alpha("#fff", 0.02) }}>
-              <Typography sx={{ fontSize: 12, fontWeight: 950, color: alpha("#fff", 0.5), mb: 1.5, textTransform: "uppercase" }}>Текущие курсы (пример)</Typography>
-              <Typography sx={{ color: "#fff", fontWeight: 800, mb: 0.5 }}>1 USD ≈ 90 ₽</Typography>
-              <Typography sx={{ color: "#fff", fontWeight: 800, mb: 1.5 }}>1 EUR ≈ 100 ₽</Typography>
-              <Typography sx={{ fontSize: 11, color: alpha("#fff", 0.3) }}>Курс указан для ориентира, реальные значения могут отличаться.</Typography>
+          <RowItem noDivider>
+            <CurrencyRubleOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: "#fff", mb: 1 }}>Основная валюта</Typography>
+              <FormControl fullWidth size="small">
+                <Select value={user?.currency || "RUB"} onChange={(e) => updateProfile({ currency: e.target.value })} sx={{ color: "#fff", bgcolor: alpha("#fff", 0.05), borderRadius: 2 }}>
+                  <MenuItem value="RUB">RUB — ₽ (Рубль)</MenuItem>
+                  <MenuItem value="USD">USD — $ (Доллар)</MenuItem>
+                  <MenuItem value="EUR">EUR — € (Евро)</MenuItem>
+                </Select>
+              </FormControl>
+              <Box sx={{ mt: 2, p: 2, bgcolor: alpha("#fff", 0.05), borderRadius: 3, border: `1px solid ${alpha("#fff", 0.05)}` }}>
+                <Typography variant="caption" sx={{ fontWeight: 900, color: alpha("#fff", 0.4), textTransform: "uppercase", mb: 1, display: "block" }}>Текущие курсы</Typography>
+                <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>1 USD ≈ 90.00 RUB</Typography>
+                <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: 14 }}>1 EUR ≈ 100.00 RUB</Typography>
+              </Box>
             </Box>
-          </Box>
+          </RowItem>
         </Box>
       )}
 
       {tab === 2 && (
-        <Box>
-          <SectionTitle>Удаление данных</SectionTitle>
+        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden", px: 2 }}>
+          <SectionTitle>Управление данными</SectionTitle>
           <RowItem noDivider>
-            <DeleteOutlineOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <DeleteOutlineOutlinedIcon sx={{ color: colors.danger }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Удалить данные за месяц</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.4), mb: 2 }}>Выберите месяц и тип данных для удаления</Typography>
-              <Button fullWidth variant="outlined" onClick={() => setDeleteDataOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.1), color: "#fff", textTransform: "none", fontWeight: 900, py: 1.2 }}>Открыть выбор</Button>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Очистить историю</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), mb: 2 }}>Удаление транзакций за определенный месяц</Typography>
+              <Button variant="contained" color="error" onClick={() => setDeleteDataOpen(true)} sx={{ borderRadius: 10, fontWeight: 900, px: 4, textTransform: "none" }}>Выбрать период</Button>
             </Box>
           </RowItem>
         </Box>
       )}
 
-      {/* Модалки те же, просто убедился что они работают */}
+      {/* Модальные окна */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff", width: "100%", maxWidth: 400 } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Изменить имя</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 900 }}>Профиль</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
           <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Имя" fullWidth value={firstName} onChange={(e) => setFirstName(e.target.value)} />
@@ -306,7 +308,7 @@ export default function SettingsPage() {
       <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
         <DialogTitle sx={{ fontWeight: 900 }}>Новый Email</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <TextField label="Email" fullWidth value={newEmail} onChange={(e) => setNewEmail(e.target.value)} sx={{ mt: 1 }} />
+          <TextField label="Email почта" fullWidth value={newEmail} onChange={(e) => setNewEmail(e.target.value)} sx={{ mt: 1 }} />
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
@@ -320,7 +322,7 @@ export default function SettingsPage() {
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField type="password" label="Текущий пароль" fullWidth value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
             <TextField type="password" label="Новый пароль" fullWidth value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <TextField type="password" label="Повторите" fullWidth value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <TextField type="password" label="Повторите пароль" fullWidth value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
@@ -334,13 +336,13 @@ export default function SettingsPage() {
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
           <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
           <FormGroup sx={{ mt: 2 }}>
-            <FormControlLabel control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} sx={{ color: "#fff" }} />} label="Доходы" />
-            <FormControlLabel control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} sx={{ color: "#fff" }} />} label="Расходы" />
+            <FormControlLabel control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} sx={{ color: "#fff" }} />} label="Удалить доходы" />
+            <FormControlLabel control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} sx={{ color: "#fff" }} />} label="Удалить расходы" />
           </FormGroup>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setDeleteDataOpen(false)} disabled={deleting}>Отмена</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteData} disabled={deleting}>Удалить</Button>
+          <Button variant="contained" color="error" onClick={handleDeleteData} disabled={deleting}>{deleting ? "Удаление..." : "Удалить навсегда"}</Button>
         </DialogActions>
       </Dialog>
 
