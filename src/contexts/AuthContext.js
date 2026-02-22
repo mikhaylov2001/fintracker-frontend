@@ -18,25 +18,23 @@ const API_BASE_URL = (
 const API_AUTH_BASE = "/api/auth";
 const AUTH_STORAGE_KEYS = ["authToken", "token", "accessToken", "jwt", "authUser"];
 
-// --- УЛУЧШЕННАЯ ОБРАБОТКА ОШИБОК ---
+// --- ПЕРЕВОДЧИК ОШИБОК ---
 const translateError = (err) => {
   const msg = err?.message || String(err);
 
-  // Если бэкенд прислал 409 (обычно это неверный старый пароль или занятый email)
-  if (msg.includes("409")) return "Неверный текущий пароль или данные уже заняты";
-  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла, войдите заново";
-  if (msg.includes("400")) return "Проверьте правильность введенных данных";
-  if (msg.includes("404")) return "Запрашиваемые данные не найдены";
-  if (msg.includes("500")) return "Ошибка на сервере, мы уже чиним";
-  if (msg.includes("Failed to fetch")) return "Нет соединения с интернетом";
+  if (msg.includes("409")) return "Ошибка: Неверный текущий пароль или данные уже используются.";
+  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла. Войдите в систему заново.";
+  if (msg.includes("400")) return "Некорректные данные. Проверьте правильность заполнения.";
+  if (msg.includes("404")) return "Данные не найдены на сервере.";
+  if (msg.includes("500")) return "Ошибка на сервере. Мы уже работаем над исправлением.";
+  if (msg.includes("Failed to fetch") || msg.includes("Network Error")) return "Нет связи с сервером. Проверьте интернет.";
 
-  return msg || "Произошла ошибка, попробуйте позже";
+  return "Произошла ошибка. Попробуйте еще раз.";
 };
 
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
-  if (!s) return null;
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
@@ -46,58 +44,34 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(false);
 
+  // 1. Загрузка данных при старте
   useEffect(() => {
-    let savedToken = null;
-    let savedUser = null;
     try {
-      savedToken = localStorage.getItem("authToken");
-      savedUser = localStorage.getItem("authUser");
-    } catch {}
+      const savedToken = localStorage.getItem("authToken");
+      const savedUser = localStorage.getItem("authUser");
 
-    const t = normalizeToken(savedToken);
-    if (t) setToken(t);
+      const t = normalizeToken(savedToken);
+      if (t) setToken(t);
 
-    if (savedUser) {
-      try {
+      if (savedUser) {
         const parsed = JSON.parse(savedUser);
         setUser(parsed && (parsed.id || parsed.email) ? parsed : null);
-      } catch { setUser(null); }
+      }
+    } catch (e) {
+      console.error("Auth init error", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
     try {
-      for (const k of AUTH_STORAGE_KEYS) localStorage.removeItem(k);
+      AUTH_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
       sessionStorage.clear();
     } catch {}
   }, []);
-
-  const saveAuthData = useCallback((data) => {
-    const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
-    const nextToken = normalizeToken(nextTokenRaw);
-    const nextUser = data?.user ?? null;
-
-    setUser((prevUser) => {
-      if (prevUser && nextUser && prevUser.id && nextUser.id && prevUser.id !== nextUser.id) {
-        hardResetState();
-        setAuthError(true);
-        return null;
-      }
-      if (nextUser) {
-        localStorage.setItem("authUser", JSON.stringify(nextUser));
-        return nextUser;
-      }
-      return prevUser;
-    });
-
-    if (nextToken) {
-      setToken(nextToken);
-      localStorage.setItem("authToken", nextToken);
-    }
-  }, [hardResetState]);
 
   const updateUserInState = useCallback((partialUser) => {
     setUser((prev) => {
@@ -107,17 +81,17 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // --- МЕТОДЫ ДЛЯ SETTINGS (С СОХРАНЕНИЕМ В БД И ПЕРЕВОДОМ ОШИБОК) ---
+  // --- МЕТОДЫ ДЛЯ SETTINGS (С СОХРАНЕНИЕМ В БД) ---
 
   const updateProfile = useCallback(async (data) => {
     try {
-      // Идет в AccountController.java -> @PutMapping("/profile")
+      // Идет в AccountController: PUT /api/account/profile
       const res = await apiFetch("/api/account/profile", {
         method: "PUT",
         body: JSON.stringify(data),
       });
-      updateUserInState(res);
-      return { success: true, data: res };
+      updateUserInState(res); // Сохраняем в стейт и localStorage
+      return res;
     } catch (err) {
       throw new Error(translateError(err));
     }
@@ -125,13 +99,13 @@ export const AuthProvider = ({ children }) => {
 
   const updateSettings = useCallback(async (settings) => {
     try {
-      // Идет в UserSettingsController.java -> @PutMapping("/me")
+      // Идет в UserSettingsController: PUT /api/settings/me
       const res = await apiFetch("/api/settings/me", {
         method: "PUT",
         body: JSON.stringify(settings),
       });
       updateUserInState({ settings: res });
-      return { success: true, data: res };
+      return res;
     } catch (err) {
       throw new Error(translateError(err));
     }
@@ -139,38 +113,48 @@ export const AuthProvider = ({ children }) => {
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     try {
-      // Идет в AccountController.java -> @PostMapping("/change-password")
-      await apiFetch("/api/account/change-password", {
+      // Идет в AccountController: POST /api/account/change-password
+      return await apiFetch("/api/account/change-password", {
         method: "POST",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-      return { success: true };
     } catch (err) {
-      // Вот тут 409 превратится в "Неверный текущий пароль..."
       throw new Error(translateError(err));
     }
   }, []);
 
   const deleteData = useCallback(async (year, month, type = 'all') => {
     try {
-      await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
+      return await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
         method: "DELETE",
       });
-      return { success: true };
     } catch (err) {
       throw new Error(translateError(err));
     }
   }, []);
 
-  // --- ОСТАЛЬНЫЕ СТАНДАРТНЫЕ МЕТОДЫ ---
+  // --- СТАНДАРТНЫЕ МЕТОДЫ АВТОРИЗАЦИИ ---
 
-  const login = useCallback(async ({ email, password }) => {
+  const saveAuthData = useCallback((data) => {
+    const nextToken = normalizeToken(data?.token || data?.accessToken || data?.jwt);
+    const nextUser = data?.user;
+
+    if (nextUser) {
+      setUser(nextUser);
+      localStorage.setItem("authUser", JSON.stringify(nextUser));
+    }
+    if (nextToken) {
+      setToken(nextToken);
+      localStorage.setItem("authToken", nextToken);
+    }
+  }, []);
+
+  const login = useCallback(async (credentials) => {
     try {
       const data = await apiFetch(`${API_AUTH_BASE}/login`, {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(credentials),
       });
-      setAuthError(false);
       saveAuthData(data);
       return data;
     } catch (err) {
@@ -186,7 +170,6 @@ export const AuthProvider = ({ children }) => {
       });
     } catch {} finally {
       hardResetState();
-      setAuthError(false);
     }
   }, [hardResetState]);
 
@@ -199,7 +182,7 @@ export const AuthProvider = ({ children }) => {
     updateSettings,
     changePassword,
     deleteData,
-    isAuthenticated: !!user && !!localStorage.getItem("authToken"),
+    isAuthenticated: !!user && !!token,
     loading,
     updateUserInState,
     authError,
