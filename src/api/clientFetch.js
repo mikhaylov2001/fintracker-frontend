@@ -112,6 +112,13 @@ export async function apiFetch(path, options = {}) {
   if (res.status === 401 || res.status === 403) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+    const isLoginPage = window.location.pathname.includes('/login');
+        if (!isLoginPage) {
+            window.location.replace('/login?expired=true');
+        }
+        throw new Error("Session expired");
+    }
+
     if (!window.location.pathname.includes('/login')) {
         window.location.replace('/login?expired=true');
     }
