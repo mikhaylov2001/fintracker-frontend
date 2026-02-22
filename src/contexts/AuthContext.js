@@ -42,9 +42,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [authError, setAuthError] = useState(false);
+  const [authError] = useState(false); // Убрал неиспользуемый setAuthError
 
-  // 1. Загрузка данных при старте
   useEffect(() => {
     try {
       const savedToken = localStorage.getItem("authToken");
@@ -81,16 +80,13 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // --- МЕТОДЫ ДЛЯ SETTINGS (С СОХРАНЕНИЕМ В БД) ---
-
   const updateProfile = useCallback(async (data) => {
     try {
-      // Идет в AccountController: PUT /api/account/profile
       const res = await apiFetch("/api/account/profile", {
         method: "PUT",
         body: JSON.stringify(data),
       });
-      updateUserInState(res); // Сохраняем в стейт и localStorage
+      updateUserInState(res);
       return res;
     } catch (err) {
       throw new Error(translateError(err));
@@ -99,7 +95,6 @@ export const AuthProvider = ({ children }) => {
 
   const updateSettings = useCallback(async (settings) => {
     try {
-      // Идет в UserSettingsController: PUT /api/settings/me
       const res = await apiFetch("/api/settings/me", {
         method: "PUT",
         body: JSON.stringify(settings),
@@ -113,7 +108,6 @@ export const AuthProvider = ({ children }) => {
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     try {
-      // Идет в AccountController: POST /api/account/change-password
       return await apiFetch("/api/account/change-password", {
         method: "POST",
         body: JSON.stringify({ currentPassword, newPassword }),
@@ -132,8 +126,6 @@ export const AuthProvider = ({ children }) => {
       throw new Error(translateError(err));
     }
   }, []);
-
-  // --- СТАНДАРТНЫЕ МЕТОДЫ АВТОРИЗАЦИИ ---
 
   const saveAuthData = useCallback((data) => {
     const nextToken = normalizeToken(data?.token || data?.accessToken || data?.jwt);
