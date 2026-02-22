@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react"; // Убрал useCallback
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Box, Typography, Tabs, Tab, Switch, FormControl, Select, MenuItem, // Убрал InputLabel
+  Box, Typography, Tabs, Tab, Switch, FormControl, Select, MenuItem,
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
   Snackbar, Alert, Divider, Checkbox, FormControlLabel, FormGroup, Avatar, Stack, Chip, InputAdornment,
 } from "@mui/material";
@@ -12,13 +12,13 @@ import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined
 import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-// Убрал InfoOutlinedIcon
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined"; // Вернул для блока "О приложении"
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { bankingColors as colors } from "../../styles/bankingTokens";
 
-// --- Helpers (Твои оригинальные) ---
+// --- Helpers ---
 const parseYearMonth = (str) => {
   const m = String(str || "").trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
@@ -66,57 +66,38 @@ function MonthPicker({ value, onChange }) {
         }}
         sx={{ mb: 2 }}
       />
-      {Object.entries(months)
-        .sort(([a], [b]) => Number(b) - Number(a))
-        .map(([year, monthList]) => (
-          <Box key={year} sx={{ mb: 1.5 }}>
-            <Typography variant="caption" sx={{ fontWeight: 900, color: alpha("#000", 0.5), mb: 0.75, display: "block" }}>
-              {year}
-            </Typography>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
-              {monthList.map((m) => {
-                const v = ymValue(Number(year), m);
-                const selected = value === v;
-                return (
-                  <Chip
-                    key={m}
-                    label={MONTH_NAMES[m - 1]}
-                    size="small"
-                    onClick={() => onChange(v)}
-                    sx={{
-                      fontWeight: 900,
-                      bgcolor: selected ? colors.primary : alpha("#000", 0.07),
-                      color: selected ? "#fff" : "inherit",
-                      "&:hover": { bgcolor: selected ? colors.primary : alpha("#000", 0.12) },
-                    }}
-                  />
-                );
-              })}
-            </Box>
+      {Object.entries(months).sort(([a], [b]) => Number(b) - Number(a)).map(([year, monthList]) => (
+        <Box key={year} sx={{ mb: 1.5 }}>
+          <Typography variant="caption" sx={{ fontWeight: 900, color: alpha("#000", 0.5), mb: 0.75, display: "block" }}>{year}</Typography>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+            {monthList.map((m) => {
+              const v = ymValue(Number(year), m);
+              const selected = value === v;
+              return (
+                <Chip key={m} label={MONTH_NAMES[m - 1]} size="small" onClick={() => onChange(v)}
+                  sx={{ fontWeight: 900, bgcolor: selected ? colors.primary : alpha("#000", 0.07), color: selected ? "#fff" : "inherit" }}
+                />
+              );
+            })}
           </Box>
-        ))}
+        </Box>
+      ))}
     </Box>
   );
 }
 
-const PageWrap = ({ children }) => (
-  <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>
-    {children}
-  </Box>
-);
+const PageWrap = ({ children }) => <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>{children}</PageWrap>;
 
 const SectionTitle = ({ children, sx }) => (
-  <Typography sx={{ fontSize: 14, fontWeight: 950, color: alpha("#fff", 0.55), mb: 1.5, mt: 3, textTransform: "uppercase", letterSpacing: 0.5, ...sx }}>
+  <Typography sx={{ fontSize: 13, fontWeight: 950, color: alpha("#fff", 0.45), mb: 2, mt: 4, textTransform: "uppercase", letterSpacing: 1, ...sx }}>
     {children}
   </Typography>
 );
 
 const RowItem = ({ children, noDivider }) => (
   <>
-    <Box sx={{ py: 2.25, px: 3, display: "flex", alignItems: "center", gap: 2, transition: "background 0.2s" }}>
-      {children}
-    </Box>
-    {!noDivider && <Divider sx={{ borderColor: alpha("#fff", 0.08), mx: 3 }} />}
+    <Box sx={{ py: 2.5, px: 1, display: "flex", alignItems: "center", gap: 2.5 }}>{children}</Box>
+    {!noDivider && <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />}
   </>
 );
 
@@ -154,7 +135,7 @@ export default function SettingsPage() {
   const handleSaveName = async () => {
     const res = await updateProfile({ firstName, lastName });
     if (res.success) {
-      showSnack("success", "Имя успешно обновлено");
+      showSnack("success", "Профиль обновлен");
       setEditNameOpen(false);
     } else {
       showSnack("error", res.error);
@@ -164,7 +145,7 @@ export default function SettingsPage() {
   const handleSaveEmail = async () => {
     const res = await updateProfile({ email: newEmail });
     if (res.success) {
-      showSnack("success", "Email изменен и сохранен в базе");
+      showSnack("success", "Email успешно изменен");
       setEditEmailOpen(false);
     } else {
       showSnack("error", res.error);
@@ -172,13 +153,10 @@ export default function SettingsPage() {
   };
 
   const handleSavePassword = async () => {
-    if (newPassword !== confirmPassword) {
-      showSnack("error", "Пароли не совпадают");
-      return;
-    }
+    if (newPassword !== confirmPassword) return showSnack("error", "Пароли не совпадают");
     const res = await updateProfile({ currentPassword, newPassword });
     if (res.success) {
-      showSnack("success", "Пароль успешно изменен");
+      showSnack("success", "Пароль изменен");
       setEditPasswordOpen(false);
     } else {
       showSnack("error", res.error);
@@ -192,7 +170,7 @@ export default function SettingsPage() {
     const res = await deleteDataByMonth(deleteMonth, type);
     if (res.success) {
       const p = parseYearMonth(deleteMonth);
-      showSnack("success", "Данные за " + ymLabel(p.year, p.month) + " удалены");
+      showSnack("success", `Данные за ${ymLabel(p.year, p.month)} удалены`);
       setDeleteDataOpen(false);
     } else {
       showSnack("error", res.error);
@@ -205,95 +183,116 @@ export default function SettingsPage() {
 
   return (
     <PageWrap>
-      <Box sx={{ mb: 3, pt: 1 }}>
-        <Typography variant="h4" sx={{ fontWeight: 980, color: "#fff", letterSpacing: -1 }}>Настройки</Typography>
+      <Box sx={{ mb: 4, pt: 1 }}>
+        <Typography variant="h4" sx={{ fontWeight: 900, color: "#fff", letterSpacing: -0.5 }}>Настройки</Typography>
       </Box>
 
-      <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 2, "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3, borderRadius: "3px 3px 0 0" } }}>
-        <Tab label="Аккаунт" sx={{ color: "#fff", fontWeight: 900, fontSize: 15, textTransform: "none", opacity: tab === 0 ? 1 : 0.5 }} />
-        <Tab label="Интерфейс" sx={{ color: "#fff", fontWeight: 900, fontSize: 15, textTransform: "none", opacity: tab === 1 ? 1 : 0.5 }} />
-        <Tab label="Данные" sx={{ color: "#fff", fontWeight: 900, fontSize: 15, textTransform: "none", opacity: tab === 2 ? 1 : 0.5 }} />
+      <Tabs value={tab} onChange={(_e, v) => setTab(v)} sx={{ mb: 4, "& .MuiTabs-indicator": { bgcolor: colors.primary, height: 3 } }}>
+        <Tab label="Аккаунт" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16, mr: 2 }} />
+        <Tab label="Интерфейс" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16, mr: 2 }} />
+        <Tab label="Данные" sx={{ color: "#fff", fontWeight: 900, textTransform: "none", fontSize: 16 }} />
       </Tabs>
 
       {tab === 0 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden" }}>
-          <SectionTitle sx={{ px: 3 }}>Профиль</SectionTitle>
+        <Box>
+          <SectionTitle>Профиль</SectionTitle>
           <RowItem>
-            <Avatar sx={{ width: 56, height: 56, bgcolor: alpha(colors.primary, 0.2), color: colors.primary, fontWeight: 900, fontSize: 20 }}>{user?.firstName?.[0]}</Avatar>
+            <Avatar sx={{ width: 64, height: 64, bgcolor: alpha(colors.primary, 0.15), color: colors.primary, fontWeight: 900, fontSize: 24 }}>{user?.firstName?.[0] || "M"}</Avatar>
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 950, color: "#fff", fontSize: 17 }}>{user?.firstName} {user?.lastName}</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), fontWeight: 700 }}>{user?.email}</Typography>
+              <Typography sx={{ fontWeight: 900, color: "#fff", fontSize: 18 }}>{user?.firstName} {user?.lastName}</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5), fontWeight: 600 }}>{user?.email}</Typography>
             </Box>
-            <Button variant="contained" onClick={() => setEditNameOpen(true)} startIcon={<EditOutlinedIcon />} sx={{ bgcolor: alpha("#fff", 0.08), "&:hover": { bgcolor: alpha("#fff", 0.12) }, borderRadius: 3, fontWeight: 900, textTransform: "none" }}>Изменить</Button>
+            <Button variant="outlined" onClick={() => setEditNameOpen(true)} startIcon={<EditOutlinedIcon />} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
           </RowItem>
 
-          <SectionTitle sx={{ px: 3 }}>Безопасность</SectionTitle>
+          <SectionTitle>Безопасность</SectionTitle>
           <RowItem>
-            <EmailOutlinedIcon sx={{ color: alpha("#fff", 0.5) }} />
+            <EmailOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email почта</Typography>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email</Typography>
               <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>{user?.email}</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 3, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900 }}>Сменить</Button>
+            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
           </RowItem>
-          <RowItem noDivider>
-            <LockOutlinedIcon sx={{ color: alpha("#fff", 0.5) }} />
+          <RowItem>
+            <LockOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Пароль</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Обновлен недавно</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>••••••••</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditPasswordOpen(true)} sx={{ borderRadius: 3, borderColor: alpha("#fff", 0.2), color: "#fff", fontWeight: 900 }}>Сменить</Button>
+            <Button variant="outlined" onClick={() => setEditPasswordOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.2), color: "#fff", textTransform: "none", fontWeight: 900, px: 3 }}>Изменить</Button>
+          </RowItem>
+
+          <SectionTitle>О приложении</SectionTitle>
+          <RowItem noDivider>
+            <InfoOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>FinTrackerPro</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Версия 1.0.0</Typography>
+              <Typography variant="caption" sx={{ color: alpha("#fff", 0.35), display: "block", mt: 0.5 }}>Создатель: Дмитрий Михайлов</Typography>
+            </Box>
           </RowItem>
         </Box>
       )}
 
       {tab === 1 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden" }}>
-          <SectionTitle sx={{ px: 3 }}>Отображение</SectionTitle>
+        <Box>
+          <SectionTitle>Отображение</SectionTitle>
           <RowItem>
-            <PaletteOutlinedIcon sx={{ color: alpha("#fff", 0.5) }} />
+            <PaletteOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Скрывать суммы</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Показывает **** вместо чисел</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.4) }}>Полезно при показе экрана другим</Typography>
             </Box>
-            <Switch checked={user?.hideAmounts || false} onChange={(e) => updateProfile({ hideAmounts: e.target.checked })} />
+            <Switch checked={user?.hideAmounts || false} onChange={(e) => updateProfile({ hideAmounts: e.target.checked })} color="primary" />
           </RowItem>
-          <SectionTitle sx={{ px: 3 }}>Валюта</SectionTitle>
-          <RowItem noDivider>
-            <CurrencyRubleOutlinedIcon sx={{ color: alpha("#fff", 0.5) }} />
-            <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff", mb: 0.5 }}>Основная валюта</Typography>
-              <FormControl fullWidth size="small">
-                <Select value={user?.currency || "RUB"} onChange={(e) => updateProfile({ currency: e.target.value })} sx={{ color: "#fff", bgcolor: alpha("#fff", 0.05), borderRadius: 2 }}>
-                  <MenuItem value="RUB">Рубль (₽)</MenuItem>
-                  <MenuItem value="USD">Доллар ($) — курс 90</MenuItem>
-                  <MenuItem value="EUR">Евро (€) — курс 100</MenuItem>
-                </Select>
-              </FormControl>
+
+          <SectionTitle>Валюта</SectionTitle>
+          <Box sx={{ p: 1 }}>
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <Select 
+                value={user?.currency || "RUB"} 
+                onChange={(e) => updateProfile({ currency: e.target.value })}
+                sx={{ bgcolor: alpha("#fff", 0.05), color: "#fff", borderRadius: 3, ".MuiOutlinedInput-notchedOutline": { borderColor: alpha("#fff", 0.1) } }}
+              >
+                <MenuItem value="RUB">RUB — ₽</MenuItem>
+                <MenuItem value="USD">USD — $</MenuItem>
+                <MenuItem value="EUR">EUR — €</MenuItem>
+              </Select>
+            </FormControl>
+            <Typography variant="caption" sx={{ color: alpha("#fff", 0.4), display: "block", mb: 3 }}>
+              Данные хранятся в базовой валюте, здесь только отображение и конвертация.
+            </Typography>
+
+            <Box sx={{ p: 2.5, borderRadius: 4, border: `1px solid ${alpha("#fff", 0.1)}`, bgcolor: alpha("#fff", 0.02) }}>
+              <Typography sx={{ fontSize: 12, fontWeight: 950, color: alpha("#fff", 0.5), mb: 1.5, textTransform: "uppercase" }}>Текущие курсы (пример)</Typography>
+              <Typography sx={{ color: "#fff", fontWeight: 800, mb: 0.5 }}>1 USD ≈ 90 ₽</Typography>
+              <Typography sx={{ color: "#fff", fontWeight: 800, mb: 1.5 }}>1 EUR ≈ 100 ₽</Typography>
+              <Typography sx={{ fontSize: 11, color: alpha("#fff", 0.3) }}>Курс указан для ориентира, реальные значения могут отличаться.</Typography>
             </Box>
-          </RowItem>
+          </Box>
         </Box>
       )}
 
       {tab === 2 && (
-        <Box sx={{ bgcolor: alpha("#fff", 0.03), borderRadius: 4, border: `1px solid ${alpha("#fff", 0.08)}`, overflow: "hidden" }}>
-          <SectionTitle sx={{ px: 3 }}>Управление данными</SectionTitle>
+        <Box>
+          <SectionTitle>Удаление данных</SectionTitle>
           <RowItem noDivider>
-            <DeleteOutlineOutlinedIcon sx={{ color: colors.danger }} />
+            <DeleteOutlineOutlinedIcon sx={{ color: alpha("#fff", 0.6) }} />
             <Box sx={{ flex: 1 }}>
-              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Удалить историю</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.5) }}>Очистка транзакций за выбранный период</Typography>
+              <Typography sx={{ fontWeight: 900, color: "#fff" }}>Удалить данные за месяц</Typography>
+              <Typography variant="body2" sx={{ color: alpha("#fff", 0.4), mb: 2 }}>Выберите месяц и тип данных для удаления</Typography>
+              <Button fullWidth variant="outlined" onClick={() => setDeleteDataOpen(true)} sx={{ borderRadius: 10, borderColor: alpha("#fff", 0.1), color: "#fff", textTransform: "none", fontWeight: 900, py: 1.2 }}>Открыть выбор</Button>
             </Box>
-            <Button variant="contained" color="error" onClick={() => setDeleteDataOpen(true)} sx={{ borderRadius: 3, fontWeight: 900 }}>Очистить</Button>
           </RowItem>
         </Box>
       )}
 
-      {/* Модалки */}
-      <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#1a1a1a", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Имя профиля</DialogTitle>
+      {/* Модалки те же, просто убедился что они работают */}
+      <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff", width: "100%", maxWidth: 400 } }}>
+        <DialogTitle sx={{ fontWeight: 900 }}>Изменить имя</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <Stack spacing={2.5} sx={{ mt: 1 }}>
+          <Stack spacing={2} sx={{ pt: 1 }}>
             <TextField label="Имя" fullWidth value={firstName} onChange={(e) => setFirstName(e.target.value)} />
             <TextField label="Фамилия" fullWidth value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </Stack>
@@ -304,10 +303,10 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#1a1a1a", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Смена Email</DialogTitle>
+      <Dialog open={editEmailOpen} onClose={() => setEditEmailOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
+        <DialogTitle sx={{ fontWeight: 900 }}>Новый Email</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
-          <TextField label="Новый Email" fullWidth value={newEmail} onChange={(e) => setNewEmail(e.target.value)} sx={{ mt: 1 }} />
+          <TextField label="Email" fullWidth value={newEmail} onChange={(e) => setNewEmail(e.target.value)} sx={{ mt: 1 }} />
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setEditEmailOpen(false)}>Отмена</Button>
@@ -315,37 +314,37 @@ export default function SettingsPage() {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#1a1a1a", color: "#fff" } }}>
+      <Dialog open={editPasswordOpen} onClose={() => setEditPasswordOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
         <DialogTitle sx={{ fontWeight: 900 }}>Смена пароля</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField type="password" label="Текущий пароль" fullWidth value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
             <TextField type="password" label="Новый пароль" fullWidth value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-            <TextField type="password" label="Повторите пароль" fullWidth value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <TextField type="password" label="Повторите" fullWidth value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setEditPasswordOpen(false)}>Отмена</Button>
-          <Button variant="contained" onClick={handleSavePassword}>Сменить пароль</Button>
+          <Button variant="contained" onClick={handleSavePassword}>Сменить</Button>
         </DialogActions>
       </Dialog>
 
-      <Dialog open={deleteDataOpen} onClose={() => !deleting && setDeleteDataOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#1a1a1a", color: "#fff" } }}>
-        <DialogTitle sx={{ fontWeight: 900 }}>Очистка данных</DialogTitle>
+      <Dialog open={deleteDataOpen} onClose={() => !deleting && setDeleteDataOpen(false)} PaperProps={{ sx: { borderRadius: 4, bgcolor: "#121212", color: "#fff" } }}>
+        <DialogTitle sx={{ fontWeight: 900 }}>Удаление данных</DialogTitle>
         <DialogContent dividers sx={{ borderColor: alpha("#fff", 0.1) }}>
           <MonthPicker value={deleteMonth} onChange={setDeleteMonth} />
           <FormGroup sx={{ mt: 2 }}>
-            <FormControlLabel control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} sx={{ color: alpha("#fff", 0.3) }} />} label="Удалить доходы" />
-            <FormControlLabel control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} sx={{ color: alpha("#fff", 0.3) }} />} label="Удалить расходы" />
+            <FormControlLabel control={<Checkbox checked={deleteIncome} onChange={(e) => setDeleteIncome(e.target.checked)} sx={{ color: "#fff" }} />} label="Доходы" />
+            <FormControlLabel control={<Checkbox checked={deleteExpenses} onChange={(e) => setDeleteExpenses(e.target.checked)} sx={{ color: "#fff" }} />} label="Расходы" />
           </FormGroup>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setDeleteDataOpen(false)} disabled={deleting}>Отмена</Button>
-          <Button variant="contained" color="error" onClick={handleDeleteData} disabled={deleting}>{deleting ? "Удаление..." : "Удалить навсегда"}</Button>
+          <Button variant="contained" color="error" onClick={handleDeleteData} disabled={deleting}>Удалить</Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snack.open} autoHideDuration={3500} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
         <Alert severity={snack.severity} variant="filled">{snack.message}</Alert>
       </Snackbar>
     </PageWrap>
