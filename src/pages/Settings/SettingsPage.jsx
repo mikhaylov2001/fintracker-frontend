@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  Box, Typography, Tabs, Tab, Switch, FormControl, InputLabel, Select, MenuItem,
+  Box, Typography, Tabs, Tab, Switch, FormControl, Select, MenuItem,
   Button, TextField, Dialog, DialogTitle, DialogContent, DialogActions,
   Snackbar, Alert, Divider, Checkbox, FormControlLabel, FormGroup, Avatar, Stack, Chip, InputAdornment,
 } from "@mui/material";
@@ -9,25 +9,21 @@ import { alpha } from "@mui/material/styles";
 import PaletteOutlinedIcon from "@mui/icons-material/PaletteOutlined";
 import CurrencyRubleOutlinedIcon from "@mui/icons-material/CurrencyRubleOutlined";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
-import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 
 import { useAuth } from "../../contexts/AuthContext";
 import { bankingColors as colors } from "../../styles/bankingTokens";
 
-// --- Helpers (оставляем без изменений) ---
+// --- Helpers ---
 const parseYearMonth = (str) => {
   const m = String(str || "").trim().match(/^(\d{4})-(\d{1,2})$/);
   if (!m) return null;
   return { year: Number(m[1]), month: Number(m[2]) };
 };
 const ymValue = (year, month) => `${year}-${String(month).padStart(2, "0")}`;
-const ymLabel = (year, month) => new Date(year, month - 1, 1).toLocaleDateString("ru-RU", { month: "long", year: "numeric" });
 
-// --- Вспомогательный компонент выбора месяца ---
+// --- MonthPicker ---
 function MonthPicker({ value, onChange }) {
   const [inputVal, setInputVal] = useState(value || "");
   useEffect(() => setInputVal(value || ""), [value]);
@@ -77,29 +73,21 @@ function MonthPicker({ value, onChange }) {
   );
 }
 
-// --- Layout Helpers ---
 const PageWrap = ({ children }) => <Box sx={{ width: "100%", mx: "auto", maxWidth: { xs: "100%", sm: 720, md: 900, lg: 1040 }, userSelect: "none" }}>{children}</Box>;
 const SectionTitle = ({ children }) => <Typography sx={{ fontSize: 14, fontWeight: 950, color: alpha("#fff", 0.55), mb: 1.5, mt: 3, textTransform: "uppercase" }}>{children}</Typography>;
 const RowItem = ({ children, noDivider }) => (
   <><Box sx={{ py: 2.25, px: 3, display: "flex", alignItems: "center", gap: 2 }}>{children}</Box>{!noDivider && <Divider sx={{ borderColor: alpha("#fff", 0.08) }} />}</>
 );
 
-// --- ОСНОВНОЙ КОМПОНЕНТ ---
 export default function SettingsPage() {
-  const { user, updateProfile, deleteDataByMonth, isAuthenticated, loading: authLoading } = useAuth(); // Берем новые функции!
+  const { user, updateProfile, deleteDataByMonth, isAuthenticated, loading: authLoading } = useAuth();
 
   const [tab, setTab] = useState(0);
   const [editNameOpen, setEditNameOpen] = useState(false);
-  const [editEmailOpen, setEditEmailOpen] = useState(false);
-  const [editPasswordOpen, setEditPasswordOpen] = useState(false);
   const [deleteDataOpen, setDeleteDataOpen] = useState(false);
 
   const [firstName, setFirstName] = useState(user?.firstName || "");
   const [lastName, setLastName] = useState(user?.lastName || "");
-  const [newEmail, setNewEmail] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [deleteMonth, setDeleteMonth] = useState("");
   const [deleteIncome, setDeleteIncome] = useState(false);
@@ -116,7 +104,6 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  // 1. ИЗМЕНЕНИЕ ИМЕНИ (Аккаунт)
   const handleSaveName = async () => {
     const res = await updateProfile({ firstName, lastName });
     if (res.success) {
@@ -127,40 +114,24 @@ export default function SettingsPage() {
     }
   };
 
-  // 2. ИЗМЕНЕНИЕ EMAIL (Аккаунт)
-  const handleSaveEmail = async () => {
-    const res = await updateProfile({ email: newEmail });
-    if (res.success) {
-      showSnack("success", "Email изменен");
-      setEditEmailOpen(false);
-    } else {
-      showSnack("error", res.error);
-    }
-  };
-
-  // 3. СКРЫТИЕ СУММ (Интерфейс)
   const handleToggleHide = async (checked) => {
     const res = await updateProfile({ hideAmounts: checked });
     if (!res.success) showSnack("error", res.error);
   };
 
-  // 4. СМЕНА ВАЛЮТЫ (Интерфейс)
   const handleChangeCurrency = async (val) => {
     const res = await updateProfile({ currency: val });
     if (!res.success) showSnack("error", res.error);
   };
 
-  // 5. УДАЛЕНИЕ ДАННЫХ (Данные)
   const handleDeleteData = async () => {
     const parsed = parseYearMonth(deleteMonth);
     if (!parsed || (!deleteIncome && !deleteExpenses)) {
       showSnack("error", "Выберите месяц и тип данных");
       return;
     }
-
     setDeleting(true);
     let type = deleteIncome && deleteExpenses ? "all" : deleteIncome ? "income" : "expenses";
-    
     const res = await deleteDataByMonth(deleteMonth, type);
     if (res.success) {
       showSnack("success", "Данные успешно удалены");
@@ -171,7 +142,7 @@ export default function SettingsPage() {
     setDeleting(false);
   };
 
-  if (authLoading) return <PageWrap><Typography sx={{ color: "#fff", mt: 4, textAlign: "center" }}>Загрузка настроек...</Typography></PageWrap>;
+  if (authLoading) return <PageWrap><Typography sx={{ color: "#fff", mt: 4, textAlign: "center" }}>Загрузка...</Typography></PageWrap>;
   if (!isAuthenticated) return null;
 
   return (
@@ -186,7 +157,6 @@ export default function SettingsPage() {
         <Tab label="Данные" sx={{ color: "#fff", fontWeight: 900 }} />
       </Tabs>
 
-      {/* ВКЛАДКА АККАУНТ */}
       {tab === 0 && (
         <Box>
           <SectionTitle>Профиль</SectionTitle>
@@ -206,12 +176,10 @@ export default function SettingsPage() {
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Email</Typography>
               <Typography variant="body2" sx={{ color: alpha("#fff", 0.6) }}>{user?.email}</Typography>
             </Box>
-            <Button variant="outlined" onClick={() => setEditEmailOpen(true)} sx={{ borderRadius: 2, color: "#fff" }}>Изменить</Button>
           </RowItem>
         </Box>
       )}
 
-      {/* ВКЛАДКА ИНТЕРФЕЙС */}
       {tab === 1 && (
         <Box>
           <SectionTitle>Отображение</SectionTitle>
@@ -219,7 +187,6 @@ export default function SettingsPage() {
             <PaletteOutlinedIcon sx={{ color: "#fff" }} />
             <Box sx={{ flex: 1 }}>
               <Typography sx={{ fontWeight: 900, color: "#fff" }}>Скрывать суммы</Typography>
-              <Typography variant="body2" sx={{ color: alpha("#fff", 0.6) }}>Полезно при показе экрана другим</Typography>
             </Box>
             <Switch checked={user?.hideAmounts || false} onChange={(e) => handleToggleHide(e.target.checked)} />
           </RowItem>
@@ -240,7 +207,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* ВКЛАДКА ДАННЫЕ */}
       {tab === 2 && (
         <Box>
           <SectionTitle>Удаление данных</SectionTitle>
@@ -254,7 +220,6 @@ export default function SettingsPage() {
         </Box>
       )}
 
-      {/* ДИАЛОГИ (МОДАЛКИ) */}
       <Dialog open={editNameOpen} onClose={() => setEditNameOpen(false)}>
         <DialogTitle sx={{ fontWeight: 900 }}>Редактировать профиль</DialogTitle>
         <DialogContent dividers>
