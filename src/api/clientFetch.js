@@ -34,11 +34,13 @@ const clearAuthData = () => {
   } catch {}
 };
 
+// ВАЖНО: В настройках Vercel оставь REACT_APP_API_BASE_URL ПУСТЫМ
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
   const p = String(path || "").startsWith("/") ? String(path) : `/${path}`;
+  // Если API_BASE пустой, вернет относительный путь (например, "/api/auth/login")
   return API_BASE ? `${API_BASE}${p}` : p;
 };
 
@@ -54,26 +56,23 @@ async function refreshToken() {
   if (refreshPromise) return refreshPromise;
   refreshPromise = (async () => {
     try {
-      console.log("[AUTH] Попытка обновления токена...");
+      // Запрос идет на "/api/auth/refresh", который Vercel проксирует на Railway
       const res = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
-        credentials: "include", // КРИТИЧНО для Safari
+        credentials: "include",
         headers: new Headers({ "Content-Type": "application/json" }),
       });
 
       const data = await parseBody(res);
-      console.log("[AUTH] Ответ рефреша:", res.status, data);
 
       if (!res.ok) return null;
 
       const newAccess = data?.token || data?.accessToken || data?.jwt || null;
       if (newAccess) {
         writeToken(newAccess);
-        console.log("[AUTH] Токен успешно обновлен");
       }
       return normalizeToken(newAccess) || null;
     } catch (e) {
-      console.error("[AUTH] Ошибка сети при рефреше:", e);
       return null;
     }
   })();
@@ -83,7 +82,6 @@ async function refreshToken() {
 export async function apiFetch(path, options = {}) {
   const url = buildUrl(path);
   const doRequest = async () => {
-    // Ждем, если в этот момент другой запрос обновляет токен
     if (refreshPromise) await refreshPromise;
 
     const token = readToken();
@@ -94,6 +92,7 @@ export async function apiFetch(path, options = {}) {
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
+    // credentials: "include" заставляет браузер отправлять куки
     const res = await fetch(url, { ...options, credentials: "include", headers });
     const data = await parseBody(res);
     return { res, data };
@@ -101,6 +100,7 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
+  // Если получили 401/403, пробуем обновить токен один раз
   if (res.status === 401 || res.status === 403) {
     const newToken = await refreshToken();
     if (newToken) {
@@ -108,6 +108,7 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
+  // Если всё еще 401/403 — разлогиниваем
   if (res.status === 401 || res.status === 403) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
