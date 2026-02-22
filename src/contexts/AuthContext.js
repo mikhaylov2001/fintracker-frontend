@@ -16,25 +16,27 @@ const API_BASE_URL = (
 ).trim();
 
 const API_AUTH_BASE = "/api/auth";
-const AUTH_STORAGE_KEYS = ["authToken", "token", "accessToken", "jwt", "authUser"];
+const AUTH_STORAGE_KEYS = [
+  "authToken",
+  "token",
+  "accessToken",
+  "jwt",
+  "authUser",
+];
 
-// --- ПЕРЕВОДЧИК ОШИБОК ---
-const translateError = (err) => {
+// Хелпер для ошибок (на русском)
+const getRuError = (err) => {
   const msg = err?.message || String(err);
-
-  if (msg.includes("409")) return "Ошибка: Неверный текущий пароль или данные уже используются.";
-  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла. Войдите в систему заново.";
-  if (msg.includes("400")) return "Некорректные данные. Проверьте правильность заполнения.";
-  if (msg.includes("404")) return "Данные не найдены на сервере.";
-  if (msg.includes("500")) return "Ошибка на сервере. Мы уже работаем над исправлением.";
-  if (msg.includes("Failed to fetch") || msg.includes("Network Error")) return "Нет связи с сервером. Проверьте интернет.";
-
-  return "Произошла ошибка. Попробуйте еще раз.";
+  if (msg.includes("409")) return "Неверный текущий пароль или данные уже заняты";
+  if (msg.includes("401") || msg.includes("403")) return "Сессия истекла, войдите заново";
+  if (msg.includes("Failed to fetch")) return "Нет связи с сервером";
+  return "Произошла ошибка. Попробуйте еще раз";
 };
 
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
+  if (!s) return null;
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
@@ -42,45 +44,99 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
 
-  // 1. Загрузка данных при старте
   useEffect(() => {
+    let savedToken = null;
+    let savedUser = null;
+
     try {
-      const savedToken = localStorage.getItem("authToken");
-      const savedUser = localStorage.getItem("authUser");
+      savedToken = localStorage.getItem("authToken");
+      savedUser = localStorage.getItem("authUser");
+    } catch {}
 
-      const t = normalizeToken(savedToken);
-      if (t) setToken(t);
+    const t = normalizeToken(savedToken);
+    if (t) setToken(t);
 
-      if (savedUser) {
+    if (savedUser) {
+      try {
         const parsed = JSON.parse(savedUser);
-        setUser(parsed && (parsed.id || parsed.email) ? parsed : null);
+        setUser(parsed && parsed.id ? parsed : null);
+      } catch {
+        setUser(null);
       }
-    } catch (e) {
-      console.error("Auth init error", e);
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    const sync = () => {
+      try {
+        const savedToken = localStorage.getItem("authToken");
+        const t = normalizeToken(savedToken);
+        setToken(t);
+      } catch {}
+    };
+
+    sync();
+    const id = setInterval(sync, 10000);
+    return () => clearInterval(id);
   }, []);
 
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
     try {
-      AUTH_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+      for (const k of AUTH_STORAGE_KEYS) localStorage.removeItem(k);
+    } catch {}
+    try {
       sessionStorage.clear();
     } catch {}
   }, []);
 
+  const saveAuthData = useCallback(
+    (data) => {
+      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+      const nextToken = normalizeToken(nextTokenRaw);
+      const nextUser = data?.user ?? null;
+
+      setUser((prevUser) => {
+        if (prevUser && nextUser && prevUser.id !== nextUser.id) {
+          hardResetState();
+          setAuthError(true);
+          return null;
+        }
+        if (nextUser) {
+          try {
+            localStorage.setItem("authUser", JSON.stringify(nextUser));
+          } catch {}
+          return nextUser;
+        }
+        return prevUser;
+      });
+
+      if (nextToken) {
+        setToken(nextToken);
+        try {
+          localStorage.setItem("authToken", nextToken);
+        } catch {}
+      }
+    },
+    [hardResetState]
+  );
+
   const updateUserInState = useCallback((partialUser) => {
     setUser((prev) => {
       const next = { ...(prev || {}), ...(partialUser || {}) };
-      localStorage.setItem("authUser", JSON.stringify(next));
+      try {
+        localStorage.setItem("authUser", JSON.stringify(next));
+      } catch {}
       return next;
     });
   }, []);
 
-  // --- МЕТОДЫ ДЛЯ SETTINGS (С СОХРАНЕНИЕМ В БД) ---
+  // --- НОВЫЕ ФУНКЦИИ (ДЛЯ ТВОЕЙ СТРАНИЦЫ) ---
 
   const updateProfile = useCallback(async (data) => {
     try {
@@ -90,8 +146,8 @@ export const AuthProvider = ({ children }) => {
       });
       updateUserInState(res);
       return res;
-    } catch (err) {
-      throw new Error(translateError(err));
+    } catch (e) {
+      throw new Error(getRuError(e));
     }
   }, [updateUserInState]);
 
@@ -103,8 +159,8 @@ export const AuthProvider = ({ children }) => {
       });
       updateUserInState({ settings: res });
       return res;
-    } catch (err) {
-      throw new Error(translateError(err));
+    } catch (e) {
+      throw new Error(getRuError(e));
     }
   }, [updateUserInState]);
 
@@ -114,8 +170,8 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
-    } catch (err) {
-      throw new Error(translateError(err));
+    } catch (e) {
+      throw new Error(getRuError(e));
     }
   }, []);
 
@@ -124,39 +180,38 @@ export const AuthProvider = ({ children }) => {
       return await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
         method: "DELETE",
       });
-    } catch (err) {
-      throw new Error(translateError(err));
+    } catch (e) {
+      throw new Error(getRuError(e));
     }
   }, []);
 
-  // --- СТАНДАРТНЫЕ МЕТОДЫ АВТОРИЗАЦИИ ---
+  // --- ОСТАЛЬНОЕ КАК БЫЛО ---
 
-  const saveAuthData = useCallback((data) => {
-    const nextToken = normalizeToken(data?.token || data?.accessToken || data?.jwt);
-    const nextUser = data?.user;
-
-    if (nextUser) {
-      setUser(nextUser);
-      localStorage.setItem("authUser", JSON.stringify(nextUser));
-    }
-    if (nextToken) {
-      setToken(nextToken);
-      localStorage.setItem("authToken", nextToken);
-    }
-  }, []);
-
-  const login = useCallback(async (credentials) => {
-    try {
+  const login = useCallback(
+    async ({ email, password }) => {
       const data = await apiFetch(`${API_AUTH_BASE}/login`, {
         method: "POST",
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({ email, password }),
       });
+      setAuthError(false);
       saveAuthData(data);
       return data;
-    } catch (err) {
-      throw new Error(translateError(err));
-    }
-  }, [saveAuthData]);
+    },
+    [saveAuthData]
+  );
+
+  const register = useCallback(
+    async ({ firstName, lastName, email, password }) => {
+      const data = await apiFetch(`${API_AUTH_BASE}/register`, {
+        method: "POST",
+        body: JSON.stringify({ firstName, lastName, email, password }),
+      });
+      setAuthError(false);
+      saveAuthData(data);
+      return data;
+    },
+    [saveAuthData]
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -164,31 +219,57 @@ export const AuthProvider = ({ children }) => {
         method: "POST",
         credentials: "include",
       });
-    } catch {} finally {
+    } catch (e) {
+      console.warn("Logout request failed:", e);
+    } finally {
       hardResetState();
+      setAuthError(false);
     }
   }, [hardResetState]);
+
+  const authFetch = useCallback(async (url, options = {}) => {
+    const data = await apiFetch(url, options);
+    return { ok: true, status: 200, json: async () => data, data };
+  }, []);
+
+  const hasStoredToken = (() => {
+    try {
+      return Boolean(localStorage.getItem("authToken"));
+    } catch {
+      return false;
+    }
+  })();
 
   const value = {
     user,
     token,
     login,
+    register,
     logout,
     updateProfile,
     updateSettings,
     changePassword,
     deleteData,
-    isAuthenticated: !!user && !!token,
+    isAuthenticated: !!user && hasStoredToken,
     loading,
     updateUserInState,
-    authError: false, // Теперь это просто константа, билд не упадет
+    authFetch,
+    authError,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
-    </AuthContext.Provider>
-  );
+  if (authError) {
+    return (
+      <AuthContext.Provider value={value}>
+        <AuthErrorScreen />
+      </AuthContext.Provider>
+    );
+  }
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
+  return ctx;
+};
