@@ -42,8 +42,8 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [authError] = useState(false); // Убрал неиспользуемый setAuthError
 
+  // 1. Загрузка данных при старте
   useEffect(() => {
     try {
       const savedToken = localStorage.getItem("authToken");
@@ -79,6 +79,8 @@ export const AuthProvider = ({ children }) => {
       return next;
     });
   }, []);
+
+  // --- МЕТОДЫ ДЛЯ SETTINGS (С СОХРАНЕНИЕМ В БД) ---
 
   const updateProfile = useCallback(async (data) => {
     try {
@@ -126,6 +128,8 @@ export const AuthProvider = ({ children }) => {
       throw new Error(translateError(err));
     }
   }, []);
+
+  // --- СТАНДАРТНЫЕ МЕТОДЫ АВТОРИЗАЦИИ ---
 
   const saveAuthData = useCallback((data) => {
     const nextToken = normalizeToken(data?.token || data?.accessToken || data?.jwt);
@@ -177,10 +181,8 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user && !!token,
     loading,
     updateUserInState,
-    authError,
+    authError: false, // Теперь это просто константа, билд не упадет
   };
-
-  if (authError) return <AuthErrorScreen />;
 
   return (
     <AuthContext.Provider value={value}>
