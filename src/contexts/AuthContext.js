@@ -10,13 +10,7 @@ import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-const AUTH_STORAGE_KEYS = [
-  "authToken",
-  "token",
-  "accessToken",
-  "jwt",
-  "authUser",
-];
+const AUTH_STORAGE_KEYS = ["authToken", "authUser"];
 
 const normalizeToken = (t) => {
   if (!t) return null;
@@ -51,7 +45,7 @@ export const AuthProvider = ({ children }) => {
       if (savedUser) {
         try {
           const parsed = JSON.parse(savedUser);
-          if (parsed && parsed.id) setUser(parsed);
+          if (parsed && (parsed.id || parsed.email)) setUser(parsed);
         } catch {
           setUser(null);
         }
@@ -62,39 +56,31 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // 2. Слушатель принудительного разлогина (от 401 ошибок в apiFetch)
+  // 2. Слушатель принудительного разлогина (теперь он точно сработает при 403)
   useEffect(() => {
     const handleForceLogout = () => {
-      console.warn("[AUTH] Force logout event received");
+      console.warn("[AUTH] Force logout event received. Cleaning state...");
       hardResetState();
+      // Если ты хочешь показывать экран ошибки вместо редиректа на логин, раскомментируй:
+      // setAuthError(true);
     };
     window.addEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
     return () => window.removeEventListener(AUTH_LOGOUT_EVENT, handleForceLogout);
   }, [hardResetState]);
 
-  const saveAuthData = useCallback(
-    (data) => {
-      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
+  const saveAuthData = useCallback((data) => {
+      if (!data) return;
+
+      const nextTokenRaw = data.token || data.accessToken || data.jwt;
       const nextToken = normalizeToken(nextTokenRaw);
-      const nextUser = data?.user ?? null;
+      const nextUser = data.user;
 
-      // Проверка на подмену пользователя (Security Check)
-      setUser((prevUser) => {
-        if (prevUser && nextUser && prevUser.id !== nextUser.id) {
-          console.error("[AUTH] Security: User ID mismatch!", { prevUser, nextUser });
-          hardResetState();
-          setAuthError(true);
-          return null;
-        }
-
-        if (nextUser) {
-          try {
-            localStorage.setItem("authUser", JSON.stringify(nextUser));
-          } catch {}
-          return nextUser;
-        }
-        return prevUser;
-      });
+      if (nextUser) {
+        setUser(nextUser);
+        try {
+          localStorage.setItem("authUser", JSON.stringify(nextUser));
+        } catch {}
+      }
 
       if (nextToken) {
         setToken(nextToken);
@@ -102,9 +88,7 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem("authToken", nextToken);
         } catch {}
       }
-    },
-    [hardResetState]
-  );
+    }, []);
 
   const login = useCallback(async (credentials) => {
     const data = await apiFetch("/api/auth/login", {
@@ -126,7 +110,6 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, [saveAuthData]);
 
-  // Восстановленный метод Google Auth
   const loginWithGoogle = useCallback(async (idToken) => {
     const data = await apiFetch("/api/auth/google", {
       method: "POST",
@@ -139,9 +122,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await apiFetch("/api/auth/logout", { method: "POST" });
-    } catch (e) {
-      console.warn("Logout request failed:", e);
+      // Пытаемся уведомить бэкенд, но не ждем его, если он упал
+      await apiFetch("/api/auth/logout", { method: "POST" }).catch(() => {});
     } finally {
       hardResetState();
       setAuthError(false);
@@ -158,10 +140,9 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // Удобная обертка для запросов через контекст
   const authFetch = useCallback(async (url, options = {}) => {
     const data = await apiFetch(url, options);
-    return { ok: true, status: 200, json: async () => data, data };
+    return { ok: true, status: 200, data };
   }, []);
 
   const value = {
@@ -169,7 +150,7 @@ export const AuthProvider = ({ children }) => {
     token,
     login,
     register,
-    loginWithGoogle, // Добавлено обратно
+    loginWithGoogle,
     logout,
     isAuthenticated: !!user && !!token,
     loading,
@@ -181,7 +162,10 @@ export const AuthProvider = ({ children }) => {
   if (authError) {
     return (
       <AuthContext.Provider value={value}>
-        <AuthErrorScreen />
+        <AuthErrorScreen onRetry={() => {
+            setAuthError(false);
+            window.location.href = '/login';
+        }} />
       </AuthContext.Provider>
     );
   }

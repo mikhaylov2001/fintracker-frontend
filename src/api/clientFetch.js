@@ -31,7 +31,14 @@ const writeToken = (token) => {
   } catch {}
 };
 
-// Если REACT_APP_API_BASE_URL пустой, запросы идут на текущий домен (для Rewrites)
+const clearAuthData = () => {
+  try {
+    TOKEN_KEYS.forEach(k => localStorage.removeItem(k));
+    localStorage.removeItem("authUser");
+  } catch {}
+};
+
+// Если REACT_APP_API_BASE_URL пустой, запросы идут на текущий домен (через Vercel Rewrites)
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
@@ -61,7 +68,7 @@ async function refreshToken() {
     try {
       const res = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
-        credentials: "include", // Обязательно для HttpOnly cookies
+        credentials: "include", // Обязательно для передачи refresh-кук
         headers: new Headers({ "Content-Type": "application/json" }),
       });
 
@@ -119,27 +126,33 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  // Если 401 — пытаемся обновить токен
-  if (res.status === 401) {
+  // 1. Если 401 или 403 — пробуем один раз обновить токен
+  if (res.status === 401 || res.status === 403) {
     const newToken = await refreshToken();
     if (newToken) {
       ({ res, data } = await doRequest());
     }
   }
 
-  // Если все еще 401 — сессия окончательно мертва
-  if (res.status === 401) {
-    try {
-      localStorage.removeItem("authToken");
-      localStorage.removeItem("authUser");
-      // Сообщаем контексту, что нужно разлогинить пользователя
-      window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
-    } catch {}
+  // 2. Если после попытки рефреша всё еще 401/403 — сессия мертва
+  if (res.status === 401 || res.status === 403) {
+    console.warn(`[AUTH] Session expired or forbidden (${res.status}). Forcing logout...`);
+
+    clearAuthData();
+
+    // Уведомляем React-контекст
+    window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+
+    // Если мы не на логине — принудительно перекидываем
+    if (!window.location.pathname.includes('/login')) {
+        window.location.replace('/login');
+    }
 
     const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
   }
 
+  // Обработка остальных ошибок (500, 400 и т.д.)
   if (!res.ok) {
     const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
     throw new Error(`${res.status}: ${msg}`);
