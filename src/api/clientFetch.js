@@ -35,7 +35,7 @@ const clearAuthData = () => {
   } catch {}
 };
 
-// ВАЖНО: В настройках Vercel оставь REACT_APP_API_BASE_URL ПУСТЫМ (как у тебя)
+// ВАЖНО: В настройках Vercel оставь REACT_APP_API_BASE_URL ПУСТЫМ
 const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
   .trim()
   .replace(/\/+$/, "");
@@ -89,8 +89,6 @@ async function refreshToken() {
 }
 
 function isAuthEndpoint(url) {
-  // любые endpoints логина/регистрации/гугла НЕ должны форс-логаутить
-  // иначе неверные креды будут трактоваться как "сессия истекла"
   return (
     url.includes("/api/auth/login") ||
     url.includes("/api/auth/register") ||
@@ -113,7 +111,6 @@ export async function apiFetch(path, options = {}) {
       headers.set("Content-Type", "application/json");
     }
 
-    // ВНИМАНИЕ: на /login можно тоже слать Bearer, но это не обязательно
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -125,7 +122,7 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  // 1) Рефреш имеет смысл только для НЕ-auth endpoints
+  // 1) refresh только для НЕ-auth endpoints
   if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     const newToken = await refreshToken();
     if (newToken) {
@@ -133,7 +130,7 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  // 2) Форс-логаут только если это НЕ login/register/google
+  // 2) форс-логаут только если это НЕ login/register/google
   if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
@@ -148,7 +145,7 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
-  // 3) Остальные ошибки (включая неверные креды на /login) — просто наверх
+  // 3) остальные ошибки (включая неверный пароль в /api/account/email) — наверх
   if (!res.ok) {
     const msg =
       typeof data === "string"
@@ -156,7 +153,7 @@ export async function apiFetch(path, options = {}) {
         : data?.message || data?.error || res.statusText || `HTTP ${res.status}`;
 
     const err = new Error(msg);
-    err.status = res.status;
+    err.status = res.status; // ✅ важно
     err.data = data;
     throw err;
   }

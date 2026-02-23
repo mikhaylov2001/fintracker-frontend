@@ -31,51 +31,68 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
-// ✅ ВАЖНО: используем err.status, а не парсим "401:" в тексте
 const getHumanError = (err, context = "general") => {
   const status = err?.status;
   const code = err?.code;
   const raw = err?.message || String(err || "");
   const lower = raw.toLowerCase();
 
+  // Сеть
+  if (lower.includes("failed to fetch") || lower.includes("network")) {
+    return "Нет связи с сервером. Проверьте интернет-соединение";
+  }
+  if (lower.includes("timeout")) return "Сервер не ответил вовремя. Попробуйте ещё раз";
+
   if (code === "SESSION_EXPIRED") {
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
-  if (status === 401) {
-    // Для логина безопаснее одинаковое сообщение (не раскрывать, существует ли email)
-    if (context === "login" || context === "register") {
-      return "Неверный email или пароль";
+  // --- КЕЙС: смена email ---
+  if (context === "email") {
+    // Неверный пароль
+    if (status === 401) return "Неверный пароль";
+    if (
+      status === 400 &&
+      (lower.includes("password") ||
+        lower.includes("invalid") ||
+        lower.includes("wrong") ||
+        lower.includes("incorrect"))
+    ) {
+      return "Неверный пароль";
     }
+
+    // Email занят
+    if (status === 409) return "Этот email уже используется другим пользователем";
+    if (lower.includes("email_taken")) return "Этот email уже используется другим пользователем";
+
+    // Фолбэк
+    return "Не удалось изменить email. Проверьте пароль и попробуйте ещё раз";
+  }
+
+  // --- Логин/регистрация ---
+  if (status === 401) {
+    if (context === "login" || context === "register") return "Неверный email или пароль";
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
   if (status === 403) return "Недостаточно прав для выполнения действия";
 
   if (status === 409) {
-    if (context === "email") return "Этот email уже используется другим пользователем";
+    if (context === "register") return "Этот email уже используется другим пользователем";
     return "Указанные данные уже используются";
   }
 
   if (status === 400) {
     if (context === "password") return "Пароль слишком слабый. Минимум 8 символов";
-    if (context === "email") return "Неверный формат email";
     if (context === "profile") return "Проверьте правильность заполнения полей";
     return "Некорректные данные. Проверьте введённую информацию";
   }
 
   if (status >= 500) return "Ошибка сервера. Попробуйте позже";
 
-  if (lower.includes("failed to fetch") || lower.includes("network")) {
-    return "Нет связи с сервером. Проверьте интернет-соединение";
-  }
-  if (lower.includes("timeout")) {
-    return "Сервер не ответил вовремя. Попробуйте ещё раз";
-  }
-
-  // Фолбэк по маркерам (если бэк так возвращает)
-  if (lower.includes("invalid_password")) return "Неверный текущий пароль";
-  if (lower.includes("email_taken")) return "Этот email уже используется другим пользователем";
+  // Фолбэки по тексту (если бэк так шлёт)
+  if (lower.includes("invalid_password")) return "Неверный пароль";
+  if (lower.includes("user not found")) return "Пользователь не найден";
 
   return "Произошла ошибка. Попробуйте ещё раз";
 };
@@ -112,8 +129,6 @@ export const AuthProvider = ({ children }) => {
         setToken(savedToken);
       } catch {}
     };
-
-    sync();
     const id = setInterval(sync, 10000);
     return () => clearInterval(id);
   }, []);
@@ -142,11 +157,7 @@ export const AuthProvider = ({ children }) => {
 
       const nextToken = normalizeToken(nextTokenRaw);
 
-      const nextUser =
-        data?.user ??
-        data?.authUser ??
-        data?.data?.user ??
-        null;
+      const nextUser = data?.user ?? data?.authUser ?? data?.data?.user ?? null;
 
       if (nextUser) {
         setUser((prevUser) => {
@@ -188,7 +199,7 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // ---- Профиль/настройки ----
+  // -------- Профиль --------
 
   const updateProfile = useCallback(
     async (data) => {
@@ -259,7 +270,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // ---- Авторизация ----
+  // -------- Авторизация --------
 
   const login = useCallback(
     async ({ email, password }) => {
