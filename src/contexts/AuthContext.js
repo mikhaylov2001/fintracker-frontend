@@ -24,7 +24,6 @@ const AUTH_STORAGE_KEYS = [
   "authUser",
 ];
 
-// Переводчик ошибок → человекопонятный текст
 const getHumanError = (err, context = "general") => {
   const raw = err?.message || String(err || "");
   const lower = raw.toLowerCase();
@@ -120,7 +119,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // синхронизация токена
+  // синхронизация токена (если логин/логаут случился в другой вкладке)
   useEffect(() => {
     const sync = () => {
       try {
@@ -258,7 +257,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // -------- Оригинальные методы авторизации --------
+  // -------- Авторизация --------
 
   const login = useCallback(
     async ({ email, password }) => {
@@ -277,7 +276,6 @@ export const AuthProvider = ({ children }) => {
     [saveAuthData]
   );
 
-  // ✅ Google login: GIS callback отдаёт ID token в response.credential [page:795]
   const loginWithGoogle = useCallback(
     async (idToken) => {
       try {
@@ -331,19 +329,11 @@ export const AuthProvider = ({ children }) => {
     return { ok: true, status: 200, json: async () => data, data };
   }, []);
 
-  const hasStoredToken = (() => {
-    try {
-      return Boolean(localStorage.getItem("authToken"));
-    } catch {
-      return false;
-    }
-  })();
-
   const value = {
     user,
     token,
     login,
-    loginWithGoogle, // ✅ важно: иначе useAuth() не вернёт метод
+    loginWithGoogle,
     register,
     logout,
     updateProfile,
@@ -351,7 +341,8 @@ export const AuthProvider = ({ children }) => {
     updateSettings,
     changePassword,
     deleteData,
-    isAuthenticated: !!user && hasStoredToken,
+    // ✅ фикс: реактивно от стейта, а не от одноразового localStorage флага [web:804]
+    isAuthenticated: Boolean(user && token),
     loading,
     updateUserInState,
     authFetch,
