@@ -4,6 +4,7 @@ export const AUTH_LOGOUT_EVENT = "app_force_logout";
 const normalizeToken = (t) => {
   if (!t) return null;
   const s = String(t).trim();
+  if (!s) return null;
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
@@ -28,14 +29,16 @@ const writeToken = (token) => {
 
 const clearAuthData = () => {
   try {
-    TOKEN_KEYS.forEach(k => localStorage.removeItem(k));
+    TOKEN_KEYS.forEach((k) => localStorage.removeItem(k));
     localStorage.removeItem("authUser");
     sessionStorage.clear();
   } catch {}
 };
 
-// ВАЖНО: В настройках Vercel оставь REACT_APP_API_BASE_URL ПУСТЫМ
-const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "").trim().replace(/\/+$/, "");
+// ВАЖНО: В настройках Vercel оставь REACT_APP_API_BASE_URL ПУСТЫМ (как у тебя)
+const API_BASE = String(process.env.REACT_APP_API_BASE_URL || "")
+  .trim()
+  .replace(/\/+$/, "");
 
 const buildUrl = (path) => {
   if (/^https?:\/\//i.test(path)) return path;
@@ -46,13 +49,18 @@ const buildUrl = (path) => {
 const parseBody = async (res) => {
   const text = await res.text();
   if (!text) return null;
-  try { return JSON.parse(text); } catch { return text; }
+  try {
+    return JSON.parse(text);
+  } catch {
+    return text;
+  }
 };
 
 let refreshPromise = null;
 
 async function refreshToken() {
   if (refreshPromise) return refreshPromise;
+
   refreshPromise = (async () => {
     try {
       const res = await fetch(buildUrl("/api/auth/refresh"), {
@@ -65,15 +73,31 @@ async function refreshToken() {
       if (!res.ok) return null;
 
       const newAccess = data?.token || data?.accessToken || data?.jwt || null;
-      if (newAccess) {
-        writeToken(newAccess);
-      }
+      if (newAccess) writeToken(newAccess);
+
       return normalizeToken(newAccess) || null;
-    } catch (e) {
+    } catch {
       return null;
     }
   })();
-  try { return await refreshPromise; } finally { refreshPromise = null; }
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+function isAuthEndpoint(url) {
+  // любые endpoints логина/регистрации/гугла НЕ должны форс-логаутить
+  // иначе неверные креды будут трактоваться как "сессия истекла"
+  return (
+    url.includes("/api/auth/login") ||
+    url.includes("/api/auth/register") ||
+    url.includes("/api/auth/google") ||
+    url.includes("/api/auth/refresh") ||
+    url.includes("/api/auth/logout")
+  );
 }
 
 export async function apiFetch(path, options = {}) {
@@ -84,9 +108,12 @@ export async function apiFetch(path, options = {}) {
 
     const token = readToken();
     const headers = new Headers(options.headers || {});
+
     if (!(options.body instanceof FormData) && options.body && !headers.has("Content-Type")) {
       headers.set("Content-Type", "application/json");
     }
+
+    // ВНИМАНИЕ: на /login можно тоже слать Bearer, но это не обязательно
     if (token && !headers.has("Authorization")) {
       headers.set("Authorization", `Bearer ${token}`);
     }
@@ -98,30 +125,40 @@ export async function apiFetch(path, options = {}) {
 
   let { res, data } = await doRequest();
 
-  // 1. Попытка рефреша при 401/403
-  if (res.status === 401 || res.status === 403) {
+  // 1) Рефреш имеет смысл только для НЕ-auth endpoints
+  if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     const newToken = await refreshToken();
     if (newToken) {
       ({ res, data } = await doRequest());
     }
   }
 
-  // 2. Если всё еще 401/403 после попытки рефреша — разлогин
-  if (res.status === 401 || res.status === 403) {
+  // 2) Форс-логаут только если это НЕ login/register/google
+  if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
 
-    const isLoginPage = window.location.pathname.includes('/login');
-    if (!isLoginPage) {
-        window.location.replace('/login?expired=true');
-    }
-    throw new Error("Session expired");
+    const isLoginPage = window.location.pathname.includes("/login");
+    if (!isLoginPage) window.location.replace("/login?expired=true");
+
+    const err = new Error("Session expired");
+    err.status = res.status;
+    err.code = "SESSION_EXPIRED";
+    err.data = data;
+    throw err;
   }
 
-  // 3. Обработка остальных ошибок
+  // 3) Остальные ошибки (включая неверные креды на /login) — просто наверх
   if (!res.ok) {
-    const msg = typeof data === "string" ? data : data?.message || data?.error || res.statusText;
-    throw new Error(`${res.status}: ${msg}`);
+    const msg =
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || res.statusText || `HTTP ${res.status}`;
+
+    const err = new Error(msg);
+    err.status = res.status;
+    err.data = data;
+    throw err;
   }
 
   return data;

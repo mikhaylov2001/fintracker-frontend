@@ -24,42 +24,47 @@ const AUTH_STORAGE_KEYS = [
   "authUser",
 ];
 
+const normalizeToken = (t) => {
+  if (!t) return null;
+  const s = String(t).trim();
+  if (!s) return null;
+  return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
+};
+
+// ✅ ВАЖНО: используем err.status, а не парсим "401:" в тексте
 const getHumanError = (err, context = "general") => {
+  const status = err?.status;
+  const code = err?.code;
   const raw = err?.message || String(err || "");
   const lower = raw.toLowerCase();
 
-  if (lower.includes("invalid_password")) return "Неверный текущий пароль";
-  if (lower.includes("email_taken"))
-    return "Этот email уже используется другим пользователем";
+  if (code === "SESSION_EXPIRED") {
+    return "Сессия истекла. Войдите в аккаунт заново";
+  }
 
-  if (lower.includes("401") || lower.includes("unauthorized")) {
-    if (context === "email" || context === "password") {
-      return "Неверный текущий пароль";
+  if (status === 401) {
+    // Для логина безопаснее одинаковое сообщение (не раскрывать, существует ли email)
+    if (context === "login" || context === "register") {
+      return "Неверный email или пароль";
     }
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
-  if (lower.includes("403") || lower.includes("forbidden")) {
-    return "Недостаточно прав для выполнения действия";
-  }
+  if (status === 403) return "Недостаточно прав для выполнения действия";
 
-  if (lower.includes("409") || lower.includes("conflict")) {
-    if (context === "email")
-      return "Этот email уже используется другим пользователем";
+  if (status === 409) {
+    if (context === "email") return "Этот email уже используется другим пользователем";
     return "Указанные данные уже используются";
   }
 
-  if (lower.includes("400") || lower.includes("bad request")) {
-    if (context === "password")
-      return "Пароль слишком слабый. Минимум 8 символов";
+  if (status === 400) {
+    if (context === "password") return "Пароль слишком слабый. Минимум 8 символов";
     if (context === "email") return "Неверный формат email";
     if (context === "profile") return "Проверьте правильность заполнения полей";
     return "Некорректные данные. Проверьте введённую информацию";
   }
 
-  if (lower.includes("500") || lower.includes("internal server")) {
-    return "Ошибка сервера. Попробуйте позже";
-  }
+  if (status >= 500) return "Ошибка сервера. Попробуйте позже";
 
   if (lower.includes("failed to fetch") || lower.includes("network")) {
     return "Нет связи с сервером. Проверьте интернет-соединение";
@@ -68,21 +73,11 @@ const getHumanError = (err, context = "general") => {
     return "Сервер не ответил вовремя. Попробуйте ещё раз";
   }
 
-  if (lower.includes("incorrect password") || lower.includes("wrong password"))
-    return "Неверный текущий пароль";
-  if (lower.includes("email already"))
-    return "Этот email уже используется другим пользователем";
-  if (lower.includes("user not found")) return "Пользователь не найден";
-  if (lower.includes("passwords do not match")) return "Пароли не совпадают";
+  // Фолбэк по маркерам (если бэк так возвращает)
+  if (lower.includes("invalid_password")) return "Неверный текущий пароль";
+  if (lower.includes("email_taken")) return "Этот email уже используется другим пользователем";
 
   return "Произошла ошибка. Попробуйте ещё раз";
-};
-
-const normalizeToken = (t) => {
-  if (!t) return null;
-  const s = String(t).trim();
-  if (!s) return null;
-  return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
 export const AuthProvider = ({ children }) => {
@@ -110,7 +105,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  // синхронизация токена (на случай другой вкладки)
   useEffect(() => {
     const sync = () => {
       try {
@@ -118,6 +112,8 @@ export const AuthProvider = ({ children }) => {
         setToken(savedToken);
       } catch {}
     };
+
+    sync();
     const id = setInterval(sync, 10000);
     return () => clearInterval(id);
   }, []);
@@ -133,7 +129,6 @@ export const AuthProvider = ({ children }) => {
     } catch {}
   }, []);
 
-  // ВАЖНО: устойчиво к разным форматам ответов бэка
   const saveAuthData = useCallback(
     (data) => {
       const nextTokenRaw =
@@ -193,7 +188,7 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // -------- Методы профиля --------
+  // ---- Профиль/настройки ----
 
   const updateProfile = useCallback(
     async (data) => {
@@ -264,7 +259,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // -------- Авторизация --------
+  // ---- Авторизация ----
 
   const login = useCallback(
     async ({ email, password }) => {
