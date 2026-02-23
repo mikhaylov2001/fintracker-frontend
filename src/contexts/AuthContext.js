@@ -44,20 +44,16 @@ const getHumanError = (err, context = "general") => {
   }
 
   if (lower.includes("409") || lower.includes("conflict")) {
-    if (context === "email") {
+    if (context === "email")
       return "Этот email уже используется другим пользователем";
-    }
     return "Указанные данные уже используются";
   }
 
   if (lower.includes("400") || lower.includes("bad request")) {
-    if (context === "password") {
+    if (context === "password")
       return "Пароль слишком слабый. Минимум 8 символов";
-    }
     if (context === "email") return "Неверный формат email";
-    if (context === "profile") {
-      return "Проверьте правильность заполнения полей";
-    }
+    if (context === "profile") return "Проверьте правильность заполнения полей";
     return "Некорректные данные. Проверьте введённую информацию";
   }
 
@@ -96,40 +92,32 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(false);
 
   useEffect(() => {
-    let savedToken = null;
-    let savedUser = null;
-
     try {
-      savedToken = localStorage.getItem("authToken");
-      savedUser = localStorage.getItem("authUser");
-    } catch {}
+      const savedToken = normalizeToken(localStorage.getItem("authToken"));
+      if (savedToken) setToken(savedToken);
 
-    const t = normalizeToken(savedToken);
-    if (t) setToken(t);
-
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        setUser(parsed && parsed.id ? parsed : null);
-      } catch {
-        setUser(null);
+      const savedUserRaw = localStorage.getItem("authUser");
+      if (savedUserRaw) {
+        try {
+          const parsed = JSON.parse(savedUserRaw);
+          setUser(parsed && parsed.id ? parsed : null);
+        } catch {
+          setUser(null);
+        }
       }
-    }
+    } catch {}
 
     setLoading(false);
   }, []);
 
-  // синхронизация токена (если логин/логаут случился в другой вкладке)
+  // синхронизация токена (на случай другой вкладки)
   useEffect(() => {
     const sync = () => {
       try {
-        const savedToken = localStorage.getItem("authToken");
-        const t = normalizeToken(savedToken);
-        setToken(t);
+        const savedToken = normalizeToken(localStorage.getItem("authToken"));
+        setToken(savedToken);
       } catch {}
     };
-
-    sync();
     const id = setInterval(sync, 10000);
     return () => clearInterval(id);
   }, []);
@@ -145,26 +133,45 @@ export const AuthProvider = ({ children }) => {
     } catch {}
   }, []);
 
+  // ВАЖНО: устойчиво к разным форматам ответов бэка
   const saveAuthData = useCallback(
     (data) => {
-      const nextTokenRaw = data?.token ?? data?.accessToken ?? data?.jwt ?? null;
-      const nextToken = normalizeToken(nextTokenRaw);
-      const nextUser = data?.user ?? null;
+      const nextTokenRaw =
+        data?.token ??
+        data?.accessToken ??
+        data?.jwt ??
+        data?.authToken ??
+        data?.data?.token ??
+        data?.data?.accessToken ??
+        null;
 
-      setUser((prevUser) => {
-        if (prevUser && nextUser && prevUser.id !== nextUser.id) {
-          hardResetState();
-          setAuthError(true);
-          return null;
-        }
-        if (nextUser) {
+      const nextToken = normalizeToken(nextTokenRaw);
+
+      const nextUser =
+        data?.user ??
+        data?.authUser ??
+        data?.data?.user ??
+        null;
+
+      if (nextUser) {
+        setUser((prevUser) => {
+          if (
+            prevUser &&
+            nextUser &&
+            prevUser.id &&
+            nextUser.id &&
+            prevUser.id !== nextUser.id
+          ) {
+            hardResetState();
+            setAuthError(true);
+            return null;
+          }
           try {
             localStorage.setItem("authUser", JSON.stringify(nextUser));
           } catch {}
           return nextUser;
-        }
-        return prevUser;
-      });
+        });
+      }
 
       if (nextToken) {
         setToken(nextToken);
@@ -186,7 +193,7 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // -------- Методы для настроек / профиля --------
+  // -------- Методы профиля --------
 
   const updateProfile = useCallback(
     async (data) => {
@@ -341,7 +348,6 @@ export const AuthProvider = ({ children }) => {
     updateSettings,
     changePassword,
     deleteData,
-    // ✅ фикс: реактивно от стейта, а не от одноразового localStorage флага [web:804]
     isAuthenticated: Boolean(user && token),
     loading,
     updateUserInState,

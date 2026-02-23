@@ -123,17 +123,18 @@ export default function LoginPage() {
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      await login({ email: form.email, password: form.password });
-      navigate(afterLoginPath, { replace: true });
-    } catch (err) {
-      console.error(err);
-      setError(err?.message || "Неверный email или пароль");
-    }
-  };
+ const handleSubmit = async (e) => {
+   e.preventDefault();
+   setError("");
+   try {
+     await login({ email: form.email, password: form.password });
+     navigate(afterLoginPath, { replace: true });
+   } catch (err) {
+     console.error(err);
+     setError(err?.message || "Ошибка входа. Проверьте данные");
+   }
+ };
+
 
   if (!loading && isAuthenticated) {
     const userName = user?.userName;
