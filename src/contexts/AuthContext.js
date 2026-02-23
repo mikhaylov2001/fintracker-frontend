@@ -26,19 +26,13 @@ const AUTH_STORAGE_KEYS = [
 
 // Переводчик ошибок → человекопонятный текст
 const getHumanError = (err, context = "general") => {
-  // err может быть Error с message, либо объект ответа
   const raw = err?.message || String(err || "");
   const lower = raw.toLowerCase();
 
-  // 1. Специальные маркеры от бэка (если будешь их использовать)
-  if (lower.includes("invalid_password")) {
-    return "Неверный текущий пароль";
-  }
-  if (lower.includes("email_taken")) {
+  if (lower.includes("invalid_password")) return "Неверный текущий пароль";
+  if (lower.includes("email_taken"))
     return "Этот email уже используется другим пользователем";
-  }
 
-  // 2. 401 — либо неверный пароль, либо сессия
   if (lower.includes("401") || lower.includes("unauthorized")) {
     if (context === "email" || context === "password") {
       return "Неверный текущий пароль";
@@ -46,12 +40,10 @@ const getHumanError = (err, context = "general") => {
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
-  // 3. 403 — нет прав
   if (lower.includes("403") || lower.includes("forbidden")) {
     return "Недостаточно прав для выполнения действия";
   }
 
-  // 4. 409 — конфликт данных
   if (lower.includes("409") || lower.includes("conflict")) {
     if (context === "email") {
       return "Этот email уже используется другим пользователем";
@@ -59,26 +51,21 @@ const getHumanError = (err, context = "general") => {
     return "Указанные данные уже используются";
   }
 
-  // 5. 400 — некорректные данные
   if (lower.includes("400") || lower.includes("bad request")) {
     if (context === "password") {
       return "Пароль слишком слабый. Минимум 8 символов";
     }
-    if (context === "email") {
-      return "Неверный формат email";
-    }
+    if (context === "email") return "Неверный формат email";
     if (context === "profile") {
       return "Проверьте правильность заполнения полей";
     }
     return "Некорректные данные. Проверьте введённую информацию";
   }
 
-  // 6. 500
   if (lower.includes("500") || lower.includes("internal server")) {
     return "Ошибка сервера. Попробуйте позже";
   }
 
-  // 7. Сеть
   if (lower.includes("failed to fetch") || lower.includes("network")) {
     return "Нет связи с сервером. Проверьте интернет-соединение";
   }
@@ -86,21 +73,13 @@ const getHumanError = (err, context = "general") => {
     return "Сервер не ответил вовремя. Попробуйте ещё раз";
   }
 
-  // 8. Фразы по тексту
-  if (lower.includes("incorrect password") || lower.includes("wrong password")) {
+  if (lower.includes("incorrect password") || lower.includes("wrong password"))
     return "Неверный текущий пароль";
-  }
-  if (lower.includes("email already")) {
+  if (lower.includes("email already"))
     return "Этот email уже используется другим пользователем";
-  }
-  if (lower.includes("user not found")) {
-    return "Пользователь не найден";
-  }
-  if (lower.includes("passwords do not match")) {
-    return "Пароли не совпадают";
-  }
+  if (lower.includes("user not found")) return "Пользователь не найден";
+  if (lower.includes("passwords do not match")) return "Пароли не совпадают";
 
-  // 9. По умолчанию
   return "Произошла ошибка. Попробуйте ещё раз";
 };
 
@@ -210,45 +189,53 @@ export const AuthProvider = ({ children }) => {
 
   // -------- Методы для настроек / профиля --------
 
-  const updateProfile = useCallback(async (data) => {
-    try {
-      const res = await apiFetch("/api/account/profile", {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
-      // Бэк возвращает { token, user }
-      saveAuthData(res);
-      return res;
-    } catch (e) {
-      throw new Error(getHumanError(e, "profile"));
-    }
-  }, [saveAuthData]);
+  const updateProfile = useCallback(
+    async (data) => {
+      try {
+        const res = await apiFetch("/api/account/profile", {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+        saveAuthData(res);
+        return res;
+      } catch (e) {
+        throw new Error(getHumanError(e, "profile"));
+      }
+    },
+    [saveAuthData]
+  );
 
-  const updateEmail = useCallback(async (newEmail, password) => {
-    try {
-      const res = await apiFetch("/api/account/email", {
-        method: "PUT",
-        body: JSON.stringify({ newEmail, password }),
-      });
-      saveAuthData(res);
-      return res;
-    } catch (e) {
-      throw new Error(getHumanError(e, "email"));
-    }
-  }, [saveAuthData]);
+  const updateEmail = useCallback(
+    async (newEmail, password) => {
+      try {
+        const res = await apiFetch("/api/account/email", {
+          method: "PUT",
+          body: JSON.stringify({ newEmail, password }),
+        });
+        saveAuthData(res);
+        return res;
+      } catch (e) {
+        throw new Error(getHumanError(e, "email"));
+      }
+    },
+    [saveAuthData]
+  );
 
-  const updateSettings = useCallback(async (settings) => {
-    try {
-      const res = await apiFetch("/api/settings/me", {
-        method: "PUT",
-        body: JSON.stringify(settings),
-      });
-      updateUserInState({ settings: res });
-      return res;
-    } catch (e) {
-      throw new Error(getHumanError(e, "settings"));
-    }
-  }, [updateUserInState]);
+  const updateSettings = useCallback(
+    async (settings) => {
+      try {
+        const res = await apiFetch("/api/settings/me", {
+          method: "PUT",
+          body: JSON.stringify(settings),
+        });
+        updateUserInState({ settings: res });
+        return res;
+      } catch (e) {
+        throw new Error(getHumanError(e, "settings"));
+      }
+    },
+    [updateUserInState]
+  );
 
   const changePassword = useCallback(async (currentPassword, newPassword) => {
     try {
@@ -279,6 +266,24 @@ export const AuthProvider = ({ children }) => {
         const data = await apiFetch(`${API_AUTH_BASE}/login`, {
           method: "POST",
           body: JSON.stringify({ email, password }),
+        });
+        setAuthError(false);
+        saveAuthData(data);
+        return data;
+      } catch (e) {
+        throw new Error(getHumanError(e, "login"));
+      }
+    },
+    [saveAuthData]
+  );
+
+  // ✅ Google login: GIS callback отдаёт ID token в response.credential [page:795]
+  const loginWithGoogle = useCallback(
+    async (idToken) => {
+      try {
+        const data = await apiFetch(`${API_AUTH_BASE}/google`, {
+          method: "POST",
+          body: JSON.stringify({ idToken }),
         });
         setAuthError(false);
         saveAuthData(data);
@@ -338,6 +343,7 @@ export const AuthProvider = ({ children }) => {
     user,
     token,
     login,
+    loginWithGoogle, // ✅ важно: иначе useAuth() не вернёт метод
     register,
     logout,
     updateProfile,
