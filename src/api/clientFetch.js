@@ -98,23 +98,39 @@ function isAuthEndpoint(url) {
   );
 }
 
-const isEmailEndpoint = (url) => url.includes("/api/account/email");
+const extractMsg = (data, fallback = "") => {
+  if (typeof data === "string") return data;
+  return data?.message || data?.error || fallback;
+};
 
-const isInvalidPasswordEmail401 = (url, resStatus, data) => {
-  if (!isEmailEndpoint(url)) return false;
-  if (resStatus !== 401) return false;
+const matchAny = (s, arr) => arr.some((x) => s.includes(x));
 
-  const msg =
-    (typeof data === "string" ? data : data?.message || data?.error || "") || "";
-  const lower = String(msg).toLowerCase();
+const isUserInputAuthFailure = (url, status, data) => {
+  // Здесь перечисляем эндпоинты, где 401 может означать "неверный пароль",
+  // а НЕ "сессия истекла".
+  const path = String(url);
+  const msg = String(extractMsg(data, "") || "").toLowerCase();
 
-  // сюда можно добавить data?.code === "INVALID_PASSWORD", если сделаешь на бэке
-  return (
-    lower.includes("invalid password") ||
-    lower.includes("wrong password") ||
-    lower.includes("incorrect password") ||
-    lower.includes("неверный пароль")
-  );
+  const isEmail = path.includes("/api/account/email");
+  const isChangePassword = path.includes("/api/account/change-password");
+
+  if (status !== 401) return false;
+  if (!(isEmail || isChangePassword)) return false;
+
+  // Если на бэке добавишь code: INVALID_PASSWORD — можно будет опираться только на него.
+  const code = (typeof data === "object" && data && data.code) ? String(data.code) : "";
+  if (code === "INVALID_PASSWORD" || code === "WRONG_PASSWORD") return true;
+
+  // Эвристика по тексту (чтобы работало уже сейчас)
+  return matchAny(msg, [
+    "invalid password",
+    "wrong password",
+    "incorrect password",
+    "current password",
+    "стар",
+    "неверн",
+    "парол",
+  ]);
 };
 
 export async function apiFetch(path, options = {}) {
@@ -149,21 +165,16 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  // ✅ спец-кейс: /api/account/email + неверный пароль = НЕ логаутим
-  if (isInvalidPasswordEmail401(url, res.status, data)) {
-    const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || "Неверный пароль";
-
-    const err = new Error(msg);
+  // ✅ 1.5) 401 на "неверный пароль" в проф.операциях — НЕ разлогиниваем
+  if (isUserInputAuthFailure(url, res.status, data)) {
+    const err = new Error(extractMsg(data, "Неверный пароль"));
     err.status = res.status;
     err.code = "INVALID_PASSWORD";
     err.data = data;
     throw err;
   }
 
-  // 2) форс-логаут только если это НЕ login/register/google
+  // 2) форс-логаут (только если это реально про сессию)
   if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     clearAuthData();
     window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
@@ -178,14 +189,11 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
-  // 3) остальные ошибки — наверх
+  // 3) остальные ошибки — наверх (400/409/422 и т.д. просто покажутся сообщением)
   if (!res.ok) {
-    const msg =
-      typeof data === "string"
-        ? data
-        : data?.message || data?.error || res.statusText || `HTTP ${res.status}`;
-
-    const err = new Error(msg);
+    const err = new Error(
+      extractMsg(data, res.statusText || `HTTP ${res.status}`) || `HTTP ${res.status}`
+    );
     err.status = res.status;
     err.data = data;
     throw err;
