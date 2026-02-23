@@ -24,35 +24,45 @@ const AUTH_STORAGE_KEYS = [
   "authUser",
 ];
 
-// 🎯 Улучшенная функция перевода ошибок в понятные сообщения
+// Переводчик ошибок → человекопонятный текст
 const getHumanError = (err, context = "general") => {
-  const msg = err?.message || String(err);
-  const lower = msg.toLowerCase();
+  // err может быть Error с message, либо объект ответа
+  const raw = err?.message || String(err || "");
+  const lower = raw.toLowerCase();
 
-  // Ошибки авторизации
-  if (lower.includes("401") || lower.includes("unauthorized")) {
-    return "Сессия истекла. Пожалуйста, войдите заново";
+  // 1. Специальные маркеры от бэка (если будешь их использовать)
+  if (lower.includes("invalid_password")) {
+    return "Неверный текущий пароль";
+  }
+  if (lower.includes("email_taken")) {
+    return "Этот email уже используется другим пользователем";
   }
 
+  // 2. 401 — либо неверный пароль, либо сессия
+  if (lower.includes("401") || lower.includes("unauthorized")) {
+    if (context === "email" || context === "password") {
+      return "Неверный текущий пароль";
+    }
+    return "Сессия истекла. Войдите в аккаунт заново";
+  }
+
+  // 3. 403 — нет прав
   if (lower.includes("403") || lower.includes("forbidden")) {
     return "Недостаточно прав для выполнения действия";
   }
 
-  // Ошибки конфликта данных (409)
+  // 4. 409 — конфликт данных
   if (lower.includes("409") || lower.includes("conflict")) {
     if (context === "email") {
       return "Этот email уже используется другим пользователем";
     }
-    if (context === "password") {
-      return "Неверный текущий пароль";
-    }
     return "Указанные данные уже используются";
   }
 
-  // Ошибки валидации (400)
+  // 5. 400 — некорректные данные
   if (lower.includes("400") || lower.includes("bad request")) {
     if (context === "password") {
-      return "Пароль слишком слабый. Используйте минимум 8 символов, включая буквы и цифры";
+      return "Пароль слишком слабый. Минимум 8 символов";
     }
     if (context === "email") {
       return "Неверный формат email";
@@ -63,39 +73,35 @@ const getHumanError = (err, context = "general") => {
     return "Некорректные данные. Проверьте введённую информацию";
   }
 
-  // Ошибки сервера (500)
+  // 6. 500
   if (lower.includes("500") || lower.includes("internal server")) {
-    return "Ошибка сервера. Попробуйте позже или обратитесь в поддержку";
+    return "Ошибка сервера. Попробуйте позже";
   }
 
-  // Ошибки сети
+  // 7. Сеть
   if (lower.includes("failed to fetch") || lower.includes("network")) {
     return "Нет связи с сервером. Проверьте интернет-соединение";
   }
-
   if (lower.includes("timeout")) {
-    return "Превышено время ожидания. Попробуйте ещё раз";
+    return "Сервер не ответил вовремя. Попробуйте ещё раз";
   }
 
-  // Специфичные бизнес-ошибки
+  // 8. Фразы по тексту
   if (lower.includes("incorrect password") || lower.includes("wrong password")) {
-    return "Неверный пароль";
+    return "Неверный текущий пароль";
   }
-
-  if (lower.includes("user not found") || lower.includes("email not found")) {
-    return "Пользователь с таким email не найден";
+  if (lower.includes("email already")) {
+    return "Этот email уже используется другим пользователем";
   }
-
+  if (lower.includes("user not found")) {
+    return "Пользователь не найден";
+  }
   if (lower.includes("passwords do not match")) {
     return "Пароли не совпадают";
   }
 
-  if (lower.includes("email already exists") || lower.includes("email already in use")) {
-    return "Этот email уже зарегистрирован";
-  }
-
-  // Дефолтное сообщение
-  return "Произошла ошибка. Попробуйте ещё раз или обратитесь в поддержку";
+  // 9. По умолчанию
+  return "Произошла ошибка. Попробуйте ещё раз";
 };
 
 const normalizeToken = (t) => {
@@ -135,6 +141,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  // синхронизация токена
   useEffect(() => {
     const sync = () => {
       try {
@@ -201,7 +208,7 @@ export const AuthProvider = ({ children }) => {
     });
   }, []);
 
-  // --- МЕТОДЫ С ЧЕЛОВЕКОПОНЯТНЫМИ ОШИБКАМИ ---
+  // -------- Методы для настроек / профиля --------
 
   const updateProfile = useCallback(async (data) => {
     try {
@@ -209,6 +216,7 @@ export const AuthProvider = ({ children }) => {
         method: "PUT",
         body: JSON.stringify(data),
       });
+      // Бэк возвращает { token, user }
       saveAuthData(res);
       return res;
     } catch (e) {
@@ -253,7 +261,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const deleteData = useCallback(async (year, month, type = 'all') => {
+  const deleteData = useCallback(async (year, month, type = "all") => {
     try {
       return await apiFetch(`/api/data/me/month/${year}/${month}?type=${type}`, {
         method: "DELETE",
@@ -262,6 +270,8 @@ export const AuthProvider = ({ children }) => {
       throw new Error(getHumanError(e, "delete"));
     }
   }, []);
+
+  // -------- Оригинальные методы авторизации --------
 
   const login = useCallback(
     async ({ email, password }) => {
