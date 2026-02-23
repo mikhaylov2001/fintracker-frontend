@@ -98,6 +98,25 @@ function isAuthEndpoint(url) {
   );
 }
 
+const isEmailEndpoint = (url) => url.includes("/api/account/email");
+
+const isInvalidPasswordEmail401 = (url, resStatus, data) => {
+  if (!isEmailEndpoint(url)) return false;
+  if (resStatus !== 401) return false;
+
+  const msg =
+    (typeof data === "string" ? data : data?.message || data?.error || "") || "";
+  const lower = String(msg).toLowerCase();
+
+  // сюда можно добавить data?.code === "INVALID_PASSWORD", если сделаешь на бэке
+  return (
+    lower.includes("invalid password") ||
+    lower.includes("wrong password") ||
+    lower.includes("incorrect password") ||
+    lower.includes("неверный пароль")
+  );
+};
+
 export async function apiFetch(path, options = {}) {
   const url = buildUrl(path);
 
@@ -130,6 +149,20 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
+  // ✅ спец-кейс: /api/account/email + неверный пароль = НЕ логаутим
+  if (isInvalidPasswordEmail401(url, res.status, data)) {
+    const msg =
+      typeof data === "string"
+        ? data
+        : data?.message || data?.error || "Неверный пароль";
+
+    const err = new Error(msg);
+    err.status = res.status;
+    err.code = "INVALID_PASSWORD";
+    err.data = data;
+    throw err;
+  }
+
   // 2) форс-логаут только если это НЕ login/register/google
   if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
     clearAuthData();
@@ -145,7 +178,7 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
-  // 3) остальные ошибки (включая неверный пароль в /api/account/email) — наверх
+  // 3) остальные ошибки — наверх
   if (!res.ok) {
     const msg =
       typeof data === "string"
@@ -153,7 +186,7 @@ export async function apiFetch(path, options = {}) {
         : data?.message || data?.error || res.statusText || `HTTP ${res.status}`;
 
     const err = new Error(msg);
-    err.status = res.status; // ✅ важно
+    err.status = res.status;
     err.data = data;
     throw err;
   }
