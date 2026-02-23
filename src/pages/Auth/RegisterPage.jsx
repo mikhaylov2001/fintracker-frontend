@@ -8,10 +8,32 @@ const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
+const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+function loadGisScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve(true);
+
+    const existing = document.querySelector(`script[src="${GIS_SRC}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(true));
+      existing.addEventListener("error", reject);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = GIS_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(true);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, isAuthenticated, loading, user } =
-    useAuth();
+  const { register, loginWithGoogle, isAuthenticated, loading, user } = useAuth();
 
   const [form, setForm] = useState({
     firstName: "",
@@ -22,16 +44,29 @@ export default function RegisterPage() {
 
   const [error, setError] = useState("");
   const googleDivRef = useRef(null);
+  const gisInitedRef = useRef(false);
 
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError("");
-        await loginWithGoogle(response.credential);
+
+        const idToken = response?.credential;
+        if (!idToken) {
+          setError("Google не вернул токен. Попробуйте ещё раз.");
+          return;
+        }
+
+        if (typeof loginWithGoogle !== "function") {
+          setError("Google вход не настроен (loginWithGoogle отсутствует).");
+          return;
+        }
+
+        await loginWithGoogle(idToken);
         navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError("Ошибка регистрации через Google");
+        setError(err?.message || "Ошибка регистрации через Google");
       }
     },
     [loginWithGoogle, navigate]
@@ -39,21 +74,49 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
-    if (!window.google?.accounts?.id) return;
-    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
-      return;
 
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCallback,
-    });
+    let cancelled = false;
 
-    window.google.accounts.id.renderButton(googleDivRef.current, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      text: "signup_with",
-    });
+    (async () => {
+      try {
+        await loadGisScript();
+        if (cancelled) return;
+
+        if (!googleDivRef.current) return;
+        if (!window.google?.accounts?.id) return;
+
+        if (gisInitedRef.current) return;
+        gisInitedRef.current = true;
+
+        googleDivRef.current.innerHTML = "";
+
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        window.google.accounts.id.renderButton(googleDivRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "signup_with",
+        });
+
+        // window.google.accounts.id.prompt();
+      } catch (e) {
+        console.error(e);
+        setError("Не удалось загрузить Google вход. Проверьте настройки.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      try {
+        window.google?.accounts?.id?.cancel();
+      } catch {}
+    };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
   const handleChange = (e) =>
@@ -72,7 +135,7 @@ export default function RegisterPage() {
       navigate("/login", { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Ошибка при регистрации. Попробуйте ещё раз.");
+      setError(err?.message || "Ошибка при регистрации. Попробуйте ещё раз.");
     }
   };
 
@@ -213,12 +276,7 @@ export default function RegisterPage() {
             </Typography>
           </Box>
 
-          <Box
-            component="form"
-            onSubmit={handleSubmit}
-            noValidate
-            sx={{ mt: 0.5 }}
-          >
+          <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 0.5 }}>
             <TextField
               margin="dense"
               fullWidth

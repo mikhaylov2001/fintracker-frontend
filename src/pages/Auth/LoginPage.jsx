@@ -8,6 +8,29 @@ const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
+const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+function loadGisScript() {
+  return new Promise((resolve, reject) => {
+    if (window.google?.accounts?.id) return resolve(true);
+
+    const existing = document.querySelector(`script[src="${GIS_SRC}"]`);
+    if (existing) {
+      existing.addEventListener("load", () => resolve(true));
+      existing.addEventListener("error", reject);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = GIS_SRC;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(true);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,6 +39,7 @@ export default function LoginPage() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const googleDivRef = useRef(null);
+  const gisInitedRef = useRef(false);
 
   const afterLoginPath = location.state?.from?.pathname || "/";
 
@@ -23,11 +47,23 @@ export default function LoginPage() {
     async (response) => {
       try {
         setError("");
-        await loginWithGoogle(response.credential);
+
+        const idToken = response?.credential;
+        if (!idToken) {
+          setError("Google не вернул токен. Попробуйте ещё раз.");
+          return;
+        }
+
+        if (typeof loginWithGoogle !== "function") {
+          setError("Google вход не настроен (loginWithGoogle отсутствует).");
+          return;
+        }
+
+        await loginWithGoogle(idToken);
         navigate(afterLoginPath, { replace: true });
       } catch (err) {
         console.error(err);
-        setError("Ошибка входа через Google");
+        setError(err?.message || "Ошибка входа через Google");
       }
     },
     [loginWithGoogle, navigate, afterLoginPath]
@@ -35,21 +71,53 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
-    if (!window.google?.accounts?.id) return;
-    if (!googleDivRef.current || googleDivRef.current.childElementCount > 0)
-      return;
 
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCallback,
-    });
+    let cancelled = false;
 
-    window.google.accounts.id.renderButton(googleDivRef.current, {
-      type: "standard",
-      theme: "outline",
-      size: "large",
-      text: "continue_with",
-    });
+    (async () => {
+      try {
+        await loadGisScript();
+        if (cancelled) return;
+
+        if (!googleDivRef.current) return;
+        if (!window.google?.accounts?.id) return;
+
+        // Не инициализируем дважды на одной странице
+        if (gisInitedRef.current) return;
+        gisInitedRef.current = true;
+
+        // На всякий случай чистим контейнер
+        googleDivRef.current.innerHTML = "";
+
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleCallback,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        window.google.accounts.id.renderButton(googleDivRef.current, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+        });
+
+        // Если хочешь One Tap — раскомментируй:
+        // window.google.accounts.id.prompt();
+      } catch (e) {
+        console.error(e);
+        setError("Не удалось загрузить Google вход. Проверьте настройки.");
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      // На выходе со страницы можно убрать One Tap состояния
+      try {
+        window.google?.accounts?.id?.cancel();
+      } catch {}
+    };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
   const handleChange = (e) =>
@@ -63,7 +131,7 @@ export default function LoginPage() {
       navigate(afterLoginPath, { replace: true });
     } catch (err) {
       console.error(err);
-      setError("Неверный email или пароль");
+      setError(err?.message || "Неверный email или пароль");
     }
   };
 
