@@ -41,7 +41,9 @@ const getHumanError = (err, context = "general") => {
   if (lower.includes("failed to fetch") || lower.includes("network")) {
     return "Нет связи с сервером. Проверьте интернет-соединение";
   }
-  if (lower.includes("timeout")) return "Сервер не ответил вовремя. Попробуйте ещё раз";
+  if (lower.includes("timeout")) {
+    return "Сервер не ответил вовремя. Попробуйте ещё раз";
+  }
 
   if (code === "SESSION_EXPIRED") {
     return "Сессия истекла. Войдите в аккаунт заново";
@@ -63,15 +65,27 @@ const getHumanError = (err, context = "general") => {
 
     // Email занят
     if (status === 409) return "Этот email уже используется другим пользователем";
-    if (lower.includes("email_taken")) return "Этот email уже используется другим пользователем";
+    if (lower.includes("email_taken")) {
+      return "Этот email уже используется другим пользователем";
+    }
 
     // Фолбэк
     return "Не удалось изменить email. Проверьте пароль и попробуйте ещё раз";
   }
 
+  // --- КЕЙС: смена пароля ---
+  // ВАЖНО: бэк на /api/account/change-password возвращает 401, когда текущий пароль неверен. [file:678]
+  if (context === "password") {
+    if (status === 401) return "Текущий пароль неверен";
+    if (status === 400) return "Пароль слишком слабый. Минимум 8 символов";
+    return "Не удалось изменить пароль. Попробуйте ещё раз";
+  }
+
   // --- Логин/регистрация ---
   if (status === 401) {
-    if (context === "login" || context === "register") return "Неверный email или пароль";
+    if (context === "login" || context === "register") {
+      return "Неверный email или пароль";
+    }
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
@@ -83,7 +97,6 @@ const getHumanError = (err, context = "general") => {
   }
 
   if (status === 400) {
-    if (context === "password") return "Пароль слишком слабый. Минимум 8 символов";
     if (context === "profile") return "Проверьте правильность заполнения полей";
     return "Некорректные данные. Проверьте введённую информацию";
   }
