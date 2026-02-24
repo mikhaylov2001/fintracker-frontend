@@ -115,7 +115,7 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-/** "дд.мм.гггг" → dayjs или null, без форматирования строки */
+/** "дд.мм.гггг" → dayjs или null */
 const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
@@ -132,50 +132,17 @@ const parseDayjsToYM = (d) => {
   return { year: d.year(), month: d.month() + 1 };
 };
 
-// ===== МАСКА ДАТЫ ДЛЯ ПЕРИОДА =====
-
+// простая маска: только автоточечки
 const formatDateDots = (raw) => {
   const digits = String(raw || "").replace(/\D/g, "").slice(0, 8); // DDMMYYYY
   const dd = digits.slice(0, 2);
   const mm = digits.slice(2, 4);
   const yyyy = digits.slice(4, 8);
 
-  let out = dd;
-  if (digits.length > 2) out += "." + mm;
-  if (digits.length > 4) out += "." + yyyy;
-  return out;
+  if (digits.length <= 2) return dd;
+  if (digits.length <= 4) return `${dd}.${mm}`;
+  return `${dd}.${mm}.${yyyy}`;
 };
-
-const countDigitsLeft = (str, pos) =>
-  (str.slice(0, pos).match(/\d/g) || []).length;
-
-const caretPosForDigits = (formatted, digitsLeft) => {
-  if (digitsLeft <= 0) return 0;
-  let digitsSeen = 0;
-  for (let i = 0; i < formatted.length; i++) {
-    if (/\d/.test(formatted[i])) digitsSeen++;
-    if (digitsSeen >= digitsLeft) return i + 1;
-  }
-  return formatted.length;
-};
-
-const useDateMask = (setValue) => {
-  return (e, inputEl) => {
-    const prev = e.target.value;
-    const prevPos = e.target.selectionStart ?? prev.length;
-    const digitsLeft = countDigitsLeft(prev, prevPos);
-    const next = formatDateDots(prev);
-    setValue(next);
-    queueMicrotask(() => {
-      const el = inputEl?.current || e.target;
-      if (!el) return;
-      const nextPos = caretPosForDigits(next, digitsLeft);
-      el.setSelectionRange(nextPos, nextPos);
-    });
-  };
-};
-
-// ===== /МАСКА ДАТЫ =====
 
 const KpiCard = memo(function KpiCard({
   label,
@@ -481,14 +448,8 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строки периода + маска
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
-
-  const fromRef = useRef(null);
-  const toRef = useRef(null);
-  const onFromChange = useDateMask(setRangeFromStr);
-  const onToChange = useDateMask(setRangeToStr);
 
   const bothDatesValid = useMemo(() => {
     const from = parseFullDateString(rangeFromStr);
@@ -966,9 +927,8 @@ export default function AnalyticsPage() {
               sx={{ width: "100%" }}
             >
               <TextField
-                inputRef={fromRef}
                 value={rangeFromStr}
-                onChange={(e) => onFromChange(e, fromRef)}
+                onChange={(e) => setRangeFromStr(formatDateDots(e.target.value))}
                 placeholder="01.01.2025"
                 size="small"
                 inputProps={{
@@ -1020,9 +980,8 @@ export default function AnalyticsPage() {
               </Typography>
 
               <TextField
-                inputRef={toRef}
                 value={rangeToStr}
-                onChange={(e) => onToChange(e, toRef)}
+                onChange={(e) => setRangeToStr(formatDateDots(e.target.value))}
                 placeholder="31.12.2025"
                 size="small"
                 inputProps={{
