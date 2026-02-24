@@ -116,8 +116,8 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-/** "дд.мм.гггг" → dayjs или null */
-const parseStringToDate = (str) => {
+/** "дд.мм.гггг" → dayjs или null (только если строка полная и валидная) */
+const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const clean = str.replace(/\D/g, "");
   if (clean.length !== 8) return null;
@@ -128,13 +128,11 @@ const parseStringToDate = (str) => {
   return parsed.isValid() ? parsed : null;
 };
 
-/** автоточки с минимальным вмешательством */
+/** автоточки, но не мешаем вводу */
 const formatDateInput = (value) => {
   const cleaned = value.replace(/[^\d]/g, "");
   if (!cleaned) return "";
   let res = "";
-
-  // день
   if (cleaned.length <= 2) {
     res = cleaned;
   } else if (cleaned.length <= 4) {
@@ -466,32 +464,30 @@ export default function AnalyticsPage() {
     dayjs().format("DD.MM.YYYY")
   );
 
-  // dayjs для логики
-  const rangeFrom = useMemo(
-    () => parseStringToDate(rangeFromStr) || dayjs().subtract(3, "month"),
-    [rangeFromStr]
-  );
-  const rangeTo = useMemo(
-    () => parseStringToDate(rangeToStr) || dayjs(),
-    [rangeToStr]
-  );
+  // dayjs для логики: только если обе даты полные и валидные
+  const bothDatesValid = useMemo(() => {
+    const from = parseFullDateString(rangeFromStr);
+    const to = parseFullDateString(rangeToStr);
+    if (!from || !to) return null;
+    if (from.isAfter(to)) return null;
+    return { from, to };
+  }, [rangeFromStr, rangeToStr]);
 
   const rangeParsed = useMemo(() => {
-    const a = parseDayjsToYM(rangeFrom);
-    const b = parseDayjsToYM(rangeTo);
+    if (!bothDatesValid) return null;
+    const a = parseDayjsToYM(bothDatesValid.from);
+    const b = parseDayjsToYM(bothDatesValid.to);
     if (!a || !b) return null;
-
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
     if (fromN > toN) return null;
-
     return {
       from: { year: a.year, month: a.month },
       to: { year: b.year, month: b.month },
       fromN,
       toN,
     };
-  }, [rangeFrom, rangeTo]);
+  }, [bothDatesValid]);
 
   const todayLabel = useMemo(
     () =>
@@ -989,41 +985,6 @@ export default function AnalyticsPage() {
                 }}
               />
 
-              <Box
-                sx={{
-                  px: 1,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  minWidth: 80,
-                }}
-              >
-                <Typography
-                  sx={{
-                    color: colors.muted,
-                    fontWeight: 800,
-                    fontSize: 13,
-                    textAlign: "center",
-                    mb: 0.25,
-                  }}
-                >
-                  —
-                </Typography>
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: colors.muted,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    textAlign: "center",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  Введите дату дд.мм.гггг
-                </Typography>
-              </Box>
-
               <TextField
                 value={rangeToStr}
                 onChange={(e) => {
@@ -1058,6 +1019,19 @@ export default function AnalyticsPage() {
                 }}
               />
             </Stack>
+
+            <Typography
+              variant="caption"
+              sx={{
+                mt: 0.2,
+                color: colors.muted,
+                fontSize: 11,
+                fontWeight: 700,
+                textAlign: "center",
+              }}
+            >
+              Введите дату в формате дд.мм.гггг
+            </Typography>
           </Stack>
         )}
       </Box>
