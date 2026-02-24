@@ -120,6 +120,7 @@ const withHeadroom = (maxVal) => {
 const formatDateInput = (raw) => {
   const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
   const parts = [];
+  if (digits.length === 0) return "";
   if (digits.length <= 2) {
     parts.push(digits);
   } else if (digits.length <= 4) {
@@ -472,9 +473,14 @@ export default function AnalyticsPage() {
     setRangeFromError("");
     setRangeToError("");
 
-    if (!a) setRangeFromError("Введите дату в формате дд.мм.гггг");
-    if (!b) setRangeToError("Введите дату в формате дд.мм.гггг");
-    if (!a || !b) return null;
+    if (!a) {
+      setRangeFromError("Введите дату в формате дд.мм.гггг");
+      return null;
+    }
+    if (!b) {
+      setRangeToError("Введите дату в формате дд.мм.гггг");
+      return null;
+    }
 
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
@@ -626,7 +632,9 @@ export default function AnalyticsPage() {
 
   // отфильтрованные по режиму месяцы для всех расчётов
   const monthsFiltered = useMemo(() => {
-    if (isRange && rangeParsed) {
+    if (isRange) {
+      // если режим "Период", но диапазон ещё не распарсен (даты не заполнены) → пустой массив
+      if (!rangeParsed) return [];
       return cashflowRowsBase.filter((r) => {
         const x = ymNum(r.year, r.month);
         return x >= rangeParsed.fromN && x <= rangeParsed.toN;
@@ -695,7 +703,13 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !userId) return;
-    if (!monthsForCats.length) return;
+    // если массив monthsForCats пустой (даты не заполнены), не делаем загрузку
+    if (!monthsForCats.length) {
+      setTopCatsExpenses([]);
+      setTopCatsIncome([]);
+      setCatsLoading(false);
+      return;
+    }
 
     let cancelled = false;
 
@@ -950,8 +964,8 @@ export default function AnalyticsPage() {
         {isRange && (
           <Stack
             direction="row"
-            spacing={1}
-            sx={{ mt: 2, maxWidth: 480 }}
+            spacing={1.5}
+            sx={{ mt: 2.5, maxWidth: 520 }}
           >
             <TextField
               label="С (дд.мм.гггг)"
@@ -963,15 +977,14 @@ export default function AnalyticsPage() {
               }}
               placeholder="01.01.2025"
               error={Boolean(rangeFromError)}
-              helperText={
-                rangeFromError ||
-                "Формат: дд.мм.гггг (точки ставятся автоматически)"
-              }
+              helperText={rangeFromError || "Например: 01.01.2025"}
               FormHelperTextProps={{
                 sx: {
                   fontSize: 11,
                   mt: 0.3,
-                  color: alpha(colors.text, 0.8),
+                  color: rangeFromError
+                    ? colors.warning
+                    : alpha(colors.text, 0.7),
                 },
               }}
               inputProps={{
@@ -1022,15 +1035,12 @@ export default function AnalyticsPage() {
               }}
               placeholder="31.12.2025"
               error={Boolean(rangeToError)}
-              helperText={
-                rangeToError ||
-                "Формат: дд.мм.гггг (точки ставятся автоматически)"
-              }
+              helperText={rangeToError || "Например: 31.12.2025"}
               FormHelperTextProps={{
                 sx: {
                   fontSize: 11,
                   mt: 0.3,
-                  color: alpha(colors.text, 0.8),
+                  color: rangeToError ? colors.warning : alpha(colors.text, 0.7),
                 },
               }}
               inputProps={{
@@ -1401,7 +1411,9 @@ export default function AnalyticsPage() {
         ) : (topTab === "expenses" ? topCatsExpenses : topCatsIncome).length ===
           0 ? (
           <Typography variant="body2" sx={{ color: colors.muted }}>
-            Нет данных по категориям за выбранный период.
+            {isRange && !rangeParsed
+              ? "Введите даты для расчёта категорий."
+              : "Нет данных по категориям за выбранный период."}
           </Typography>
         ) : (
           <Box
