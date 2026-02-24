@@ -7,7 +7,15 @@ import React, {
   memo,
   useRef,
 } from "react";
-import { Typography, Box, Stack, Chip, Tabs, Tab } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Stack,
+  Chip,
+  Tabs,
+  Tab,
+  TextField,
+} from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
@@ -105,6 +113,33 @@ const withHeadroom = (maxVal) => {
   const raw = maxVal + maxVal * 0.25;
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
+};
+
+// ----- helpers для даты (как в Dashboard) -----
+
+const formatDateInput = (raw) => {
+  const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
+  const parts = [];
+  if (digits.length <= 2) {
+    parts.push(digits);
+  } else if (digits.length <= 4) {
+    parts.push(digits.slice(0, 2), digits.slice(2));
+  } else {
+    parts.push(digits.slice(0, 2), digits.slice(2, 4), digits.slice(4));
+  }
+  return parts.filter(Boolean).join(".");
+};
+
+const parseDdMmYyyy = (s) => {
+  const m = String(s || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year))
+    return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { day, month, year };
 };
 
 /* KPI card */
@@ -369,10 +404,10 @@ export default function AnalyticsPage() {
   const [error, setError] = useState("");
 
   const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
+  const yearNow = now.getFullYear();
+  const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month");
+  const [mode, setMode] = useState("month"); // month | year | range
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -413,7 +448,67 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // Сброс стейта при смене пользователя
+  // диапазон дат для режима "Период"
+  const [rangeFromRaw, setRangeFromRaw] = useState(() => {
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const y = now.getFullYear();
+    return `${d}.${m}.${y}`;
+  });
+  const [rangeToRaw, setRangeToRaw] = useState(() => {
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const y = now.getFullYear();
+    return `${d}.${m}.${y}`;
+  });
+  const [rangeFromError, setRangeFromError] = useState("");
+  const [rangeToError, setRangeToError] = useState("");
+
+  // разбор диапазона (по месяцам, как на дашборде)
+  const rangeParsed = useMemo(() => {
+    const a = parseDdMmYyyy(rangeFromRaw);
+    const b = parseDdMmYyyy(rangeToRaw);
+
+    setRangeFromError("");
+    setRangeToError("");
+
+    if (!a) setRangeFromError("Введите дату в формате дд.мм.гггг");
+    if (!b) setRangeToError("Введите дату в формате дд.мм.гггг");
+    if (!a || !b) return null;
+
+    const fromN = ymNum(a.year, a.month);
+    const toN = ymNum(b.year, b.month);
+    if (fromN > toN) {
+      setRangeFromError("Дата начала позже даты окончания");
+      setRangeToError("Дата окончания раньше даты начала");
+      return null;
+    }
+
+    return {
+      from: { year: a.year, month: a.month },
+      to: { year: b.year, month: b.month },
+      fromN,
+      toN,
+    };
+  }, [rangeFromRaw, rangeToRaw]);
+
+  const PageWrap = ({ children }) => (
+    <Box
+      sx={{
+        width: "100%",
+        mx: "auto",
+        px: { xs: 2, md: 3, lg: 4 },
+        maxWidth: { xs: "100%", sm: 720, md: 1040, lg: 1240, xl: 1400 },
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MsUserSelect: "none",
+      }}
+    >
+      {children}
+    </Box>
+  );
+
+  // reset при смене юзера
   useEffect(() => {
     setHistory([]);
     setError("");
@@ -432,7 +527,7 @@ export default function AnalyticsPage() {
 
         const getMonthlySummary = getMonthlySummaryRef.current;
 
-        const baseYM = { year, month };
+        const baseYM = { year: yearNow, month: monthNow };
         const tasks = [];
         const rows = [];
 
@@ -470,14 +565,14 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [userId, year, month, authLoading, isAuthenticated]);
+  }, [userId, yearNow, monthNow, authLoading, isAuthenticated]);
 
   const last12 = useMemo(() => {
-    const base = { year, month };
+    const base = { year: yearNow, month: monthNow };
     const arr = [];
     for (let i = 11; i >= 0; i--) arr.push(addMonthsYM(base, -i));
     return arr;
-  }, [year, month]);
+  }, [yearNow, monthNow]);
 
   const historyMap = useMemo(() => {
     const m = new Map();
@@ -485,7 +580,8 @@ export default function AnalyticsPage() {
     return m;
   }, [history]);
 
-  const cashflowRows = useMemo(
+  // базовая последовательность по месяцам для графиков
+  const cashflowRowsBase = useMemo(
     () =>
       last12.map((ym) => {
         const h = historyMap.get(`${ym.year}-${ym.month}`);
@@ -493,6 +589,8 @@ export default function AnalyticsPage() {
         const expenses = n(h?.total_expenses);
         const balance = income - expenses;
         return {
+          year: ym.year,
+          month: ym.month,
           label: `${monthShortRu(ym.year, ym.month)} ${String(ym.year).slice(
             2
           )}`,
@@ -504,66 +602,79 @@ export default function AnalyticsPage() {
     [last12, historyMap]
   );
 
-  const periodLabel =
-    mode === "year"
-      ? `Показаны данные: ${year} год`
-      : `Показаны данные: ${monthTitleRu(year, month)}`;
+  const isYear = mode === "year";
+  const isRange = mode === "range";
 
-  const yearMonths = useMemo(() => {
-    const cur = ymNum(year, month);
-    return history.filter(
-      (h) => h.year === year && ymNum(h.year, h.month) <= cur
+  const periodLabel = isYear
+    ? `Показаны данные: ${yearNow} год`
+    : isRange && rangeParsed
+    ? `Период: ${monthTitleRu(
+        rangeParsed.from.year,
+        rangeParsed.from.month
+      )} — ${monthTitleRu(rangeParsed.to.year, rangeParsed.to.month)}`
+    : `Показаны данные: ${monthTitleRu(yearNow, monthNow)}`;
+
+  // отфильтрованные по режиму месяцы для всех расчётов
+  const monthsFiltered = useMemo(() => {
+    if (isRange && rangeParsed) {
+      return cashflowRowsBase.filter((r) => {
+        const x = ymNum(r.year, r.month);
+        return x >= rangeParsed.fromN && x <= rangeParsed.toN;
+      });
+    }
+    if (isYear) {
+      return cashflowRowsBase.filter((r) => r.year === yearNow);
+    }
+    // месяц
+    return cashflowRowsBase.filter(
+      (r) => r.year === yearNow && r.month === monthNow
     );
-  }, [history, year, month]);
+  }, [cashflowRowsBase, isYear, isRange, rangeParsed, yearNow, monthNow]);
 
-  const ytdIncome = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
-    [yearMonths]
-  );
-  const ytdExpenses = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
-    [yearMonths]
-  );
-  const ytdBalance = useMemo(
-    () => ytdIncome - ytdExpenses,
-    [ytdIncome, ytdExpenses]
-  );
-  const ytdSavings = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
-    [yearMonths]
-  );
-  const ytdRate = useMemo(
-    () => (ytdIncome > 0 ? Math.round((ytdBalance / ytdIncome) * 100) : 0),
-    [ytdIncome, ytdBalance]
-  );
+  // cashflow‑данные именно для графиков (по режиму)
+  const cashflowRows = useMemo(() => {
+    // для режима "месяц" графики всё равно показывают 12 месяцев (как сейчас)
+    if (mode === "month") return cashflowRowsBase;
+    // для "год" и "период" показываем только выбранный диапазон
+    if (isYear || isRange) return monthsFiltered;
+    return cashflowRowsBase;
+  }, [mode, isYear, isRange, cashflowRowsBase, monthsFiltered]);
 
-  const currentMonthSummary = useMemo(
-    () => history.find((h) => h.year === year && h.month === month) || null,
-    [history, year, month]
+  // KPI (по режиму)
+  const totalIncome = useMemo(
+    () => monthsFiltered.reduce((acc, r) => acc + r.income, 0),
+    [monthsFiltered]
   );
-
-  const mIncome = n(currentMonthSummary?.total_income);
-  const mExpenses = n(currentMonthSummary?.total_expenses);
-  const mBalance = n(currentMonthSummary?.balance);
-  const mSavings = n(currentMonthSummary?.savings);
-  const mRate = n(currentMonthSummary?.savings_rate_percent);
-
-  const kpiIncome = mode === "year" ? ytdIncome : mIncome;
-  const kpiExpenses = mode === "year" ? ytdExpenses : mExpenses;
-  const kpiBalance = mode === "year" ? ytdBalance : mBalance;
-  const kpiRate = mode === "year" ? ytdRate : mRate;
-  const kpiSavings = mode === "year" ? ytdSavings : mSavings;
+  const totalExpenses = useMemo(
+    () => monthsFiltered.reduce((acc, r) => acc + r.expenses, 0),
+    [monthsFiltered]
+  );
+  const totalBalance = useMemo(
+    () => totalIncome - totalExpenses,
+    [totalIncome, totalExpenses]
+  );
+  const totalSavings = useMemo(
+    () => history
+      .filter((h) =>
+        monthsFiltered.some((r) => r.year === h.year && r.month === h.month)
+      )
+      .reduce((acc, h) => acc + n(h.savings), 0),
+    [history, monthsFiltered]
+  );
+  const totalRate = useMemo(
+    () => (totalIncome > 0 ? Math.round((totalBalance / totalIncome) * 100) : 0),
+    [totalIncome, totalBalance]
+  );
 
   const [topCatsExpenses, setTopCatsExpenses] = useState([]);
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
 
-  const monthsForCats = useMemo(() => {
-    if (mode !== "year") return [{ year, month }];
-    const arr = [];
-    for (let m = 1; m <= month; m++) arr.push({ year, month: m });
-    return arr;
-  }, [mode, year, month]);
+  // месяцы для top categories — те же, что и monthsFiltered
+  const monthsForCats = useMemo(
+    () => monthsFiltered.map((m) => ({ year: m.year, month: m.month })),
+    [monthsFiltered]
+  );
 
   useEffect(() => {
     setTopCatsExpenses([]);
@@ -573,6 +684,7 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !userId) return;
+    if (!monthsForCats.length) return;
 
     let cancelled = false;
 
@@ -633,32 +745,28 @@ export default function AnalyticsPage() {
     };
   }, [userId, monthsForCats, authLoading, isAuthenticated]);
 
-  const PageWrap = ({ children }) => (
-    <Box
-      sx={{
-        width: "100%",
-        mx: "auto",
-        px: { xs: 2, md: 3, lg: 4 },
-        maxWidth: { xs: "100%", sm: 720, md: 1040, lg: 1240, xl: 1400 },
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MsUserSelect: "none",
-      }}
-    >
-      {children}
-    </Box>
-  );
+  // Пока идёт auth
+  if (authLoading)
+    return (
+      <PageWrap>
+        <Typography sx={{ color: colors.muted }}>Загрузка…</Typography>
+      </PageWrap>
+    );
 
-  // Пока не знаем статус авторизации — можно показать пустой контейнер или спиннер
-  if (authLoading) return <PageWrap><Typography sx={{ color: colors.muted }}>Загрузка…</Typography></PageWrap>;
-
-  // Если не авторизован (через PrivateRoutes сюда обычно не попадём),
-  // то просто ничего не рендерим и не дёргаем API
   if (!isAuthenticated) return null;
+
+  const todayLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date()),
+    []
+  );
 
   return (
     <PageWrap>
-      {/* дальше твой JSX без логических изменений */}
       {/* Header */}
       <Box
         sx={{
@@ -771,7 +879,7 @@ export default function AnalyticsPage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Cashflow • Категории • KPI
+                  Сегодня: {todayLabel}
                 </Typography>
               </Stack>
             </Box>
@@ -832,9 +940,138 @@ export default function AnalyticsPage() {
             >
               <ToggleButton value="month">Месяц</ToggleButton>
               <ToggleButton value="year">Год</ToggleButton>
+              <ToggleButton value="range">Период</ToggleButton>
             </ToggleButtonGroup>
           </Stack>
         </Stack>
+
+        {/* Диапазон дат — только в режиме "Период", два поля в ряд */}
+        {isRange && (
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ mt: 2, maxWidth: 480 }}
+          >
+            <TextField
+              label="С (дд.мм.гггг)"
+              size="small"
+              value={rangeFromRaw}
+              onChange={(e) => {
+                const formatted = formatDateInput(e.target.value);
+                setRangeFromRaw(formatted);
+              }}
+              placeholder="01.01.2025"
+              error={Boolean(rangeFromError)}
+              helperText={
+                rangeFromError ||
+                "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              }
+              FormHelperTextProps={{
+                sx: {
+                  fontSize: 11,
+                  mt: 0.3,
+                  color: alpha(colors.text, 0.8),
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: alpha(colors.text, 0.9),
+                },
+              }}
+              InputProps={{
+                sx: {
+                  borderRadius: 999,
+                  bgcolor: alpha(colors.card2, 0.9),
+                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: alpha(colors.primary, 0.45),
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary,
+                  },
+                },
+              }}
+              InputLabelProps={{
+                sx: {
+                  color: alpha(colors.text, 0.8),
+                  fontSize: 11,
+                  transform: "translate(14px, -2px) scale(1)",
+                  "&.MuiInputLabel-shrink": {
+                    transform: "translate(14px, -16px) scale(0.85)",
+                  },
+                  "&.Mui-focused": {
+                    color: colors.text,
+                  },
+                },
+              }}
+              sx={{ flex: 1, minWidth: 0 }}
+            />
+            <TextField
+              label="По (дд.мм.гггг)"
+              size="small"
+              value={rangeToRaw}
+              onChange={(e) => {
+                const formatted = formatDateInput(e.target.value);
+                setRangeToRaw(formatted);
+              }}
+              placeholder="31.12.2025"
+              error={Boolean(rangeToError)}
+              helperText={
+                rangeToError ||
+                "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              }
+              FormHelperTextProps={{
+                sx: {
+                  fontSize: 11,
+                  mt: 0.3,
+                  color: alpha(colors.text, 0.8),
+                },
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: alpha(colors.text, 0.9),
+                },
+              }}
+              InputProps={{
+                sx: {
+                  borderRadius: 999,
+                  bgcolor: alpha(colors.card2, 0.9),
+                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: alpha(colors.primary, 0.45),
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary,
+                  },
+                },
+              }}
+              InputLabelProps={{
+                sx: {
+                  color: alpha(colors.text, 0.8),
+                  fontSize: 11,
+                  transform: "translate(14px, -2px) scale(1)",
+                  "&.MuiInputLabel-shrink": {
+                    transform: "translate(14px, -16px) scale(0.85)",
+                  },
+                  "&.Mui-focused": {
+                    color: colors.text,
+                  },
+                },
+              }}
+              sx={{ flex: 1, minWidth: 0 }}
+            />
+          </Stack>
+        )}
       </Box>
 
       {/* KPI */}
@@ -851,29 +1088,29 @@ export default function AnalyticsPage() {
       >
         <KpiCard
           label="Баланс"
-          value={formatAmount(kpiBalance)}
+          value={formatAmount(totalBalance)}
           sub=" "
           accent={COLORS.balance}
           icon={<AccountBalanceWalletOutlinedIcon />}
         />
         <KpiCard
           label="Доходы"
-          value={formatAmount(kpiIncome)}
+          value={formatAmount(totalIncome)}
           sub=" "
           accent={COLORS.income}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
         <KpiCard
           label="Расходы"
-          value={formatAmount(kpiExpenses)}
+          value={formatAmount(totalExpenses)}
           sub=" "
           accent={COLORS.expenses}
           icon={<ArrowCircleDownOutlinedIcon />}
         />
         <KpiCard
           label="Норма сбережений"
-          value={`${kpiRate}%`}
-          sub={`Сбережения: ${formatAmount(kpiSavings)}`}
+          value={`${totalRate}%`}
+          sub={`Сбережения: ${formatAmount(totalSavings)}`}
           accent={COLORS.rate}
           icon={<PercentOutlinedIcon />}
         />
@@ -885,7 +1122,7 @@ export default function AnalyticsPage() {
           variant="h6"
           sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 0.75 }}
         >
-          Cashflow за 12 месяцев
+          Cashflow
         </Typography>
 
         <CashflowLegend />
@@ -1100,9 +1337,17 @@ export default function AnalyticsPage() {
             label={
               catsLoading
                 ? "Считаю…"
-                : mode === "year"
-                ? `${year} год`
-                : monthTitleRu(year, month)
+                : isRange && rangeParsed
+                ? `${monthTitleRu(
+                    rangeParsed.from.year,
+                    rangeParsed.from.month
+                  )} — ${monthTitleRu(
+                    rangeParsed.to.year,
+                    rangeParsed.to.month
+                  )}`
+                : isYear
+                ? `${yearNow} год`
+                : monthTitleRu(yearNow, monthNow)
             }
             variant="filled"
             sx={{
