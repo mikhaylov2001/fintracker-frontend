@@ -14,6 +14,7 @@ import {
   Chip,
   Tabs,
   Tab,
+  TextField,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -921,6 +922,7 @@ export default function AnalyticsPage() {
               alignItems="center"
               sx={{ mt: 2.5, maxWidth: 520 }}
             >
+              {/* FROM */}
               <DatePicker
                 label={null}
                 value={rangeFrom}
@@ -933,7 +935,6 @@ export default function AnalyticsPage() {
                 slots={{
                   textField: (params) => (
                     <Box
-                      onClick={params.inputProps?.onClick}
                       sx={{
                         flex: 1,
                         minWidth: 0,
@@ -950,16 +951,29 @@ export default function AnalyticsPage() {
                         "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
                       }}
                     >
-                      <Typography
-                        sx={{
-                          color: "#FFFFFF",
-                          fontWeight: 950,
-                          fontSize: 13,
-                          letterSpacing: 0.4,
+                      <TextField
+                        {...params}
+                        variant="standard"
+                        fullWidth
+                        InputProps={{
+                          ...params.InputProps,
+                          disableUnderline: true,
+                          sx: {
+                            textAlign: "center",
+                            "& .MuiInputBase-input": {
+                              textAlign: "center",
+                              padding: 0,
+                              fontWeight: 950,
+                              fontSize: 13,
+                              color: "#FFFFFF",
+                            },
+                            "& .MuiSvgIcon-root": {
+                              color: "rgba(255,255,255,0.85)",
+                              fontSize: 18,
+                            },
+                          },
                         }}
-                      >
-                        {rangeFrom ? rangeFrom.format("DD.MM.YYYY") : "С"}
-                      </Typography>
+                      />
                     </Box>
                   ),
                 }}
@@ -976,6 +990,7 @@ export default function AnalyticsPage() {
                 —
               </Typography>
 
+              {/* TO */}
               <DatePicker
                 label={null}
                 value={rangeTo}
@@ -988,7 +1003,6 @@ export default function AnalyticsPage() {
                 slots={{
                   textField: (params) => (
                     <Box
-                      onClick={params.inputProps?.onClick}
                       sx={{
                         flex: 1,
                         minWidth: 0,
@@ -1005,16 +1019,29 @@ export default function AnalyticsPage() {
                         "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
                       }}
                     >
-                      <Typography
-                        sx={{
-                          color: "#FFFFFF",
-                          fontWeight: 950,
-                          fontSize: 13,
-                          letterSpacing: 0.4,
+                      <TextField
+                        {...params}
+                        variant="standard"
+                        fullWidth
+                        InputProps={{
+                          ...params.InputProps,
+                          disableUnderline: true,
+                          sx: {
+                            textAlign: "center",
+                            "& .MuiInputBase-input": {
+                              textAlign: "center",
+                              padding: 0,
+                              fontWeight: 950,
+                              fontSize: 13,
+                              color: "#FFFFFF",
+                            },
+                            "& .MuiSvgIcon-root": {
+                              color: "rgba(255,255,255,0.85)",
+                              fontSize: 18,
+                            },
+                          },
                         }}
-                      >
-                        {rangeTo ? rangeTo.format("DD.MM.YYYY") : "По"}
-                      </Typography>
+                      />
                     </Box>
                   ),
                 }}
