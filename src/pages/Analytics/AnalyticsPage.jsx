@@ -464,7 +464,7 @@ export default function AnalyticsPage() {
   const [rangeFromError, setRangeFromError] = useState("");
   const [rangeToError, setRangeToError] = useState("");
 
-  // разбор диапазона (по месяцам, как на дашборде)
+  // разбор диапазона (по месяцам)
   const rangeParsed = useMemo(() => {
     const a = parseDdMmYyyy(rangeFromRaw);
     const b = parseDdMmYyyy(rangeToRaw);
@@ -491,6 +491,16 @@ export default function AnalyticsPage() {
       toN,
     };
   }, [rangeFromRaw, rangeToRaw]);
+
+  const todayLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat("ru-RU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(new Date()),
+    []
+  );
 
   const PageWrap = ({ children }) => (
     <Box
@@ -633,7 +643,7 @@ export default function AnalyticsPage() {
 
   // cashflow‑данные именно для графиков (по режиму)
   const cashflowRows = useMemo(() => {
-    // для режима "месяц" графики всё равно показывают 12 месяцев (как сейчас)
+    // для режима "месяц" графики всё равно показывают 12 месяцев (как раньше)
     if (mode === "month") return cashflowRowsBase;
     // для "год" и "период" показываем только выбранный диапазон
     if (isYear || isRange) return monthsFiltered;
@@ -654,11 +664,12 @@ export default function AnalyticsPage() {
     [totalIncome, totalExpenses]
   );
   const totalSavings = useMemo(
-    () => history
-      .filter((h) =>
-        monthsFiltered.some((r) => r.year === h.year && r.month === h.month)
-      )
-      .reduce((acc, h) => acc + n(h.savings), 0),
+    () =>
+      history
+        .filter((h) =>
+          monthsFiltered.some((r) => r.year === h.year && r.month === h.month)
+        )
+        .reduce((acc, h) => acc + n(h.savings), 0),
     [history, monthsFiltered]
   );
   const totalRate = useMemo(
@@ -754,16 +765,6 @@ export default function AnalyticsPage() {
     );
 
   if (!isAuthenticated) return null;
-
-  const todayLabel = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }).format(new Date()),
-    []
-  );
 
   return (
     <PageWrap>
