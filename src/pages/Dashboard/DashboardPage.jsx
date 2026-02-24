@@ -12,7 +12,7 @@ import {
   Chip,
   Stack,
   Skeleton,
-  TextField, // NEW
+  TextField,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
@@ -39,6 +39,8 @@ import {
 } from "../../styles/bankingTokens";
 
 import { useCurrency } from "../../contexts/CurrencyContext";
+
+// -------- helpers --------
 
 const COLORS = {
   income: colors.primary,
@@ -71,6 +73,34 @@ const chunk = (arr, size) => {
   for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
   return out;
 };
+
+// "сырое" значение -> отформатированная строка дд.мм.гггг
+const formatDateInput = (raw) => {
+  const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
+  const parts = [];
+  if (digits.length <= 2) {
+    parts.push(digits);
+  } else if (digits.length <= 4) {
+    parts.push(digits.slice(0, 2), digits.slice(2));
+  } else {
+    parts.push(digits.slice(0, 2), digits.slice(2, 4), digits.slice(4));
+  }
+  return parts.filter(Boolean).join(".");
+};
+
+// строка дд.мм.гггг -> { year, month, day } или null
+const parseDdMmYyyy = (s) => {
+  const m = String(s || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = Number(m[2]);
+  const year = Number(m[3]);
+  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return { day, month, year };
+};
+
+// -------- small UI components --------
 
 const SectionTitle = memo(function SectionTitle({ title, right }) {
   return (
@@ -426,6 +456,8 @@ function DashboardSkeleton() {
   );
 }
 
+// -------- main component --------
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -495,14 +527,23 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  // NEW: диапазон С/ПО в формате YYYY-MM
-  const [range, setRange] = useState(() => {
+  // Диапазон по датам (дд.мм.гггг)
+  const [rangeFromRaw, setRangeFromRaw] = useState(() => {
     const now = new Date();
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
     const y = now.getFullYear();
-    const m = now.getMonth() + 1;
-    const ym = ymKey(y, m);
-    return { from: ym, to: ym };
+    return `${d}.${m}.${y}`;
   });
+  const [rangeToRaw, setRangeToRaw] = useState(() => {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const y = now.getFullYear();
+    return `${d}.${m}.${y}`;
+  });
+  const [rangeFromError, setRangeFromError] = useState("");
+  const [rangeToError, setRangeToError] = useState("");
 
   const displayName = useMemo(() => {
     if (user?.firstName && user?.lastName) {
@@ -617,26 +658,39 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  // NEW: парсим диапазон и фильтруем месяцы
+  // диапазон -> месяцы + ошибки
   const rangeParsed = useMemo(() => {
-    const a = parseYm(range.from);
-    const b = parseYm(range.to);
+    const a = parseDdMmYyyy(rangeFromRaw);
+    const b = parseDdMmYyyy(rangeToRaw);
+
+    setRangeFromError("");
+    setRangeToError("");
+
+    if (!a) {
+      setRangeFromError("Введите дату в формате дд.мм.гггг");
+    }
+    if (!b) {
+      setRangeToError("Введите дату в формате дд.мм.гггг");
+    }
     if (!a || !b) return null;
 
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
 
     if (fromN > toN) {
-      return {
-        from: b,
-        to: a,
-        fromN: toN,
-        toN: fromN,
-      };
+      setRangeFromError("Дата начала позже даты окончания");
+      setRangeToError("Дата окончания раньше даты начала");
+      return null;
     }
 
-    return { from: a, to: b, fromN, toN };
-  }, [range.from, range.to]);
+    return {
+      from: { year: a.year, month: a.month },
+      to: { year: b.year, month: b.month },
+      fromN,
+      toN,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rangeFromRaw, rangeToRaw]);
 
   const rangeMonths = useMemo(() => {
     if (!rangeParsed) return [];
@@ -684,7 +738,6 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
-  // NEW: агрегаты по диапазону
   const rangeIncome = useMemo(
     () => rangeMonths.reduce((acc, h) => acc + n(h.total_income), 0),
     [rangeMonths]
@@ -746,12 +799,8 @@ export default function DashboardPage() {
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
 
-  // Пока не знаем статус auth — показываем скелет
   if (authLoading) return <DashboardSkeleton />;
-
-  // Если не авторизован
   if (!isAuthenticated) return null;
-
   if (loading) return <DashboardSkeleton />;
 
   return (
@@ -894,37 +943,83 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* NEW: поля выбора диапазона */}
+        {/* Диапазон дат */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1}
           sx={{ mt: 1.5, maxWidth: 420 }}
         >
           <TextField
-            label="С (год-месяц)"
+            label="С (дд.мм.гггг)"
             size="small"
-            value={range.from}
-            onChange={(e) =>
-              setRange((prev) => ({ ...prev, from: e.target.value }))
-            }
-            placeholder="2025-01"
-            sx={{
-              flex: 1,
-              "& .MuiInputBase-input": { fontSize: 13, fontWeight: 800 },
+            value={rangeFromRaw}
+            onChange={(e) => {
+              const formatted = formatDateInput(e.target.value);
+              setRangeFromRaw(formatted);
             }}
+            placeholder="01.01.2025"
+            error={Boolean(rangeFromError)}
+            helperText={
+              rangeFromError ||
+              "Формат: дд.мм.гггг (точки ставятся автоматически)"
+            }
+            FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
+            inputProps={{
+              sx: { fontSize: 13, fontWeight: 800 },
+            }}
+            InputProps={{
+              sx: {
+                bgcolor: "#FFFFFF",
+                color: colors.text,
+                borderRadius: 3,
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: alpha(colors.border2 || "#000", 0.18),
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: alpha(colors.primary, 0.5),
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary,
+                },
+              },
+            }}
+            sx={{ flex: 1 }}
           />
           <TextField
-            label="По (год-месяц)"
+            label="По (дд.мм.гггг)"
             size="small"
-            value={range.to}
-            onChange={(e) =>
-              setRange((prev) => ({ ...prev, to: e.target.value }))
-            }
-            placeholder="2025-12"
-            sx={{
-              flex: 1,
-              "& .MuiInputBase-input": { fontSize: 13, fontWeight: 800 },
+            value={rangeToRaw}
+            onChange={(e) => {
+              const formatted = formatDateInput(e.target.value);
+              setRangeToRaw(formatted);
             }}
+            placeholder="31.12.2025"
+            error={Boolean(rangeToError)}
+            helperText={
+              rangeToError ||
+              "Формат: дд.мм.гггг (точки ставятся автоматически)"
+            }
+            FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
+            inputProps={{
+              sx: { fontSize: 13, fontWeight: 800 },
+            }}
+            InputProps={{
+              sx: {
+                bgcolor: "#FFFFFF",
+                color: colors.text,
+                borderRadius: 3,
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderColor: alpha(colors.border2 || "#000", 0.18),
+                },
+                "&:hover .MuiOutlinedInput-notchedOutline": {
+                  borderColor: alpha(colors.primary, 0.5),
+                },
+                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                  borderColor: colors.primary,
+                },
+              },
+            }}
+            sx={{ flex: 1 }}
           />
         </Stack>
       </Box>
