@@ -919,7 +919,7 @@ export default function AnalyticsPage() {
               direction="row"
               spacing={1}
               alignItems="center"
-              sx={{ mt: 2.5, maxWidth: 500 }}
+              sx={{ mt: 2.5, maxWidth: 520 }}
             >
               <DatePicker
                 label={null}
@@ -930,55 +930,38 @@ export default function AnalyticsPage() {
                   setRangeFromStr(newValue.format("DD.MM.YYYY"));
                 }}
                 format="DD.MM.YYYY"
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    InputLabelProps: { shrink: false },
-                    placeholder: "с",
-                    inputProps: {
-                      readOnly: true,
-                      style: { cursor: "pointer" },
-                    },
-                    sx: {
-                      flex: 1,
-                      minWidth: 0,
-                      "& .MuiInputBase-root": {
+                slots={{
+                  textField: (params) => (
+                    <Box
+                      onClick={params.inputProps?.onClick}
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
                         height: 32,
                         borderRadius: 999,
                         backgroundColor: "rgba(4,47,46,0.95)",
-                        border: 0,
-                        color: "#FFFFFF",
-                        fontWeight: 950,
-                        fontSize: 13,
-                        px: 1.8,
                         boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         cursor: "pointer",
+                        px: 2,
                         transition: "all 140ms ease",
-                        textAlign: "center",
-                      },
-                      "& .MuiInputBase-input": {
-                        textAlign: "center",
-                        padding: 0,
-                      },
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: 0,
-                      },
-                      "& .MuiSvgIcon-root": {
-                        color: "rgba(255,255,255,0.85)",
-                        fontSize: 18,
-                      },
-                      "& .MuiInputBase-root:hover": {
-                        backgroundColor: "rgba(4,47,46,1)",
-                      },
-                      "& .MuiInputBase-root.Mui-focused": {
-                        backgroundColor: colors.primary,
-                        color: "#05140C",
-                        "& .MuiSvgIcon-root": {
-                          color: "#05140C",
-                        },
-                      },
-                    },
-                  },
+                        "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: "#FFFFFF",
+                          fontWeight: 950,
+                          fontSize: 13,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {rangeFrom ? rangeFrom.format("DD.MM.YYYY") : "С"}
+                      </Typography>
+                    </Box>
+                  ),
                 }}
               />
 
@@ -1002,55 +985,38 @@ export default function AnalyticsPage() {
                   setRangeToStr(newValue.format("DD.MM.YYYY"));
                 }}
                 format="DD.MM.YYYY"
-                slotProps={{
-                  textField: {
-                    size: "small",
-                    InputLabelProps: { shrink: false },
-                    placeholder: "по",
-                    inputProps: {
-                      readOnly: true,
-                      style: { cursor: "pointer" },
-                    },
-                    sx: {
-                      flex: 1,
-                      minWidth: 0,
-                      "& .MuiInputBase-root": {
+                slots={{
+                  textField: (params) => (
+                    <Box
+                      onClick={params.inputProps?.onClick}
+                      sx={{
+                        flex: 1,
+                        minWidth: 0,
                         height: 32,
                         borderRadius: 999,
                         backgroundColor: "rgba(4,47,46,0.95)",
-                        border: 0,
-                        color: "#FFFFFF",
-                        fontWeight: 950,
-                        fontSize: 13,
-                        px: 1.8,
                         boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                         cursor: "pointer",
+                        px: 2,
                         transition: "all 140ms ease",
-                        textAlign: "center",
-                      },
-                      "& .MuiInputBase-input": {
-                        textAlign: "center",
-                        padding: 0,
-                      },
-                      "& .MuiOutlinedInput-notchedOutline": {
-                        border: 0,
-                      },
-                      "& .MuiSvgIcon-root": {
-                        color: "rgba(255,255,255,0.85)",
-                        fontSize: 18,
-                      },
-                      "& .MuiInputBase-root:hover": {
-                        backgroundColor: "rgba(4,47,46,1)",
-                      },
-                      "& .MuiInputBase-root.Mui-focused": {
-                        backgroundColor: colors.primary,
-                        color: "#05140C",
-                        "& .MuiSvgIcon-root": {
-                          color: "#05140C",
-                        },
-                      },
-                    },
-                  },
+                        "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: "#FFFFFF",
+                          fontWeight: 950,
+                          fontSize: 13,
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {rangeTo ? rangeTo.format("DD.MM.YYYY") : "По"}
+                      </Typography>
+                    </Box>
+                  ),
                 }}
               />
             </Stack>
