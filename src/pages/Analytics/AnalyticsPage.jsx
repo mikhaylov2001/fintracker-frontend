@@ -144,10 +144,16 @@ const formatDateInput = (value) => {
 };
 
 const parseDayjsToYM = (d) => {
-  if (!d || !dayjs(d).isValid()) return null;
+  if (!d || !dayjs.isDayjs(d) || !d.isValid()) return null;
   const year = d.year();
   const month = d.month() + 1;
   return { year, month };
+};
+
+const toDayjsOrNull = (v) => {
+  if (!v) return null;
+  if (dayjs.isDayjs(v) && v.isValid()) return v;
+  return null;
 };
 
 /* KPI card */
@@ -950,11 +956,13 @@ export default function AnalyticsPage() {
                 }}
               >
                 <DatePicker
-                  value={rangeFrom}
+                  value={toDayjsOrNull(rangeFrom)}
                   onChange={(newValue) => {
                     if (!newValue) return;
-                    setRangeFrom(newValue);
-                    setRangeFromRaw(newValue.format("DD.MM.YYYY"));
+                    const safe = dayjs(newValue);
+                    if (!safe.isValid()) return;
+                    setRangeFrom(safe);
+                    setRangeFromRaw(safe.format("DD.MM.YYYY"));
                   }}
                   format="DD.MM.YYYY"
                   slotProps={{
@@ -1011,11 +1019,13 @@ export default function AnalyticsPage() {
                 </Typography>
 
                 <DatePicker
-                  value={rangeTo}
+                  value={toDayjsOrNull(rangeTo)}
                   onChange={(newValue) => {
                     if (!newValue) return;
-                    setRangeTo(newValue);
-                    setRangeToRaw(newValue.format("DD.MM.YYYY"));
+                    const safe = dayjs(newValue);
+                    if (!safe.isValid()) return;
+                    setRangeTo(safe);
+                    setRangeToRaw(safe.format("DD.MM.YYYY"));
                   }}
                   format="DD.MM.YYYY"
                   slotProps={{
