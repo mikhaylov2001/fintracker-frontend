@@ -6,7 +6,14 @@ import React, {
   memo,
   useRef,
 } from "react";
-import { Typography, Box, Chip, Stack, Skeleton } from "@mui/material";
+import {
+  Typography,
+  Box,
+  Chip,
+  Stack,
+  Skeleton,
+  TextField, // NEW
+} from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Accordion from "@mui/material/Accordion";
 import AccordionSummary from "@mui/material/AccordionSummary";
@@ -470,7 +477,7 @@ export default function DashboardPage() {
   const [kpiMode, setKpiMode] = useState(() => {
     try {
       const v = window.localStorage.getItem(kpiModeKey);
-      return v === "month" || v === "year" ? v : "month";
+      return v === "month" || v === "year" || v === "range" ? v : "month";
     } catch {
       return "month";
     }
@@ -487,6 +494,15 @@ export default function DashboardPage() {
 
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
+
+  // NEW: диапазон С/ПО в формате YYYY-MM
+  const [range, setRange] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const ym = ymKey(y, m);
+    return { from: ym, to: ym };
+  });
 
   const displayName = useMemo(() => {
     if (user?.firstName && user?.lastName) {
@@ -601,6 +617,35 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
+  // NEW: парсим диапазон и фильтруем месяцы
+  const rangeParsed = useMemo(() => {
+    const a = parseYm(range.from);
+    const b = parseYm(range.to);
+    if (!a || !b) return null;
+
+    const fromN = ymNum(a.year, a.month);
+    const toN = ymNum(b.year, b.month);
+
+    if (fromN > toN) {
+      return {
+        from: b,
+        to: a,
+        fromN: toN,
+        toN: fromN,
+      };
+    }
+
+    return { from: a, to: b, fromN, toN };
+  }, [range.from, range.to]);
+
+  const rangeMonths = useMemo(() => {
+    if (!rangeParsed) return [];
+    return historyDesc.filter((h) => {
+      const x = ymNum(h.year, h.month);
+      return x >= rangeParsed.fromN && x <= rangeParsed.toN;
+    });
+  }, [historyDesc, rangeParsed]);
+
   const curSummary = useMemo(
     () => summariesMap.get(ymKey(year, month)) || null,
     [summariesMap, year, month]
@@ -639,16 +684,64 @@ export default function DashboardPage() {
     return Number.isFinite(r) ? r : 0;
   }, [yearIncome, yearBalance]);
 
+  // NEW: агрегаты по диапазону
+  const rangeIncome = useMemo(
+    () => rangeMonths.reduce((acc, h) => acc + n(h.total_income), 0),
+    [rangeMonths]
+  );
+  const rangeExpenses = useMemo(
+    () => rangeMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
+    [rangeMonths]
+  );
+  const rangeBalance = rangeIncome - rangeExpenses;
+  const rangeSavings = useMemo(
+    () => rangeMonths.reduce((acc, h) => acc + n(h.savings), 0),
+    [rangeMonths]
+  );
+
+  const rangeSavingsRate = useMemo(() => {
+    if (rangeIncome <= 0) return 0;
+    const r = Math.round((rangeBalance / rangeIncome) * 100);
+    return Number.isFinite(r) ? r : 0;
+  }, [rangeIncome, rangeBalance]);
+
   const isYear = kpiMode === "year";
+  const isRange = kpiMode === "range";
+
   const periodLabel = isYear
     ? `Показаны данные: ${year} год`
+    : isRange && rangeParsed
+    ? `Период: ${monthTitle(
+        rangeParsed.from.year,
+        rangeParsed.from.month
+      )} — ${monthTitle(rangeParsed.to.year, rangeParsed.to.month)}`
     : `Показаны данные: ${monthTitle(year, month)}`;
 
-  const displayIncome = isYear ? yearIncome : incomeMonth;
-  const displayExpenses = isYear ? yearExpenses : expenseMonth;
-  const displayBalance = isYear ? yearBalance : balanceMonth;
-  const displayRate = isYear ? yearSavingsRate : savingsRateMonth;
-  const displaySavings = isYear ? yearSavings : savingsMonth;
+  const displayIncome = isYear
+    ? yearIncome
+    : isRange
+    ? rangeIncome
+    : incomeMonth;
+  const displayExpenses = isYear
+    ? yearExpenses
+    : isRange
+    ? rangeExpenses
+    : expenseMonth;
+  const displayBalance = isYear
+    ? yearBalance
+    : isRange
+    ? rangeBalance
+    : balanceMonth;
+  const displayRate = isYear
+    ? yearSavingsRate
+    : isRange
+    ? rangeSavingsRate
+    : savingsRateMonth;
+  const displaySavings = isYear
+    ? yearSavings
+    : isRange
+    ? rangeSavings
+    : savingsMonth;
 
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
@@ -656,8 +749,7 @@ export default function DashboardPage() {
   // Пока не знаем статус auth — показываем скелет
   if (authLoading) return <DashboardSkeleton />;
 
-  // Если не авторизован (теоретически через PrivateRoutes сюда не попадём),
-  // то ничего не рендерим и не дёргаем API
+  // Если не авторизован
   if (!isAuthenticated) return null;
 
   if (loading) return <DashboardSkeleton />;
@@ -683,7 +775,7 @@ export default function DashboardPage() {
           backdropFilter: "none",
           filter: "none",
           "&::before, &::after": { content: "none", display: "none" },
-      }}
+        }}
       >
         <Stack
           direction={{ xs: "column", md: "row" }}
@@ -739,7 +831,6 @@ export default function DashboardPage() {
             alignItems={{ sm: "center" }}
             sx={{ width: { xs: "100%", md: "auto" } }}
           >
-            {/* Актуально — не кликабельно, но и так Chip без onClick и без href */}
             <Chip
               label="Актуально"
               clickable={false}
@@ -757,7 +848,13 @@ export default function DashboardPage() {
                   sx={{ color: alpha(colors.primary, 0.98) }}
                 />
               }
-              label={isYear ? "Режим: Год" : "Режим: Месяц"}
+              label={
+                isYear
+                  ? "Режим: Год"
+                  : isRange
+                  ? "Режим: Период"
+                  : "Режим: Месяц"
+              }
               sx={{
                 ...pillSx,
                 width: { xs: "100%", sm: "auto" },
@@ -792,8 +889,43 @@ export default function DashboardPage() {
             >
               <ToggleButton value="month">Месяц</ToggleButton>
               <ToggleButton value="year">Год</ToggleButton>
+              <ToggleButton value="range">Период</ToggleButton>
             </ToggleButtonGroup>
           </Stack>
+        </Stack>
+
+        {/* NEW: поля выбора диапазона */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          sx={{ mt: 1.5, maxWidth: 420 }}
+        >
+          <TextField
+            label="С (год-месяц)"
+            size="small"
+            value={range.from}
+            onChange={(e) =>
+              setRange((prev) => ({ ...prev, from: e.target.value }))
+            }
+            placeholder="2025-01"
+            sx={{
+              flex: 1,
+              "& .MuiInputBase-input": { fontSize: 13, fontWeight: 800 },
+            }}
+          />
+          <TextField
+            label="По (год-месяц)"
+            size="small"
+            value={range.to}
+            onChange={(e) =>
+              setRange((prev) => ({ ...prev, to: e.target.value }))
+            }
+            placeholder="2025-12"
+            sx={{
+              flex: 1,
+              "& .MuiInputBase-input": { fontSize: 13, fontWeight: 800 },
+            }}
+          />
         </Stack>
       </Box>
 
@@ -809,7 +941,6 @@ export default function DashboardPage() {
           mb: 2,
         }}
       >
-        {/* Баланс — НЕ кликабелен */}
         <KpiCard
           label="Баланс"
           value={formatAmount(displayBalance)}
@@ -817,7 +948,6 @@ export default function DashboardPage() {
           accent={COLORS.balance}
           icon={<AccountBalanceWalletOutlinedIcon />}
         />
-        {/* Доходы — кликабельно */}
         <KpiCard
           label="Доходы"
           value={formatAmount(displayIncome)}
@@ -826,7 +956,6 @@ export default function DashboardPage() {
           onClick={goIncome}
           icon={<ArrowCircleUpOutlinedIcon />}
         />
-        {/* Расходы — кликабельно */}
         <KpiCard
           label="Расходы"
           value={formatAmount(displayExpenses)}
@@ -835,7 +964,6 @@ export default function DashboardPage() {
           onClick={goExpenses}
           icon={<ArrowCircleDownOutlinedIcon />}
         />
-        {/* Норма сбережений — НЕ кликабельно */}
         <KpiCard
           label="Норма сбережений"
           value={`${displayRate}%`}
@@ -881,12 +1009,12 @@ export default function DashboardPage() {
         </Stack>
 
         <Box sx={{ mt: 1.25 }}>
-          {historyDesc.length === 0 ? (
+          {(isRange ? rangeMonths : historyDesc).length === 0 ? (
             <Typography variant="body2" sx={{ color: colors.muted }}>
               Пока нет сохранённых месяцев.
             </Typography>
           ) : (
-            historyDesc.map((h) => (
+            (isRange ? rangeMonths : historyDesc).map((h) => (
               <HistoryAccordion
                 key={`${h.year}-${h.month}`}
                 h={h}
