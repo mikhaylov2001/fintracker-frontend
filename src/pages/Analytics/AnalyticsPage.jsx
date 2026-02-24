@@ -27,7 +27,6 @@ import {
   ChartsTooltipContainer,
   ChartsItemTooltipContent,
 } from "@mui/x-charts/ChartsTooltip";
-
 import dayjs from "dayjs";
 
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -116,7 +115,7 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-/** "дд.мм.гггг" → dayjs или null (только если строка полная и валидная) */
+/** Полная строка "дд.мм.гггг" → dayjs или null */
 const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const clean = str.replace(/\D/g, "");
@@ -128,19 +127,17 @@ const parseFullDateString = (str) => {
   return parsed.isValid() ? parsed : null;
 };
 
-/** автоточки, но не мешаем вводу */
-const formatDateInput = (value) => {
-  const cleaned = value.replace(/[^\d]/g, "");
+/** Автоточки без ломания ввода */
+const formatDateInput = (raw) => {
+  const cleaned = raw.replace(/[^\d]/g, "");
   if (!cleaned) return "";
-  let res = "";
-  if (cleaned.length <= 2) {
-    res = cleaned;
-  } else if (cleaned.length <= 4) {
-    res = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
-  } else {
-    res = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4, 8)}`;
-  }
-  return res;
+  if (cleaned.length <= 2) return cleaned;
+  if (cleaned.length <= 4)
+    return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+  return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(
+    4,
+    8
+  )}`;
 };
 
 const parseDayjsToYM = (d) => {
@@ -150,7 +147,6 @@ const parseDayjsToYM = (d) => {
   return { year, month };
 };
 
-/* KPI card */
 const KpiCard = memo(function KpiCard({
   label,
   value,
@@ -346,7 +342,6 @@ function BalancePinnedTooltip(props) {
           pointerEvents: "none",
         }}
       />
-
       <Box
         sx={{
           bgcolor: alpha("#0B1220", 0.94),
@@ -456,7 +451,7 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строки ввода для диапазона
+  // строки ввода диапазона
   const [rangeFromStr, setRangeFromStr] = useState(() =>
     dayjs().subtract(3, "month").format("DD.MM.YYYY")
   );
@@ -464,7 +459,7 @@ export default function AnalyticsPage() {
     dayjs().format("DD.MM.YYYY")
   );
 
-  // dayjs для логики: только если обе даты полные и валидные
+  // обе даты должны быть полными и валидными → только тогда фильтруем
   const bothDatesValid = useMemo(() => {
     const from = parseFullDateString(rangeFromStr);
     const to = parseFullDateString(rangeToStr);
@@ -940,14 +935,10 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <Stack
-            direction="column"
-            spacing={0.75}
-            sx={{ mt: 2.5, maxWidth: 520 }}
-          >
+          <Stack direction="column" spacing={0.75} sx={{ mt: 2.5, maxWidth: 520 }}>
             <Stack
               direction="row"
-              spacing={1.5}
+              spacing={1}
               alignItems="center"
               sx={{ width: "100%" }}
             >
@@ -984,6 +975,18 @@ export default function AnalyticsPage() {
                   },
                 }}
               />
+
+              <Typography
+                sx={{
+                  px: 0.75,
+                  color: colors.muted,
+                  fontWeight: 800,
+                  fontSize: 13,
+                  textAlign: "center",
+                }}
+              >
+                —
+              </Typography>
 
               <TextField
                 value={rangeToStr}
