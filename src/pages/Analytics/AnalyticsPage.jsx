@@ -993,56 +993,52 @@ export default function AnalyticsPage() {
                           —
                         </Typography>
 
-                        <DatePicker
-                          label={null}
-                          value={rangeTo}
-                          onChange={(newValue) => {
-                            if (!newValue || !newValue.isValid()) return;
-                            setRangeTo(newValue);
-                            setRangeToStr(newValue.format("DD.MM.YYYY"));
-                          }}
-                          format="DD.MM.YYYY"
-                          slotProps={{
-                            textField: {
-                              size: "small",
-                              InputLabelProps: { shrink: false },
-                              sx: {
-                                flex: 1,
-                                minWidth: 0,
-                                "& .MuiInputBase-root": {
-                                  borderRadius: "999px !important",
-                                  backgroundColor: "rgba(4, 47, 46, 0.95) !important",
-                                  height: 32,
-                                  padding: "0 12px",
-                                  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
-                                  cursor: "pointer",
-                                  border: "none !important",
-                                  "&:hover": {
-                                    backgroundColor: "rgba(4, 47, 46, 1) !important",
-                                  }
-                                },
-                                "& .MuiOutlinedInput-notchedOutline": {
-                                  border: "none !important",
-                                  display: "none !important",
-                                },
-                                "& .MuiInputBase-input": {
-                                  color: "#FFFFFF !important",
-                                  "-webkit-text-fill-color": "#FFFFFF !important",
-                                  textAlign: "center",
-                                  padding: "0 !important",
-                                  fontWeight: "900 !important",
-                                  fontSize: "13px",
-                                  cursor: "pointer",
-                                },
-                                "& .MuiSvgIcon-root": {
-                                  color: "#FFFFFF !important",
-                                  fontSize: "18px",
-                                  opacity: 0.9
-                                },
-                              },
-                            },
-                          }}
-                        />
+                       <DatePicker
+                         label={null}
+                         value={rangeFrom}
+                         onChange={(newValue) => {
+                           if (!newValue || !newValue.isValid()) return;
+                           setRangeFrom(newValue);
+                           setRangeFromStr(newValue.format("DD.MM.YYYY"));
+                         }}
+                         format="DD.MM.YYYY"
+                         slotProps={{
+                           textField: {
+                             size: "small",
+                             sx: {
+                               flex: 1,
+                               minWidth: 0,
+                               "& .MuiInputBase-root": {
+                                 borderRadius: "999px !important",
+                                 backgroundColor: "rgba(4, 47, 46, 0.95) !important",
+                                 height: 32,
+                                 padding: "0 12px",
+                                 border: "none !important",
+                                 // Убираем свечение при фокусе
+                                 "&.Mui-focused": { boxShadow: "none" },
+                               },
+                               "& .MuiOutlinedInput-notchedOutline": {
+                                 border: "none !important",
+                               },
+                               "& .MuiInputBase-input": {
+                                 // Форсируем белый цвет для всех браузеров
+                                 color: "#FFFFFF !important",
+                                 "-webkit-text-fill-color": "#FFFFFF !important",
+                                 opacity: "1 !important",
+                                 textAlign: "center",
+                                 fontWeight: "950 !important", // Делаем максимально жирным как в заголовках
+                                 fontSize: "13px",
+                                 padding: "0 !important",
+                               },
+                               "& .MuiSvgIcon-root": {
+                                 color: "#FFFFFF !important",
+                                 fontSize: "18px",
+                                 opacity: 0.8
+                               },
+                             },
+                           },
+                         }}
+                       />
                       </Stack>
 
                       <Typography
