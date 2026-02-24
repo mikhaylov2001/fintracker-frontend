@@ -120,7 +120,9 @@ const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
   if (!m) return null;
-  const [_, dd, MM, yyyy] = m;
+  const dd = m[1];
+  const MM = m[2];
+  const yyyy = m[3];
   const parsed = dayjs(`${yyyy}-${MM}-${dd}`, "YYYY-MM-DD", true);
   return parsed.isValid() ? parsed : null;
 };
@@ -438,7 +440,6 @@ export default function AnalyticsPage() {
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
-  // обе даты должны быть полными и валидными
   const bothDatesValid = useMemo(() => {
     const from = parseFullDateString(rangeFromStr);
     const to = parseFullDateString(rangeToStr);
