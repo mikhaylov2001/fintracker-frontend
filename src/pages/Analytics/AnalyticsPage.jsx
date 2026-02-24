@@ -915,152 +915,151 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
-            <Stack
-              direction="column"
-              spacing={0.6}
-              sx={{ mt: 2.5, maxWidth: 420 }}
-            >
-              <Stack
-                direction="row"
-                spacing={0.75}
-                alignItems="center"
-                sx={{ width: "100%" }}
-              >
-                <DatePicker
-                  label={null}
-                  value={rangeFrom}
-                  onChange={(newValue) => {
-                    if (!newValue || !newValue.isValid()) return;
-                    setRangeFrom(newValue);
-                    setRangeFromStr(newValue.format("DD.MM.YYYY"));
-                  }}
-                  format="DD.MM.YYYY"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      InputLabelProps: { shrink: false },
-                      inputProps: {
-                        readOnly: true,
-                      },
-                      sx: {
-                        flex: 1,
-                        minWidth: 0,
-                        "& .MuiInputBase-root": {
-                          borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
-                          border: "none !important",
-                          height: 32,
-                          padding: "0 16px",
-                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
-                          cursor: "pointer",
-                          transition: "all 140ms ease",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          border: "none !important",
-                        },
-                        "& .MuiInputBase-input": {
-                          color: "#FFFFFF !important",
-                          WebkitTextFillColor: "#FFFFFF !important",
+                  <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+                    <Stack
+                      direction="column"
+                      spacing={0.6}
+                      sx={{ mt: 2.5, maxWidth: 420 }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        alignItems="center"
+                        sx={{ width: "100%" }}
+                      >
+                        <DatePicker
+                          label={null}
+                          value={rangeFrom}
+                          onChange={(newValue) => {
+                            if (!newValue || !newValue.isValid()) return;
+                            setRangeFrom(newValue);
+                            setRangeFromStr(newValue.format("DD.MM.YYYY"));
+                          }}
+                          format="DD.MM.YYYY"
+                          slotProps={{
+                            textField: {
+                              size: "small",
+                              InputLabelProps: { shrink: false },
+                              sx: {
+                                flex: 1,
+                                minWidth: 0,
+                                // Стили для самой оболочки инпута
+                                "& .MuiInputBase-root": {
+                                  borderRadius: "999px !important",
+                                  backgroundColor: "rgba(4, 47, 46, 0.95) !important",
+                                  height: 32,
+                                  padding: "0 12px",
+                                  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                                  cursor: "pointer",
+                                  border: "none !important",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(4, 47, 46, 1) !important",
+                                  }
+                                },
+                                // Полное удаление стандартной рамки MUI
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                  border: "none !important",
+                                  display: "none !important",
+                                },
+                                // Жесткая перекраска текста внутри
+                                "& .MuiInputBase-input": {
+                                  color: "#FFFFFF !important",
+                                  "-webkit-text-fill-color": "#FFFFFF !important", // Для Chrome/Safari
+                                  textAlign: "center",
+                                  padding: "0 !important",
+                                  fontWeight: "900 !important",
+                                  fontSize: "13px",
+                                  cursor: "pointer",
+                                },
+                                // Цвет иконки календаря
+                                "& .MuiSvgIcon-root": {
+                                  color: "#FFFFFF !important",
+                                  fontSize: "18px",
+                                  opacity: 0.9
+                                },
+                              },
+                            },
+                          }}
+                        />
+
+                        <Typography
+                          sx={{
+                            px: 0.25,
+                            color: "rgba(255,255,255,0.7)",
+                            fontWeight: 950,
+                            fontSize: 14,
+                          }}
+                        >
+                          —
+                        </Typography>
+
+                        <DatePicker
+                          label={null}
+                          value={rangeTo}
+                          onChange={(newValue) => {
+                            if (!newValue || !newValue.isValid()) return;
+                            setRangeTo(newValue);
+                            setRangeToStr(newValue.format("DD.MM.YYYY"));
+                          }}
+                          format="DD.MM.YYYY"
+                          slotProps={{
+                            textField: {
+                              size: "small",
+                              InputLabelProps: { shrink: false },
+                              sx: {
+                                flex: 1,
+                                minWidth: 0,
+                                "& .MuiInputBase-root": {
+                                  borderRadius: "999px !important",
+                                  backgroundColor: "rgba(4, 47, 46, 0.95) !important",
+                                  height: 32,
+                                  padding: "0 12px",
+                                  boxShadow: "0 8px 24px rgba(0,0,0,0.25)",
+                                  cursor: "pointer",
+                                  border: "none !important",
+                                  "&:hover": {
+                                    backgroundColor: "rgba(4, 47, 46, 1) !important",
+                                  }
+                                },
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                  border: "none !important",
+                                  display: "none !important",
+                                },
+                                "& .MuiInputBase-input": {
+                                  color: "#FFFFFF !important",
+                                  "-webkit-text-fill-color": "#FFFFFF !important",
+                                  textAlign: "center",
+                                  padding: "0 !important",
+                                  fontWeight: "900 !important",
+                                  fontSize: "13px",
+                                  cursor: "pointer",
+                                },
+                                "& .MuiSvgIcon-root": {
+                                  color: "#FFFFFF !important",
+                                  fontSize: "18px",
+                                  opacity: 0.9
+                                },
+                              },
+                            },
+                          }}
+                        />
+                      </Stack>
+
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          mt: 0.1,
+                          color: "rgba(255,255,255,0.4)",
+                          fontSize: 10,
+                          fontWeight: 700,
                           textAlign: "center",
-                          padding: "0 !important",
-                          fontWeight: 950,
-                          fontSize: 13,
-                          cursor: "pointer",
-                        },
-                        "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
-                          fontSize: 18,
-                        },
-                        "& .MuiInputBase-root:hover": {
-                          backgroundColor: "rgba(4,47,46,1)",
-                        },
-                      },
-                    },
-                  }}
-                />
-
-                <Typography
-                  sx={{
-                    px: 0.25,
-                    color: colors.muted,
-                    fontWeight: 800,
-                    fontSize: 14,
-                    textAlign: "center",
-                  }}
-                >
-                  —
-                </Typography>
-
-                <DatePicker
-                  label={null}
-                  value={rangeTo}
-                  onChange={(newValue) => {
-                    if (!newValue || !newValue.isValid()) return;
-                    setRangeTo(newValue);
-                    setRangeToStr(newValue.format("DD.MM.YYYY"));
-                  }}
-                  format="DD.MM.YYYY"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      InputLabelProps: { shrink: false },
-                      inputProps: {
-                        readOnly: true,
-                      },
-                      sx: {
-                        flex: 1,
-                        minWidth: 0,
-                        "& .MuiInputBase-root": {
-                          borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
-                          border: "none !important",
-                          height: 32,
-                          padding: "0 16px",
-                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
-                          cursor: "pointer",
-                          transition: "all 140ms ease",
-                        },
-                        "& .MuiOutlinedInput-notchedOutline": {
-                          border: "none !important",
-                        },
-                        "& .MuiInputBase-input": {
-                          color: "#FFFFFF !important",
-                          WebkitTextFillColor: "#FFFFFF !important",
-                          textAlign: "center",
-                          padding: "0 !important",
-                          fontWeight: 950,
-                          fontSize: 13,
-                          cursor: "pointer",
-                        },
-                        "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
-                          fontSize: 18,
-                        },
-                        "& .MuiInputBase-root:hover": {
-                          backgroundColor: "rgba(4,47,46,1)",
-                        },
-                      },
-                    },
-                  }}
-                />
-              </Stack>
-
-              <Typography
-                variant="caption"
-                sx={{
-                  mt: 0.1,
-                  color: colors.muted,
-                  fontSize: 10,
-                  fontWeight: 700,
-                  textAlign: "center",
-                }}
-              >
-                Выберите даты в календаре
-              </Typography>
-            </Stack>
-          </LocalizationProvider>
-        )}
+                        }}
+                      >
+                        Выберите даты в календаре
+                      </Typography>
+                    </Stack>
+                  </LocalizationProvider>
+                )}
       </Box>
 
       {/* KPI */}
