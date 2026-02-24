@@ -1,3 +1,4 @@
+// src/pages/Dashboard/DashboardPage.jsx
 import React, {
   useEffect,
   useMemo,
@@ -40,7 +41,7 @@ import {
 
 import { useCurrency } from "../../contexts/CurrencyContext";
 
-// -------- helpers --------
+// ===== helpers =====
 
 const COLORS = {
   income: colors.primary,
@@ -74,7 +75,7 @@ const chunk = (arr, size) => {
   return out;
 };
 
-// "сырое" значение -> отформатированная строка дд.мм.гггг
+// сырое значение -> дд.мм.гггг
 const formatDateInput = (raw) => {
   const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
   const parts = [];
@@ -88,19 +89,20 @@ const formatDateInput = (raw) => {
   return parts.filter(Boolean).join(".");
 };
 
-// строка дд.мм.гггг -> { year, month, day } или null
+// дд.мм.гггг -> {day,month,year} | null
 const parseDdMmYyyy = (s) => {
   const m = String(s || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (!m) return null;
   const day = Number(m[1]);
   const month = Number(m[2]);
   const year = Number(m[3]);
-  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year)) return null;
+  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year))
+    return null;
   if (month < 1 || month > 12 || day < 1 || day > 31) return null;
   return { day, month, year };
 };
 
-// -------- small UI components --------
+// ===== UI мелочи =====
 
 const SectionTitle = memo(function SectionTitle({ title, right }) {
   return (
@@ -456,7 +458,7 @@ function DashboardSkeleton() {
   );
 }
 
-// -------- main component --------
+// ===== main =====
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -527,7 +529,7 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  // Диапазон по датам (дд.мм.гггг)
+  // диапазон дат
   const [rangeFromRaw, setRangeFromRaw] = useState(() => {
     const now = new Date();
     const d = String(now.getDate()).padStart(2, "0");
@@ -799,8 +801,6 @@ export default function DashboardPage() {
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
 
-  const datesDisabled = !isRange;
-
   if (authLoading) return <DashboardSkeleton />;
   if (!isAuthenticated) return null;
   if (loading) return <DashboardSkeleton />;
@@ -945,7 +945,7 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат: целиком показывается только в режиме "Период" */}
+        {/* Диапазон дат — только в режиме "Период" */}
         {isRange && (
           <Stack
             direction={{ xs: "column", sm: "row" }}
