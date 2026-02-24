@@ -945,10 +945,10 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат — только в режиме "Период" */}
+        {/* Диапазон дат — только в режиме "Период", оба поля в одну строку */}
         {isRange && (
           <Stack
-            direction={{ xs: "column", sm: "row" }}
+            direction="row"
             spacing={1}
             sx={{ mt: 1.5, maxWidth: 480 }}
           >
@@ -999,12 +999,17 @@ export default function DashboardPage() {
               InputLabelProps={{
                 sx: {
                   color: alpha(colors.text, 0.8),
+                  fontSize: 11,
+                  transform: "translate(14px, 8px) scale(1)",
+                  "&.MuiInputLabel-shrink": {
+                    transform: "translate(14px, -6px) scale(0.85)",
+                  },
                   "&.Mui-focused": {
                     color: colors.text,
                   },
                 },
               }}
-              sx={{ flex: 1 }}
+              sx={{ flex: 1, minWidth: 0 }}
             />
             <TextField
               label="По (дд.мм.гггг)"
@@ -1053,12 +1058,17 @@ export default function DashboardPage() {
               InputLabelProps={{
                 sx: {
                   color: alpha(colors.text, 0.8),
+                  fontSize: 11,
+                  transform: "translate(14px, 8px) scale(1)",
+                  "&.MuiInputLabel-shrink": {
+                    transform: "translate(14px, -6px) scale(0.85)",
+                  },
                   "&.Mui-focused": {
                     color: colors.text,
                   },
                 },
               }}
-              sx={{ flex: 1 }}
+              sx={{ flex: 1, minWidth: 0 }}
             />
           </Stack>
         )}
