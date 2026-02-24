@@ -121,17 +121,6 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-const parseFullDateString = (str) => {
-  if (!str || typeof str !== "string") return null;
-  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
-  if (!m) return null;
-  const dd = m[1];
-  const MM = m[2];
-  const yyyy = m[3];
-  const parsed = dayjs(`${yyyy}-${MM}-${dd}`, "YYYY-MM-DD", true);
-  return parsed.isValid() ? parsed : null;
-};
-
 const parseDayjsToYM = (d) => {
   if (!d || !dayjs.isDayjs(d) || !d.isValid()) return null;
   return { year: d.year(), month: d.month() + 1 };
@@ -441,24 +430,15 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
-  const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
-
+  // диапазон дат – только dayjs, без строк
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
-  const bothDatesValid = useMemo(() => {
-    const from = parseFullDateString(rangeFromStr);
-    const to = parseFullDateString(rangeToStr);
-    if (!from || !to) return null;
-    if (from.isAfter(to)) return null;
-    return { from, to };
-  }, [rangeFromStr, rangeToStr]);
-
   const rangeParsed = useMemo(() => {
-    if (!bothDatesValid) return null;
-    const a = parseDayjsToYM(bothDatesValid.from);
-    const b = parseDayjsToYM(bothDatesValid.to);
+    if (!rangeFrom || !rangeTo || !rangeFrom.isValid() || !rangeTo.isValid())
+      return null;
+    const a = parseDayjsToYM(rangeFrom);
+    const b = parseDayjsToYM(rangeTo);
     if (!a || !b) return null;
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
@@ -469,7 +449,7 @@ export default function AnalyticsPage() {
       fromN,
       toN,
     };
-  }, [bothDatesValid]);
+  }, [rangeFrom, rangeTo]);
 
   const todayLabel = useMemo(
     () =>
@@ -929,9 +909,9 @@ export default function AnalyticsPage() {
                 onChange={(newValue) => {
                   if (!newValue || !newValue.isValid()) return;
                   setRangeFrom(newValue);
-                  setRangeFromStr(newValue.format("DD.MM.YYYY"));
                 }}
                 format="DD.MM.YYYY"
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <Box
@@ -993,14 +973,13 @@ export default function AnalyticsPage() {
               {/* TO */}
               <DatePicker
                 label={null}
-                value={rangeFrom}
+                value={rangeTo}
                 onChange={(newValue) => {
                   if (!newValue || !newValue.isValid()) return;
-                  setRangeFrom(newValue);
-                  setRangeFromStr(newValue.format("DD.MM.YYYY"));
+                  setRangeTo(newValue);
                 }}
                 format="DD.MM.YYYY"
-                enableAccessibleFieldDOMStructure={false} // ← ВАЖНО
+                enableAccessibleFieldDOMStructure={false}
                 slots={{
                   textField: (params) => (
                     <Box
