@@ -799,6 +799,8 @@ export default function DashboardPage() {
   const goIncome = useCallback(() => navigate("/income"), [navigate]);
   const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
 
+  const datesDisabled = !isRange;
+
   if (authLoading) return <DashboardSkeleton />;
   if (!isAuthenticated) return null;
   if (loading) return <DashboardSkeleton />;
@@ -943,27 +945,37 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат в стиле тёмного чипа */}
+        {/* Диапазон дат в стиле тёмного чипа, активен только в режиме "Период" */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1}
-          sx={{ mt: 1.5, maxWidth: 480 }}
+          sx={{ mt: 1.5, maxWidth: 480, opacity: datesDisabled ? 0.5 : 1 }}
         >
           <TextField
             label="С (дд.мм.гггг)"
             size="small"
             value={rangeFromRaw}
             onChange={(e) => {
+              if (datesDisabled) return;
               const formatted = formatDateInput(e.target.value);
               setRangeFromRaw(formatted);
             }}
             placeholder="01.01.2025"
-            error={Boolean(rangeFromError)}
+            disabled={datesDisabled}
+            error={Boolean(rangeFromError) && !datesDisabled}
             helperText={
-              rangeFromError ||
-              "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              datesDisabled
+                ? "Выберите режим «Период», чтобы задать даты"
+                : rangeFromError ||
+                  "Формат: дд.мм.гггг (точки ставятся автоматически)"
             }
-            FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
+            FormHelperTextProps={{
+              sx: {
+                fontSize: 11,
+                mt: 0.3,
+                color: alpha(colors.text, 0.8),
+              },
+            }}
             inputProps={{
               sx: {
                 fontSize: 13,
@@ -980,10 +992,12 @@ export default function DashboardPage() {
                   borderColor: "transparent",
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.primary, 0.45),
+                  borderColor: datesDisabled
+                    ? "transparent"
+                    : alpha(colors.primary, 0.45),
                 },
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: colors.primary,
+                  borderColor: datesDisabled ? "transparent" : colors.primary,
                 },
               },
             }}
@@ -994,16 +1008,26 @@ export default function DashboardPage() {
             size="small"
             value={rangeToRaw}
             onChange={(e) => {
+              if (datesDisabled) return;
               const formatted = formatDateInput(e.target.value);
               setRangeToRaw(formatted);
             }}
             placeholder="31.12.2025"
-            error={Boolean(rangeToError)}
+            disabled={datesDisabled}
+            error={Boolean(rangeToError) && !datesDisabled}
             helperText={
-              rangeToError ||
-              "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              datesDisabled
+                ? "Выберите режим «Период», чтобы задать даты"
+                : rangeToError ||
+                  "Формат: дд.мм.гггг (точки ставятся автоматически)"
             }
-            FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
+            FormHelperTextProps={{
+              sx: {
+                fontSize: 11,
+                mt: 0.3,
+                color: alpha(colors.text, 0.8),
+              },
+            }}
             inputProps={{
               sx: {
                 fontSize: 13,
@@ -1020,10 +1044,12 @@ export default function DashboardPage() {
                   borderColor: "transparent",
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.primary, 0.45),
+                  borderColor: datesDisabled
+                    ? "transparent"
+                    : alpha(colors.primary, 0.45),
                 },
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: colors.primary,
+                  borderColor: datesDisabled ? "transparent" : colors.primary,
                 },
               },
             }}
