@@ -943,11 +943,11 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат */}
+        {/* Диапазон дат в стиле тёмного чипа */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1}
-          sx={{ mt: 1.5, maxWidth: 420 }}
+          sx={{ mt: 1.5, maxWidth: 480 }}
         >
           <TextField
             label="С (дд.мм.гггг)"
@@ -965,18 +965,22 @@ export default function DashboardPage() {
             }
             FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
             inputProps={{
-              sx: { fontSize: 13, fontWeight: 800 },
+              sx: {
+                fontSize: 13,
+                fontWeight: 800,
+                color: alpha(colors.text, 0.9),
+              },
             }}
             InputProps={{
               sx: {
-                bgcolor: "#FFFFFF",
-                color: colors.text,
-                borderRadius: 3,
+                borderRadius: 999,
+                bgcolor: alpha(colors.card2, 0.9),
+                border: `1px solid ${alpha(colors.border2, 0.9)}`,
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.border2 || "#000", 0.18),
+                  borderColor: "transparent",
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.primary, 0.5),
+                  borderColor: alpha(colors.primary, 0.45),
                 },
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: colors.primary,
@@ -1001,18 +1005,22 @@ export default function DashboardPage() {
             }
             FormHelperTextProps={{ sx: { fontSize: 11, mt: 0.3 } }}
             inputProps={{
-              sx: { fontSize: 13, fontWeight: 800 },
+              sx: {
+                fontSize: 13,
+                fontWeight: 800,
+                color: alpha(colors.text, 0.9),
+              },
             }}
             InputProps={{
               sx: {
-                bgcolor: "#FFFFFF",
-                color: colors.text,
-                borderRadius: 3,
+                borderRadius: 999,
+                bgcolor: alpha(colors.card2, 0.9),
+                border: `1px solid ${alpha(colors.border2, 0.9)}`,
                 "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.border2 || "#000", 0.18),
+                  borderColor: "transparent",
                 },
                 "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: alpha(colors.primary, 0.5),
+                  borderColor: alpha(colors.primary, 0.45),
                 },
                 "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                   borderColor: colors.primary,
