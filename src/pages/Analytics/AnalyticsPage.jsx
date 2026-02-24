@@ -120,7 +120,6 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-/** "дд.мм.гггг" → dayjs или null */
 const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
@@ -400,7 +399,7 @@ export default function AnalyticsPage() {
   const yearNow = now.getFullYear();
   const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month"); // month | year | range
+  const [mode, setMode] = useState("month");
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -441,11 +440,9 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строки используются всей логикой (как и раньше)
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
-  // dayjs-значения для пикеров
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
@@ -917,19 +914,17 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <LocalizationProvider
-            dateAdapter={AdapterDayjs}
-            adapterLocale="ru"
-          >
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
             <Stack
               direction="column"
               spacing={0.6}
-              sx={{ mt: 2.5, maxWidth: 420 }}
+              sx={{ mt: 2.5, maxWidth: 420, mx: "auto" }}
             >
               <Stack
                 direction="row"
                 spacing={0.75}
                 alignItems="center"
+                justifyContent="center"
                 sx={{ width: "100%" }}
               >
                 <DatePicker
