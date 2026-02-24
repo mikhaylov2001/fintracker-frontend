@@ -400,7 +400,7 @@ export default function AnalyticsPage() {
   const yearNow = now.getFullYear();
   const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month"); // month | year | range
+  const [mode, setMode] = useState("month");
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -441,11 +441,9 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строки для логики
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
-  // значения для пикера
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
@@ -957,9 +955,9 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: alpha(colors.card2, 0.7),
+                          backgroundColor: "rgba(4,47,46,0.95)",
                           border: 0,
-                          color: alpha(colors.text, 0.78),
+                          color: "#FFFFFF",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
@@ -970,11 +968,11 @@ export default function AnalyticsPage() {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: alpha(colors.text, 0.78),
+                          color: "rgba(255,255,255,0.9)",
                           fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: alpha(colors.card2, 0.9),
+                          backgroundColor: "rgba(4,47,46,1)",
                         },
                         "& .MuiInputBase-root.Mui-focused": {
                           backgroundColor: colors.primary,
@@ -1025,9 +1023,9 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: alpha(colors.card2, 0.7),
+                          backgroundColor: "rgba(4,47,46,0.95)",
                           border: 0,
-                          color: alpha(colors.text, 0.78),
+                          color: "#FFFFFF",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
@@ -1038,11 +1036,11 @@ export default function AnalyticsPage() {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: alpha(colors.text, 0.78),
+                          color: "rgba(255,255,255,0.9)",
                           fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: alpha(colors.card2, 0.9),
+                          backgroundColor: "rgba(4,47,46,1)",
                         },
                         "& .MuiInputBase-root.Mui-focused": {
                           backgroundColor: colors.primary,
