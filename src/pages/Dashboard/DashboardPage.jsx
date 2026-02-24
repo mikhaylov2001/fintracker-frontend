@@ -12,7 +12,7 @@ import {
   Box,
   Chip,
   Stack,
-  Skeleton,
+Skeleton,
   TextField,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -950,7 +950,7 @@ export default function DashboardPage() {
           <Stack
             direction="row"
             spacing={1}
-            sx={{ mt: 1.5, maxWidth: 480 }}
+            sx={{ mt: 2, maxWidth: 480 }}
           >
             <TextField
               label="С (дд.мм.гггг)"
@@ -1000,9 +1000,9 @@ export default function DashboardPage() {
                 sx: {
                   color: alpha(colors.text, 0.8),
                   fontSize: 11,
-                  transform: "translate(14px, 8px) scale(1)",
+                  transform: "translate(14px, -8px) scale(1)",
                   "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -6px) scale(0.85)",
+                    transform: "translate(14px, -22px) scale(0.85)",
                   },
                   "&.Mui-focused": {
                     color: colors.text,
@@ -1059,9 +1059,9 @@ export default function DashboardPage() {
                 sx: {
                   color: alpha(colors.text, 0.8),
                   fontSize: 11,
-                  transform: "translate(14px, 8px) scale(1)",
+                  transform: "translate(14px, -8px) scale(1)",
                   "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -6px) scale(0.85)",
+                    transform: "translate(14px, -22px) scale(0.85)",
                   },
                   "&.Mui-focused": {
                     color: colors.text,
