@@ -400,7 +400,7 @@ export default function AnalyticsPage() {
   const yearNow = now.getFullYear();
   const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month");
+  const [mode, setMode] = useState("month"); // month | year | range
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -441,9 +441,11 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
+  // строки для логики
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
+  // значения для пикера
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
@@ -944,8 +946,8 @@ export default function AnalyticsPage() {
                         readOnly: true,
                         style: {
                           textAlign: "center",
-                          padding: "6px 8px",
-                          fontWeight: 700,
+                          padding: "6px 12px",
+                          fontWeight: 950,
                           fontSize: 13,
                           cursor: "pointer",
                         },
@@ -954,27 +956,23 @@ export default function AnalyticsPage() {
                         flex: 1,
                         minWidth: 0,
                         "& .MuiInputBase-root": {
-                          borderRadius: 8,
-                          backgroundColor: "rgba(4,47,46,0.95)", // тёмно-зелёная капсула
-                          border: "1px solid rgba(255,255,255,0.42)", // яркая рамка
-                          color: "#FFFFFF",
-                          height: 36,
+                          borderRadius: 999,
+                          backgroundColor: alpha(colors.card2, 0.7),
+                          border: 0,
+                          color: alpha(colors.text, 0.78),
+                          height: 34,
                           cursor: "pointer",
+                          transition: "all 140ms ease",
                         },
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
+                          color: alpha(colors.text, 0.78),
                         },
-                        "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline":
-                          {
-                            borderColor: colors.primary,
-                          },
-                        "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                          {
-                            borderColor: colors.primary,
-                          },
+                        "& .MuiInputBase-root:hover": {
+                          backgroundColor: alpha(colors.card2, 0.85),
+                        },
                       },
                     },
                   }}
@@ -1009,8 +1007,8 @@ export default function AnalyticsPage() {
                         readOnly: true,
                         style: {
                           textAlign: "center",
-                          padding: "6px 8px",
-                          fontWeight: 700,
+                          padding: "6px 12px",
+                          fontWeight: 950,
                           fontSize: 13,
                           cursor: "pointer",
                         },
@@ -1019,27 +1017,23 @@ export default function AnalyticsPage() {
                         flex: 1,
                         minWidth: 0,
                         "& .MuiInputBase-root": {
-                          borderRadius: 8,
-                          backgroundColor: "rgba(4,47,46,0.95)",
-                          border: "1px solid rgba(255,255,255,0.42)",
-                          color: "#FFFFFF",
-                          height: 36,
+                          borderRadius: 999,
+                          backgroundColor: alpha(colors.card2, 0.7),
+                          border: 0,
+                          color: alpha(colors.text, 0.78),
+                          height: 34,
                           cursor: "pointer",
+                          transition: "all 140ms ease",
                         },
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
+                          color: alpha(colors.text, 0.78),
                         },
-                        "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline":
-                          {
-                            borderColor: colors.primary,
-                          },
-                        "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                          {
-                            borderColor: colors.primary,
-                          },
+                        "& .MuiInputBase-root:hover": {
+                          backgroundColor: alpha(colors.card2, 0.85),
+                        },
                       },
                     },
                   }}
