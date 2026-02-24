@@ -14,6 +14,7 @@ import {
   Chip,
   Tabs,
   Tab,
+  TextField,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -118,6 +119,29 @@ const withHeadroom = (maxVal) => {
   const raw = maxVal + maxVal * 0.25;
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
+};
+
+/** Парсим строку "дд.мм.гггг" в dayjs */
+const parseStringToDate = (str) => {
+  if (!str || typeof str !== "string") return null;
+  const clean = str.replace(/\D/g, "");
+  if (clean.length !== 8) return null;
+  const d = clean.slice(0, 2);
+  const m = clean.slice(2, 4);
+  const y = clean.slice(4, 8);
+  const parsed = dayjs(`${y}-${m}-${d}`, "YYYY-MM-DD", true);
+  return parsed.isValid() ? parsed : null;
+};
+
+/** Автоточки при вводе (как в расходах) */
+const formatDateInput = (value) => {
+  const cleaned = value.replace(/\D/g, "");
+  let result = "";
+  for (let i = 0; i < cleaned.length && i < 8; i++) {
+    if (i === 2 || i === 4) result += ".";
+    result += cleaned[i];
+  }
+  return result;
 };
 
 const parseDayjsToYM = (d) => {
@@ -433,9 +457,23 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // диапазон для режима "Период": последние 3 месяца по умолчанию
-  const [rangeFrom, setRangeFrom] = useState(() => dayjs().subtract(3, "month"));
-  const [rangeTo, setRangeTo] = useState(() => dayjs());
+  // строковые значения полей ввода (для автоточек)
+  const [rangeFromRaw, setRangeFromRaw] = useState(() =>
+    dayjs().subtract(3, "month").format("DD.MM.YYYY")
+  );
+  const [rangeToRaw, setRangeToRaw] = useState(() =>
+    dayjs().format("DD.MM.YYYY")
+  );
+
+  // dayjs‑значения для DatePicker
+  const rangeFrom = useMemo(
+    () => parseStringToDate(rangeFromRaw) || dayjs().subtract(3, "month"),
+    [rangeFromRaw]
+  );
+  const rangeTo = useMemo(
+    () => parseStringToDate(rangeToRaw) || dayjs(),
+    [rangeToRaw]
+  );
 
   const rangeParsed = useMemo(() => {
     const a = parseDayjsToYM(rangeFrom);
@@ -865,8 +903,10 @@ export default function AnalyticsPage() {
                   if (!next) return;
                   setMode(next);
                   if (next === "range") {
-                    setRangeFrom(dayjs().subtract(3, "month"));
-                    setRangeTo(dayjs());
+                    const from3m = dayjs().subtract(3, "month");
+                    const now = dayjs();
+                    setRangeFromRaw(from3m.format("DD.MM.YYYY"));
+                    setRangeToRaw(now.format("DD.MM.YYYY"));
                   }
                 }}
                 size="small"
@@ -915,12 +955,19 @@ export default function AnalyticsPage() {
                 }}
               >
                 <DatePicker
-                  label="С"
                   value={rangeFrom}
-                  onChange={(newValue) => setRangeFrom(newValue)}
+                  onChange={(newValue) => {
+                    if (!newValue) return;
+                    setRangeFromRaw(newValue.format("DD.MM.YYYY"));
+                  }}
                   format="DD.MM.YYYY"
                   slotProps={{
                     textField: {
+                      value: rangeFromRaw,
+                      onChange: (e) => {
+                        const formatted = formatDateInput(e.target.value);
+                        setRangeFromRaw(formatted);
+                      },
                       size: "small",
                       placeholder: "01.01.2025",
                       sx: { flex: 1, minWidth: 0 },
@@ -929,6 +976,8 @@ export default function AnalyticsPage() {
                           borderRadius: 999,
                           bgcolor: alpha(colors.card2, 0.9),
                           border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                          color: alpha(colors.text, 0.95),
+                          fontWeight: 700,
                           "& .MuiOutlinedInput-notchedOutline": {
                             borderColor: "transparent",
                           },
@@ -938,18 +987,14 @@ export default function AnalyticsPage() {
                           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                             borderColor: colors.primary,
                           },
+                          "& .MuiInputBase-input::placeholder": {
+                            color: alpha(colors.text, 0.5),
+                            opacity: 1,
+                          },
                         },
                       },
                       InputLabelProps: {
-                        sx: {
-                          color: alpha(colors.text, 0.8),
-                          fontSize: 11,
-                          "&.MuiInputLabel-shrink": {
-                            transform:
-                              "translate(14px, -16px) scale(0.85)",
-                          },
-                          "&.Mui-focused": { color: colors.text },
-                        },
+                        shrink: false,
                       },
                     },
                   }}
@@ -968,12 +1013,19 @@ export default function AnalyticsPage() {
                 </Typography>
 
                 <DatePicker
-                  label="По"
                   value={rangeTo}
-                  onChange={(newValue) => setRangeTo(newValue)}
+                  onChange={(newValue) => {
+                    if (!newValue) return;
+                    setRangeToRaw(newValue.format("DD.MM.YYYY"));
+                  }}
                   format="DD.MM.YYYY"
                   slotProps={{
                     textField: {
+                      value: rangeToRaw,
+                      onChange: (e) => {
+                        const formatted = formatDateInput(e.target.value);
+                        setRangeToRaw(formatted);
+                      },
                       size: "small",
                       placeholder: "31.12.2025",
                       sx: { flex: 1, minWidth: 0 },
@@ -982,6 +1034,8 @@ export default function AnalyticsPage() {
                           borderRadius: 999,
                           bgcolor: alpha(colors.card2, 0.9),
                           border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                          color: alpha(colors.text, 0.95),
+                          fontWeight: 700,
                           "& .MuiOutlinedInput-notchedOutline": {
                             borderColor: "transparent",
                           },
@@ -991,18 +1045,14 @@ export default function AnalyticsPage() {
                           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                             borderColor: colors.primary,
                           },
+                          "& .MuiInputBase-input::placeholder": {
+                            color: alpha(colors.text, 0.5),
+                            opacity: 1,
+                          },
                         },
                       },
                       InputLabelProps: {
-                        sx: {
-                          color: alpha(colors.text, 0.8),
-                          fontSize: 11,
-                          "&.MuiInputLabel-shrink": {
-                            transform:
-                              "translate(14px, -16px) scale(0.85)",
-                          },
-                          "&.Mui-focused": { color: colors.text },
-                        },
+                        shrink: false,
                       },
                     },
                   }}
@@ -1012,13 +1062,15 @@ export default function AnalyticsPage() {
               <Typography
                 variant="caption"
                 sx={{
-                  mt: 0.75,
+                  mt: 0.85,
                   color: colors.muted,
                   fontSize: 11,
                   fontWeight: 700,
+                  display: "block",
+                  textAlign: "center",
                 }}
               >
-                Введите дату в формате дд.мм.гггг или выберите в календаре
+                Введите дату в формате дд.мм.гггг
               </Typography>
             </>
           )}
@@ -1351,7 +1403,7 @@ export default function AnalyticsPage() {
             0 ? (
             <Typography variant="body2" sx={{ color: colors.muted }}>
               {isRange && !rangeParsed
-                ? "Введите или выберите даты для расчёта категорий."
+                ? "Введите корректные даты для расчёта категорий."
                 : "Нет данных по категориям за выбранный период."}
             </Typography>
           ) : (
