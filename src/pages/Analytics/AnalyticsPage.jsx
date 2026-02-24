@@ -132,13 +132,14 @@ const parseDayjsToYM = (d) => {
   return { year: d.year(), month: d.month() + 1 };
 };
 
-// простая маска: только автоточечки
+// простая маска: только автоточечки (будет применяться на onBlur)
 const formatDateDots = (raw) => {
   const digits = String(raw || "").replace(/\D/g, "").slice(0, 8); // DDMMYYYY
   const dd = digits.slice(0, 2);
   const mm = digits.slice(2, 4);
   const yyyy = digits.slice(4, 8);
 
+  if (!digits) return "";
   if (digits.length <= 2) return dd;
   if (digits.length <= 4) return `${dd}.${mm}`;
   return `${dd}.${mm}.${yyyy}`;
@@ -448,8 +449,22 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
+  // логические значения периода (для вычислений)
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
+
+  // черновики, которые отображаются в инпутах
+  const [rangeFromDraft, setRangeFromDraft] = useState(rangeFromStr);
+  const [rangeToDraft, setRangeToDraft] = useState(rangeToStr);
+
+  // если логика где-то снаружи поменяет период – синхронизируем драфты
+  useEffect(() => {
+    setRangeFromDraft(rangeFromStr);
+  }, [rangeFromStr]);
+
+  useEffect(() => {
+    setRangeToDraft(rangeToStr);
+  }, [rangeToStr]);
 
   const bothDatesValid = useMemo(() => {
     const from = parseFullDateString(rangeFromStr);
@@ -927,8 +942,11 @@ export default function AnalyticsPage() {
               sx={{ width: "100%" }}
             >
               <TextField
-                value={rangeFromStr}
-                onChange={(e) => setRangeFromStr(formatDateDots(e.target.value))}
+                value={rangeFromDraft}
+                onChange={(e) => setRangeFromDraft(e.target.value)}
+                onBlur={() =>
+                  setRangeFromStr(formatDateDots(rangeFromDraft))
+                }
                 placeholder="01.01.2025"
                 size="small"
                 inputProps={{
@@ -980,8 +998,9 @@ export default function AnalyticsPage() {
               </Typography>
 
               <TextField
-                value={rangeToStr}
-                onChange={(e) => setRangeToStr(formatDateDots(e.target.value))}
+                value={rangeToDraft}
+                onChange={(e) => setRangeToDraft(e.target.value)}
+                onBlur={() => setRangeToStr(formatDateDots(rangeToDraft))}
                 placeholder="31.12.2025"
                 size="small"
                 inputProps={{
