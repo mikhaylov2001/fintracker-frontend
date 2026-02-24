@@ -115,36 +115,19 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
-/** Полная строка "дд.мм.гггг" → dayjs или null */
+/** "дд.мм.гггг" → dayjs или null, без форматирования строки */
 const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
-  const clean = str.replace(/\D/g, "");
-  if (clean.length !== 8) return null;
-  const d = clean.slice(0, 2);
-  const m = clean.slice(2, 4);
-  const y = clean.slice(4, 8);
-  const parsed = dayjs(`${y}-${m}-${d}`, "YYYY-MM-DD", true);
+  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
+  if (!m) return null;
+  const [_, dd, MM, yyyy] = m;
+  const parsed = dayjs(`${yyyy}-${MM}-${dd}`, "YYYY-MM-DD", true);
   return parsed.isValid() ? parsed : null;
-};
-
-/** Автоточки без ломания ввода */
-const formatDateInput = (raw) => {
-  const cleaned = raw.replace(/[^\d]/g, "");
-  if (!cleaned) return "";
-  if (cleaned.length <= 2) return cleaned;
-  if (cleaned.length <= 4)
-    return `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
-  return `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(
-    4,
-    8
-  )}`;
 };
 
 const parseDayjsToYM = (d) => {
   if (!d || !dayjs.isDayjs(d) || !d.isValid()) return null;
-  const year = d.year();
-  const month = d.month() + 1;
-  return { year, month };
+  return { year: d.year(), month: d.month() + 1 };
 };
 
 const KpiCard = memo(function KpiCard({
@@ -451,15 +434,11 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строки ввода диапазона
-  const [rangeFromStr, setRangeFromStr] = useState(() =>
-    dayjs().subtract(3, "month").format("DD.MM.YYYY")
-  );
-  const [rangeToStr, setRangeToStr] = useState(() =>
-    dayjs().format("DD.MM.YYYY")
-  );
+  // компактные строки ввода без масок
+  const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
+  const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
-  // обе даты должны быть полными и валидными → только тогда фильтруем
+  // обе даты должны быть полными и валидными
   const bothDatesValid = useMemo(() => {
     const from = parseFullDateString(rangeFromStr);
     const to = parseFullDateString(rangeToStr);
@@ -893,12 +872,6 @@ export default function AnalyticsPage() {
               onChange={(_e, next) => {
                 if (!next) return;
                 setMode(next);
-                if (next === "range") {
-                  const from3m = dayjs().subtract(3, "month");
-                  const now = dayjs();
-                  setRangeFromStr(from3m.format("DD.MM.YYYY"));
-                  setRangeToStr(now.format("DD.MM.YYYY"));
-                }
               }}
               size="small"
               sx={{
@@ -935,30 +908,37 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <Stack direction="column" spacing={0.75} sx={{ mt: 2.5, maxWidth: 520 }}>
+          <Stack direction="column" spacing={0.6} sx={{ mt: 2.5, maxWidth: 420 }}>
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0.75}
               alignItems="center"
               sx={{ width: "100%" }}
             >
               <TextField
                 value={rangeFromStr}
-                onChange={(e) => {
-                  const formatted = formatDateInput(e.target.value);
-                  setRangeFromStr(formatted);
-                }}
+                onChange={(e) => setRangeFromStr(e.target.value)}
                 placeholder="01.01.2025"
                 size="small"
+                inputProps={{
+                  maxLength: 10,
+                  inputMode: "numeric",
+                  style: {
+                    textAlign: "center",
+                    padding: "6px 8px",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  },
+                }}
                 sx={{
                   flex: 1,
                   minWidth: 0,
                   "& .MuiInputBase-root": {
-                    borderRadius: 999,
+                    borderRadius: 2,
                     bgcolor: alpha(colors.card2, 0.9),
                     border: `1px solid ${alpha(colors.border2, 0.9)}`,
                     color: alpha(colors.text, 0.95),
-                    fontWeight: 700,
+                    height: 34,
                   },
                   "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: "transparent",
@@ -978,10 +958,10 @@ export default function AnalyticsPage() {
 
               <Typography
                 sx={{
-                  px: 0.75,
+                  px: 0.25,
                   color: colors.muted,
                   fontWeight: 800,
-                  fontSize: 13,
+                  fontSize: 14,
                   textAlign: "center",
                 }}
               >
@@ -990,21 +970,28 @@ export default function AnalyticsPage() {
 
               <TextField
                 value={rangeToStr}
-                onChange={(e) => {
-                  const formatted = formatDateInput(e.target.value);
-                  setRangeToStr(formatted);
-                }}
+                onChange={(e) => setRangeToStr(e.target.value)}
                 placeholder="31.12.2025"
                 size="small"
+                inputProps={{
+                  maxLength: 10,
+                  inputMode: "numeric",
+                  style: {
+                    textAlign: "center",
+                    padding: "6px 8px",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  },
+                }}
                 sx={{
                   flex: 1,
                   minWidth: 0,
                   "& .MuiInputBase-root": {
-                    borderRadius: 999,
+                    borderRadius: 2,
                     bgcolor: alpha(colors.card2, 0.9),
                     border: `1px solid ${alpha(colors.border2, 0.9)}`,
                     color: alpha(colors.text, 0.95),
-                    fontWeight: 700,
+                    height: 34,
                   },
                   "& .MuiOutlinedInput-notchedOutline": {
                     borderColor: "transparent",
@@ -1026,9 +1013,9 @@ export default function AnalyticsPage() {
             <Typography
               variant="caption"
               sx={{
-                mt: 0.2,
+                mt: 0.1,
                 color: colors.muted,
-                fontSize: 11,
+                fontSize: 10,
                 fontWeight: 700,
                 textAlign: "center",
               }}
