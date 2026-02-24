@@ -14,7 +14,6 @@ import {
   Chip,
   Tabs,
   Tab,
-  TextField,
 } from "@mui/material";
 import { alpha, useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -27,6 +26,13 @@ import {
   ChartsTooltipContainer,
   ChartsItemTooltipContent,
 } from "@mui/x-charts/ChartsTooltip";
+
+import {
+  DatePicker,
+  LocalizationProvider,
+} from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import ArrowCircleUpOutlinedIcon from "@mui/icons-material/ArrowCircleUpOutlined";
@@ -108,39 +114,17 @@ const niceStep = (maxVal) => {
   return 100_000;
 };
 
-/** +25% запаса вверх для шкалы */
 const withHeadroom = (maxVal) => {
   const raw = maxVal + maxVal * 0.25;
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
 };
 
-// ----- helpers для даты (как в Dashboard) -----
-
-const formatDateInput = (raw) => {
-  const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
-  const parts = [];
-  if (digits.length === 0) return "";
-  if (digits.length <= 2) {
-    parts.push(digits);
-  } else if (digits.length <= 4) {
-    parts.push(digits.slice(0, 2), digits.slice(2));
-  } else {
-    parts.push(digits.slice(0, 2), digits.slice(2, 4), digits.slice(4));
-  }
-  return parts.filter(Boolean).join(".");
-};
-
-const parseDdMmYyyy = (s) => {
-  const m = String(s || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (!m) return null;
-  const day = Number(m[1]);
-  const month = Number(m[2]);
-  const year = Number(m[3]);
-  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year))
-    return null;
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return { day, month, year };
+const parseDayjsToYM = (d) => {
+  if (!d || !dayjs(d).isValid()) return null;
+  const year = d.year();
+  const month = d.month() + 1;
+  return { year, month };
 };
 
 /* KPI card */
@@ -449,46 +433,18 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // диапазон дат для режима "Период"
-  const [rangeFromRaw, setRangeFromRaw] = useState(() => {
-    const d = String(now.getDate()).padStart(2, "0");
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const y = now.getFullYear();
-    return `${d}.${m}.${y}`;
-  });
-  const [rangeToRaw, setRangeToRaw] = useState(() => {
-    const d = String(now.getDate()).padStart(2, "0");
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const y = now.getFullYear();
-    return `${d}.${m}.${y}`;
-  });
-  const [rangeFromError, setRangeFromError] = useState("");
-  const [rangeToError, setRangeToError] = useState("");
+  // диапазон для режима "Период": последние 3 месяца по умолчанию
+  const [rangeFrom, setRangeFrom] = useState(() => dayjs().subtract(3, "month"));
+  const [rangeTo, setRangeTo] = useState(() => dayjs());
 
-  // разбор диапазона (по месяцам)
   const rangeParsed = useMemo(() => {
-    const a = parseDdMmYyyy(rangeFromRaw);
-    const b = parseDdMmYyyy(rangeToRaw);
-
-    setRangeFromError("");
-    setRangeToError("");
-
-    if (!a) {
-      setRangeFromError("Введите дату в формате дд.мм.гггг");
-      return null;
-    }
-    if (!b) {
-      setRangeToError("Введите дату в формате дд.мм.гггг");
-      return null;
-    }
+    const a = parseDayjsToYM(rangeFrom);
+    const b = parseDayjsToYM(rangeTo);
+    if (!a || !b) return null;
 
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
-    if (fromN > toN) {
-      setRangeFromError("Дата начала позже даты окончания");
-      setRangeToError("Дата окончания раньше даты начала");
-      return null;
-    }
+    if (fromN > toN) return null;
 
     return {
       from: { year: a.year, month: a.month },
@@ -496,7 +452,7 @@ export default function AnalyticsPage() {
       fromN,
       toN,
     };
-  }, [rangeFromRaw, rangeToRaw]);
+  }, [rangeFrom, rangeTo]);
 
   const todayLabel = useMemo(
     () =>
@@ -524,7 +480,6 @@ export default function AnalyticsPage() {
     </Box>
   );
 
-  // reset при смене юзера
   useEffect(() => {
     setHistory([]);
     setError("");
@@ -596,7 +551,6 @@ export default function AnalyticsPage() {
     return m;
   }, [history]);
 
-  // базовая последовательность по месяцам для графиков
   const cashflowRowsBase = useMemo(
     () =>
       last12.map((ym) => {
@@ -630,10 +584,8 @@ export default function AnalyticsPage() {
       )} — ${monthTitleRu(rangeParsed.to.year, rangeParsed.to.month)}`
     : `Показаны данные: ${monthTitleRu(yearNow, monthNow)}`;
 
-  // отфильтрованные по режиму месяцы для всех расчётов
   const monthsFiltered = useMemo(() => {
     if (isRange) {
-      // если режим "Период", но диапазон ещё не распарсен (даты не заполнены) → пустой массив
       if (!rangeParsed) return [];
       return cashflowRowsBase.filter((r) => {
         const x = ymNum(r.year, r.month);
@@ -643,22 +595,17 @@ export default function AnalyticsPage() {
     if (isYear) {
       return cashflowRowsBase.filter((r) => r.year === yearNow);
     }
-    // месяц
     return cashflowRowsBase.filter(
       (r) => r.year === yearNow && r.month === monthNow
     );
   }, [cashflowRowsBase, isYear, isRange, rangeParsed, yearNow, monthNow]);
 
-  // cashflow‑данные именно для графиков (по режиму)
   const cashflowRows = useMemo(() => {
-    // для режима "месяц" графики всё равно показывают 12 месяцев (как раньше)
     if (mode === "month") return cashflowRowsBase;
-    // для "год" и "период" показываем только выбранный диапазон
     if (isYear || isRange) return monthsFiltered;
     return cashflowRowsBase;
   }, [mode, isYear, isRange, cashflowRowsBase, monthsFiltered]);
 
-  // KPI (по режиму)
   const totalIncome = useMemo(
     () => monthsFiltered.reduce((acc, r) => acc + r.income, 0),
     [monthsFiltered]
@@ -689,7 +636,6 @@ export default function AnalyticsPage() {
   const [topCatsIncome, setTopCatsIncome] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
 
-  // месяцы для top categories — те же, что и monthsFiltered
   const monthsForCats = useMemo(
     () => monthsFiltered.map((m) => ({ year: m.year, month: m.month })),
     [monthsFiltered]
@@ -703,7 +649,6 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || !userId) return;
-    // если массив monthsForCats пустой (даты не заполнены), не делаем загрузку
     if (!monthsForCats.length) {
       setTopCatsExpenses([]);
       setTopCatsIncome([]);
@@ -770,7 +715,6 @@ export default function AnalyticsPage() {
     };
   }, [userId, monthsForCats, authLoading, isAuthenticated]);
 
-  // Пока идёт auth
   if (authLoading)
     return (
       <PageWrap>
@@ -781,511 +725,406 @@ export default function AnalyticsPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <PageWrap>
-      {/* Header */}
-      <Box
-        sx={{
-          mb: { xs: 3, md: 3 },
-          position: "relative",
-          px: 0,
-          pt: { xs: 1, md: 1.5 },
-          pb: { xs: 1.5, md: 2 },
-          borderRadius: 0,
-          border: 0,
-          boxShadow: "none",
-          backgroundColor: "transparent",
-        }}
-      >
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+      <PageWrap>
+        {/* Header */}
         <Box
           sx={{
-            position: "absolute",
-            inset: 0,
-            pointerEvents: "none",
-            background: "none",
+            mb: { xs: 3, md: 3 },
+            position: "relative",
+            px: 0,
+            pt: { xs: 1, md: 1.5 },
+            pb: { xs: 1.5, md: 2 },
+            borderRadius: 0,
+            border: 0,
+            boxShadow: "none",
+            backgroundColor: "transparent",
           }}
-        />
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1.25, sm: 1 }}
-          alignItems={{ sm: "center" }}
-          sx={{ position: "relative", zIndex: 1 }}
         >
           <Stack
-            direction="row"
-            spacing={1.25}
-            alignItems="center"
-            sx={{ flexGrow: 1, minWidth: 0 }}
+            direction={{ xs: "column", sm: "row" }}
+            spacing={{ xs: 1.25, sm: 1 }}
+            alignItems={{ sm: "center" }}
+            sx={{ position: "relative", zIndex: 1 }}
           >
-            <Box
-              sx={{
-                width: { xs: 38, md: 44 },
-                height: { xs: 38, md: 44 },
-                borderRadius: 3,
-                display: "grid",
-                placeItems: "center",
-                bgcolor: alpha(COLORS.balance, 0.14),
-                border: 0,
-                boxShadow: "none",
-                flex: "0 0 auto",
-              }}
+            <Stack
+              direction="row"
+              spacing={1.25}
+              alignItems="center"
+              sx={{ flexGrow: 1, minWidth: 0 }}
             >
-              <CalendarMonthOutlinedIcon
+              <Box
                 sx={{
-                  fontSize: { xs: 20, md: 22 },
-                  color: alpha("#FFFFFF", 0.92),
-                }}
-              />
-            </Box>
-
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 980,
-                  color: colors.text,
-                  letterSpacing: -0.35,
-                  lineHeight: 1.05,
-                  fontSize: { xs: "1.35rem", sm: "1.55rem", md: "1.8rem" },
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
+                  width: { xs: 38, md: 44 },
+                  height: { xs: 38, md: 44 },
+                  borderRadius: 3,
+                  display: "grid",
+                  placeItems: "center",
+                  bgcolor: alpha(COLORS.balance, 0.14),
+                  border: 0,
+                  boxShadow: "none",
+                  flex: "0 0 auto",
                 }}
               >
-                Аналитика
-              </Typography>
-
-              <Stack
-                direction="row"
-                spacing={0.8}
-                alignItems="center"
-                sx={{ mt: 0.55, minWidth: 0 }}
-              >
-                <Typography
-                  variant="body2"
+                <CalendarMonthOutlinedIcon
                   sx={{
-                    color: colors.muted,
-                    fontWeight: 700,
-                    minWidth: 0,
+                    fontSize: { xs: 20, md: 22 },
+                    color: alpha("#FFFFFF", 0.92),
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  variant="h5"
+                  sx={{
+                    fontWeight: 980,
+                    color: colors.text,
+                    letterSpacing: -0.35,
+                    lineHeight: 1.05,
+                    fontSize: { xs: "1.35rem", sm: "1.55rem", md: "1.8rem" },
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {periodLabel}
+                  Аналитика
                 </Typography>
 
-                <Box
-                  sx={{
-                    width: 6,
-                    height: 6,
+                <Stack
+                  direction="row"
+                  spacing={0.8}
+                  alignItems="center"
+                  sx={{ mt: 0.55, minWidth: 0 }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: colors.muted,
+                      fontWeight: 700,
+                      minWidth: 0,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {periodLabel}
+                  </Typography>
+
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: 999,
+                      bgcolor: alpha("#FFFFFF", 0.18),
+                      flex: "0 0 auto",
+                    }}
+                  />
+
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: alpha("#FFFFFF", 0.62),
+                      fontWeight: 800,
+                      letterSpacing: 0.5,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    Сегодня: {todayLabel}
+                  </Typography>
+                </Stack>
+              </Box>
+            </Stack>
+
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              alignItems={{ sm: "center" }}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
+              <Chip
+                label={loading ? "Загрузка…" : error ? "Частично" : "Актуально"}
+                variant="filled"
+                sx={{
+                  borderRadius: 999,
+                  border: 0,
+                  bgcolor: error
+                    ? alpha(COLORS.expenses, 0.14)
+                    : alpha(colors.primary, 0.14),
+                  color: error ? COLORS.expenses : colors.primary,
+                  fontWeight: 900,
+                  width: { xs: "100%", sm: "auto" },
+                  cursor: "default",
+                }}
+              />
+
+              <ToggleButtonGroup
+                value={mode}
+                exclusive
+                onChange={(_e, next) => {
+                  if (!next) return;
+                  setMode(next);
+                  if (next === "range") {
+                    setRangeFrom(dayjs().subtract(3, "month"));
+                    setRangeTo(dayjs());
+                  }
+                }}
+                size="small"
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  bgcolor: alpha(colors.card2, 0.7),
+                  border: 0,
+                  borderRadius: 999,
+                  p: 0.25,
+                  boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                  "& .MuiToggleButtonGroup-grouped": {
+                    border: "0 !important",
+                  },
+                  "& .MuiToggleButton-root": {
+                    border: 0,
+                    px: 1.6,
+                    flex: { xs: 1, sm: "unset" },
+                    color: alpha(colors.text, 0.78),
+                    fontWeight: 950,
+                    textTransform: "none",
                     borderRadius: 999,
-                    bgcolor: alpha("#FFFFFF", 0.18),
-                    flex: "0 0 auto",
+                  },
+                  "& .MuiToggleButton-root.Mui-selected": {
+                    color: "#05140C",
+                    backgroundColor: colors.primary,
+                    boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
+                  },
+                }}
+              >
+                <ToggleButton value="month">Месяц</ToggleButton>
+                <ToggleButton value="year">Год</ToggleButton>
+                <ToggleButton value="range">Период</ToggleButton>
+              </ToggleButtonGroup>
+            </Stack>
+          </Stack>
+
+          {isRange && (
+            <>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{
+                  mt: 2.5,
+                  maxWidth: 520,
+                  alignItems: "center",
+                }}
+              >
+                <DatePicker
+                  label="С"
+                  value={rangeFrom}
+                  onChange={(newValue) => setRangeFrom(newValue)}
+                  format="DD.MM.YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      placeholder: "01.01.2025",
+                      sx: { flex: 1, minWidth: 0 },
+                      InputProps: {
+                        sx: {
+                          borderRadius: 999,
+                          bgcolor: alpha(colors.card2, 0.9),
+                          border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "transparent",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: alpha(colors.primary, 0.45),
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: colors.primary,
+                          },
+                        },
+                      },
+                      InputLabelProps: {
+                        sx: {
+                          color: alpha(colors.text, 0.8),
+                          fontSize: 11,
+                          "&.MuiInputLabel-shrink": {
+                            transform:
+                              "translate(14px, -16px) scale(0.85)",
+                          },
+                          "&.Mui-focused": { color: colors.text },
+                        },
+                      },
+                    },
                   }}
                 />
 
                 <Typography
-                  variant="caption"
                   sx={{
-                    color: alpha("#FFFFFF", 0.62),
+                    px: 0.5,
+                    color: colors.muted,
                     fontWeight: 800,
-                    letterSpacing: 0.5,
-                    whiteSpace: "nowrap",
+                    fontSize: 13,
+                    textAlign: "center",
                   }}
                 >
-                  Сегодня: {todayLabel}
+                  —
                 </Typography>
+
+                <DatePicker
+                  label="По"
+                  value={rangeTo}
+                  onChange={(newValue) => setRangeTo(newValue)}
+                  format="DD.MM.YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      placeholder: "31.12.2025",
+                      sx: { flex: 1, minWidth: 0 },
+                      InputProps: {
+                        sx: {
+                          borderRadius: 999,
+                          bgcolor: alpha(colors.card2, 0.9),
+                          border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "transparent",
+                          },
+                          "&:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: alpha(colors.primary, 0.45),
+                          },
+                          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: colors.primary,
+                          },
+                        },
+                      },
+                      InputLabelProps: {
+                        sx: {
+                          color: alpha(colors.text, 0.8),
+                          fontSize: 11,
+                          "&.MuiInputLabel-shrink": {
+                            transform:
+                              "translate(14px, -16px) scale(0.85)",
+                          },
+                          "&.Mui-focused": { color: colors.text },
+                        },
+                      },
+                    },
+                  }}
+                />
               </Stack>
-            </Box>
-          </Stack>
 
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-            sx={{ width: { xs: "100%", sm: "auto" } }}
-          >
-            <Chip
-              label={loading ? "Загрузка…" : error ? "Частично" : "Актуально"}
-              variant="filled"
-              sx={{
-                borderRadius: 999,
-                border: 0,
-                bgcolor: error
-                  ? alpha(COLORS.expenses, 0.14)
-                  : alpha(colors.primary, 0.14),
-                color: error ? COLORS.expenses : colors.primary,
-                fontWeight: 900,
-                width: { xs: "100%", sm: "auto" },
-                cursor: "default",
-              }}
-            />
-
-            <ToggleButtonGroup
-              value={mode}
-              exclusive
-              onChange={(_e, next) => next && setMode(next)}
-              size="small"
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                bgcolor: alpha(colors.card2, 0.7),
-                border: 0,
-                borderRadius: 999,
-                p: 0.25,
-                boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
-                "& .MuiToggleButtonGroup-grouped": {
-                  border: "0 !important",
-                },
-                "& .MuiToggleButton-root": {
-                  border: 0,
-                  px: 1.6,
-                  flex: { xs: 1, sm: "unset" },
-                  color: alpha(colors.text, 0.78),
-                  fontWeight: 950,
-                  textTransform: "none",
-                  borderRadius: 999,
-                },
-                "& .MuiToggleButton-root.Mui-selected": {
-                  color: "#05140C",
-                  backgroundColor: colors.primary,
-                  boxShadow: `0 14px 40px ${alpha(colors.primary, 0.22)}`,
-                },
-              }}
-            >
-              <ToggleButton value="month">Месяц</ToggleButton>
-              <ToggleButton value="year">Год</ToggleButton>
-              <ToggleButton value="range">Период</ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
-        </Stack>
-
-        {/* Диапазон дат — только в режиме "Период", два поля в ряд */}
-        {isRange && (
-          <Stack
-            direction="row"
-            spacing={1.5}
-            sx={{ mt: 2.5, maxWidth: 520 }}
-          >
-            <TextField
-              label="С (дд.мм.гггг)"
-              size="small"
-              value={rangeFromRaw}
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setRangeFromRaw(formatted);
-              }}
-              placeholder="01.01.2025"
-              error={Boolean(rangeFromError)}
-              helperText={rangeFromError || "Например: 01.01.2025"}
-              FormHelperTextProps={{
-                sx: {
+              <Typography
+                variant="caption"
+                sx={{
+                  mt: 0.75,
+                  color: colors.muted,
                   fontSize: 11,
-                  mt: 0.3,
-                  color: rangeFromError
-                    ? colors.warning
-                    : alpha(colors.text, 0.7),
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: alpha(colors.text, 0.9),
-                },
-              }}
-              InputProps={{
-                sx: {
-                  borderRadius: 999,
-                  bgcolor: alpha(colors.card2, 0.9),
-                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                },
-              }}
-              InputLabelProps={{
-                sx: {
-                  color: alpha(colors.text, 0.8),
-                  fontSize: 11,
-                  transform: "translate(14px, -2px) scale(1)",
-                  "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -16px) scale(0.85)",
-                  },
-                  "&.Mui-focused": {
-                    color: colors.text,
-                  },
-                },
-              }}
-              sx={{ flex: 1, minWidth: 0 }}
-            />
-            <TextField
-              label="По (дд.мм.гггг)"
-              size="small"
-              value={rangeToRaw}
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setRangeToRaw(formatted);
-              }}
-              placeholder="31.12.2025"
-              error={Boolean(rangeToError)}
-              helperText={rangeToError || "Например: 31.12.2025"}
-              FormHelperTextProps={{
-                sx: {
-                  fontSize: 11,
-                  mt: 0.3,
-                  color: rangeToError ? colors.warning : alpha(colors.text, 0.7),
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: alpha(colors.text, 0.9),
-                },
-              }}
-              InputProps={{
-                sx: {
-                  borderRadius: 999,
-                  bgcolor: alpha(colors.card2, 0.9),
-                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                },
-              }}
-              InputLabelProps={{
-                sx: {
-                  color: alpha(colors.text, 0.8),
-                  fontSize: 11,
-                  transform: "translate(14px, -2px) scale(1)",
-                  "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -16px) scale(0.85)",
-                  },
-                  "&.Mui-focused": {
-                    color: colors.text,
-                  },
-                },
-              }}
-              sx={{ flex: 1, minWidth: 0 }}
-            />
-          </Stack>
-        )}
-      </Box>
+                  fontWeight: 700,
+                }}
+              >
+                Введите дату в формате дд.мм.гггг или выберите в календаре
+              </Typography>
+            </>
+          )}
+        </Box>
 
-      {/* KPI */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(4, minmax(0, 1fr))",
-          },
-          gap: { xs: 1.5, sm: 1.75, md: 2 },
-          mb: { xs: 5, md: 3 },
-        }}
-      >
-        <KpiCard
-          label="Баланс"
-          value={formatAmount(totalBalance)}
-          sub=" "
-          accent={COLORS.balance}
-          icon={<AccountBalanceWalletOutlinedIcon />}
-        />
-        <KpiCard
-          label="Доходы"
-          value={formatAmount(totalIncome)}
-          sub=" "
-          accent={COLORS.income}
-          icon={<ArrowCircleUpOutlinedIcon />}
-        />
-        <KpiCard
-          label="Расходы"
-          value={formatAmount(totalExpenses)}
-          sub=" "
-          accent={COLORS.expenses}
-          icon={<ArrowCircleDownOutlinedIcon />}
-        />
-        <KpiCard
-          label="Норма сбережений"
-          value={`${totalRate}%`}
-          sub={`Сбережения: ${formatAmount(totalSavings)}`}
-          accent={COLORS.rate}
-          icon={<PercentOutlinedIcon />}
-        />
-      </Box>
-
-      {/* Cashflow */}
-      <Box sx={{ mb: { xs: 5, md: 3 } }}>
-        <Typography
-          variant="h6"
-          sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 0.75 }}
+        {/* KPI */}
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "repeat(2, minmax(0, 1fr))",
+              md: "repeat(4, minmax(0, 1fr))",
+            },
+            gap: { xs: 1.5, sm: 1.75, md: 2 },
+            mb: { xs: 5, md: 3 },
+          }}
         >
-          Cashflow
-        </Typography>
-
-        <CashflowLegend />
-
-        <Box sx={{ width: "100%", height: { xs: 280, md: 340 } }}>
-          <BarChart
-            height={340}
-            hideLegend
-            xAxis={[
-              {
-                data: cashflowRows.map((r) => r.label),
-                scaleType: "band",
-                tickSpacing: 14,
-                tickLabelStyle: {
-                  fontSize: 11,
-                  fill: WHITE,
-                  fontWeight: 800,
-                },
-                categoryGapRatio: 0.28,
-                barGapRatio: 0.12,
-              },
-            ]}
-            yAxis={[
-              {
-                min: 0,
-                tickNumber: 6,
-                valueFormatter: (v) => axisMoneyFormatter(v),
-                tickLabelStyle: {
-                  fontSize: 11,
-                  fill: WHITE,
-                  fontWeight: 800,
-                },
-                domainLimit: (_minVal, maxVal) => {
-                  const max = withHeadroom(Number(maxVal || 0));
-                  return { min: 0, max };
-                },
-              },
-            ]}
-            series={[
-              {
-                data: cashflowRows.map((r) => r.income),
-                label: "Доходы",
-                color: COLORS.income,
-              },
-              {
-                data: cashflowRows.map((r) => r.expenses),
-                label: "Расходы",
-                color: COLORS.expenses,
-              },
-            ]}
-            grid={{ horizontal: true }}
-            margin={cashflowMargin}
-            sx={{
-              "& .MuiChartsAxis-line": {
-                stroke: "rgba(255,255,255,0.16)",
-              },
-              "& .MuiChartsAxis-tick": {
-                stroke: "rgba(255,255,255,0.12)",
-              },
-              "& .MuiChartsAxis-tickLabel": {
-                fill: WHITE,
-                fontSize: 11,
-              },
-              "& .MuiChartsGrid-line": {
-                stroke: "rgba(255,255,255,0.06)",
-              },
-            }}
+          <KpiCard
+            label="Баланс"
+            value={formatAmount(totalBalance)}
+            sub=" "
+            accent={COLORS.balance}
+            icon={<AccountBalanceWalletOutlinedIcon />}
+          />
+          <KpiCard
+            label="Доходы"
+            value={formatAmount(totalIncome)}
+            sub=" "
+            accent={COLORS.income}
+            icon={<ArrowCircleUpOutlinedIcon />}
+          />
+          <KpiCard
+            label="Расходы"
+            value={formatAmount(totalExpenses)}
+            sub=" "
+            accent={COLORS.expenses}
+            icon={<ArrowCircleDownOutlinedIcon />}
+          />
+          <KpiCard
+            label="Норма сбережений"
+            value={`${totalRate}%`}
+            sub={`Сбережения: ${formatAmount(totalSavings)}`}
+            accent={COLORS.rate}
+            icon={<PercentOutlinedIcon />}
           />
         </Box>
 
-        <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            justifyContent="center"
-            sx={{ mb: { xs: 2, md: 1.5 } }}
+        {/* Cashflow */}
+        <Box sx={{ mb: { xs: 5, md: 3 } }}>
+          <Typography
+            variant="h6"
+            sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2, mb: 0.75 }}
           >
-            <Box
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: 999,
-                bgcolor: COLORS.balance,
-              }}
-            />
-            <Typography
-              variant="caption"
-              sx={{
-                fontWeight: 900,
-                color: WHITE,
-                letterSpacing: 0.8,
-                textTransform: "uppercase",
-                fontSize: 11,
-              }}
-            >
-              Баланс
-            </Typography>
-            <Box
-              sx={{
-                width: 6,
-                height: 6,
-                borderRadius: 999,
-                bgcolor: COLORS.balance,
-              }}
-            />
-          </Stack>
+            Cashflow
+          </Typography>
 
-          <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
-            <LineChart
-              height={320}
+          <CashflowLegend />
+
+          <Box sx={{ width: "100%", height: { xs: 280, md: 340 } }}>
+            <BarChart
+              height={340}
+              hideLegend
               xAxis={[
                 {
                   data: cashflowRows.map((r) => r.label),
-                  scaleType: "point",
-                  tickSpacing: 18,
+                  scaleType: "band",
+                  tickSpacing: 14,
                   tickLabelStyle: {
                     fontSize: 11,
                     fill: WHITE,
                     fontWeight: 800,
                   },
+                  categoryGapRatio: 0.28,
+                  barGapRatio: 0.12,
                 },
               ]}
               yAxis={[
                 {
                   min: 0,
-                  tickNumber: 7,
+                  tickNumber: 6,
+                  valueFormatter: (v) => axisMoneyFormatter(v),
+                  tickLabelStyle: {
+                    fontSize: 11,
+                    fill: WHITE,
+                    fontWeight: 800,
+                  },
                   domainLimit: (_minVal, maxVal) => {
                     const max = withHeadroom(Number(maxVal || 0));
                     return { min: 0, max };
                   },
-                  valueFormatter: (v) => axisMoneyFormatter(v),
-                  tickLabelStyle: {
-                    fontSize: 11,
-                    fill: WHITE,
-                    fontWeight: 800,
-                  },
                 },
               ]}
               series={[
                 {
-                  data: cashflowRows.map((r) => r.balance),
-                  label: "Баланс",
-                  color: COLORS.balance,
-                  curve: "linear",
-                  area: true,
-                  showMark: true,
+                  data: cashflowRows.map((r) => r.income),
+                  label: "Доходы",
+                  color: COLORS.income,
+                },
+                {
+                  data: cashflowRows.map((r) => r.expenses),
+                  label: "Расходы",
+                  color: COLORS.expenses,
                 },
               ]}
-              slots={{ tooltip: BalancePinnedTooltip }}
               grid={{ horizontal: true }}
-              margin={balanceMargin}
+              margin={cashflowMargin}
               sx={{
                 "& .MuiChartsAxis-line": {
                   stroke: "rgba(255,255,255,0.16)",
@@ -1300,190 +1139,291 @@ export default function AnalyticsPage() {
                 "& .MuiChartsGrid-line": {
                   stroke: "rgba(255,255,255,0.06)",
                 },
-                "& .MuiLineElement-root": { strokeWidth: 3 },
-                "& .MuiMarkElement-root": {
-                  r: 4,
-                  strokeWidth: 2,
-                  stroke: COLORS.balance,
-                  fill: "#0B1220",
-                },
-                "& .MuiAreaElement-root": {
-                  fill: "url('#balanceGradient')",
-                },
-                ".MuiChartsLegend-root": { display: "none" },
-              }}
-            >
-              <BalanceAreaGradient
-                id="balanceGradient"
-                color={COLORS.balance}
-              />
-            </LineChart>
-          </Box>
-        </Box>
-      </Box>
-
-      {/* Топ категорий */}
-      <Box sx={{ mt: { xs: 6, md: 3.5 }, mb: { xs: 2.5, md: 0 } }}>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          alignItems={{ sm: "center" }}
-          sx={{ mb: 1.75 }}
-        >
-          <Typography
-            variant="h6"
-            sx={{
-              fontWeight: 950,
-              color: colors.text,
-              flexGrow: 1,
-              letterSpacing: -0.2,
-            }}
-          >
-            {topTab === "expenses"
-              ? "Топ категорий расходов"
-              : "Топ категорий доходов"}
-          </Typography>
-
-          <Chip
-            label={
-              catsLoading
-                ? "Считаю…"
-                : isRange && rangeParsed
-                ? `${monthTitleRu(
-                    rangeParsed.from.year,
-                    rangeParsed.from.month
-                  )} — ${monthTitleRu(
-                    rangeParsed.to.year,
-                    rangeParsed.to.month
-                  )}`
-                : isYear
-                ? `${yearNow} год`
-                : monthTitleRu(yearNow, monthNow)
-            }
-            variant="filled"
-            sx={{
-              borderRadius: 999,
-              border: 0,
-              color: topTab === "expenses" ? COLORS.expenses : COLORS.income,
-              bgcolor: alpha(
-                topTab === "expenses" ? COLORS.expenses : COLORS.income,
-                0.12
-              ),
-              fontWeight: 900,
-              cursor: "default",
-            }}
-          />
-        </Stack>
-
-        <Tabs
-          value={topTab}
-          onChange={(_e, v) => setTopTab(v)}
-          variant="scrollable"
-          allowScrollButtonsMobile
-          scrollButtons="auto"
-          sx={{
-            minHeight: 40,
-            mb: { xs: 2, md: 1.5 },
-            "& .MuiTab-root": {
-              minHeight: 40,
-              color: alpha(colors.text, 0.7),
-              textTransform: "none",
-              fontWeight: 900,
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: colors.text,
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: COLORS.balance,
-              height: 3,
-              borderRadius: 999,
-            },
-          }}
-        >
-          <Tab label="Расходы" value="expenses" />
-          <Tab label="Доходы" value="income" />
-        </Tabs>
-
-        {catsLoading ? (
-          <Typography variant="body2" sx={{ color: colors.muted }}>
-            Загрузка данных по категориям…
-          </Typography>
-        ) : (topTab === "expenses" ? topCatsExpenses : topCatsIncome).length ===
-          0 ? (
-          <Typography variant="body2" sx={{ color: colors.muted }}>
-            {isRange && !rangeParsed
-              ? "Введите даты для расчёта категорий."
-              : "Нет данных по категориям за выбранный период."}
-          </Typography>
-        ) : (
-          <Box
-            sx={{
-              width: "100%",
-              height: { xs: 280, md: 280 },
-              minWidth: 0,
-            }}
-          >
-            <BarChart
-              height={280}
-              layout="horizontal"
-              yAxis={[
-                {
-                  data: (topTab === "expenses"
-                    ? topCatsExpenses
-                    : topCatsIncome
-                  ).map((x) => x.category),
-                  scaleType: "band",
-                  width: topCatsYAxisWidth,
-                  tickLabelStyle: {
-                    fontSize: isMobile ? 10 : 11,
-                    fill: WHITE,
-                    fontWeight: 800,
-                  },
-                },
-              ]}
-              xAxis={[
-                {
-                  valueFormatter: (v) => axisMoneyFormatter(v),
-                  tickLabelStyle: {
-                    fontSize: 11,
-                    fill: WHITE,
-                    fontWeight: 800,
-                  },
-                },
-              ]}
-              series={[
-                {
-                  data: (topTab === "expenses"
-                    ? topCatsExpenses
-                    : topCatsIncome
-                  ).map((x) => x.amount),
-                  label: "Сумма",
-                  color:
-                    topTab === "expenses" ? COLORS.expenses : COLORS.income,
-                },
-              ]}
-              grid={{ vertical: true }}
-              margin={topCatsMargin}
-              sx={{
-                "& .MuiChartsAxis-line": {
-                  stroke: "rgba(255,255,255,0.16)",
-                },
-                "& .MuiChartsAxis-tick": {
-                  stroke: "rgba(255,255,255,0.12)",
-                },
-                "& .MuiChartsAxis-tickLabel": {
-                  fill: WHITE,
-                  fontSize: 11,
-                },
-                "& .MuiChartsGrid-line": {
-                  stroke: "rgba(255,255,255,0.06)",
-                },
-                ".MuiChartsLegend-root": { display: "none" },
               }}
             />
           </Box>
-        )}
-      </Box>
-    </PageWrap>
+
+          <Box sx={{ mt: { xs: 6, md: 4.5 } }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              justifyContent="center"
+              sx={{ mb: { xs: 2, md: 1.5 } }}
+            >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 999,
+                  bgcolor: COLORS.balance,
+                }}
+              />
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 900,
+                  color: WHITE,
+                  letterSpacing: 0.8,
+                  textTransform: "uppercase",
+                  fontSize: 11,
+                }}
+              >
+                Баланс
+              </Typography>
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 999,
+                  bgcolor: COLORS.balance,
+                }}
+              />
+            </Stack>
+
+            <Box sx={{ width: "100%", height: { xs: 260, md: 320 } }}>
+              <LineChart
+                height={320}
+                xAxis={[
+                  {
+                    data: cashflowRows.map((r) => r.label),
+                    scaleType: "point",
+                    tickSpacing: 18,
+                    tickLabelStyle: {
+                      fontSize: 11,
+                      fill: WHITE,
+                      fontWeight: 800,
+                    },
+                  },
+                ]}
+                yAxis={[
+                  {
+                    min: 0,
+                    tickNumber: 7,
+                    domainLimit: (_minVal, maxVal) => {
+                      const max = withHeadroom(Number(maxVal || 0));
+                      return { min: 0, max };
+                    },
+                    valueFormatter: (v) => axisMoneyFormatter(v),
+                    tickLabelStyle: {
+                      fontSize: 11,
+                      fill: WHITE,
+                      fontWeight: 800,
+                    },
+                  },
+                ]}
+                series={[
+                  {
+                    data: cashflowRows.map((r) => r.balance),
+                    label: "Баланс",
+                    color: COLORS.balance,
+                    curve: "linear",
+                    area: true,
+                    showMark: true,
+                  },
+                ]}
+                slots={{ tooltip: BalancePinnedTooltip }}
+                grid={{ horizontal: true }}
+                margin={balanceMargin}
+                sx={{
+                  "& .MuiChartsAxis-line": {
+                    stroke: "rgba(255,255,255,0.16)",
+                  },
+                  "& .MuiChartsAxis-tick": {
+                    stroke: "rgba(255,255,255,0.12)",
+                  },
+                  "& .MuiChartsAxis-tickLabel": {
+                    fill: WHITE,
+                    fontSize: 11,
+                  },
+                  "& .MuiChartsGrid-line": {
+                    stroke: "rgba(255,255,255,0.06)",
+                  },
+                  "& .MuiLineElement-root": { strokeWidth: 3 },
+                  "& .MuiMarkElement-root": {
+                    r: 4,
+                    strokeWidth: 2,
+                    stroke: COLORS.balance,
+                    fill: "#0B1220",
+                  },
+                  "& .MuiAreaElement-root": {
+                    fill: "url('#balanceGradient')",
+                  },
+                  ".MuiChartsLegend-root": { display: "none" },
+                }}
+              >
+                <BalanceAreaGradient
+                  id="balanceGradient"
+                  color={COLORS.balance}
+                />
+              </LineChart>
+            </Box>
+          </Box>
+        </Box>
+
+        {/* Топ категорий */}
+        <Box sx={{ mt: { xs: 6, md: 3.5 }, mb: { xs: 2.5, md: 0 } }}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            alignItems={{ sm: "center" }}
+            sx={{ mb: 1.75 }}
+          >
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: 950,
+                color: colors.text,
+                flexGrow: 1,
+                letterSpacing: -0.2,
+              }}
+            >
+              {topTab === "expenses"
+                ? "Топ категорий расходов"
+                : "Топ категорий доходов"}
+            </Typography>
+
+            <Chip
+              label={
+                catsLoading
+                  ? "Считаю…"
+                  : isRange && rangeParsed
+                  ? `${monthTitleRu(
+                      rangeParsed.from.year,
+                      rangeParsed.from.month
+                    )} — ${monthTitleRu(
+                      rangeParsed.to.year,
+                      rangeParsed.to.month
+                    )}`
+                  : isYear
+                  ? `${yearNow} год`
+                  : monthTitleRu(yearNow, monthNow)
+              }
+              variant="filled"
+              sx={{
+                borderRadius: 999,
+                border: 0,
+                color: topTab === "expenses" ? COLORS.expenses : COLORS.income,
+                bgcolor: alpha(
+                  topTab === "expenses" ? COLORS.expenses : COLORS.income,
+                  0.12
+                ),
+                fontWeight: 900,
+                cursor: "default",
+              }}
+            />
+          </Stack>
+
+          <Tabs
+            value={topTab}
+            onChange={(_e, v) => setTopTab(v)}
+            variant="scrollable"
+            allowScrollButtonsMobile
+            scrollButtons="auto"
+            sx={{
+              minHeight: 40,
+              mb: { xs: 2, md: 1.5 },
+              "& .MuiTab-root": {
+                minHeight: 40,
+                color: alpha(colors.text, 0.7),
+                textTransform: "none",
+                fontWeight: 900,
+              },
+              "& .MuiTab-root.Mui-selected": {
+                color: colors.text,
+              },
+              "& .MuiTabs-indicator": {
+                backgroundColor: COLORS.balance,
+                height: 3,
+                borderRadius: 999,
+              },
+            }}
+          >
+            <Tab label="Расходы" value="expenses" />
+            <Tab label="Доходы" value="income" />
+          </Tabs>
+
+          {catsLoading ? (
+            <Typography variant="body2" sx={{ color: colors.muted }}>
+              Загрузка данных по категориям…
+            </Typography>
+          ) : (topTab === "expenses" ? topCatsExpenses : topCatsIncome).length ===
+            0 ? (
+            <Typography variant="body2" sx={{ color: colors.muted }}>
+              {isRange && !rangeParsed
+                ? "Введите или выберите даты для расчёта категорий."
+                : "Нет данных по категориям за выбранный период."}
+            </Typography>
+          ) : (
+            <Box
+              sx={{
+                width: "100%",
+                height: { xs: 280, md: 280 },
+                minWidth: 0,
+              }}
+            >
+              <BarChart
+                height={280}
+                layout="horizontal"
+                yAxis={[
+                  {
+                    data: (topTab === "expenses"
+                      ? topCatsExpenses
+                      : topCatsIncome
+                    ).map((x) => x.category),
+                    scaleType: "band",
+                    width: topCatsYAxisWidth,
+                    tickLabelStyle: {
+                      fontSize: isMobile ? 10 : 11,
+                      fill: WHITE,
+                      fontWeight: 800,
+                    },
+                  },
+                ]}
+                xAxis={[
+                  {
+                    valueFormatter: (v) => axisMoneyFormatter(v),
+                    tickLabelStyle: {
+                      fontSize: 11,
+                      fill: WHITE,
+                      fontWeight: 800,
+                    },
+                  },
+                ]}
+                series={[
+                  {
+                    data: (topTab === "expenses"
+                      ? topCatsExpenses
+                      : topCatsIncome
+                    ).map((x) => x.amount),
+                    label: "Сумма",
+                    color:
+                      topTab === "expenses" ? COLORS.expenses : COLORS.income,
+                  },
+                ]}
+                grid={{ vertical: true }}
+                margin={topCatsMargin}
+                sx={{
+                  "& .MuiChartsAxis-line": {
+                    stroke: "rgba(255,255,255,0.16)",
+                  },
+                  "& .MuiChartsAxis-tick": {
+                    stroke: "rgba(255,255,255,0.12)",
+                  },
+                  "& .MuiChartsAxis-tickLabel": {
+                    fill: WHITE,
+                    fontSize: 11,
+                  },
+                  "& .MuiChartsGrid-line": {
+                    stroke: "rgba(255,255,255,0.06)",
+                  },
+                  ".MuiChartsLegend-root": { display: "none" },
+                }}
+              />
+            </Box>
+          )}
+        </Box>
+      </PageWrap>
+    </LocalizationProvider>
   );
 }
