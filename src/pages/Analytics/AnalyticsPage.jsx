@@ -955,28 +955,37 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
+                          backgroundColor: alpha(colors.card2, 0.7),
                           border: 0,
-                          color: "#FFFFFF",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         },
+                        "& .MuiInputBase-input": {
+                          color: alpha(colors.text, 0.78),
+                          WebkitTextFillColor: alpha(colors.text, 0.78),
+                        },
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
+                          color: alpha(colors.text, 0.78),
                           fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: "rgba(4,47,46,1)",
+                          backgroundColor: alpha(colors.card2, 0.9),
                         },
                         "& .MuiInputBase-root.Mui-focused": {
                           backgroundColor: colors.primary,
-                          color: "#05140C",
+                          "& .MuiInputBase-input": {
+                            color: "#05140C",
+                            WebkitTextFillColor: "#05140C",
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: "#05140C",
+                          },
                         },
                       },
                     },
@@ -986,7 +995,7 @@ export default function AnalyticsPage() {
                 <Typography
                   sx={{
                     px: 0.25,
-                    color: colors.muted,
+                    color: alpha(colors.text, 0.78),
                     fontWeight: 800,
                     fontSize: 14,
                     textAlign: "center",
@@ -1023,28 +1032,37 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
+                          backgroundColor: alpha(colors.card2, 0.7),
                           border: 0,
-                          color: "#FFFFFF",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         },
+                        "& .MuiInputBase-input": {
+                          color: alpha(colors.text, 0.78),
+                          WebkitTextFillColor: alpha(colors.text, 0.78),
+                        },
                         "& .MuiOutlinedInput-notchedOutline": {
                           borderColor: "transparent",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: "rgba(255,255,255,0.9)",
+                          color: alpha(colors.text, 0.78),
                           fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: "rgba(4,47,46,1)",
+                          backgroundColor: alpha(colors.card2, 0.9),
                         },
                         "& .MuiInputBase-root.Mui-focused": {
                           backgroundColor: colors.primary,
-                          color: "#05140C",
+                          "& .MuiInputBase-input": {
+                            color: "#05140C",
+                            WebkitTextFillColor: "#05140C",
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: "#05140C",
+                          },
                         },
                       },
                     },
