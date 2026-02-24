@@ -128,15 +128,21 @@ const parseStringToDate = (str) => {
   return parsed.isValid() ? parsed : null;
 };
 
-/** автоточки */
+/** автоточки с минимальным вмешательством */
 const formatDateInput = (value) => {
-  const cleaned = value.replace(/\D/g, "");
-  let result = "";
-  for (let i = 0; i < cleaned.length && i < 8; i++) {
-    if (i === 2 || i === 4) result += ".";
-    result += cleaned[i];
+  const cleaned = value.replace(/[^\d]/g, "");
+  if (!cleaned) return "";
+  let res = "";
+
+  // день
+  if (cleaned.length <= 2) {
+    res = cleaned;
+  } else if (cleaned.length <= 4) {
+    res = `${cleaned.slice(0, 2)}.${cleaned.slice(2)}`;
+  } else {
+    res = `${cleaned.slice(0, 2)}.${cleaned.slice(2, 4)}.${cleaned.slice(4, 8)}`;
   }
-  return result;
+  return res;
 };
 
 const parseDayjsToYM = (d) => {
@@ -938,15 +944,16 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <>
+          <Stack
+            direction="column"
+            spacing={0.75}
+            sx={{ mt: 2.5, maxWidth: 520 }}
+          >
             <Stack
               direction="row"
               spacing={1.5}
-              sx={{
-                mt: 2.5,
-                maxWidth: 520,
-                alignItems: "center",
-              }}
+              alignItems="center"
+              sx={{ width: "100%" }}
             >
               <TextField
                 value={rangeFromStr}
@@ -982,17 +989,40 @@ export default function AnalyticsPage() {
                 }}
               />
 
-              <Typography
+              <Box
                 sx={{
-                  px: 0.5,
-                  color: colors.muted,
-                  fontWeight: 800,
-                  fontSize: 13,
-                  textAlign: "center",
+                  px: 1,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 80,
                 }}
               >
-                —
-              </Typography>
+                <Typography
+                  sx={{
+                    color: colors.muted,
+                    fontWeight: 800,
+                    fontSize: 13,
+                    textAlign: "center",
+                    mb: 0.25,
+                  }}
+                >
+                  —
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: colors.muted,
+                    fontSize: 10,
+                    fontWeight: 700,
+                    textAlign: "center",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Введите дату дд.мм.гггг
+                </Typography>
+              </Box>
 
               <TextField
                 value={rangeToStr}
@@ -1028,21 +1058,7 @@ export default function AnalyticsPage() {
                 }}
               />
             </Stack>
-
-            <Typography
-              variant="caption"
-              sx={{
-                mt: 0.85,
-                color: colors.muted,
-                fontSize: 11,
-                fontWeight: 700,
-                display: "block",
-                textAlign: "center",
-              }}
-            >
-              Введите дату в формате дд.мм.гггг
-            </Typography>
-          </>
+          </Stack>
         )}
       </Box>
 
