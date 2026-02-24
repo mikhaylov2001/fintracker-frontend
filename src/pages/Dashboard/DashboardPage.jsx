@@ -945,117 +945,123 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат в стиле тёмного чипа, активен только в режиме "Период" */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={1}
-          sx={{ mt: 1.5, maxWidth: 480, opacity: datesDisabled ? 0.5 : 1 }}
-        >
-          <TextField
-            label="С (дд.мм.гггг)"
-            size="small"
-            value={rangeFromRaw}
-            onChange={(e) => {
-              if (datesDisabled) return;
-              const formatted = formatDateInput(e.target.value);
-              setRangeFromRaw(formatted);
-            }}
-            placeholder="01.01.2025"
-            disabled={datesDisabled}
-            error={Boolean(rangeFromError) && !datesDisabled}
-            helperText={
-              datesDisabled
-                ? "Выберите режим «Период», чтобы задать даты"
-                : rangeFromError ||
-                  "Формат: дд.мм.гггг (точки ставятся автоматически)"
-            }
-            FormHelperTextProps={{
-              sx: {
-                fontSize: 11,
-                mt: 0.3,
-                color: alpha(colors.text, 0.8),
-              },
-            }}
-            inputProps={{
-              sx: {
-                fontSize: 13,
-                fontWeight: 800,
-                color: alpha(colors.text, 0.9),
-              },
-            }}
-            InputProps={{
-              sx: {
-                borderRadius: 999,
-                bgcolor: alpha(colors.card2, 0.9),
-                border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "transparent",
+        {/* Диапазон дат: целиком показывается только в режиме "Период" */}
+        {isRange && (
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{ mt: 1.5, maxWidth: 480 }}
+          >
+            <TextField
+              label="С (дд.мм.гггг)"
+              size="small"
+              value={rangeFromRaw}
+              onChange={(e) => {
+                const formatted = formatDateInput(e.target.value);
+                setRangeFromRaw(formatted);
+              }}
+              placeholder="01.01.2025"
+              error={Boolean(rangeFromError)}
+              helperText={
+                rangeFromError ||
+                "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              }
+              FormHelperTextProps={{
+                sx: {
+                  fontSize: 11,
+                  mt: 0.3,
+                  color: alpha(colors.text, 0.8),
                 },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: datesDisabled
-                    ? "transparent"
-                    : alpha(colors.primary, 0.45),
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: alpha(colors.text, 0.9),
                 },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: datesDisabled ? "transparent" : colors.primary,
+              }}
+              InputProps={{
+                sx: {
+                  borderRadius: 999,
+                  bgcolor: alpha(colors.card2, 0.9),
+                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: alpha(colors.primary, 0.45),
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary,
+                  },
                 },
-              },
-            }}
-            sx={{ flex: 1 }}
-          />
-          <TextField
-            label="По (дд.мм.гггг)"
-            size="small"
-            value={rangeToRaw}
-            onChange={(e) => {
-              if (datesDisabled) return;
-              const formatted = formatDateInput(e.target.value);
-              setRangeToRaw(formatted);
-            }}
-            placeholder="31.12.2025"
-            disabled={datesDisabled}
-            error={Boolean(rangeToError) && !datesDisabled}
-            helperText={
-              datesDisabled
-                ? "Выберите режим «Период», чтобы задать даты"
-                : rangeToError ||
-                  "Формат: дд.мм.гггг (точки ставятся автоматически)"
-            }
-            FormHelperTextProps={{
-              sx: {
-                fontSize: 11,
-                mt: 0.3,
-                color: alpha(colors.text, 0.8),
-              },
-            }}
-            inputProps={{
-              sx: {
-                fontSize: 13,
-                fontWeight: 800,
-                color: alpha(colors.text, 0.9),
-              },
-            }}
-            InputProps={{
-              sx: {
-                borderRadius: 999,
-                bgcolor: alpha(colors.card2, 0.9),
-                border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "transparent",
+              }}
+              InputLabelProps={{
+                sx: {
+                  color: alpha(colors.text, 0.8),
+                  "&.Mui-focused": {
+                    color: colors.text,
+                  },
                 },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: datesDisabled
-                    ? "transparent"
-                    : alpha(colors.primary, 0.45),
+              }}
+              sx={{ flex: 1 }}
+            />
+            <TextField
+              label="По (дд.мм.гггг)"
+              size="small"
+              value={rangeToRaw}
+              onChange={(e) => {
+                const formatted = formatDateInput(e.target.value);
+                setRangeToRaw(formatted);
+              }}
+              placeholder="31.12.2025"
+              error={Boolean(rangeToError)}
+              helperText={
+                rangeToError ||
+                "Формат: дд.мм.гггг (точки ставятся автоматически)"
+              }
+              FormHelperTextProps={{
+                sx: {
+                  fontSize: 11,
+                  mt: 0.3,
+                  color: alpha(colors.text, 0.8),
                 },
-                "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                  borderColor: datesDisabled ? "transparent" : colors.primary,
+              }}
+              inputProps={{
+                sx: {
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color: alpha(colors.text, 0.9),
                 },
-              },
-            }}
-            sx={{ flex: 1 }}
-          />
-        </Stack>
+              }}
+              InputProps={{
+                sx: {
+                  borderRadius: 999,
+                  bgcolor: alpha(colors.card2, 0.9),
+                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "transparent",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: alpha(colors.primary, 0.45),
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: colors.primary,
+                  },
+                },
+              }}
+              InputLabelProps={{
+                sx: {
+                  color: alpha(colors.text, 0.8),
+                  "&.Mui-focused": {
+                    color: colors.text,
+                  },
+                },
+              }}
+              sx={{ flex: 1 }}
+            />
+          </Stack>
+        )}
       </Box>
 
       {/* KPI */}
