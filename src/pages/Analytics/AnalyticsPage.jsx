@@ -948,19 +948,20 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: `${alpha(colors.card2, 0.7)} !important`,
+                          backgroundColor: "rgba(4,47,46,0.95)",
                           border: "none !important",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
+                          transition: "all 140ms ease",
                         },
                         "& .MuiOutlinedInput-notchedOutline": {
                           border: "none !important",
                         },
                         "& .MuiInputBase-input": {
-                          color: `${alpha(colors.text, 0.78)} !important`,
-                          WebkitTextFillColor: `${alpha(colors.text, 0.78)} !important`,
+                          color: "#FFFFFF !important",
+                          WebkitTextFillColor: "#FFFFFF !important",
                           textAlign: "center",
                           padding: "0 !important",
                           fontWeight: 950,
@@ -968,8 +969,11 @@ export default function AnalyticsPage() {
                           cursor: "pointer",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: `${alpha(colors.text, 0.78)} !important`,
+                          color: "rgba(255,255,255,0.9)",
                           fontSize: 18,
+                        },
+                        "& .MuiInputBase-root:hover": {
+                          backgroundColor: "rgba(4,47,46,1)",
                         },
                       },
                     },
@@ -979,8 +983,8 @@ export default function AnalyticsPage() {
                 <Typography
                   sx={{
                     px: 0.25,
-                    color: `${alpha(colors.text, 0.78)} !important`,
-                    fontWeight: 950,
+                    color: colors.muted,
+                    fontWeight: 800,
                     fontSize: 14,
                     textAlign: "center",
                   }}
@@ -1009,19 +1013,20 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 999,
-                          backgroundColor: `${alpha(colors.card2, 0.7)} !important`,
+                          backgroundColor: "rgba(4,47,46,0.95)",
                           border: "none !important",
                           height: 32,
                           padding: "0 16px",
                           boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
+                          transition: "all 140ms ease",
                         },
                         "& .MuiOutlinedInput-notchedOutline": {
                           border: "none !important",
                         },
                         "& .MuiInputBase-input": {
-                          color: `${alpha(colors.text, 0.78)} !important`,
-                          WebkitTextFillColor: `${alpha(colors.text, 0.78)} !important`,
+                          color: "#FFFFFF !important",
+                          WebkitTextFillColor: "#FFFFFF !important",
                           textAlign: "center",
                           padding: "0 !important",
                           fontWeight: 950,
@@ -1029,8 +1034,11 @@ export default function AnalyticsPage() {
                           cursor: "pointer",
                         },
                         "& .MuiSvgIcon-root": {
-                          color: `${alpha(colors.text, 0.78)} !important`,
+                          color: "rgba(255,255,255,0.9)",
                           fontSize: 18,
+                        },
+                        "& .MuiInputBase-root:hover": {
+                          backgroundColor: "rgba(4,47,46,1)",
                         },
                       },
                     },
