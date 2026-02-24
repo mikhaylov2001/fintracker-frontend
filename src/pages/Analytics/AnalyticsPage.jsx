@@ -120,6 +120,7 @@ const withHeadroom = (maxVal) => {
   return roundUpToStep(raw, step);
 };
 
+/** "дд.мм.гггг" → dayjs или null */
 const parseFullDateString = (str) => {
   if (!str || typeof str !== "string") return null;
   const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
@@ -399,7 +400,7 @@ export default function AnalyticsPage() {
   const yearNow = now.getFullYear();
   const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month");
+  const [mode, setMode] = useState("month"); // month | year | range
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -440,9 +441,11 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
+  // строки для логики
   const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
   const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
 
+  // значения для пикера
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
@@ -918,13 +921,12 @@ export default function AnalyticsPage() {
             <Stack
               direction="column"
               spacing={0.6}
-              sx={{ mt: 2.5, maxWidth: 420, mx: "auto" }}
+              sx={{ mt: 2.5, maxWidth: 420 }}
             >
               <Stack
                 direction="row"
                 spacing={0.75}
                 alignItems="center"
-                justifyContent="center"
                 sx={{ width: "100%" }}
               >
                 <DatePicker
@@ -955,9 +957,9 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 2,
-                          bgcolor: alpha(colors.card2, 0.9),
-                          border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                          color: alpha(colors.text, 0.95),
+                          bgcolor: alpha("#FFFFFF", 0.12),
+                          border: `1px solid ${alpha("#FFFFFF", 0.24)}`,
+                          color: alpha("#FFFFFF", 0.96),
                           height: 34,
                           cursor: "pointer",
                         },
@@ -966,7 +968,7 @@ export default function AnalyticsPage() {
                         },
                         "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline":
                           {
-                            borderColor: alpha(colors.primary, 0.45),
+                            borderColor: alpha(colors.primary, 0.7),
                           },
                         "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline":
                           {
@@ -1017,9 +1019,9 @@ export default function AnalyticsPage() {
                         minWidth: 0,
                         "& .MuiInputBase-root": {
                           borderRadius: 2,
-                          bgcolor: alpha(colors.card2, 0.9),
-                          border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                          color: alpha(colors.text, 0.95),
+                          bgcolor: alpha("#FFFFFF", 0.12),
+                          border: `1px solid ${alpha("#FFFFFF", 0.24)}`,
+                          color: alpha("#FFFFFF", 0.96),
                           height: 34,
                           cursor: "pointer",
                         },
@@ -1028,7 +1030,7 @@ export default function AnalyticsPage() {
                         },
                         "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline":
                           {
-                            borderColor: alpha(colors.primary, 0.45),
+                            borderColor: alpha(colors.primary, 0.7),
                           },
                         "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline":
                           {
