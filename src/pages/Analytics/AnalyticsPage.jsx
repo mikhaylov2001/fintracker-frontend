@@ -430,7 +430,6 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // диапазон дат – только dayjs, без строк
   const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
   const [rangeTo, setRangeTo] = useState(dayjs());
 
@@ -916,6 +915,7 @@ export default function AnalyticsPage() {
                   textField: (params) => (
                     <Box
                       sx={{
+                        position: "relative",
                         flex: 1,
                         minWidth: 0,
                         height: 32,
@@ -939,21 +939,32 @@ export default function AnalyticsPage() {
                           ...params.InputProps,
                           disableUnderline: true,
                           sx: {
-                            textAlign: "center",
+                            opacity: 0, // прячем текст инпута
+                            height: 32,
                             "& .MuiInputBase-input": {
-                              textAlign: "center",
+                              height: 32,
                               padding: 0,
-                              fontWeight: 950,
-                              fontSize: 13,
-                              color: "#FFFFFF",
-                            },
-                            "& .MuiSvgIcon-root": {
-                              color: "rgba(255,255,255,0.85)",
-                              fontSize: 18,
                             },
                           },
                         }}
                       />
+                      <Typography
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          pointerEvents: "none",
+                          fontSize: 11,
+                          fontWeight: 900,
+                          color: "rgba(255,255,255,0.85)",
+                          textAlign: "center",
+                          px: 1,
+                        }}
+                      >
+                        Выберите даты в календаре
+                      </Typography>
                     </Box>
                   ),
                 }}
@@ -984,6 +995,7 @@ export default function AnalyticsPage() {
                   textField: (params) => (
                     <Box
                       sx={{
+                        position: "relative",
                         flex: 1,
                         minWidth: 0,
                         height: 32,
@@ -1007,21 +1019,32 @@ export default function AnalyticsPage() {
                           ...params.InputProps,
                           disableUnderline: true,
                           sx: {
-                            textAlign: "center",
+                            opacity: 0,
+                            height: 32,
                             "& .MuiInputBase-input": {
-                              textAlign: "center",
+                              height: 32,
                               padding: 0,
-                              fontWeight: 950,
-                              fontSize: 13,
-                              color: "#FFFFFF",
-                            },
-                            "& .MuiSvgIcon-root": {
-                              color: "rgba(255,255,255,0.85)",
-                              fontSize: 18,
                             },
                           },
                         }}
                       />
+                      <Typography
+                        sx={{
+                          position: "absolute",
+                          inset: 0,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          pointerEvents: "none",
+                          fontSize: 11,
+                          fontWeight: 900,
+                          color: "rgba(255,255,255,0.85)",
+                          textAlign: "center",
+                          px: 1,
+                        }}
+                      >
+                        Выберите даты в календаре
+                      </Typography>
                     </Box>
                   ),
                 }}
