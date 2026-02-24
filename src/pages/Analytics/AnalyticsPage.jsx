@@ -946,7 +946,7 @@ export default function AnalyticsPage() {
                         readOnly: true,
                         style: {
                           textAlign: "center",
-                          padding: "6px 12px",
+                          padding: 0,
                           fontWeight: 950,
                           fontSize: 13,
                           cursor: "pointer",
@@ -960,7 +960,9 @@ export default function AnalyticsPage() {
                           backgroundColor: alpha(colors.card2, 0.7),
                           border: 0,
                           color: alpha(colors.text, 0.78),
-                          height: 34,
+                          height: 32,
+                          padding: "0 16px",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         },
@@ -969,9 +971,14 @@ export default function AnalyticsPage() {
                         },
                         "& .MuiSvgIcon-root": {
                           color: alpha(colors.text, 0.78),
+                          fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: alpha(colors.card2, 0.85),
+                          backgroundColor: alpha(colors.card2, 0.9),
+                        },
+                        "& .MuiInputBase-root.Mui-focused": {
+                          backgroundColor: colors.primary,
+                          color: "#05140C",
                         },
                       },
                     },
@@ -1007,7 +1014,7 @@ export default function AnalyticsPage() {
                         readOnly: true,
                         style: {
                           textAlign: "center",
-                          padding: "6px 12px",
+                          padding: 0,
                           fontWeight: 950,
                           fontSize: 13,
                           cursor: "pointer",
@@ -1021,7 +1028,9 @@ export default function AnalyticsPage() {
                           backgroundColor: alpha(colors.card2, 0.7),
                           border: 0,
                           color: alpha(colors.text, 0.78),
-                          height: 34,
+                          height: 32,
+                          padding: "0 16px",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
                           cursor: "pointer",
                           transition: "all 140ms ease",
                         },
@@ -1030,9 +1039,14 @@ export default function AnalyticsPage() {
                         },
                         "& .MuiSvgIcon-root": {
                           color: alpha(colors.text, 0.78),
+                          fontSize: 18,
                         },
                         "& .MuiInputBase-root:hover": {
-                          backgroundColor: alpha(colors.card2, 0.85),
+                          backgroundColor: alpha(colors.card2, 0.9),
+                        },
+                        "& .MuiInputBase-root.Mui-focused": {
+                          backgroundColor: colors.primary,
+                          color: "#05140C",
                         },
                       },
                     },
