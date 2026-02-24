@@ -993,13 +993,14 @@ export default function AnalyticsPage() {
               {/* TO */}
               <DatePicker
                 label={null}
-                value={rangeTo}
+                value={rangeFrom}
                 onChange={(newValue) => {
                   if (!newValue || !newValue.isValid()) return;
-                  setRangeTo(newValue);
-                  setRangeToStr(newValue.format("DD.MM.YYYY"));
+                  setRangeFrom(newValue);
+                  setRangeFromStr(newValue.format("DD.MM.YYYY"));
                 }}
                 format="DD.MM.YYYY"
+                enableAccessibleFieldDOMStructure={false} // ← ВАЖНО
                 slots={{
                   textField: (params) => (
                     <Box
