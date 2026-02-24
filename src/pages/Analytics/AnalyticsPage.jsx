@@ -132,7 +132,7 @@ const parseStringToDate = (str) => {
   return parsed.isValid() ? parsed : null;
 };
 
-/** Автоточки при вводе (как в расходах) */
+/** Автоточки при вводе */
 const formatDateInput = (value) => {
   const cleaned = value.replace(/\D/g, "");
   let result = "";
@@ -456,22 +456,16 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // строковые значения полей ввода (для автоточек)
+  // dayjs для логики
+  const [rangeFrom, setRangeFrom] = useState(() => dayjs().subtract(3, "month"));
+  const [rangeTo, setRangeTo] = useState(() => dayjs());
+
+  // строки для автоточек
   const [rangeFromRaw, setRangeFromRaw] = useState(() =>
     dayjs().subtract(3, "month").format("DD.MM.YYYY")
   );
   const [rangeToRaw, setRangeToRaw] = useState(() =>
     dayjs().format("DD.MM.YYYY")
-  );
-
-  // dayjs‑значения для DatePicker
-  const rangeFrom = useMemo(
-    () => parseStringToDate(rangeFromRaw) || dayjs().subtract(3, "month"),
-    [rangeFromRaw]
-  );
-  const rangeTo = useMemo(
-    () => parseStringToDate(rangeToRaw) || dayjs(),
-    [rangeToRaw]
   );
 
   const rangeParsed = useMemo(() => {
@@ -762,7 +756,7 @@ export default function AnalyticsPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
       <PageWrap>
         {/* Header */}
         <Box
@@ -904,6 +898,8 @@ export default function AnalyticsPage() {
                   if (next === "range") {
                     const from3m = dayjs().subtract(3, "month");
                     const now = dayjs();
+                    setRangeFrom(from3m);
+                    setRangeTo(now);
                     setRangeFromRaw(from3m.format("DD.MM.YYYY"));
                     setRangeToRaw(now.format("DD.MM.YYYY"));
                   }
@@ -957,6 +953,7 @@ export default function AnalyticsPage() {
                   value={rangeFrom}
                   onChange={(newValue) => {
                     if (!newValue) return;
+                    setRangeFrom(newValue);
                     setRangeFromRaw(newValue.format("DD.MM.YYYY"));
                   }}
                   format="DD.MM.YYYY"
@@ -966,6 +963,8 @@ export default function AnalyticsPage() {
                       onChange: (e) => {
                         const formatted = formatDateInput(e.target.value);
                         setRangeFromRaw(formatted);
+                        const parsed = parseStringToDate(formatted);
+                        if (parsed) setRangeFrom(parsed);
                       },
                       size: "small",
                       placeholder: "01.01.2025",
@@ -1015,6 +1014,7 @@ export default function AnalyticsPage() {
                   value={rangeTo}
                   onChange={(newValue) => {
                     if (!newValue) return;
+                    setRangeTo(newValue);
                     setRangeToRaw(newValue.format("DD.MM.YYYY"));
                   }}
                   format="DD.MM.YYYY"
@@ -1024,6 +1024,8 @@ export default function AnalyticsPage() {
                       onChange: (e) => {
                         const formatted = formatDateInput(e.target.value);
                         setRangeToRaw(formatted);
+                        const parsed = parseStringToDate(formatted);
+                        if (parsed) setRangeTo(parsed);
                       },
                       size: "small",
                       placeholder: "31.12.2025",
