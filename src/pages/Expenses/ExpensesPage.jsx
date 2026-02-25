@@ -836,6 +836,20 @@ export default function ExpensesPage() {
               InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
+            {/* Информация про рубли */}
+            <Typography
+              variant="caption"
+              sx={{
+                mt: -0.5,
+                color: bankingColors.muted,
+                fontWeight: 600,
+              }}
+            >
+              Все расходы сохраняются в базовой валюте — рублях. Настройки
+              валюты в разделе «Настройки → Интерфейс» влияют только на то, в
+              какой валюте суммы показываются в интерфейсе и отчётах.
+            </Typography>
+
             <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
               <TextField
                 variant="standard"
@@ -879,7 +893,7 @@ export default function ExpensesPage() {
                 }}
                 InputProps={{
                   disableUnderline: true,
-                  sx: PILL_INPUT_SX,
+                  sx: PILL_INPUTSx,
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
