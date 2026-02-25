@@ -250,7 +250,7 @@ export default function IncomePage() {
   const [calAnchorEl, setCalAnchorEl] = useState(null);
   const calOpen = Boolean(calAnchorEl);
   const openCalendar = (e) => setCalAnchorEl(e.currentTarget);
-  the closeCalendar = () => setCalAnchorEl(null);
+  const closeCalendar = () => setCalAnchorEl(null);
 
   const amountRef = useRef(null);
 
