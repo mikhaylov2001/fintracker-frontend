@@ -250,7 +250,7 @@ export default function IncomePage() {
   const [calAnchorEl, setCalAnchorEl] = useState(null);
   const calOpen = Boolean(calAnchorEl);
   const openCalendar = (e) => setCalAnchorEl(e.currentTarget);
-  const closeCalendar = () => setCalAnchorEl(null);
+  the closeCalendar = () => setCalAnchorEl(null);
 
   const amountRef = useRef(null);
 
@@ -859,6 +859,19 @@ export default function IncomePage() {
                 />
               )}
             />
+
+            <Typography
+              variant="caption"
+              sx={{
+                mt: -0.5,
+                color: bankingColors.muted,
+                fontWeight: 600,
+              }}
+            >
+              Все доходы сохраняются в базовой валюте — рублях. Настройки
+              валюты в разделе «Настройки → Интерфейс» влияют только на то, в
+              какой валюте суммы показываются в интерфейсе и отчётах.
+            </Typography>
 
             <LocalizationProvider
               dateAdapter={AdapterDayjs}
