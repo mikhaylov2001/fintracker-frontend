@@ -349,7 +349,7 @@ export default function ExpensesPage() {
 
       const amountNum = Number(payload.amount);
       if (!Number.isFinite(amountNum) || amountNum < 0.01)
-        throw new Error("Сумма должна быть больше 0");
+        throw new Error("Сумма должна быть больше 0";
       if (!payload.category) throw new Error("Категория обязательна");
 
       attempted = true;
@@ -668,16 +668,15 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    {/* единственное изменённое место для десктопа */}
+                    {/* десктоп: описание не выезжает, обрезаем до 2 строк */}
                     <TableCell
                       sx={{
                         display: { xs: "none", sm: "table-cell" },
                         whiteSpace: "normal",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
-                        display: "-webkit-box",
                         WebkitBoxOrient: "vertical",
-                        WebkitLineClamp: 2, // 2 строки, чтобы не выезжало далеко
+                        WebkitLineClamp: 2,
                         wordBreak: "break-word",
                         verticalAlign: "top",
                       }}
