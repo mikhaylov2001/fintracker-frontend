@@ -569,7 +569,6 @@ export default function ExpensesPage() {
                 fontSize: { xs: 12, sm: 13 },
                 lineHeight: 1.3,
                 borderBottom: "none !important",
-                whiteSpace: "nowrap",
                 verticalAlign: "middle",
               },
               "& th": {
@@ -577,6 +576,7 @@ export default function ExpensesPage() {
                 color: bankingColors.text,
                 bgcolor: "transparent",
                 textAlign: "left",
+                whiteSpace: "nowrap",
               },
               "& td": {
                 color: bankingColors.text,
@@ -619,16 +619,25 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    <TableCell>
+                    {/* дата — оставляем на одной строке */}
+                    <TableCell sx={{ whiteSpace: "nowrap" }}>
                       {isMobile
                         ? formatDateRuShort(dateLike)
                         : formatDateRu(dateLike)}
                     </TableCell>
 
-                    <TableCell sx={{ fontWeight: 900, color: COLORS.expenses }}>
+                    {/* сумма — тоже одна строка */}
+                    <TableCell
+                      sx={{
+                        fontWeight: 900,
+                        color: COLORS.expenses,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
+                    {/* категория + описание в мобилке */}
                     <TableCell>
                       <Stack spacing={0.3}>
                         <Typography
@@ -668,12 +677,11 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    {/* десктоп: если не влезает — переносим вниз, строк сколько нужно */}
+                    {/* десктоп: Описание переносится вниз, сколько нужно строк */}
                     <TableCell
                       sx={{
                         display: { xs: "none", sm: "table-cell" },
                         whiteSpace: "normal",
-                        wordWrap: "break-word",
                         wordBreak: "break-word",
                         overflow: "hidden",
                       }}
@@ -682,11 +690,13 @@ export default function ExpensesPage() {
                       {x.description}
                     </TableCell>
 
+                    {/* действия — справа, в одной строке */}
                     <TableCell
                       sx={{
                         textAlign: "right",
                         px: { xs: 0.25, sm: 2 },
                         width: { xs: "20%", sm: 120 },
+                        whiteSpace: "nowrap",
                       }}
                     >
                       <IconButton
