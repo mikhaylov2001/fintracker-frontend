@@ -25,6 +25,18 @@ const validatePassword = (v) => {
   return "";
 };
 
+// аккуратное чтение ошибки с бэка
+const mapApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  if (err && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  return fallback;
+};
+
 function loadGisScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) return resolve(true);
@@ -94,7 +106,8 @@ export default function LoginPage() {
         navigate(afterLoginPath, { replace: true });
       } catch (err) {
         console.error(err);
-        setError(err?.message || "Ошибка входа через Google");
+        const msg = mapApiError(err, "Ошибка входа через Google");
+        setError(msg);
       }
     },
     [loginWithGoogle, navigate, afterLoginPath]
@@ -165,7 +178,11 @@ export default function LoginPage() {
       navigate(afterLoginPath, { replace: true });
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Ошибка входа. Проверьте данные");
+      const msg = mapApiError(
+        err,
+        "Ошибка входа. Проверьте данные и попробуйте ещё раз"
+      );
+      setError(msg);
     }
   };
 

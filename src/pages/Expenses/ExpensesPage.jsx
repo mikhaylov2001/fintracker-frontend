@@ -160,6 +160,18 @@ const unwrapList = (raw) => {
   return [];
 };
 
+// безопасное чтение message из ответа API
+const mapApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  if (err && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  return fallback;
+};
+
 export default function ExpensesPage() {
   const toast = useToast();
   const theme = useTheme();
@@ -258,7 +270,7 @@ export default function ExpensesPage() {
 
         if (!cancelled) setItems(data);
       } catch (e) {
-        const msg = e?.message || "Ошибка загрузки расходов";
+        const msg = mapApiError(e, "Ошибка загрузки расходов");
         if (!cancelled) {
           setError(msg);
           toast.error(msg);
@@ -288,7 +300,7 @@ export default function ExpensesPage() {
       const data = unwrapList(res?.data ?? res);
       setItems(data);
     } catch (e) {
-      const msg = e?.message || "Ошибка загрузки расходов";
+      const msg = mapApiError(e, "Ошибка загрузки расходов");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -365,7 +377,8 @@ export default function ExpensesPage() {
       setOpen(false);
       await reload();
     } catch (e) {
-      const msg = e?.message || "Ошибка сохранения";
+      const fallback = "Ошибка сохранения";
+      const msg = mapApiError(e, fallback);
 
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
@@ -387,7 +400,7 @@ export default function ExpensesPage() {
       toast.success("Расход удалён");
       await reload();
     } catch (e) {
-      const msg = e?.message || "Ошибка удаления";
+      const msg = mapApiError(e, "Ошибка удаления");
       setError(msg);
       toast.error(msg);
     }
@@ -619,14 +632,12 @@ export default function ExpensesPage() {
                 const dateLike = getExpenseDateLike(x);
                 return (
                   <TableRow key={x.id} hover>
-                    {/* дата — оставляем на одной строке */}
                     <TableCell sx={{ whiteSpace: "nowrap" }}>
                       {isMobile
                         ? formatDateRuShort(dateLike)
                         : formatDateRu(dateLike)}
                     </TableCell>
 
-                    {/* сумма — тоже одна строка */}
                     <TableCell
                       sx={{
                         fontWeight: 900,
@@ -637,7 +648,6 @@ export default function ExpensesPage() {
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
-                    {/* категория + описание в мобилке */}
                     <TableCell>
                       <Stack spacing={0.3}>
                         <Typography
@@ -677,7 +687,6 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    {/* десктоп: Описание переносится вниз, сколько нужно строк */}
                     <TableCell
                       sx={{
                         display: { xs: "none", sm: "table-cell" },
@@ -690,7 +699,6 @@ export default function ExpensesPage() {
                       {x.description}
                     </TableCell>
 
-                    {/* действия — справа, в одной строке */}
                     <TableCell
                       sx={{
                         textAlign: "right",

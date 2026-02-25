@@ -1,3 +1,4 @@
+// src/pages/Income/IncomePage.jsx
 import React, {
   useCallback,
   useEffect,
@@ -172,6 +173,18 @@ const unwrapList = (raw) => {
   return [];
 };
 
+// безопасное чтение message из ответа API
+const mapApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  if (err && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  return fallback;
+};
+
 export default function IncomePage() {
   const toast = useToast();
   const theme = useTheme();
@@ -270,7 +283,7 @@ export default function IncomePage() {
 
         if (!cancelled) setItems(data);
       } catch (e) {
-        const msg = e?.message || "Ошибка загрузки доходов";
+        const msg = mapApiError(e, "Ошибка загрузки доходов");
         if (!cancelled) {
           setError(msg);
           toast.error(msg);
@@ -300,7 +313,7 @@ export default function IncomePage() {
       const data = unwrapList(res?.data ?? res);
       setItems(data);
     } catch (e) {
-      const msg = e?.message || "Ошибка загрузки доходов";
+      const msg = mapApiError(e, "Ошибка загрузки доходов");
       setError(msg);
       toast.error(msg);
     } finally {
@@ -378,7 +391,7 @@ export default function IncomePage() {
       setOpen(false);
       await reload();
     } catch (e) {
-      const msg = e?.message || "Ошибка сохранения";
+      const msg = mapApiError(e, "Ошибка сохранения");
 
       if (isProxySerialization500(msg) && attempted) {
         setOpen(false);
@@ -400,7 +413,7 @@ export default function IncomePage() {
       toast.success("Доход удалён");
       await reload();
     } catch (e) {
-      const msg = e?.message || "Ошибка удаления";
+      const msg = mapApiError(e, "Ошибка удаления");
       setError(msg);
       toast.error(msg);
     }

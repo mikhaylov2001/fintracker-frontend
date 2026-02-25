@@ -60,6 +60,18 @@ const ymLabel = (year, month) =>
     year: "numeric",
   });
 
+// безопасное чтение message из ответа API
+const mapApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  if (err && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  return fallback;
+};
+
 // MonthPicker
 function MonthPicker({ value, onChange }) {
   const [inputVal, setInputVal] = useState(value || "");
@@ -236,8 +248,6 @@ const RowItem = ({ children, noDivider }) => (
 export default function SettingsPage() {
   const {
     user,
-    // authFetch,          // можно оставить, но теперь не нужно для этих сценариев
-    // updateUserInState,  // больше не нужен для профиля/емейла, т.к. токен+юзер обновляет контекст
     updateProfile,
     updateEmail,
     updateSettings,
@@ -299,7 +309,8 @@ export default function SettingsPage() {
       showSnack("success", "Имя и фамилия обновлены");
       setEditNameOpen(false);
     } catch (e) {
-      showSnack("error", e.message || "Не удалось обновить профиль");
+      const msg = mapApiError(e, "Не удалось обновить профиль");
+      showSnack("error", msg);
     }
   };
 
@@ -311,7 +322,8 @@ export default function SettingsPage() {
       setNewEmail("");
       setEmailPassword("");
     } catch (e) {
-      showSnack("error", e.message || "Не удалось изменить email");
+      const msg = mapApiError(e, "Не удалось изменить email");
+      showSnack("error", msg);
     }
   };
 
@@ -328,7 +340,8 @@ export default function SettingsPage() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (e) {
-      showSnack("error", e.message || "Не удалось изменить пароль");
+      const msg = mapApiError(e, "Не удалось изменить пароль");
+      showSnack("error", msg);
     }
   };
 
@@ -358,13 +371,17 @@ export default function SettingsPage() {
       if (deleteIncome) what.push("доходы");
       if (deleteExpenses) what.push("расходы");
 
-      showSnack("success", `Удалены ${what.join(" и ")} за ${ymLabel(year, month)}`);
+      showSnack(
+        "success",
+        `Удалены ${what.join(" и ")} за ${ymLabel(year, month)}`
+      );
       setDeleteDataOpen(false);
       setDeleteMonth("");
       setDeleteIncome(false);
       setDeleteExpenses(false);
     } catch (e) {
-      showSnack("error", e.message || "Ошибка при удалении");
+      const msg = mapApiError(e, "Ошибка при удалении");
+      showSnack("error", msg);
     } finally {
       setDeleting(false);
     }
@@ -380,7 +397,11 @@ export default function SettingsPage() {
       setHideAmounts(!!data.hideAmounts);
       showSnack("success", "Настройки интерфейса обновлены");
     } catch (e) {
-      showSnack("error", e.message || "Не удалось обновить настройки интерфейса");
+      const msg = mapApiError(
+        e,
+        "Не удалось обновить настройки интерфейса"
+      );
+      showSnack("error", msg);
     }
   };
 

@@ -34,6 +34,18 @@ const validateName = (v, label) => {
   return "";
 };
 
+// аккуратное чтение ошибки с бэка
+const mapApiError = (err, fallback) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  if (err && typeof err.message === "string" && err.message) {
+    return err.message;
+  }
+  return fallback;
+};
+
 function loadGisScript() {
   return new Promise((resolve, reject) => {
     if (window.google?.accounts?.id) return resolve(true);
@@ -126,7 +138,8 @@ export default function RegisterPage() {
         navigate("/", { replace: true });
       } catch (err) {
         console.error(err);
-        setError(err?.message || "Ошибка регистрации через Google");
+        const msg = mapApiError(err, "Ошибка регистрации через Google");
+        setError(msg);
       }
     },
     [loginWithGoogle, navigate]
@@ -215,7 +228,11 @@ export default function RegisterPage() {
       navigate("/login", { replace: true });
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Ошибка при регистрации. Попробуйте ещё раз.");
+      const msg = mapApiError(
+        err,
+        "Ошибка при регистрации. Попробуйте ещё раз."
+      );
+      setError(msg);
     }
   };
 

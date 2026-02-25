@@ -88,6 +88,15 @@ const parseDayjsToYMD = (d) => {
   return { day: d.date(), month: d.month() + 1, year: d.year() };
 };
 
+// безопасное преобразование ошибки с API
+const mapApiError = (err) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  return "Ошибка загрузки данных. Попробуйте позже.";
+};
+
 // ===== UI мелочи =====
 
 const SectionTitle = memo(function SectionTitle({ title, right }) {
@@ -515,7 +524,6 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  // диапазон дат через dayjs (DatePicker)
   const [rangeFrom, setRangeFrom] = useState(() => dayjs().startOf("month"));
   const [rangeTo, setRangeTo] = useState(() => dayjs());
 
@@ -602,8 +610,10 @@ export default function DashboardPage() {
           setSummariesMap(map);
         }
       } catch (e) {
-        if (!cancelled)
-          setError(e?.message || "Ошибка загрузки данных");
+        if (!cancelled) {
+          const msg = mapApiError(e);
+          setError(msg);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -632,7 +642,6 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  // диапазон -> месяцы
   const rangeParsed = useMemo(() => {
     const a = parseDayjsToYMD(rangeFrom);
     const b = parseDayjsToYMD(rangeTo);
@@ -902,7 +911,6 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат — теперь DatePicker‑капсулы как на Analytics */}
         {isRange && (
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
             <Stack direction="column" spacing={1.4} sx={{ mt: 2.5, maxWidth: 520 }}>

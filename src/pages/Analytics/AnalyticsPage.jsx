@@ -126,6 +126,15 @@ const parseDayjsToYM = (d) => {
   return { year: d.year(), month: d.month() + 1 };
 };
 
+// безопасное преобразование ошибки с API
+const mapApiError = (err) => {
+  const data = err?.response?.data;
+  if (data && typeof data === "object" && typeof data.message === "string") {
+    return data.message;
+  }
+  return "Ошибка загрузки аналитики. Попробуйте позже.";
+};
+
 const KpiCard = memo(function KpiCard({
   label,
   value,
@@ -520,8 +529,10 @@ export default function AnalyticsPage() {
         await Promise.all(tasks);
         if (!cancelled) setHistory(rows);
       } catch (e) {
-        if (!cancelled)
-          setError(e?.message || "Ошибка загрузки аналитики");
+        if (!cancelled) {
+          const msg = mapApiError(e);
+          setError(msg);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -699,6 +710,11 @@ export default function AnalyticsPage() {
           setTopCatsExpenses(topExp);
           setTopCatsIncome(topInc);
         }
+      } catch (e) {
+        if (!cancelled) {
+          const msg = mapApiError(e);
+          setError(msg);
+        }
       } finally {
         if (!cancelled) setCatsLoading(false);
       }
@@ -827,6 +843,24 @@ export default function AnalyticsPage() {
                   Сегодня: {todayLabel}
                 </Typography>
               </Stack>
+
+              {error && (
+                <Box
+                  role="alert"
+                  sx={{
+                    mt: 1,
+                    p: 1,
+                    borderRadius: 3,
+                    border: `1px solid ${alpha(colors.danger, 0.3)}`,
+                    bgcolor: alpha(colors.danger, 0.1),
+                    color: colors.text,
+                    fontWeight: 750,
+                    maxWidth: 520,
+                  }}
+                >
+                  {error}
+                </Box>
+              )}
             </Box>
           </Stack>
 
