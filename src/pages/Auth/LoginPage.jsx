@@ -1,3 +1,4 @@
+// src/pages/Login/LoginPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
@@ -9,6 +10,21 @@ const GOOGLE_CLIENT_ID =
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+// ===== валидация =====
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+const validateEmail = (v) => {
+  if (!v.trim()) return "Введите email";
+  if (!EMAIL_RE.test(v.trim())) return "Некорректный формат email";
+  return "";
+};
+
+const validatePassword = (v) => {
+  if (!v) return "Введите пароль";
+  if (v.length < 8) return "Минимум 8 символов";
+  return "";
+};
 
 function loadGisScript() {
   return new Promise((resolve, reject) => {
@@ -38,27 +54,40 @@ export default function LoginPage() {
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
+  const [touched, setTouched] = useState({ email: false, password: false });
   const googleDivRef = useRef(null);
   const gisInitedRef = useRef(false);
 
   const afterLoginPath = location.state?.from?.pathname || "/";
 
+  // живая валидация после первого касания
+  useEffect(() => {
+    setFieldErrors({
+      email: touched.email ? validateEmail(form.email) : "",
+      password: touched.password ? validatePassword(form.password) : "",
+    });
+  }, [form, touched]);
+
+  const handleBlur = (field) => () =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const isFormValid =
+    !validateEmail(form.email) && !validatePassword(form.password);
+
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError("");
-
         const idToken = response?.credential;
         if (!idToken) {
           setError("Google не вернул токен. Попробуйте ещё раз.");
           return;
         }
-
         if (typeof loginWithGoogle !== "function") {
           setError("Google вход не настроен (loginWithGoogle отсутствует).");
           return;
         }
-
         await loginWithGoogle(idToken);
         navigate(afterLoginPath, { replace: true });
       } catch (err) {
@@ -71,22 +100,16 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
-
     let cancelled = false;
 
     (async () => {
       try {
         await loadGisScript();
         if (cancelled) return;
-
         if (!googleDivRef.current) return;
         if (!window.google?.accounts?.id) return;
-
-        // Не инициализируем дважды на одной странице
         if (gisInitedRef.current) return;
         gisInitedRef.current = true;
-
-        // На всякий случай чистим контейнер
         googleDivRef.current.innerHTML = "";
 
         window.google.accounts.id.initialize({
@@ -102,9 +125,6 @@ export default function LoginPage() {
           size: "large",
           text: "continue_with",
         });
-
-        // Если хочешь One Tap — раскомментируй:
-        // window.google.accounts.id.prompt();
       } catch (e) {
         console.error(e);
         setError("Не удалось загрузить Google вход. Проверьте настройки.");
@@ -113,28 +133,34 @@ export default function LoginPage() {
 
     return () => {
       cancelled = true;
-      // На выходе со страницы можно убрать One Tap состояния
-      try {
-        window.google?.accounts?.id?.cancel();
-      } catch {}
+      try { window.google?.accounts?.id?.cancel(); } catch {}
     };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
 
- const handleSubmit = async (e) => {
-   e.preventDefault();
-   setError("");
-   try {
-     await login({ email: form.email, password: form.password });
-     navigate(afterLoginPath, { replace: true });
-   } catch (err) {
-     console.error(err);
-     setError(err?.message || "Ошибка входа. Проверьте данные");
-   }
- };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // форсируем показ ошибок
+    setTouched({ email: true, password: true });
 
+    const emailErr = validateEmail(form.email);
+    const passErr = validatePassword(form.password);
+    if (emailErr || passErr) {
+      setFieldErrors({ email: emailErr, password: passErr });
+      return;
+    }
+
+    setError("");
+    try {
+      await login({ email: form.email.trim(), password: form.password });
+      navigate(afterLoginPath, { replace: true });
+    } catch (err) {
+      console.error(err);
+      setError(err?.message || "Ошибка входа. Проверьте данные");
+    }
+  };
 
   if (!loading && isAuthenticated) {
     const userName = user?.userName;
@@ -281,6 +307,9 @@ export default function LoginPage() {
               name="email"
               value={form.email}
               onChange={handleChange}
+              onBlur={handleBlur("email")}
+              error={Boolean(fieldErrors.email)}
+              helperText={fieldErrors.email}
               required
               autoComplete="email"
             />
@@ -292,6 +321,9 @@ export default function LoginPage() {
               name="password"
               value={form.password}
               onChange={handleChange}
+              onBlur={handleBlur("password")}
+              error={Boolean(fieldErrors.password)}
+              helperText={fieldErrors.password}
               required
               autoComplete="current-password"
             />
@@ -307,6 +339,7 @@ export default function LoginPage() {
               fullWidth
               variant="contained"
               color="primary"
+              disabled={!isFormValid}
               sx={{
                 mt: 2.5,
                 mb: 1.5,
@@ -340,7 +373,6 @@ export default function LoginPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
-          {/* Google */}
           <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
             <Box
               sx={{

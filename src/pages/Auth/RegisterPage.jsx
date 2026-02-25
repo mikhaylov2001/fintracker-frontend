@@ -1,3 +1,4 @@
+// src/pages/Register/RegisterPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, Navigate } from "react-router-dom";
@@ -9,6 +10,30 @@ const GOOGLE_CLIENT_ID =
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+// ===== валидация =====
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
+const validateEmail = (v) => {
+  if (!v.trim()) return "Введите email";
+  if (!EMAIL_RE.test(v.trim())) return "Некорректный формат email";
+  return "";
+};
+
+const validatePassword = (v) => {
+  if (!v) return "Введите пароль";
+  if (v.length < 8) return "Минимум 8 символов";
+  if (!/[A-ZА-ЯЁ]/.test(v)) return "Нужна хотя бы одна заглавная буква";
+  if (!/[a-zа-яё]/.test(v)) return "Нужна хотя бы одна строчная буква";
+  if (!/[0-9]/.test(v)) return "Нужна хотя бы одна цифра";
+  return "";
+};
+
+const validateName = (v, label) => {
+  if (!v.trim()) return `Введите ${label}`;
+  if (v.trim().length < 2) return `${label} слишком короткое`;
+  return "";
+};
 
 function loadGisScript() {
   return new Promise((resolve, reject) => {
@@ -43,25 +68,58 @@ export default function RegisterPage() {
   });
 
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const [touched, setTouched] = useState({
+    firstName: false,
+    lastName: false,
+    email: false,
+    password: false,
+  });
+
   const googleDivRef = useRef(null);
   const gisInitedRef = useRef(false);
+
+  // живая валидация после первого касания
+  useEffect(() => {
+    setFieldErrors({
+      firstName: touched.firstName
+        ? validateName(form.firstName, "имя")
+        : "",
+      lastName: touched.lastName
+        ? validateName(form.lastName, "фамилию")
+        : "",
+      email: touched.email ? validateEmail(form.email) : "",
+      password: touched.password ? validatePassword(form.password) : "",
+    });
+  }, [form, touched]);
+
+  const handleBlur = (field) => () =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const isFormValid =
+    !validateName(form.firstName, "имя") &&
+    !validateName(form.lastName, "фамилию") &&
+    !validateEmail(form.email) &&
+    !validatePassword(form.password);
 
   const handleGoogleCallback = useCallback(
     async (response) => {
       try {
         setError("");
-
         const idToken = response?.credential;
         if (!idToken) {
           setError("Google не вернул токен. Попробуйте ещё раз.");
           return;
         }
-
         if (typeof loginWithGoogle !== "function") {
           setError("Google вход не настроен (loginWithGoogle отсутствует).");
           return;
         }
-
         await loginWithGoogle(idToken);
         navigate("/", { replace: true });
       } catch (err) {
@@ -74,20 +132,16 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
-
     let cancelled = false;
 
     (async () => {
       try {
         await loadGisScript();
         if (cancelled) return;
-
         if (!googleDivRef.current) return;
         if (!window.google?.accounts?.id) return;
-
         if (gisInitedRef.current) return;
         gisInitedRef.current = true;
-
         googleDivRef.current.innerHTML = "";
 
         window.google.accounts.id.initialize({
@@ -103,8 +157,6 @@ export default function RegisterPage() {
           size: "large",
           text: "signup_with",
         });
-
-        // window.google.accounts.id.prompt();
       } catch (e) {
         console.error(e);
         setError("Не удалось загрузить Google вход. Проверьте настройки.");
@@ -113,9 +165,7 @@ export default function RegisterPage() {
 
     return () => {
       cancelled = true;
-      try {
-        window.google?.accounts?.id?.cancel();
-      } catch {}
+      try { window.google?.accounts?.id?.cancel(); } catch {}
     };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
@@ -124,12 +174,35 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    // форсируем показ всех ошибок
+    setTouched({
+      firstName: true,
+      lastName: true,
+      email: true,
+      password: true,
+    });
+
+    const fnErr = validateName(form.firstName, "имя");
+    const lnErr = validateName(form.lastName, "фамилию");
+    const emailErr = validateEmail(form.email);
+    const passErr = validatePassword(form.password);
+
+    if (fnErr || lnErr || emailErr || passErr) {
+      setFieldErrors({
+        firstName: fnErr,
+        lastName: lnErr,
+        email: emailErr,
+        password: passErr,
+      });
+      return;
+    }
+
     setError("");
     try {
       await register({
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
         password: form.password,
       });
       navigate("/login", { replace: true });
@@ -284,6 +357,9 @@ export default function RegisterPage() {
               name="firstName"
               value={form.firstName}
               onChange={handleChange}
+              onBlur={handleBlur("firstName")}
+              error={Boolean(fieldErrors.firstName)}
+              helperText={fieldErrors.firstName}
               required
               autoComplete="given-name"
             />
@@ -294,6 +370,9 @@ export default function RegisterPage() {
               name="lastName"
               value={form.lastName}
               onChange={handleChange}
+              onBlur={handleBlur("lastName")}
+              error={Boolean(fieldErrors.lastName)}
+              helperText={fieldErrors.lastName}
               required
               autoComplete="family-name"
             />
@@ -305,6 +384,9 @@ export default function RegisterPage() {
               name="email"
               value={form.email}
               onChange={handleChange}
+              onBlur={handleBlur("email")}
+              error={Boolean(fieldErrors.email)}
+              helperText={fieldErrors.email || "Например: user@example.com"}
               required
               autoComplete="email"
             />
@@ -316,6 +398,12 @@ export default function RegisterPage() {
               name="password"
               value={form.password}
               onChange={handleChange}
+              onBlur={handleBlur("password")}
+              error={Boolean(fieldErrors.password)}
+              helperText={
+                fieldErrors.password ||
+                "Мин. 8 символов, заглавная, строчная и цифра"
+              }
               required
               autoComplete="new-password"
             />
@@ -331,6 +419,7 @@ export default function RegisterPage() {
               fullWidth
               variant="contained"
               color="primary"
+              disabled={!isFormValid}
               sx={{
                 mt: 2.5,
                 mb: 1.5,
@@ -364,7 +453,6 @@ export default function RegisterPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
-          {/* Google */}
           <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
             <Box
               sx={{
