@@ -398,7 +398,6 @@ export default function ExpensesPage() {
     [items]
   );
 
-  // Пока auth грузится — просто пустая обёртка (страница и так за ProtectedRoute)
   if (authLoading) {
     return (
       <Box
@@ -408,14 +407,11 @@ export default function ExpensesPage() {
           width: "100%",
         }}
       >
-        <Typography sx={{ color: bankingColors.muted }}>
-          Загрузка…
-        </Typography>
+        <Typography sx={{ color: bankingColors.muted }}>Загрузка…</Typography>
       </Box>
     );
   }
 
-  // Если не авторизован — ничего не рендерим и не дёргаем API
   if (!isAuthenticated) return null;
 
   return (
@@ -593,12 +589,8 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>
-                  Дата
-                </TableCell>
-                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>
-                  Сумма
-                </TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
                 <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>
                   Категория
                 </TableCell>
@@ -606,6 +598,7 @@ export default function ExpensesPage() {
                   sx={{
                     width: 200,
                     display: { xs: "none", sm: "table-cell" },
+                    // важно: заголовок тоже можно переносить, но он короткий — не обязательно
                   }}
                 >
                   Описание
@@ -633,9 +626,7 @@ export default function ExpensesPage() {
                         : formatDateRu(dateLike)}
                     </TableCell>
 
-                    <TableCell
-                      sx={{ fontWeight: 900, color: COLORS.expenses }}
-                    >
+                    <TableCell sx={{ fontWeight: 900, color: COLORS.expenses }}>
                       {formatAmount(Number(x.amount || 0))}
                     </TableCell>
 
@@ -665,10 +656,10 @@ export default function ExpensesPage() {
                             sx={{
                               fontSize: 11,
                               color: bankingColors.muted,
-                              lineHeight: 1.15,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
+                              lineHeight: 1.25,
+                              whiteSpace: "normal",
+                              overflowWrap: "anywhere",
+                              wordBreak: "break-word",
                             }}
                             title={x.description || ""}
                           >
@@ -678,8 +669,15 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
+                    {/* ✅ единственная важная правка: разрешаем перенос описания */}
                     <TableCell
-                      sx={{ display: { xs: "none", sm: "table-cell" } }}
+                      sx={{
+                        display: { xs: "none", sm: "table-cell" },
+                        whiteSpace: "normal",
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                        verticalAlign: "top",
+                      }}
                       title={x.description || ""}
                     >
                       {x.description}
@@ -886,9 +884,7 @@ export default function ExpensesPage() {
                 }}
                 FormHelperTextProps={{
                   sx: {
-                    color: dateErr
-                      ? bankingColors.danger
-                      : bankingColors.muted,
+                    color: dateErr ? bankingColors.danger : bankingColors.muted,
                     fontSize: "0.75rem",
                     mt: 0.5,
                     mx: 0,
