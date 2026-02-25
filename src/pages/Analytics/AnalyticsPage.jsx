@@ -28,6 +28,10 @@ import {
   ChartsItemTooltipContent,
 } from "@mui/x-charts/ChartsTooltip";
 import dayjs from "dayjs";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import "dayjs/locale/ru";
 
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import ArrowCircleUpOutlinedIcon from "@mui/icons-material/ArrowCircleUpOutlined";
@@ -45,6 +49,8 @@ import {
   surfaceOutlinedSx,
 } from "../../styles/bankingTokens";
 import { useCurrency } from "../../contexts/CurrencyContext";
+
+dayjs.locale("ru");
 
 const COLORS = {
   income: colors.primary,
@@ -113,18 +119,6 @@ const withHeadroom = (maxVal) => {
   const raw = maxVal + maxVal * 0.25;
   const step = niceStep(raw);
   return roundUpToStep(raw, step);
-};
-
-/** "дд.мм.гггг" → dayjs или null, без форматирования строки */
-const parseFullDateString = (str) => {
-  if (!str || typeof str !== "string") return null;
-  const m = /^(\d{2})\.(\d{2})\.(\d{4})$/.exec(str.trim());
-  if (!m) return null;
-  const dd = m[1];
-  const MM = m[2];
-  const yyyy = m[3];
-  const parsed = dayjs(`${yyyy}-${MM}-${dd}`, "YYYY-MM-DD", true);
-  return parsed.isValid() ? parsed : null;
 };
 
 const parseDayjsToYM = (d) => {
@@ -395,7 +389,7 @@ export default function AnalyticsPage() {
   const yearNow = now.getFullYear();
   const monthNow = now.getMonth() + 1;
 
-  const [mode, setMode] = useState("month"); // month | year | range
+  const [mode, setMode] = useState("month");
   const [topTab, setTopTab] = useState("expenses");
 
   const fmtAxis = useMemo(
@@ -436,22 +430,14 @@ export default function AnalyticsPage() {
     [isMobile]
   );
 
-  // компактные строки ввода без масок
-  const [rangeFromStr, setRangeFromStr] = useState("01.01.2025");
-  const [rangeToStr, setRangeToStr] = useState(dayjs().format("DD.MM.YYYY"));
-
-  const bothDatesValid = useMemo(() => {
-    const from = parseFullDateString(rangeFromStr);
-    const to = parseFullDateString(rangeToStr);
-    if (!from || !to) return null;
-    if (from.isAfter(to)) return null;
-    return { from, to };
-  }, [rangeFromStr, rangeToStr]);
+  const [rangeFrom, setRangeFrom] = useState(dayjs("2025-01-01"));
+  const [rangeTo, setRangeTo] = useState(dayjs());
 
   const rangeParsed = useMemo(() => {
-    if (!bothDatesValid) return null;
-    const a = parseDayjsToYM(bothDatesValid.from);
-    const b = parseDayjsToYM(bothDatesValid.to);
+    if (!rangeFrom || !rangeTo || !rangeFrom.isValid() || !rangeTo.isValid())
+      return null;
+    const a = parseDayjsToYM(rangeFrom);
+    const b = parseDayjsToYM(rangeTo);
     if (!a || !b) return null;
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
@@ -462,7 +448,7 @@ export default function AnalyticsPage() {
       fromN,
       toN,
     };
-  }, [bothDatesValid]);
+  }, [rangeFrom, rangeTo]);
 
   const todayLabel = useMemo(
     () =>
@@ -908,121 +894,152 @@ export default function AnalyticsPage() {
         </Stack>
 
         {isRange && (
-          <Stack direction="column" spacing={0.6} sx={{ mt: 2.5, maxWidth: 420 }}>
-            <Stack
-              direction="row"
-              spacing={0.75}
-              alignItems="center"
-              sx={{ width: "100%" }}
-            >
-              <TextField
-                value={rangeFromStr}
-                onChange={(e) => setRangeFromStr(e.target.value)}
-                placeholder="01.01.2025"
-                size="small"
-                inputProps={{
-                  maxLength: 10,
-                  inputMode: "numeric",
-                  style: {
-                    textAlign: "center",
-                    padding: "6px 8px",
-                    fontWeight: 700,
-                    fontSize: 13,
-                  },
-                }}
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  "& .MuiInputBase-root": {
-                    borderRadius: 2,
-                    bgcolor: alpha(colors.card2, 0.9),
-                    border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                    color: alpha(colors.text, 0.95),
-                    height: 34,
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                  "& .MuiInputBase-input::placeholder": {
-                    color: alpha(colors.text, 0.5),
-                    opacity: 1,
-                  },
-                }}
-              />
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+            <Stack direction="column" spacing={1.4} sx={{ mt: 2.5, maxWidth: 520 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ width: "100%" }}
+              >
+                {/* FROM */}
+                <DatePicker
+                  label={null}
+                  value={rangeFrom}
+                  onChange={(newValue) => {
+                    if (!newValue || !newValue.isValid()) return;
+                    setRangeFrom(newValue);
+                  }}
+                  format="DD.MM.YYYY"
+                  enableAccessibleFieldDOMStructure={false}
+                  slots={{
+                    textField: (params) => (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: 40,
+                          borderRadius: 999,
+                          backgroundColor: "rgba(4,47,46,0.95)",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          px: 2,
+                          transition: "all 140ms ease",
+                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                        }}
+                      >
+                        <TextField
+                          {...params}
+                          variant="standard"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: 0,
+                                fontWeight: 950,
+                                fontSize: 13,
+                                color: "#FFFFFF",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                color: "rgba(255,255,255,0.9)",
+                                fontSize: 20,
+                              },
+                            },
+                          }}
+                        />
+                      </Box>
+                    ),
+                  }}
+                />
 
+                <Typography
+                  sx={{
+                    px: 0.5,
+                    color: colors.muted,
+                    fontWeight: 900,
+                    fontSize: 16,
+                    textAlign: "center",
+                  }}
+                >
+                  —
+                </Typography>
+
+                {/* TO */}
+                <DatePicker
+                  label={null}
+                  value={rangeTo}
+                  onChange={(newValue) => {
+                    if (!newValue || !newValue.isValid()) return;
+                    setRangeTo(newValue);
+                  }}
+                  format="DD.MM.YYYY"
+                  enableAccessibleFieldDOMStructure={false}
+                  slots={{
+                    textField: (params) => (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: 40,
+                          borderRadius: 999,
+                          backgroundColor: "rgba(4,47,46,0.95)",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          px: 2,
+                          transition: "all 140ms ease",
+                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                        }}
+                      >
+                        <TextField
+                          {...params}
+                          variant="standard"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: 0,
+                                fontWeight: 950,
+                                fontSize: 13,
+                                color: "#FFFFFF",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                color: "rgba(255,255,255,0.9)",
+                                fontSize: 20,
+                              },
+                            },
+                          }}
+                        />
+                      </Box>
+                    ),
+                  }}
+                />
+              </Stack>
+
+              {/* надпись под ячейками */}
               <Typography
                 sx={{
-                  px: 0.25,
-                  color: colors.muted,
-                  fontWeight: 800,
-                  fontSize: 14,
                   textAlign: "center",
+                  fontWeight: 900,
+                  fontSize: 13,
+                  color: "rgba(255,255,255,0.9)",
                 }}
               >
-                —
+                Выберите даты в календаре
               </Typography>
-
-              <TextField
-                value={rangeToStr}
-                onChange={(e) => setRangeToStr(e.target.value)}
-                placeholder="31.12.2025"
-                size="small"
-                inputProps={{
-                  maxLength: 10,
-                  inputMode: "numeric",
-                  style: {
-                    textAlign: "center",
-                    padding: "6px 8px",
-                    fontWeight: 700,
-                    fontSize: 13,
-                  },
-                }}
-                sx={{
-                  flex: 1,
-                  minWidth: 0,
-                  "& .MuiInputBase-root": {
-                    borderRadius: 2,
-                    bgcolor: alpha(colors.card2, 0.9),
-                    border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                    color: alpha(colors.text, 0.95),
-                    height: 34,
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                  "& .MuiInputBase-input::placeholder": {
-                    color: alpha(colors.text, 0.5),
-                    opacity: 1,
-                  },
-                }}
-              />
             </Stack>
-
-            {/* НОВАЯ СТРОКА ПОД ПОЛЯМИ */}
-            <Typography
-              sx={{
-                mt: 1.2,
-                textAlign: "center",
-                fontWeight: 900,
-                fontSize: 13,
-                color: "rgba(255,255,255,0.9)",
-              }}
-            >
-              Выберите даты в календаре
-            </Typography>
-          </Stack>
+          </LocalizationProvider>
         )}
       </Box>
 
