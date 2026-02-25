@@ -552,15 +552,7 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        // 👉 ОБЁРТКА ДЛЯ ДЕСКТОПА: ограничиваем ширину и центрируем список
-        <Box
-          sx={{
-            overflowX: "hidden",
-            width: "100%",
-            mx: "auto",
-            maxWidth: { xs: "100%", md: 900 }, // десктоп не растягиваем дальше 900px
-          }}
-        >
+        <Box sx={{ overflowX: "hidden" }}>
           <Table
             size="small"
             sx={{
@@ -597,14 +589,14 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "25%", sm: 120 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "30%", sm: 180 } }}>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>
                   Категория
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: { xs: 0, sm: 260 }, // 👉 немного шире под длинные описания
+                    width: 200,
                     display: { xs: "none", sm: "table-cell" },
                   }}
                 >
@@ -676,12 +668,16 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    {/* Описание в десктопе — многострочное, чтобы не раздувать ширину */}
+                    {/* единственное изменённое место для десктопа */}
                     <TableCell
                       sx={{
                         display: { xs: "none", sm: "table-cell" },
                         whiteSpace: "normal",
-                        overflowWrap: "anywhere",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitBoxOrient: "vertical",
+                        WebkitLineClamp: 2, // 2 строки, чтобы не выезжало далеко
                         wordBreak: "break-word",
                         verticalAlign: "top",
                       }}
