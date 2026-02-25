@@ -1,4 +1,3 @@
-// src/pages/Login/LoginPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
@@ -79,15 +78,18 @@ export default function LoginPage() {
     async (response) => {
       try {
         setError("");
+
         const idToken = response?.credential;
         if (!idToken) {
           setError("Google не вернул токен. Попробуйте ещё раз.");
           return;
         }
+
         if (typeof loginWithGoogle !== "function") {
           setError("Google вход не настроен (loginWithGoogle отсутствует).");
           return;
         }
+
         await loginWithGoogle(idToken);
         navigate(afterLoginPath, { replace: true });
       } catch (err) {
@@ -100,16 +102,20 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
+
     let cancelled = false;
 
     (async () => {
       try {
         await loadGisScript();
         if (cancelled) return;
+
         if (!googleDivRef.current) return;
         if (!window.google?.accounts?.id) return;
+
         if (gisInitedRef.current) return;
         gisInitedRef.current = true;
+
         googleDivRef.current.innerHTML = "";
 
         window.google.accounts.id.initialize({
@@ -133,7 +139,9 @@ export default function LoginPage() {
 
     return () => {
       cancelled = true;
-      try { window.google?.accounts?.id?.cancel(); } catch {}
+      try {
+        window.google?.accounts?.id?.cancel();
+      } catch {}
     };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
@@ -142,7 +150,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // форсируем показ ошибок
     setTouched({ email: true, password: true });
 
     const emailErr = validateEmail(form.email);
@@ -211,7 +218,7 @@ export default function LoginPage() {
               lineHeight: 1.15,
             }}
           >
-            FinTrackerPro
+            Вход в ваш центр финансового контроля
           </Typography>
           <Typography
             sx={{
@@ -221,7 +228,8 @@ export default function LoginPage() {
               lineHeight: 1.35,
             }}
           >
-            Доходы, расходы и норма сбережений — в одном месте.
+            Подключитесь к истории доходов, расходов и сбережений, чтобы видеть
+            картину по месяцам и держать бюджет под контролем.
           </Typography>
         </Box>
 
@@ -246,7 +254,7 @@ export default function LoginPage() {
               lineHeight: 1.1,
             }}
           >
-            FinTrackerPro
+            Вход в ваш центр финансового контроля
           </Typography>
           <Typography
             sx={{
@@ -256,7 +264,8 @@ export default function LoginPage() {
               maxWidth: 420,
             }}
           >
-            Войдите и следите за динамикой по месяцам.
+            Подключитесь к истории доходов, расходов и сбережений, чтобы видеть
+            картину по месяцам и держать бюджет под контролем.
           </Typography>
         </Box>
 
@@ -373,6 +382,7 @@ export default function LoginPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
+          {/* Google */}
           <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
             <Box
               sx={{

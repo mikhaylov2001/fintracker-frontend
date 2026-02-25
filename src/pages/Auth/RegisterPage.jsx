@@ -1,4 +1,3 @@
-// src/pages/Register/RegisterPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, Navigate } from "react-router-dom";
@@ -111,15 +110,18 @@ export default function RegisterPage() {
     async (response) => {
       try {
         setError("");
+
         const idToken = response?.credential;
         if (!idToken) {
           setError("Google не вернул токен. Попробуйте ещё раз.");
           return;
         }
+
         if (typeof loginWithGoogle !== "function") {
           setError("Google вход не настроен (loginWithGoogle отсутствует).");
           return;
         }
+
         await loginWithGoogle(idToken);
         navigate("/", { replace: true });
       } catch (err) {
@@ -132,16 +134,20 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (loading || isAuthenticated) return;
+
     let cancelled = false;
 
     (async () => {
       try {
         await loadGisScript();
         if (cancelled) return;
+
         if (!googleDivRef.current) return;
         if (!window.google?.accounts?.id) return;
+
         if (gisInitedRef.current) return;
         gisInitedRef.current = true;
+
         googleDivRef.current.innerHTML = "";
 
         window.google.accounts.id.initialize({
@@ -165,7 +171,9 @@ export default function RegisterPage() {
 
     return () => {
       cancelled = true;
-      try { window.google?.accounts?.id?.cancel(); } catch {}
+      try {
+        window.google?.accounts?.id?.cancel();
+      } catch {}
     };
   }, [handleGoogleCallback, loading, isAuthenticated]);
 
@@ -174,7 +182,6 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // форсируем показ всех ошибок
     setTouched({
       firstName: true,
       lastName: true,
@@ -261,7 +268,7 @@ export default function RegisterPage() {
               lineHeight: 1.15,
             }}
           >
-            FinTrackerPro
+            Начните путь к осознанным финансам
           </Typography>
           <Typography
             sx={{
@@ -271,7 +278,8 @@ export default function RegisterPage() {
               lineHeight: 1.35,
             }}
           >
-            Создай аккаунт и начни вести финансы уже сегодня.
+            Создайте аккаунт, задайте цели и отслеживайте, сколько вы
+            зарабатываете, тратите и откладываете каждый месяц.
           </Typography>
         </Box>
 
@@ -296,7 +304,7 @@ export default function RegisterPage() {
               lineHeight: 1.1,
             }}
           >
-            Создай аккаунт
+            Начните путь к осознанным финансам
           </Typography>
           <Typography
             sx={{
@@ -306,8 +314,8 @@ export default function RegisterPage() {
               maxWidth: 420,
             }}
           >
-            Регистрация займёт минуту. Дальше — история по месяцам, баланс и
-            норма сбережений.
+            Создайте аккаунт, задайте цели и отслеживайте, сколько вы
+            зарабатываете, тратите и откладываете каждый месяц.
           </Typography>
         </Box>
 
@@ -453,6 +461,7 @@ export default function RegisterPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
+          {/* Google */}
           <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
             <Box
               sx={{
