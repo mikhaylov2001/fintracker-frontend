@@ -12,7 +12,7 @@ const GOOGLE_CLIENT_ID =
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 
 // ===== валидация =====
-const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
 const validateEmail = (v) => {
   if (!v.trim()) return "Введите email";
