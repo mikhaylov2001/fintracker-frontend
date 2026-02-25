@@ -24,6 +24,12 @@ import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
 import ToggleButton from "@mui/material/ToggleButton";
 import { useNavigate } from "react-router-dom";
 
+import dayjs from "dayjs";
+import "dayjs/locale/ru";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import ArrowCircleUpOutlinedIcon from "@mui/icons-material/ArrowCircleUpOutlined";
 import ArrowCircleDownOutlinedIcon from "@mui/icons-material/ArrowCircleDownOutlined";
@@ -40,6 +46,8 @@ import {
 } from "../../styles/bankingTokens";
 
 import { useCurrency } from "../../contexts/CurrencyContext";
+
+dayjs.locale("ru");
 
 // ===== helpers =====
 
@@ -75,31 +83,9 @@ const chunk = (arr, size) => {
   return out;
 };
 
-// сырое значение -> дд.мм.гггг
-const formatDateInput = (raw) => {
-  const digits = String(raw || "").replace(/\D/g, "").slice(0, 8);
-  const parts = [];
-  if (digits.length <= 2) {
-    parts.push(digits);
-  } else if (digits.length <= 4) {
-    parts.push(digits.slice(0, 2), digits.slice(2));
-  } else {
-    parts.push(digits.slice(0, 2), digits.slice(2, 4), digits.slice(4));
-  }
-  return parts.filter(Boolean).join(".");
-};
-
-// дд.мм.гггг -> {day,month,year} | null
-const parseDdMmYyyy = (s) => {
-  const m = String(s || "").trim().match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
-  if (!m) return null;
-  const day = Number(m[1]);
-  const month = Number(m[2]);
-  const year = Number(m[3]);
-  if (!Number.isFinite(day) || !Number.isFinite(month) || !Number.isFinite(year))
-    return null;
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-  return { day, month, year };
+const parseDayjsToYMD = (d) => {
+  if (!d || !dayjs.isDayjs(d) || !d.isValid()) return null;
+  return { day: d.date(), month: d.month() + 1, year: d.year() };
 };
 
 // ===== UI мелочи =====
@@ -529,23 +515,9 @@ export default function DashboardPage() {
   const [usedMonths, setUsedMonths] = useState([]);
   const [summariesMap, setSummariesMap] = useState(() => new Map());
 
-  // диапазон дат
-  const [rangeFromRaw, setRangeFromRaw] = useState(() => {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, "0");
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const y = now.getFullYear();
-    return `${d}.${m}.${y}`;
-  });
-  const [rangeToRaw, setRangeToRaw] = useState(() => {
-    const now = new Date();
-    const d = String(now.getDate()).padStart(2, "0");
-    const m = String(now.getMonth() + 1).padStart(2, "0");
-    const y = now.getFullYear();
-    return `${d}.${m}.${y}`;
-  });
-  const [rangeFromError, setRangeFromError] = useState("");
-  const [rangeToError, setRangeToError] = useState("");
+  // диапазон дат через dayjs (DatePicker)
+  const [rangeFrom, setRangeFrom] = useState(() => dayjs().startOf("month"));
+  const [rangeTo, setRangeTo] = useState(() => dayjs());
 
   const displayName = useMemo(() => {
     if (user?.firstName && user?.lastName) {
@@ -660,30 +632,16 @@ export default function DashboardPage() {
     });
   }, [usedMonths, summariesMap]);
 
-  // диапазон -> месяцы + ошибки
+  // диапазон -> месяцы
   const rangeParsed = useMemo(() => {
-    const a = parseDdMmYyyy(rangeFromRaw);
-    const b = parseDdMmYyyy(rangeToRaw);
-
-    setRangeFromError("");
-    setRangeToError("");
-
-    if (!a) {
-      setRangeFromError("Введите дату в формате дд.мм.гггг");
-    }
-    if (!b) {
-      setRangeToError("Введите дату в формате дд.мм.гггг");
-    }
+    const a = parseDayjsToYMD(rangeFrom);
+    const b = parseDayjsToYMD(rangeTo);
     if (!a || !b) return null;
 
     const fromN = ymNum(a.year, a.month);
     const toN = ymNum(b.year, b.month);
 
-    if (fromN > toN) {
-      setRangeFromError("Дата начала позже даты окончания");
-      setRangeToError("Дата окончания раньше даты начала");
-      return null;
-    }
+    if (fromN > toN) return null;
 
     return {
       from: { year: a.year, month: a.month },
@@ -691,8 +649,7 @@ export default function DashboardPage() {
       fromN,
       toN,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rangeFromRaw, rangeToRaw]);
+  }, [rangeFrom, rangeTo]);
 
   const rangeMonths = useMemo(() => {
     if (!rangeParsed) return [];
@@ -945,132 +902,151 @@ export default function DashboardPage() {
           </Stack>
         </Stack>
 
-        {/* Диапазон дат — только в режиме "Период", оба поля в одну строку */}
+        {/* Диапазон дат — теперь DatePicker‑капсулы как на Analytics */}
         {isRange && (
-          <Stack
-            direction="row"
-            spacing={1}
-            sx={{ mt: 2, maxWidth: 480 }}
-          >
-            <TextField
-              label="С (дд.мм.гггг)"
-              size="small"
-              value={rangeFromRaw}
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setRangeFromRaw(formatted);
-              }}
-              placeholder="01.01.2025"
-              error={Boolean(rangeFromError)}
-              helperText={
-                rangeFromError ||
-                "Формат: дд.мм.гггг (точки ставятся автоматически)"
-              }
-              FormHelperTextProps={{
-                sx: {
-                  fontSize: 11,
-                  mt: 0.3,
-                  color: alpha(colors.text, 0.8),
-                },
-              }}
-              inputProps={{
-                sx: {
+          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
+            <Stack direction="column" spacing={1.4} sx={{ mt: 2.5, maxWidth: 520 }}>
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ width: "100%" }}
+              >
+                <DatePicker
+                  label={null}
+                  value={rangeFrom}
+                  onChange={(newValue) => {
+                    if (!newValue || !newValue.isValid()) return;
+                    setRangeFrom(newValue);
+                  }}
+                  format="DD.MM.YYYY"
+                  enableAccessibleFieldDOMStructure={false}
+                  slots={{
+                    textField: (params) => (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: 40,
+                          borderRadius: 999,
+                          backgroundColor: "rgba(4,47,46,0.95)",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          px: 2,
+                          transition: "all 140ms ease",
+                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                        }}
+                      >
+                        <TextField
+                          {...params}
+                          variant="standard"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: 0,
+                                fontWeight: 950,
+                                fontSize: 13,
+                                color: "#FFFFFF",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                color: "rgba(255,255,255,0.9)",
+                                fontSize: 20,
+                              },
+                            },
+                          }}
+                        />
+                      </Box>
+                    ),
+                  }}
+                />
+
+                <Typography
+                  sx={{
+                    px: 0.5,
+                    color: colors.muted,
+                    fontWeight: 900,
+                    fontSize: 16,
+                    textAlign: "center",
+                  }}
+                >
+                  —
+                </Typography>
+
+                <DatePicker
+                  label={null}
+                  value={rangeTo}
+                  onChange={(newValue) => {
+                    if (!newValue || !newValue.isValid()) return;
+                    setRangeTo(newValue);
+                  }}
+                  format="DD.MM.YYYY"
+                  enableAccessibleFieldDOMStructure={false}
+                  slots={{
+                    textField: (params) => (
+                      <Box
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          height: 40,
+                          borderRadius: 999,
+                          backgroundColor: "rgba(4,47,46,0.95)",
+                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          px: 2,
+                          transition: "all 140ms ease",
+                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
+                        }}
+                      >
+                        <TextField
+                          {...params}
+                          variant="standard"
+                          fullWidth
+                          InputProps={{
+                            ...params.InputProps,
+                            disableUnderline: true,
+                            sx: {
+                              "& .MuiInputBase-input": {
+                                textAlign: "center",
+                                padding: 0,
+                                fontWeight: 950,
+                                fontSize: 13,
+                                color: "#FFFFFF",
+                              },
+                              "& .MuiSvgIcon-root": {
+                                color: "rgba(255,255,255,0.9)",
+                                fontSize: 20,
+                              },
+                            },
+                          }}
+                        />
+                      </Box>
+                    ),
+                  }}
+                />
+              </Stack>
+
+              <Typography
+                sx={{
+                  textAlign: "center",
+                  fontWeight: 900,
                   fontSize: 13,
-                  fontWeight: 800,
-                  color: alpha(colors.text, 0.9),
-                },
-              }}
-              InputProps={{
-                sx: {
-                  borderRadius: 999,
-                  bgcolor: alpha(colors.card2, 0.9),
-                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                },
-              }}
-              InputLabelProps={{
-                sx: {
-                  color: alpha(colors.text, 0.8),
-                  fontSize: 11,
-                  transform: "translate(14px, -2px) scale(1)",
-                  "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -16px) scale(0.85)",
-                  },
-                  "&.Mui-focused": {
-                    color: colors.text,
-                  },
-                },
-              }}
-              sx={{ flex: 1, minWidth: 0 }}
-            />
-            <TextField
-              label="По (дд.мм.гггг)"
-              size="small"
-              value={rangeToRaw}
-              onChange={(e) => {
-                const formatted = formatDateInput(e.target.value);
-                setRangeToRaw(formatted);
-              }}
-              placeholder="31.12.2025"
-              error={Boolean(rangeToError)}
-              helperText={
-                rangeToError ||
-                "Формат: дд.мм.гггг (точки ставятся автоматически)"
-              }
-              FormHelperTextProps={{
-                sx: {
-                  fontSize: 11,
-                  mt: 0.3,
-                  color: alpha(colors.text, 0.8),
-                },
-              }}
-              inputProps={{
-                sx: {
-                  fontSize: 13,
-                  fontWeight: 800,
-                  color: alpha(colors.text, 0.9),
-                },
-              }}
-              InputProps={{
-                sx: {
-                  borderRadius: 999,
-                  bgcolor: alpha(colors.card2, 0.9),
-                  border: `1px solid ${alpha(colors.border2, 0.9)}`,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "transparent",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: alpha(colors.primary, 0.45),
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: colors.primary,
-                  },
-                },
-              }}
-              InputLabelProps={{
-                sx: {
-                  color: alpha(colors.text, 0.8),
-                  fontSize: 11,
-                  transform: "translate(14px, -2px) scale(1)",
-                  "&.MuiInputLabel-shrink": {
-                    transform: "translate(14px, -16px) scale(0.85)",
-                  },
-                  "&.Mui-focused": {
-                    color: colors.text,
-                  },
-                },
-              }}
-              sx={{ flex: 1, minWidth: 0 }}
-            />
-          </Stack>
+                  color: "rgba(255,255,255,0.9)",
+                }}
+              >
+                Выберите даты в календаре
+              </Typography>
+            </Stack>
+          </LocalizationProvider>
         )}
       </Box>
 
