@@ -836,7 +836,6 @@ export default function ExpensesPage() {
               InputProps={{ disableUnderline: true, sx: PILL_INPUT_SX }}
             />
 
-            {/* Информация про рубли */}
             <Typography
               variant="caption"
               sx={{
@@ -893,7 +892,7 @@ export default function ExpensesPage() {
                 }}
                 InputProps={{
                   disableUnderline: true,
-                  sx: PILL_INPUTSx,
+                  sx: PILL_INPUT_SX,
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
