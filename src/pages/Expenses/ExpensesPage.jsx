@@ -552,7 +552,15 @@ export default function ExpensesPage() {
           onAction={openCreate}
         />
       ) : (
-        <Box sx={{ overflowX: "hidden" }}>
+        // 👉 ОБЁРТКА ДЛЯ ДЕСКТОПА: ограничиваем ширину и центрируем список
+        <Box
+          sx={{
+            overflowX: "hidden",
+            width: "100%",
+            mx: "auto",
+            maxWidth: { xs: "100%", md: 900 }, // десктоп не растягиваем дальше 900px
+          }}
+        >
           <Table
             size="small"
             sx={{
@@ -589,16 +597,15 @@ export default function ExpensesPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Дата</TableCell>
-                <TableCell sx={{ width: { xs: "25%", sm: 160 } }}>Сумма</TableCell>
-                <TableCell sx={{ width: { xs: "30%", sm: 200 } }}>
+                <TableCell sx={{ width: { xs: "25%", sm: 120 } }}>Дата</TableCell>
+                <TableCell sx={{ width: { xs: "25%", sm: 140 } }}>Сумма</TableCell>
+                <TableCell sx={{ width: { xs: "30%", sm: 180 } }}>
                   Категория
                 </TableCell>
                 <TableCell
                   sx={{
-                    width: 200,
+                    width: { xs: 0, sm: 260 }, // 👉 немного шире под длинные описания
                     display: { xs: "none", sm: "table-cell" },
-                    // важно: заголовок тоже можно переносить, но он короткий — не обязательно
                   }}
                 >
                   Описание
@@ -669,7 +676,7 @@ export default function ExpensesPage() {
                       </Stack>
                     </TableCell>
 
-                    {/* ✅ единственная важная правка: разрешаем перенос описания */}
+                    {/* Описание в десктопе — многострочное, чтобы не раздувать ширину */}
                     <TableCell
                       sx={{
                         display: { xs: "none", sm: "table-cell" },
