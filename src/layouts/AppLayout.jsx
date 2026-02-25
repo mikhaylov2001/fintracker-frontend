@@ -168,7 +168,9 @@ export default function AppLayout() {
     const dy = Math.abs(t.clientY - y);
 
     if (dx > dy && dx > 8) {
-      e.preventDefault();
+      // раньше тут было e.preventDefault(), из-за чего браузер ругался
+      // "Unable to preventDefault inside passive event listener"
+      // просто убираем вызов без изменения остальной логики
     }
   }, []);
 
@@ -230,7 +232,6 @@ export default function AppLayout() {
           <TopNavBar onMenuClick={openMobile} />
 
           {isWidePage ? (
-            // Доходы/расходы — на всю ширину
             <Box
               sx={{
                 flex: 1,
@@ -244,7 +245,6 @@ export default function AppLayout() {
               <Outlet />
             </Box>
           ) : (
-            // Дашборд, аналитика, настройки — тянутся на всю доступную ширину с паддингами
             <Box
               sx={{
                 flex: 1,
