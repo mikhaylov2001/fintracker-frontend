@@ -1,71 +1,53 @@
+// src/pages/Auth/ForgotPasswordPage.jsx
 import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import AppBackground from "../../layouts/AppBackground";
-import { confirmPasswordReset } from "../../api/passwordResetApi";
+import { requestPasswordReset } from "../../api/passwordResetApi";
 
-function useQuery() {
-  return new URLSearchParams(useLocation().search);
-}
+const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
-export default function ResetPasswordPage() {
-  const query = useQuery();
+const validateEmail = (v) => {
+  if (!v.trim()) return "Введите email";
+  if (!EMAIL_RE.test(v.trim())) return "Некорректный формат email";
+  return "";
+};
+
+export default function ForgotPasswordPage() {
   const navigate = useNavigate();
-  const token = query.get("token") || "";
-
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [touched, setTouched] = useState(false);
+  const [fieldError, setFieldError] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
 
-  if (!token) {
-    return (
-      <AppBackground
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          px: 2,
-          py: 2,
-        }}
-      >
-        <Typography
-          sx={{
-            color: "rgba(255,255,255,0.9)",
-            fontSize: 16,
-            fontWeight: 600,
-          }}
-        >
-          Некорректная или устаревшая ссылка для восстановления пароля.
-        </Typography>
-      </AppBackground>
-    );
-  }
+  const handleBlur = () => {
+    setTouched(true);
+    setFieldError(validateEmail(email));
+  };
+
+  const handleChange = (e) => {
+    setEmail(e.target.value);
+    if (touched) setFieldError(validateEmail(e.target.value));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setStatus("");
-
-    if (!password || password.length < 8) {
-      setError("Пароль должен содержать минимум 8 символов");
-      return;
-    }
-    if (password !== password2) {
-      setError("Пароли не совпадают");
-      return;
-    }
+    const err = validateEmail(email);
+    setFieldError(err);
+    if (err) return;
 
     setLoading(true);
+    setStatus("");
+
     try {
-      await confirmPasswordReset(token, password);
-      setStatus("Пароль успешно изменён. Сейчас перенаправим на страницу входа...");
-      setTimeout(() => navigate("/login"), 2000);
-    } catch (e) {
-      setError(
-        "Ссылка недействительна или срок её действия истёк. Попробуйте запросить восстановление ещё раз."
+      await requestPasswordReset(email.trim());
+      setStatus(
+        "Если такой email существует, мы отправили инструкцию по восстановлению пароля."
+      );
+    } catch {
+      setStatus(
+        "Если такой email существует, мы отправили инструкцию по восстановлению пароля."
       );
     } finally {
       setLoading(false);
@@ -93,7 +75,6 @@ export default function ResetPasswordPage() {
           alignItems: "stretch",
         }}
       >
-        {/* Левая колонка */}
         <Box
           sx={{
             display: { xs: "none", md: "flex" },
@@ -114,7 +95,7 @@ export default function ResetPasswordPage() {
               lineHeight: 1.1,
             }}
           >
-            Установка нового пароля
+            Восстановление доступа к FinTracker
           </Typography>
           <Typography
             sx={{
@@ -124,11 +105,10 @@ export default function ResetPasswordPage() {
               maxWidth: 420,
             }}
           >
-            Придумайте новый надёжный пароль для входа в FinTracker.
+            Если вы забыли пароль, мы отправим ссылку для его сброса на ваш email.
           </Typography>
         </Box>
 
-        {/* Карточка формы */}
         <Paper
           elevation={8}
           sx={{
@@ -153,7 +133,7 @@ export default function ResetPasswordPage() {
                 color: "#111827",
               }}
             >
-              Новый пароль
+              Восстановление пароля
             </Typography>
             <Typography
               sx={{
@@ -162,7 +142,7 @@ export default function ResetPasswordPage() {
                 color: "rgba(15,23,42,0.6)",
               }}
             >
-              Введите новый пароль и подтвердите его.
+              Укажите email, на который зарегистрирован аккаунт.
             </Typography>
           </Box>
 
@@ -170,39 +150,24 @@ export default function ResetPasswordPage() {
             <TextField
               margin="dense"
               fullWidth
-              label="Новый пароль"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              label="Email"
+              type="email"
+              name="email"
+              value={email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              error={Boolean(fieldError)}
+              helperText={fieldError}
               required
+              autoComplete="email"
             />
-            <TextField
-              margin="dense"
-              fullWidth
-              label="Повторите пароль"
-              type="password"
-              value={password2}
-              onChange={(e) => setPassword2(e.target.value)}
-              required
-            />
-
-            {error && (
-              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                {error}
-              </Typography>
-            )}
-            {status && (
-              <Typography variant="body2" sx={{ mt: 1, color: "rgba(15,23,42,0.7)" }}>
-                {status}
-              </Typography>
-            )}
 
             <Button
               type="submit"
               fullWidth
               variant="contained"
               color="primary"
-              disabled={loading}
+              disabled={loading || !!validateEmail(email)}
               sx={{
                 mt: 2.5,
                 mb: 1.5,
@@ -213,9 +178,18 @@ export default function ResetPasswordPage() {
                 fontSize: 15,
               }}
             >
-              {loading ? "Сохраняем..." : "Сохранить пароль"}
+              {loading ? "Отправляем..." : "Отправить ссылку"}
             </Button>
           </Box>
+
+          {status && (
+            <Typography
+              variant="body2"
+              sx={{ mt: 1, color: "rgba(15,23,42,0.7)" }}
+            >
+              {status}
+            </Typography>
+          )}
 
           <Typography
             variant="body2"
