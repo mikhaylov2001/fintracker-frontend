@@ -408,7 +408,6 @@ const HistoryAccordion = memo(function HistoryAccordion({
             Норма сбережений:{" "}
             <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
               {has ? `${v}%` : "—%"}
-
             </Box>
           </Typography>
         </Stack>
@@ -795,17 +794,15 @@ export default function DashboardPage() {
           "&::before, &::after": { content: "none", display: "none" },
         }}
       >
-        {/* На md+: первая строка — заголовок, вторая — блок режимов справа */}
         <Stack
+          direction={{ xs: "column", md: "row" }}
           spacing={2}
+          alignItems={{ xs: "flex-start", md: "center" }}
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "1fr" },
-            gridAutoRows: "auto",
+            justifyContent: { xs: "flex-start", md: "space-between" },
           }}
         >
-          {/* Заголовок — всегда первая строка */}
-          <Box sx={{ gridColumn: "1 / -1", minWidth: 0 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
               variant="h5"
               sx={{
@@ -848,19 +845,16 @@ export default function DashboardPage() {
             ) : null}
           </Box>
 
-          {/* Правый блок режимов:
-              xs — под заголовком слева,
-              md+ — во второй строке, выравнен вправо */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
             alignItems="center"
             sx={{
-              gridColumn: "1 / -1",
-              width: "100%",
+              width: { xs: "100%", md: "auto" },
+              ml: { xs: 0, md: "auto" },
+              flexShrink: 0,
               justifyContent: { xs: "flex-start", md: "flex-end" },
-              flexWrap: "wrap",
-              rowGap: 1,
+              flexWrap: { xs: "nowrap", md: "wrap" },
             }}
           >
             <Chip
