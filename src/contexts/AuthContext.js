@@ -1,3 +1,4 @@
+// src/contexts/AuthContext.jsx
 import React, {
   createContext,
   useState,
@@ -22,6 +23,7 @@ const AUTH_STORAGE_KEYS = [
   "accessToken",
   "jwt",
   "authUser",
+  "refreshTokenBackup",
 ];
 
 const normalizeToken = (t) => {
@@ -37,7 +39,6 @@ const getHumanError = (err, context = "general") => {
   const raw = err?.message || String(err || "");
   const lower = raw.toLowerCase();
 
-  // Сеть
   if (lower.includes("failed to fetch") || lower.includes("network")) {
     return "Нет связи с сервером. Проверьте интернет-соединение";
   }
@@ -49,9 +50,7 @@ const getHumanError = (err, context = "general") => {
     return "Сессия истекла. Войдите в аккаунт заново";
   }
 
-  // --- КЕЙС: смена email ---
   if (context === "email") {
-    // Неверный пароль
     if (status === 401) return "Неверный пароль";
     if (
       status === 400 &&
@@ -62,26 +61,19 @@ const getHumanError = (err, context = "general") => {
     ) {
       return "Неверный пароль";
     }
-
-    // Email занят
     if (status === 409) return "Этот email уже используется другим пользователем";
     if (lower.includes("email_taken")) {
       return "Этот email уже используется другим пользователем";
     }
-
-    // Фолбэк
     return "Не удалось изменить email. Проверьте пароль и попробуйте ещё раз";
   }
 
-  // --- КЕЙС: смена пароля ---
-  // ВАЖНО: бэк на /api/account/change-password возвращает 401, когда текущий пароль неверен. [file:678]
   if (context === "password") {
     if (status === 401) return "Текущий пароль неверен";
     if (status === 400) return "Пароль слишком слабый. Минимум 8 символов";
     return "Не удалось изменить пароль. Попробуйте ещё раз";
   }
 
-  // --- Логин/регистрация ---
   if (status === 401) {
     if (context === "login" || context === "register") {
       return "Неверный email или пароль";
@@ -103,7 +95,6 @@ const getHumanError = (err, context = "general") => {
 
   if (status >= 500) return "Ошибка сервера. Попробуйте позже";
 
-  // Фолбэки по тексту (если бэк так шлёт)
   if (lower.includes("invalid_password")) return "Неверный пароль";
   if (lower.includes("user not found")) return "Пользователь не найден";
 
@@ -198,6 +189,15 @@ export const AuthProvider = ({ children }) => {
           localStorage.setItem("authToken", nextToken);
         } catch {}
       }
+
+      // если когда‑то начнёшь возвращать refreshToken в login/refresh — сохраним
+      const ref =
+        data?.refreshToken || data?.refresh || data?.data?.refreshToken || null;
+      if (ref) {
+        try {
+          localStorage.setItem("refreshTokenBackup", ref);
+        } catch {}
+      }
     },
     [hardResetState]
   );
@@ -211,8 +211,6 @@ export const AuthProvider = ({ children }) => {
       return next;
     });
   }, []);
-
-  // -------- Профиль --------
 
   const updateProfile = useCallback(
     async (data) => {
@@ -282,8 +280,6 @@ export const AuthProvider = ({ children }) => {
       throw new Error(getHumanError(e, "delete"));
     }
   }, []);
-
-  // -------- Авторизация --------
 
   const login = useCallback(
     async ({ email, password }) => {

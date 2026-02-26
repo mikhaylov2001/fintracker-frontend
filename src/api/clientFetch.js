@@ -1,4 +1,6 @@
+// src/api/clientFetch.js
 const TOKEN_KEYS = ["authToken", "token", "accessToken", "jwt"];
+const REFRESH_KEY = "refreshTokenBackup";
 export const AUTH_LOGOUT_EVENT = "app_force_logout";
 
 const normalizeToken = (t) => {
@@ -27,10 +29,27 @@ const writeToken = (token) => {
   } catch {}
 };
 
+const readRefreshBackup = () => {
+  try {
+    const v = localStorage.getItem(REFRESH_KEY);
+    return v || null;
+  } catch {
+    return null;
+  }
+};
+
+const writeRefreshBackup = (refresh) => {
+  if (!refresh) return;
+  try {
+    localStorage.setItem(REFRESH_KEY, refresh);
+  } catch {}
+};
+
 const clearAuthData = () => {
   try {
     TOKEN_KEYS.forEach((k) => localStorage.removeItem(k));
     localStorage.removeItem("authUser");
+    localStorage.removeItem(REFRESH_KEY);
     sessionStorage.clear();
   } catch {}
 };
@@ -68,19 +87,50 @@ async function refreshToken() {
 
   refreshPromise = (async () => {
     try {
-      const res = await fetch(buildUrl("/api/auth/refresh"), {
+      // 1) Пытаемся рефрешнуть обычным способом (через HttpOnly cookies)
+      let res = await fetch(buildUrl("/api/auth/refresh"), {
         method: "POST",
         credentials: "include",
         headers: new Headers({ "Content-Type": "application/json" }),
       });
 
-      const data = await parseBody(res);
+      let data = await parseBody(res);
+      if (res.ok) {
+        const newAccess = data?.token || data?.accessToken || data?.jwt || null;
+        if (newAccess) writeToken(newAccess);
+
+        // если бек когда‑нибудь начнёт отдавать refreshToken в JSON — сохраним
+        const newRefresh =
+          data?.refreshToken || data?.refresh || data?.data?.refreshToken || null;
+        if (newRefresh) writeRefreshBackup(newRefresh);
+
+        return normalizeToken(newAccess) || null;
+      }
+
+      // 2) Если cookies не сработали (401/403) — пробуем резервный refresh из localStorage
+      const backupRefresh = readRefreshBackup();
+      if (!backupRefresh) return null;
+
+      res = await fetch(buildUrl("/api/auth/refresh"), {
+        method: "POST",
+        credentials: "include",
+        headers: new Headers({
+          "Content-Type": "application/json",
+          "X-Refresh-Token": backupRefresh,
+        }),
+      });
+
+      data = await parseBody(res);
       if (!res.ok) return null;
 
-      const newAccess = data?.token || data?.accessToken || data?.jwt || null;
-      if (newAccess) writeToken(newAccess);
+      const newAccess2 = data?.token || data?.accessToken || data?.jwt || null;
+      if (newAccess2) writeToken(newAccess2);
 
-      return normalizeToken(newAccess) || null;
+      const newRefresh2 =
+        data?.refreshToken || data?.refresh || data?.data?.refreshToken || null;
+      if (newRefresh2) writeRefreshBackup(newRefresh2);
+
+      return normalizeToken(newAccess2) || null;
     } catch {
       return null;
     }
@@ -119,10 +169,8 @@ function isInvalidPassword401(url, status, data) {
   const code =
     typeof data === "object" && data && data.code ? String(data.code) : "";
 
-  // Если когда-нибудь добавишь на бэке code — будет идеально
   if (code === "INVALID_PASSWORD" || code === "WRONG_PASSWORD") return true;
 
-  // Текущий пароль неверен / Invalid password / etc.
   return (
     msg.includes("текущий пароль") ||
     msg.includes("неверен") ||
@@ -142,7 +190,11 @@ export async function apiFetch(path, options = {}) {
     const token = readToken();
     const headers = new Headers(options.headers || {});
 
-    if (!(options.body instanceof FormData) && options.body && !headers.has("Content-Type")) {
+    if (
+      !(options.body instanceof FormData) &&
+      options.body &&
+      !headers.has("Content-Type")
+    ) {
       headers.set("Content-Type", "application/json");
     }
 
@@ -165,7 +217,7 @@ export async function apiFetch(path, options = {}) {
     }
   }
 
-  // ✅ ВАЖНО: 401 на проверке пароля — НЕ логаутим, отдаём реальное сообщение
+  // 401 на проверке пароля — НЕ логаутим
   if (isInvalidPassword401(url, res.status, data)) {
     const err = new Error(extractMsg(data, "Неверный пароль"));
     err.status = res.status;
@@ -189,10 +241,11 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
-  // 3) остальные ошибки — наверх (400/409/422 и т.д.)
+  // 3) остальные ошибки — наверх
   if (!res.ok) {
     const err = new Error(
-      extractMsg(data, res.statusText || `HTTP ${res.status}`) || `HTTP ${res.status}`
+      extractMsg(data, res.statusText || `HTTP ${res.status}`) ||
+        `HTTP ${res.status}`
     );
     err.status = res.status;
     err.data = data;
