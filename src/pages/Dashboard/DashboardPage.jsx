@@ -794,14 +794,11 @@ export default function DashboardPage() {
           "&::before, &::after": { content: "none", display: "none" },
         }}
       >
-        {/* ВАЖНО: на md+ всегда row и с переносом, правый блок прижат вправо */}
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
           alignItems={{ md: "flex-start" }}
-          sx={{
-            flexWrap: { md: "wrap" },
-          }}
+          sx={{ flexWrap: { md: "wrap" } }}
         >
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
@@ -846,16 +843,17 @@ export default function DashboardPage() {
             ) : null}
           </Box>
 
-          {/* Правый блок: на md+ всегда справа, даже при узком окне */}
+          {/* Правый блок фильтров */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
-            alignItems={{ sm: "center" }}
+            alignItems="center"
             sx={{
               width: { xs: "100%", md: "auto" },
-              ml: { md: "auto" },          // <-- ключ: прижимаем вправо
-              flexShrink: 0,               // <-- не даём сжиматься и “уезжать”
-              justifyContent: { md: "flex-end" },
+              ml: { xs: 0, md: "auto" },
+              flexShrink: { xs: 1, md: 0 },
+              justifyContent: { xs: "flex-start", md: "flex-end" },
+              flexWrap: { xs: "nowrap", md: "wrap" },
             }}
           >
             <Chip
