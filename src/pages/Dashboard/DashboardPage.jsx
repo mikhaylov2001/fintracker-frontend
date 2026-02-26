@@ -794,12 +794,16 @@ export default function DashboardPage() {
           "&::before, &::after": { content: "none", display: "none" },
         }}
       >
+        {/* ВАЖНО: на md+ всегда row и с переносом, правый блок прижат вправо */}
         <Stack
           direction={{ xs: "column", md: "row" }}
           spacing={2}
-          alignItems={{ md: "center" }}
+          alignItems={{ md: "flex-start" }}
+          sx={{
+            flexWrap: { md: "wrap" },
+          }}
         >
-          <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography
               variant="h5"
               sx={{
@@ -842,11 +846,17 @@ export default function DashboardPage() {
             ) : null}
           </Box>
 
+          {/* Правый блок: на md+ всегда справа, даже при узком окне */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
             alignItems={{ sm: "center" }}
-            sx={{ width: { xs: "100%", md: "auto" } }}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              ml: { md: "auto" },          // <-- ключ: прижимаем вправо
+              flexShrink: 0,               // <-- не даём сжиматься и “уезжать”
+              justifyContent: { md: "flex-end" },
+            }}
           >
             <Chip
               label="Актуально"
