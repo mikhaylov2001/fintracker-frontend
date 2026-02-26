@@ -7,6 +7,8 @@ import AppLayout from "./layouts/AppLayout";
 
 import LoginPage from "./pages/Auth/LoginPage";
 import RegisterPage from "./pages/Auth/RegisterPage";
+import ForgotPasswordPage from "./pages/Auth/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/Auth/ResetPasswordPage";
 
 import DashboardPage from "./pages/Dashboard/DashboardPage";
 import ExpensesPage from "./pages/Expenses/ExpensesPage";
@@ -31,6 +33,8 @@ function App() {
             <Route element={<PublicOnlyRoute />}>
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
 
             <Route element={<PrivateRoutes />}>

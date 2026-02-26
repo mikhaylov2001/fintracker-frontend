@@ -1,3 +1,4 @@
+// src/pages/Auth/LoginPage.jsx
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
@@ -354,6 +355,30 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
 
+            {/* Ссылка "Забыли пароль?" */}
+            <Box
+              sx={{
+                mt: 1,
+                mb: 0.5,
+                display: "flex",
+                justifyContent: "flex-end",
+              }}
+            >
+              <Link
+                component="button"
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                sx={{
+                  fontSize: 13,
+                  color: "rgba(15,23,42,0.7)",
+                  textDecoration: "none",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+              >
+                Забыли пароль?
+              </Link>
+            </Box>
+
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
@@ -367,7 +392,7 @@ export default function LoginPage() {
               color="primary"
               disabled={!isFormValid}
               sx={{
-                mt: 2.5,
+                mt: 2,
                 mb: 1.5,
                 borderRadius: 999,
                 py: 1.1,
