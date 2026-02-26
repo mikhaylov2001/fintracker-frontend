@@ -355,30 +355,6 @@ export default function LoginPage() {
               autoComplete="current-password"
             />
 
-            {/* Ссылка "Забыли пароль?" */}
-            <Box
-              sx={{
-                mt: 1,
-                mb: 0.5,
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
-              <Link
-                component="button"
-                type="button"
-                onClick={() => navigate("/forgot-password")}
-                sx={{
-                  fontSize: 13,
-                  color: "rgba(15,23,42,0.7)",
-                  textDecoration: "none",
-                  "&:hover": { textDecoration: "underline" },
-                }}
-              >
-                Забыли пароль?
-              </Link>
-            </Box>
-
             {error && (
               <Typography color="error" variant="body2" sx={{ mt: 1 }}>
                 {error}
