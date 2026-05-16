@@ -56,6 +56,7 @@ export default function AppLayout() {
           userName={userName}
           dashTo={dashTo}
           onLogout={handleLogout}
+          onUpgrade={() => navigate("/pro")}
         />
       </aside>
 
@@ -80,6 +81,10 @@ export default function AppLayout() {
               userName={userName}
               dashTo={dashTo}
               onLogout={handleLogout}
+              onUpgrade={() => {
+                setMobileOpen(false);
+                navigate("/pro");
+              }}
             />
           </aside>
         </div>
@@ -107,7 +112,7 @@ export default function AppLayout() {
   );
 }
 
-function SidebarContent({ pathname, userName, dashTo, onLogout }) {
+function SidebarContent({ pathname, userName, dashTo, onLogout, onUpgrade }) {
   return (
     <>
       <AppLogo userName={userName} className="px-2" />
@@ -150,6 +155,7 @@ function SidebarContent({ pathname, userName, dashTo, onLogout }) {
           </p>
           <button
             type="button"
+            onClick={onUpgrade}
             className="w-full py-2 bg-emerald-glow text-primary-foreground font-bold text-[11px] rounded-lg uppercase tracking-[0.15em] hover:brightness-110 transition-all"
           >
             Улучшить

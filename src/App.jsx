@@ -19,6 +19,7 @@ import PrivateRoutes from "./routes/PrivateRoutes";
 import PublicOnlyRoute from "./routes/PublicOnlyRoute";
 import HomeRedirect from "./routes/HomeRedirect";
 import SettingsPage from "./pages/Settings/SettingsPage";
+import ProPlanPage from "./pages/Pro/ProPlanPage";
 
 import { CurrencyProvider } from "./contexts/CurrencyContext";
 
@@ -44,6 +45,7 @@ function App() {
                 <Route path="/income" element={<IncomePage />} />
                 <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/pro" element={<ProPlanPage />} />
               </Route>
             </Route>
 
