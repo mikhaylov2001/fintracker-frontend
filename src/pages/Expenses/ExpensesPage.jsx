@@ -101,7 +101,8 @@ export default function ExpensesPage() {
     const payload = {
       amount: String(tx.amount),
       category: tx.category,
-      description: tx.comment || "",
+      // Бэкенд требует @NotBlank description — подставляем категорию, если поле пустое
+      description: (tx.comment || "").trim() || tx.category || "Расход",
       date: normalizeDateOnly(tx.date),
     };
     try {

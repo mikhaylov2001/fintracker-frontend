@@ -158,6 +158,10 @@ export function unwrapSummariesList(raw) {
   return [];
 }
 
+/** Хронологический порядок для оси X графиков: слева старые, справа свежие */
+export const sortMonthsAsc = (months) =>
+  [...months].sort((a, b) => ymToNum(a) - ymToNum(b));
+
 /**
  * Месяцы для графика «Динамика сбережений».
  * Режим «Месяц» / «3 мес.» не сужает график до 1 точки — показываем год якоря или все месяцы с данными.
@@ -169,7 +173,7 @@ export function resolveTrendChartMonths(period, summaries = []) {
 
   const narrow = period.mode === "month" || period.mode === "3m";
   if (!narrow) {
-    return resolvePeriodMonths(period, summaries);
+    return sortMonthsAsc(resolvePeriodMonths(period, summaries));
   }
 
   const anchor = period.anchorYM || currentYM();
@@ -185,7 +189,7 @@ export function resolveTrendChartMonths(period, summaries = []) {
   const all = [...new Set(withData)].sort((a, b) => ymToNum(a) - ymToNum(b));
   if (all.length >= 2) return all;
 
-  return resolvePeriodMonths(period, summaries);
+  return sortMonthsAsc(resolvePeriodMonths(period, summaries));
 }
 
 /** Подпись под графиком динамики при узком KPI-периоде */

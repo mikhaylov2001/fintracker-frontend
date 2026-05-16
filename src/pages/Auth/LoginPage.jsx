@@ -1,25 +1,10 @@
 // src/pages/Auth/LoginPage.jsx
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
-import {
-  authHeroSx,
-  authPaperSx,
-  authTitleSx,
-  authSubtitleSx,
-  authHeroTitleSx,
-  authHeroTextSx,
-  authPrimaryButtonSx,
-} from "../../styles/authUi";
-
-
-const GOOGLE_CLIENT_ID =
-  process.env.REACT_APP_GOOGLE_CLIENT_ID ||
-  "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
-
-const GIS_SRC = "https://accounts.google.com/gsi/client";
+import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
 
 // ===== валидация =====
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -50,27 +35,6 @@ const mapApiError = (err, fallback) => {
   return fallback;
 };
 
-function loadGisScript() {
-  return new Promise((resolve, reject) => {
-    if (window.google?.accounts?.id) return resolve(true);
-
-    const existing = document.querySelector(`script[src="${GIS_SRC}"]`);
-    if (existing) {
-      existing.addEventListener("load", () => resolve(true));
-      existing.addEventListener("error", reject);
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = GIS_SRC;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => resolve(true);
-    script.onerror = reject;
-    document.body.appendChild(script);
-  });
-}
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,8 +44,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({ email: "", password: "" });
   const [touched, setTouched] = useState({ email: false, password: false });
-  const googleDivRef = useRef(null);
-  const gisInitedRef = useRef(false);
 
   const afterLoginPath = location.state?.from?.pathname || "/";
 
@@ -125,51 +87,6 @@ export default function LoginPage() {
     },
     [loginWithGoogle, navigate, afterLoginPath]
   );
-
-  useEffect(() => {
-    if (loading || isAuthenticated) return;
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        await loadGisScript();
-        if (cancelled) return;
-
-        if (!googleDivRef.current) return;
-        if (!window.google?.accounts?.id) return;
-
-        if (gisInitedRef.current) return;
-        gisInitedRef.current = true;
-
-        googleDivRef.current.innerHTML = "";
-
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleGoogleCallback,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-
-        window.google.accounts.id.renderButton(googleDivRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          text: "continue_with",
-        });
-      } catch (e) {
-        console.error(e);
-        setError("Не удалось загрузить Google вход. Проверьте настройки.");
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      try {
-        window.google?.accounts?.id?.cancel();
-      } catch {}
-    };
-  }, [handleGoogleCallback, loading, isAuthenticated]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -233,13 +150,17 @@ export default function LoginPage() {
         <Box
           sx={{
             display: { xs: "block", md: "none" },
-            ...authHeroSx,
+            borderRadius: 5,
             p: 2.5,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <Typography
             sx={{
-              ...authHeroTitleSx,
+              color: "rgba(255,255,255,0.92)",
+              fontWeight: 950,
               fontSize: 22,
               lineHeight: 1.15,
             }}
@@ -249,7 +170,7 @@ export default function LoginPage() {
           <Typography
             sx={{
               mt: 0.8,
-              ...authHeroTextSx,
+              color: "rgba(255,255,255,0.72)",
               fontSize: 13.5,
               lineHeight: 1.35,
             }}
@@ -265,13 +186,17 @@ export default function LoginPage() {
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             justifyContent: "center",
-            ...authHeroSx,
+            borderRadius: 5,
             p: 4,
+            border: "1px solid rgba(255,255,255,0.08)",
+            backgroundColor: "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(12px)",
           }}
         >
           <Typography
             sx={{
-              ...authHeroTitleSx,
+              color: "rgba(255,255,255,0.9)",
+              fontWeight: 950,
               fontSize: 34,
               lineHeight: 1.1,
             }}
@@ -281,7 +206,7 @@ export default function LoginPage() {
           <Typography
             sx={{
               mt: 1.25,
-              ...authHeroTextSx,
+              color: "rgba(255,255,255,0.72)",
               fontSize: 15,
               maxWidth: 420,
             }}
@@ -292,16 +217,38 @@ export default function LoginPage() {
         </Box>
 
         {/* Card */}
-        <Paper elevation={0} sx={authPaperSx}>
+        <Paper
+          elevation={8}
+          sx={{
+            p: { xs: 3, md: 4 },
+            width: "100%",
+            maxWidth: 420,
+            mx: "auto",
+            borderRadius: 5,
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
+            boxShadow:
+              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
+          }}
+        >
           <Box sx={{ mb: 2.5, textAlign: "center" }}>
             <Typography
               component="h1"
-              sx={authTitleSx}
+              sx={{
+                fontSize: 26,
+                fontWeight: 900,
+                letterSpacing: 0.3,
+                color: "#111827",
+              }}
             >
               Вход
             </Typography>
             <Typography
-              sx={authSubtitleSx}
+              sx={{
+                mt: 0.8,
+                fontSize: 13,
+                color: "rgba(15,23,42,0.6)",
+              }}
             >
               Войдите в аккаунт, чтобы продолжить.
             </Typography>
@@ -349,7 +296,15 @@ export default function LoginPage() {
               variant="contained"
               color="primary"
               disabled={!isFormValid}
-              sx={{ ...authPrimaryButtonSx, textTransform: "none", fontSize: 15 }}
+              sx={{
+                mt: 2,
+                mb: 1.5,
+                borderRadius: 999,
+                py: 1.1,
+                fontWeight: 800,
+                textTransform: "none",
+                fontSize: 15,
+              }}
             >
               Войти
             </Button>
@@ -374,18 +329,12 @@ export default function LoginPage() {
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
           </Box>
 
-          {/* Google */}
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 1.5 }}>
-            <Box
-              sx={{
-                width: "100%",
-                maxWidth: 420,
-                display: "flex",
-                justifyContent: "center",
-              }}
-            >
-              <div ref={googleDivRef} />
-            </Box>
+          <Box sx={{ mb: 1.5 }}>
+            <GoogleSignInButton
+              label="Войти через Google"
+              onCredential={handleGoogleCallback}
+              disabled={loading}
+            />
           </Box>
 
           <Typography
