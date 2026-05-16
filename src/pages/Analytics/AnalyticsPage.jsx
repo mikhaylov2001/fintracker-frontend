@@ -70,7 +70,6 @@ export default function AnalyticsPage() {
     () => resolvePeriodMonths(period, summaries),
     [period, summaries]
   );
-  const monthListKey = monthList.join(",");
 
   const agg = useMemo(
     () => aggregateSummaries(summaries, monthList),
@@ -137,7 +136,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, monthListKey]);
+  }, [authLoading, isAuthenticated, monthList]);
 
   const historyRows = useMemo(() => {
     const set = new Set(monthList);
