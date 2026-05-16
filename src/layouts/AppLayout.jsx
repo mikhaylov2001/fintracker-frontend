@@ -11,6 +11,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import AppLogo from "../components/ft/AppLogo";
 
 const navItems = [
   {
@@ -94,14 +95,7 @@ export default function AppLayout() {
           >
             <Menu className="size-5" />
           </button>
-          <div className="flex items-center gap-2">
-            <div className="size-6 rounded-md bg-emerald-glow shadow-[0_0_16px_oklch(0.72_0.18_162/0.5)] grid place-items-center">
-              <div className="size-1.5 rounded-sm bg-background/80" />
-            </div>
-            <span className="font-bold tracking-tight text-sm">
-              FinTracker<span className="text-emerald-glow">Pro</span>
-            </span>
-          </div>
+          <AppLogo compact className="px-1" />
           <div className="size-9" />
         </div>
 
@@ -116,17 +110,7 @@ export default function AppLayout() {
 function SidebarContent({ pathname, userName, dashTo, onLogout }) {
   return (
     <>
-      <div className="flex items-center gap-3 px-2">
-        <div className="size-9 rounded-xl bg-emerald-glow shadow-[0_0_24px_oklch(0.72_0.18_162/0.45)] grid place-items-center">
-          <div className="size-3 rounded-sm bg-background/80" />
-        </div>
-        <div className="flex flex-col leading-none">
-          <span className="font-bold text-lg tracking-tight text-foreground">
-            FinTracker<span className="text-emerald-glow">Pro</span>
-          </span>
-          <span className="text-[11px] text-muted-foreground mt-1">{userName}</span>
-        </div>
-      </div>
+      <AppLogo userName={userName} className="px-2" />
 
       <nav className="flex flex-col gap-1.5">
         <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground px-3 mb-1 font-semibold">
