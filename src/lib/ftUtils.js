@@ -28,6 +28,27 @@ export const monthLabel = (ym) => {
   });
 };
 
+/** «Май 2026 г.» — как в истории месяцев */
+export const monthLabelLong = (ym) => {
+  const [y, m] = String(ym || "").split("-").map(Number);
+  if (!y || !m) return "";
+  const raw = new Date(y, m - 1, 1).toLocaleDateString("ru-RU", {
+    month: "long",
+    year: "numeric",
+  });
+  const cap = raw.charAt(0).toUpperCase() + raw.slice(1);
+  return cap.includes("г.") ? cap : `${cap} г.`;
+};
+
+export const pluralMonthsRu = (n) => {
+  const x = Math.abs(Number(n) || 0);
+  const mod10 = x % 10;
+  const mod100 = x % 100;
+  if (mod10 === 1 && mod100 !== 11) return `${x} месяц`;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return `${x} месяца`;
+  return `${x} месяцев`;
+};
+
 export const unwrapList = (raw) => {
   if (!raw) return [];
   if (Array.isArray(raw)) return raw;

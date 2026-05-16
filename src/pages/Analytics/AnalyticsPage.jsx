@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, TrendingDown, TrendingUp, Wallet, Percent } from "lucide-react";
+import { TrendingDown, TrendingUp, Wallet, Percent } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSummaryApi } from "../../api/summaryApi";
@@ -14,6 +14,7 @@ import {
   unwrapSummariesList,
 } from "../../lib/periodUtils";
 import PeriodSelector from "../../components/ft/PeriodSelector";
+import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -29,7 +30,6 @@ export default function AnalyticsPage() {
   const [summaries, setSummaries] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedYm, setExpandedYm] = useState(null);
   const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
@@ -137,13 +137,6 @@ export default function AnalyticsPage() {
       cancelled = true;
     };
   }, [authLoading, isAuthenticated, monthList]);
-
-  const historyRows = useMemo(() => {
-    const set = new Set(monthList);
-    return summaries
-      .filter((s) => set.has(s.ym))
-      .sort((a, b) => b.ym.localeCompare(a.ym));
-  }, [summaries, monthList]);
 
   const maxCat = categories[0]?.amount || 1;
   const todayStr = new Date().toLocaleDateString("ru-RU");
@@ -255,58 +248,12 @@ export default function AnalyticsPage() {
               )}
             </section>
 
-            <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8">
-              <h2 className="text-lg font-bold mb-1">История месяцев</h2>
-              <p className="text-xs text-muted-foreground mb-5">
-                История сохранена: {historyRows.length}{" "}
-                {historyRows.length === 1 ? "месяц" : historyRows.length < 5 ? "месяца" : "месяцев"}
-                {todayStr ? ` · обновлено ${todayStr}` : ""}
-              </p>
-              {historyRows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Нет данных.</p>
-              ) : (
-                <ul className="divide-y divide-border">
-                  {historyRows.map((row) => {
-                    const rate = row.totalIncome > 0
-                      ? Math.round(row.savingsRatePercent || ((row.savings / row.totalIncome) * 100))
-                      : 0;
-                    const open = expandedYm === row.ym;
-                    return (
-                      <li key={row.ym}>
-                        <button
-                          type="button"
-                          onClick={() => setExpandedYm(open ? null : row.ym)}
-                          className="w-full flex items-center justify-between py-3.5 text-left hover:bg-white/[0.02] transition rounded-lg px-1 -mx-1"
-                        >
-                          <span className="text-sm font-medium capitalize">{monthLabel(row.ym)}</span>
-                          <span className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-emerald-glow tabular-nums">{rate}%</span>
-                            <ChevronDown
-                              className={`size-4 text-muted-foreground transition ${open ? "rotate-180" : ""}`}
-                            />
-                          </span>
-                        </button>
-                        {open && (
-                          <div className="pb-4 pl-1 text-xs text-muted-foreground space-y-1.5">
-                            <p>
-                              Доходы: <span className="text-emerald-glow font-medium">{formatAmount(row.totalIncome)}</span>
-                            </p>
-                            <p>
-                              Расходы: <span className="text-warning font-medium">{formatAmount(row.totalExpenses)}</span>
-                            </p>
-                            <p>
-                              Сбережения: <span className="text-foreground font-medium">{formatAmount(row.savings)}</span>
-                              {" · "}
-                              норма {rate}% — доля дохода, которую удалось отложить
-                            </p>
-                          </div>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </section>
+            <MonthHistoryPanel
+              rows={summaries}
+              formatAmount={formatAmount}
+              updatedAt={todayStr}
+              className="h-full"
+            />
           </div>
         </>
       )}
