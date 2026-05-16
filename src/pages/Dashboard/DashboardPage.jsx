@@ -22,7 +22,7 @@ import {
   resolvePeriodMonths,
   unwrapSummariesList,
 } from "../../lib/periodUtils";
-import DashboardPeriodBar from "../../components/ft/DashboardPeriodBar";
+import PeriodSelector from "../../components/ft/PeriodSelector";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -165,7 +165,7 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <DashboardPeriodBar period={period} onChange={setPeriod} />
+        <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 lg:mb-10">

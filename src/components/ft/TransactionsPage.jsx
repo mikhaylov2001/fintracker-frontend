@@ -76,22 +76,23 @@ export default function TransactionsPage({
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">{title}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
-        >
-          <Plus className="size-4" />
-          Добавить
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+          {period && onPeriodChange && (
+            <PeriodSelector period={period} onChange={onPeriodChange} variant="header" />
+          )}
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shrink-0 ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
+          >
+            <Plus className="size-4" />
+            Добавить
+          </button>
+        </div>
       </header>
-
-      {period && onPeriodChange && (
-        <PeriodSelector period={period} onChange={onPeriodChange} />
-      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-surface border border-border rounded-3xl p-5 relative overflow-hidden">

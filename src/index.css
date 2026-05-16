@@ -52,3 +52,15 @@ body {
   background-color: var(--ft-background);
   color: var(--ft-foreground);
 }
+
+/* Recharts: светлый текст в тултипах */
+.recharts-default-tooltip,
+.recharts-tooltip-wrapper {
+  color: #f1f1f5 !important;
+}
+.recharts-tooltip-item,
+.recharts-tooltip-item-name,
+.recharts-tooltip-item-value,
+.recharts-tooltip-label {
+  color: #f1f1f5 !important;
+}

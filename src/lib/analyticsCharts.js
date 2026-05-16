@@ -18,11 +18,19 @@ export const PIE_COLORS = [
 ];
 
 export const chartTooltipStyle = {
-  background: "oklch(0.205 0.008 285)",
-  border: "1px solid oklch(1 0 0 / 0.08)",
+  background: "#17171b",
+  border: "1px solid rgba(255, 255, 255, 0.1)",
   borderRadius: 12,
-  color: "oklch(0.96 0.005 285)",
+  color: "#f1f1f5",
   fontSize: 12,
+};
+
+/** Пропсы для Recharts Tooltip (светлый текст) */
+export const chartTooltipProps = {
+  contentStyle: chartTooltipStyle,
+  itemStyle: { color: "#f1f1f5" },
+  labelStyle: { color: "#f1f1f5", fontWeight: 600 },
+  cursor: { fill: "rgba(255, 255, 255, 0.04)" },
 };
 
 export const chartTick = { fill: CHART_TICK, fontSize: 11 };

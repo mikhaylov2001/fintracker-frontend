@@ -32,7 +32,7 @@ export default function PeriodSelector({ period, onChange, variant = "default" }
         : "month";
 
   const controls = (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
+    <div className="flex flex-row items-center gap-2.5 flex-wrap justify-end">
       <FtPeriodCalendar period={period} onChange={onChange} />
       <SegmentToggle
         value={segmentValue}

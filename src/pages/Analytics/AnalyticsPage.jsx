@@ -37,11 +37,12 @@ import {
   CHART_TICK,
   PIE_COLORS,
   chartTick,
-  chartTooltipStyle,
+  chartTooltipProps,
   monthShortRu,
 } from "../../lib/analyticsCharts";
 import PeriodSelector from "../../components/ft/PeriodSelector";
 import AnalyticsCard from "../../components/ft/AnalyticsCard";
+import ChartTooltip from "../../components/ft/ChartTooltip";
 import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 import SegmentToggle from "../../components/ft/SegmentToggle";
 
@@ -226,15 +227,16 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <header className="mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Динамика за {chartRows.length || 6} месяцев и распределение по категориям. Сегодня —{" "}
-          {periodDescription(period)}.
-        </p>
+      <header className="flex justify-between items-end mb-8 flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Динамика за {chartRows.length || 6} месяцев и распределение по категориям. Сегодня —{" "}
+            {periodDescription(period)}.
+          </p>
+        </div>
+        <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
-
-      <PeriodSelector period={period} onChange={setPeriod} />
 
       {!hasData ? (
         <div className="bg-surface rounded-3xl border border-border p-10 sm:p-14 text-center">
@@ -271,9 +273,8 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="month" tick={chartTick} />
                   <YAxis tick={chartTick} width={48} />
                   <Tooltip
-                    contentStyle={chartTooltipStyle}
-                    formatter={tooltipFmt}
-                    labelStyle={{ color: CHART_TICK }}
+                    content={<ChartTooltip formatter={tooltipFmt} />}
+                    {...chartTooltipProps}
                   />
                   <Legend wrapperStyle={{ fontSize: 12, color: CHART_TICK }} />
                   <Bar dataKey="Доходы" fill={CHART_INCOME} radius={[6, 6, 0, 0]} maxBarSize={48} />
@@ -293,9 +294,8 @@ export default function AnalyticsPage() {
                   <XAxis dataKey="month" tick={chartTick} />
                   <YAxis tick={chartTick} width={48} />
                   <Tooltip
-                    contentStyle={chartTooltipStyle}
-                    formatter={tooltipFmt}
-                    labelStyle={{ color: CHART_TICK }}
+                    content={<ChartTooltip formatter={tooltipFmt} />}
+                    {...chartTooltipProps}
                   />
                   <Line
                     type="monotone"
@@ -348,8 +348,8 @@ export default function AnalyticsPage() {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={chartTooltipStyle}
-                      formatter={tooltipFmt}
+                      content={<ChartTooltip formatter={tooltipFmt} />}
+                      {...chartTooltipProps}
                     />
                   </PieChart>
                 </ChartBox>
