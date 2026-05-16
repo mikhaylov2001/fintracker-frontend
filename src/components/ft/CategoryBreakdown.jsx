@@ -1,9 +1,31 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
+import { Box, Chip, Stack, Typography } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import { BarChart } from "@mui/x-charts/BarChart";
+import {
+  CHART_COLORS,
+  chartAxisSx,
+  fmtAxisShort,
+  withHeadroom,
+} from "../../lib/chartTheme";
 import SegmentToggle from "./SegmentToggle";
 
-const COLOR_EXPENSE = "#f5a623";
-const COLOR_INCOME = "#3ecf8e";
+function useIsMobile() {
+  const [mobile, setMobile] = React.useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 639px)").matches : false
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const fn = () => setMobile(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return mobile;
+}
 
+/**
+ * Топ категорий — горизонтальный BarChart MUI, стиль Lovable.
+ */
 export default function CategoryBreakdown({
   expenseCategories = [],
   incomeCategories = [],
@@ -14,91 +36,160 @@ export default function CategoryBreakdown({
 }) {
   const isExpense = kind === "expense";
   const categories = isExpense ? expenseCategories : incomeCategories;
-  const color = isExpense ? COLOR_EXPENSE : COLOR_INCOME;
-  const max = categories[0]?.amount || 1;
+  const accent = isExpense ? CHART_COLORS.expenses : CHART_COLORS.income;
+  const isMobile = useIsMobile();
 
   const total = useMemo(
     () => categories.reduce((s, c) => s + c.amount, 0),
     [categories]
   );
 
+  const axisMoneyFormatter = useCallback(
+    (v) => {
+      const num = Number(v) || 0;
+      if (isMobile) return fmtAxisShort(num);
+      try {
+        return formatAmount(num).replace(/\s/g, " ");
+      } catch {
+        return fmtAxisShort(num);
+      }
+    },
+    [isMobile, formatAmount]
+  );
+
+  const chartHeight = Math.max(200, categories.length * (isMobile ? 36 : 42) + 48);
+  const topCatsYAxisWidth = isMobile ? 88 : 120;
+  const topCatsMargin = isMobile
+    ? { left: 4, right: 8, top: 8, bottom: 24 }
+    : { left: 8, right: 12, top: 8, bottom: 24 };
+
+  const maxX = useMemo(() => {
+    const m = categories[0]?.amount || 0;
+    return withHeadroom(m || 1);
+  }, [categories]);
+
   return (
-    <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 h-full flex flex-col">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
-        <div>
-          <h2 className="text-lg font-bold mb-1">Топ категорий</h2>
-          <p className="text-xs text-muted-foreground">
+    <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 h-full flex flex-col min-w-0">
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={1.5}
+        alignItems={{ sm: "flex-start" }}
+        justifyContent="space-between"
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography
+            component="h2"
+            sx={{ fontWeight: 800, fontSize: "1.125rem", color: "inherit", mb: 0.5 }}
+          >
+            Топ категорий
+          </Typography>
+          <Typography sx={{ fontSize: 12, color: "rgba(241,245,249,0.55)" }}>
             {isExpense ? "Куда уходят деньги" : "Откуда приходят"} за выбранный период
-          </p>
-        </div>
-        <SegmentToggle
-          value={kind}
-          onChange={onKindChange}
-          options={[
-            {
-              id: "expense",
-              label: "Расходы",
-              activeClass:
-                "bg-[#f5a623] text-black shadow-[0_0_20px_rgba(245,166,35,0.4)]",
-            },
-            {
-              id: "income",
-              label: "Доходы",
-              activeClass:
-                "bg-[#3ecf8e] text-black shadow-[0_0_20px_rgba(62,207,142,0.4)]",
-            },
-          ]}
-        />
-      </div>
+          </Typography>
+        </Box>
+
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+          {!loading && categories.length > 0 && (
+            <Chip
+              label={`Всего: ${formatAmount(total)}`}
+              size="small"
+              sx={{
+                borderRadius: 999,
+                border: 0,
+                color: accent,
+                bgcolor: alpha(accent, 0.14),
+                fontWeight: 800,
+                fontSize: 11,
+              }}
+            />
+          )}
+          <SegmentToggle
+            value={kind}
+            onChange={onKindChange}
+            options={[
+              {
+                id: "expense",
+                label: "Расходы",
+                activeClass:
+                  "bg-[#FBBF24] text-black shadow-[0_0_20px_rgba(251,191,36,0.4)]",
+              },
+              {
+                id: "income",
+                label: "Доходы",
+                activeClass:
+                  "bg-[#22C55E] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]",
+              },
+            ]}
+          />
+        </Stack>
+      </Stack>
 
       {loading ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">Загрузка категорий…</p>
+        <Typography sx={{ fontSize: 14, color: "rgba(241,245,249,0.55)", py: 6, textAlign: "center" }}>
+          Загрузка категорий…
+        </Typography>
       ) : categories.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-8 text-center">
+        <Typography sx={{ fontSize: 14, color: "rgba(241,245,249,0.55)", py: 6, textAlign: "center" }}>
           {isExpense ? "Нет расходов за период." : "Нет доходов за период."}
-        </p>
+        </Typography>
       ) : (
-        <>
-          <p className="text-xs text-muted-foreground mb-4">
-            Всего:{" "}
-            <span className="font-semibold tabular-nums" style={{ color }}>
-              {formatAmount(total)}
-            </span>
-            {" · "}
-            {categories.length}{" "}
-            {categories.length === 1 ? "категория" : categories.length < 5 ? "категории" : "категорий"}
-          </p>
-          <ul className="space-y-4 flex-1">
-            {categories.map((c, i) => (
-              <li key={c.name}>
-                <div className="flex justify-between text-sm mb-1.5 gap-3">
-                  <span className="font-medium truncate flex items-center gap-2 min-w-0">
-                    <span
-                      className="size-5 rounded-md grid place-items-center text-[10px] font-bold shrink-0 text-black/80"
-                      style={{ backgroundColor: color, opacity: 1 - i * 0.06 }}
-                    >
-                      {i + 1}
-                    </span>
-                    {c.name}
-                  </span>
-                  <span className="font-semibold tabular-nums shrink-0" style={{ color }}>
-                    {formatAmount(c.amount)}
-                  </span>
-                </div>
-                <div className="h-2.5 rounded-full bg-white/[0.06] overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${(c.amount / max) * 100}%`,
-                      backgroundColor: color,
-                      opacity: Math.max(0.45, 1 - i * 0.08),
-                    }}
-                  />
-                </div>
-              </li>
-            ))}
-          </ul>
-        </>
+        <Box
+          sx={{
+            width: "100%",
+            height: chartHeight,
+            minWidth: 0,
+            flex: 1,
+            borderRadius: "16px",
+            bgcolor: "rgba(0,0,0,0.18)",
+            border: "1px solid rgba(255,255,255,0.06)",
+            px: { xs: 0.5, sm: 1 },
+            pt: 1,
+          }}
+        >
+          <BarChart
+            height={chartHeight}
+            layout="horizontal"
+            hideLegend
+            yAxis={[
+              {
+                data: categories.map((c) => c.name),
+                scaleType: "band",
+                width: topCatsYAxisWidth,
+                tickLabelStyle: {
+                  fontSize: isMobile ? 10 : 11,
+                  fill: CHART_COLORS.white,
+                  fontWeight: 800,
+                },
+              },
+            ]}
+            xAxis={[
+              {
+                min: 0,
+                max: maxX,
+                valueFormatter: axisMoneyFormatter,
+                tickLabelStyle: {
+                  fontSize: 11,
+                  fill: CHART_COLORS.white,
+                  fontWeight: 800,
+                },
+              },
+            ]}
+            series={[
+              {
+                data: categories.map((c) => c.amount),
+                label: "Сумма",
+                color: accent,
+              },
+            ]}
+            grid={{ vertical: true }}
+            margin={topCatsMargin}
+            sx={{
+              ...chartAxisSx,
+              "& .MuiBarElement-root": { rx: 5 },
+            }}
+          />
+        </Box>
       )}
     </section>
   );

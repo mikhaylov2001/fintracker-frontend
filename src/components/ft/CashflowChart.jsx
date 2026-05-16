@@ -1,23 +1,63 @@
-import React, { useMemo, useState } from "react";
-import { monthLabel } from "../../lib/ftUtils";
+import React, { useCallback, useMemo, useState } from "react";
+import { Box, Stack, Typography } from "@mui/material";
+import { BarChart } from "@mui/x-charts/BarChart";
+import {
+  CHART_COLORS,
+  chartAxisSx,
+  fmtAxisShort,
+  monthShortLabel,
+  withHeadroom,
+} from "../../lib/chartTheme";
 import SegmentToggle from "./SegmentToggle";
 
-const COLOR_INCOME = "#3ecf8e";
-const COLOR_EXPENSE = "#f5a623";
-const COLOR_GRID = "rgba(255,255,255,0.1)";
+function useIsMobile() {
+  const [mobile, setMobile] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 639px)").matches : false
+  );
+  React.useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const fn = () => setMobile(mq.matches);
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return mobile;
+}
 
-function shortMonth(ym) {
-  const [y, m] = String(ym || "").split("-").map(Number);
-  if (!y || !m) return "";
-  const raw = new Date(y, m - 1, 1).toLocaleDateString("ru-RU", { month: "short" });
-  return raw.charAt(0).toUpperCase() + raw.slice(1).replace(".", "");
+function CashflowLegend({ showIncome, showExpense }) {
+  return (
+    <Stack
+      direction="row"
+      spacing={2}
+      alignItems="center"
+      justifyContent="flex-end"
+      sx={{ mb: 1 }}
+    >
+      {showIncome && (
+        <Stack direction="row" spacing={0.9} alignItems="center">
+          <Box sx={{ width: 10, height: 10, borderRadius: "4px", bgcolor: CHART_COLORS.income }} />
+          <Typography sx={{ color: CHART_COLORS.white, fontWeight: 800, fontSize: 12 }}>
+            Доходы
+          </Typography>
+        </Stack>
+      )}
+      {showExpense && (
+        <Stack direction="row" spacing={0.9} alignItems="center">
+          <Box sx={{ width: 10, height: 10, borderRadius: "4px", bgcolor: CHART_COLORS.expenses }} />
+          <Typography sx={{ color: CHART_COLORS.white, fontWeight: 800, fontSize: 12 }}>
+            Расходы
+          </Typography>
+        </Stack>
+      )}
+    </Stack>
+  );
 }
 
 /**
- * Столбчатый график доходов и расходов — равномерная сетка, без пустот между месяцами.
+ * Cashflow — MUI BarChart в стиле Lovable.
  */
 export default function CashflowChart({ rows = [], formatAmount }) {
   const [view, setView] = useState("all");
+  const isMobile = useIsMobile();
 
   const data = useMemo(
     () =>
@@ -27,19 +67,59 @@ export default function CashflowChart({ rows = [], formatAmount }) {
     [rows]
   );
 
+  const showIncome = view === "all" || view === "income";
+  const showExpense = view === "all" || view === "expense";
+
+  const axisMoneyFormatter = useCallback(
+    (v) => {
+      const num = Number(v) || 0;
+      if (isMobile) return fmtAxisShort(num);
+      try {
+        return formatAmount(num).replace(/\s/g, " ");
+      } catch {
+        return fmtAxisShort(num);
+      }
+    },
+    [isMobile, formatAmount]
+  );
+
+  const cashflowMargin = useMemo(
+    () =>
+      isMobile
+        ? { left: 36, right: 8, top: 12, bottom: 44 }
+        : { left: 56, right: 12, top: 12, bottom: 44 },
+    [isMobile]
+  );
+
+  const series = useMemo(() => {
+    const out = [];
+    if (showIncome) {
+      out.push({
+        data: data.map((r) => r.totalIncome || 0),
+        label: "Доходы",
+        color: CHART_COLORS.income,
+      });
+    }
+    if (showExpense) {
+      out.push({
+        data: data.map((r) => r.totalExpenses || 0),
+        label: "Расходы",
+        color: CHART_COLORS.expenses,
+      });
+    }
+    return out;
+  }, [data, showIncome, showExpense]);
+
   const maxVal = useMemo(() => {
-    let m = 1;
+    let m = 0;
     data.forEach((r) => {
-      if (view === "all" || view === "income") m = Math.max(m, r.totalIncome || 0);
-      if (view === "all" || view === "expense") m = Math.max(m, r.totalExpenses || 0);
+      if (showIncome) m = Math.max(m, r.totalIncome || 0);
+      if (showExpense) m = Math.max(m, r.totalExpenses || 0);
     });
-    return m;
-  }, [data, view]);
+    return withHeadroom(m || 1);
+  }, [data, showIncome, showExpense]);
 
-  const chartH = 220;
-  const n = data.length;
-
-  if (n === 0) {
+  if (data.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-12">
         Нет данных для графика.
@@ -47,200 +127,132 @@ export default function CashflowChart({ rows = [], formatAmount }) {
     );
   }
 
-  const showIncome = view === "all" || view === "income";
-  const showExpense = view === "all" || view === "expense";
+  const chartHeight = isMobile ? 260 : 300;
 
   return (
-    <div className="w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+    <div className="w-full min-w-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <SegmentToggle
           value={view}
           onChange={setView}
           options={[
-            { id: "all", label: "Всё", activeClass: "bg-white/10 text-foreground border border-border" },
+            {
+              id: "all",
+              label: "Всё",
+              activeClass: "bg-white/10 text-foreground border border-border",
+            },
             {
               id: "income",
               label: "Доходы",
-              activeClass: "bg-[#3ecf8e] text-black shadow-[0_0_20px_rgba(62,207,142,0.35)]",
+              activeClass:
+                "bg-[#22C55E] text-black shadow-[0_0_20px_rgba(34,197,94,0.35)]",
             },
             {
               id: "expense",
               label: "Расходы",
-              activeClass: "bg-[#f5a623] text-black shadow-[0_0_20px_rgba(245,166,35,0.35)]",
+              activeClass:
+                "bg-[#FBBF24] text-black shadow-[0_0_20px_rgba(251,191,36,0.35)]",
             },
           ]}
         />
-        <div className="flex gap-4 text-[11px] text-muted-foreground">
-          {showIncome && (
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-sm" style={{ backgroundColor: COLOR_INCOME }} />
-              Доходы
-            </span>
-          )}
-          {showExpense && (
-            <span className="flex items-center gap-1.5">
-              <span className="size-2.5 rounded-sm" style={{ backgroundColor: COLOR_EXPENSE }} />
-              Расходы
-            </span>
-          )}
-        </div>
+        <CashflowLegend showIncome={showIncome} showExpense={showExpense} />
       </div>
 
-      <div className="flex gap-3">
-        <div className="hidden sm:flex flex-col justify-between shrink-0 w-11 text-[10px] text-muted-foreground tabular-nums py-1" style={{ height: chartH }}>
-          <span>{formatAxis(maxVal, formatAmount)}</span>
-          <span>{formatAxis(maxVal * 0.5, formatAmount)}</span>
-          <span>0</span>
-        </div>
+      <Box
+        sx={{
+          width: "100%",
+          height: chartHeight,
+          minWidth: 0,
+          borderRadius: "16px",
+          bgcolor: "rgba(0,0,0,0.2)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          px: { xs: 0.5, sm: 1 },
+          pt: 1,
+        }}
+      >
+        <BarChart
+          height={chartHeight}
+          hideLegend
+          xAxis={[
+            {
+              data: data.map((r) => monthShortLabel(r.ym)),
+              scaleType: "band",
+              tickSpacing: 12,
+              tickLabelStyle: {
+                fontSize: isMobile ? 10 : 11,
+                fill: CHART_COLORS.white,
+                fontWeight: 800,
+              },
+              categoryGapRatio: data.length <= 2 ? 0.42 : 0.28,
+              barGapRatio: 0.14,
+            },
+          ]}
+          yAxis={[
+            {
+              min: 0,
+              max: maxVal,
+              tickNumber: isMobile ? 4 : 5,
+              valueFormatter: axisMoneyFormatter,
+              tickLabelStyle: {
+                fontSize: 11,
+                fill: CHART_COLORS.white,
+                fontWeight: 800,
+              },
+            },
+          ]}
+          series={series}
+          grid={{ horizontal: true }}
+          margin={cashflowMargin}
+          sx={{
+            ...chartAxisSx,
+            "& .MuiBarElement-root": {
+              rx: 6,
+            },
+          }}
+        />
+      </Box>
 
-        <div className="flex-1 min-w-0 relative rounded-2xl border border-border/60 bg-black/15 px-2 sm:px-4 pt-3 sm:pt-4 pb-2">
-          <div
-            className="absolute left-2 right-2 sm:left-4 sm:right-4 top-3 sm:top-4 pointer-events-none flex flex-col justify-between"
-            style={{ height: chartH }}
-          >
-            <div className="border-t border-dashed" style={{ borderColor: COLOR_GRID }} />
-            <div className="border-t border-dashed" style={{ borderColor: COLOR_GRID }} />
-            <div className="border-t border-dashed" style={{ borderColor: COLOR_GRID }} />
-          </div>
-
-          <div
-            className="grid gap-2 sm:gap-4 w-full relative z-[1]"
-            style={{
-              gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))`,
-              height: chartH,
-            }}
-          >
-            {data.map((row) => {
-              const incH = showIncome
-                ? Math.max(8, Math.round((row.totalIncome / maxVal) * chartH))
-                : 0;
-              const expH = showExpense
-                ? Math.max(8, Math.round((row.totalExpenses / maxVal) * chartH))
-                : 0;
-
-              return (
-                <div
-                  key={row.ym}
-                  className="flex flex-col items-stretch justify-end min-w-0"
-                  style={{ height: chartH }}
+      {view === "all" && (
+        <div
+          className="grid gap-2 sm:gap-3 mt-4"
+          style={{ gridTemplateColumns: `repeat(${data.length}, minmax(0, 1fr))` }}
+        >
+          {data.map((row) => {
+            const balance = row.totalIncome - row.totalExpenses;
+            return (
+              <div
+                key={`sum-${row.ym}`}
+                className="rounded-xl border border-border/80 bg-white/[0.03] px-2 py-2.5 sm:p-3 text-center min-w-0"
+              >
+                <p className="text-[11px] sm:text-xs font-bold truncate">
+                  {monthShortLabel(row.ym)}
+                </p>
+                <p
+                  className="text-[10px] sm:text-xs tabular-nums mt-1"
+                  style={{ color: CHART_COLORS.income }}
                 >
-                  <div
-                    className="flex items-end justify-center w-full gap-1.5 sm:gap-2.5"
-                    style={{ height: chartH }}
-                  >
-                    {showIncome && (
-                      <Bar
-                        height={incH}
-                        color={COLOR_INCOME}
-                        label="Доходы"
-                        value={formatAmount(row.totalIncome)}
-                        wide={view !== "all"}
-                      />
-                    )}
-                    {showExpense && (
-                      <Bar
-                        height={expH}
-                        color={COLOR_EXPENSE}
-                        label="Расходы"
-                        value={formatAmount(row.totalExpenses)}
-                        wide={view !== "all"}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div
-            className="grid gap-2 sm:gap-3 mt-4 w-full"
-            style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}
-          >
-            {data.map((row) => {
-              const balance = row.totalIncome - row.totalExpenses;
-              return (
-                <div
-                  key={`lbl-${row.ym}`}
-                  className="rounded-xl border border-border bg-white/[0.03] p-2 sm:p-3 text-center min-w-0"
+                  +{formatAmount(row.totalIncome)}
+                </p>
+                <p
+                  className="text-[10px] sm:text-xs tabular-nums"
+                  style={{ color: CHART_COLORS.expenses }}
                 >
-                  <p className="text-xs sm:text-sm font-semibold capitalize truncate">
-                    {shortMonth(row.ym)}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground mb-1.5">{String(row.ym).slice(0, 4)}</p>
-                  {showIncome && (
-                    <p className="text-[10px] sm:text-xs tabular-nums" style={{ color: COLOR_INCOME }}>
-                      +{formatAmount(row.totalIncome)}
-                    </p>
-                  )}
-                  {showExpense && (
-                    <p className="text-[10px] sm:text-xs tabular-nums" style={{ color: COLOR_EXPENSE }}>
-                      −{formatAmount(row.totalExpenses)}
-                    </p>
-                  )}
-                  {view === "all" && (
-                    <p
-                      className="text-[10px] font-medium mt-1 tabular-nums"
-                      style={{ color: balance >= 0 ? COLOR_INCOME : COLOR_EXPENSE }}
-                    >
-                      {balance >= 0 ? "+" : ""}
-                      {formatAmount(balance)}
-                    </p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  −{formatAmount(row.totalExpenses)}
+                </p>
+                <p
+                  className="text-[10px] font-semibold tabular-nums mt-1"
+                  style={{
+                    color: balance >= 0 ? CHART_COLORS.income : CHART_COLORS.expenses,
+                  }}
+                >
+                  {balance >= 0 ? "+" : ""}
+                  {formatAmount(balance)}
+                </p>
+              </div>
+            );
+          })}
         </div>
-      </div>
-
-      <ul className="mt-5 space-y-2 lg:hidden border-t border-border pt-4">
-        {data.map((row) => (
-          <li key={`m-${row.ym}`} className="flex justify-between text-xs gap-2 py-1">
-            <span className="text-muted-foreground capitalize">{monthLabel(row.ym)}</span>
-            <span className="tabular-nums shrink-0 text-right">
-              {showIncome && (
-                <span style={{ color: COLOR_INCOME }}>+{formatAmount(row.totalIncome)} </span>
-              )}
-              {showExpense && (
-                <span style={{ color: COLOR_EXPENSE }}>−{formatAmount(row.totalExpenses)}</span>
-              )}
-            </span>
-          </li>
-        ))}
-      </ul>
+      )}
     </div>
   );
-}
-
-function Bar({ height, color, label, value, wide }) {
-  return (
-    <div
-      className={`group relative rounded-t-lg transition-all hover:brightness-110 cursor-default ${
-        wide ? "w-full max-w-[72px] mx-auto" : "w-5 sm:w-7 md:w-9"
-      }`}
-      style={{
-        height,
-        backgroundColor: color,
-        minHeight: 8,
-        boxShadow: `0 0 24px ${color}55`,
-      }}
-      title={`${label}: ${value}`}
-    >
-      <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md px-2 py-0.5 text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition bg-black/90 text-white z-10 border border-white/10">
-        {value}
-      </span>
-    </div>
-  );
-}
-
-function formatAxis(val, formatAmount) {
-  const num = Number(val) || 0;
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
-  if (num >= 1_000) return `${Math.round(num / 1_000)}k`;
-  try {
-    const s = formatAmount(num);
-    return s.length > 8 ? s.replace(/\s/g, "") : s;
-  } catch {
-    return String(Math.round(num));
-  }
 }
