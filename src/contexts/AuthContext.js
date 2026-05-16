@@ -11,10 +11,8 @@ import { apiFetch } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
-const API_BASE_URL = (
-  process.env.REACT_APP_API_BASE_URL ||
-  "https://fintrackerpro-production.up.railway.app"
-).trim();
+// Пустое значение → запросы на /api (прокси Vercel → Render). Не указывайте прямой URL бэка на Vercel.
+const API_BASE_URL = String(process.env.REACT_APP_API_BASE_URL || "").trim();
 
 const API_AUTH_BASE = "/api/auth";
 const AUTH_STORAGE_KEYS = [
@@ -87,8 +85,15 @@ const getHumanError = (err, context = "general") => {
   }
 
   if (context === "google") {
+    if (
+      status === 503 ||
+      lower.includes("google_not_configured") ||
+      lower.includes("not configured on the server")
+    ) {
+      return "На сервере не настроен Google OAuth. Добавьте GOOGLE_CLIENT_ID в Render и перезапустите бэкенд";
+    }
     if (lower.includes("invalid google token") || lower.includes("google token")) {
-      return "Не удалось подтвердить вход через Google. Попробуйте ещё раз";
+      return "Не удалось подтвердить вход через Google. Проверьте, что GOOGLE_CLIENT_ID на Render совпадает с клиентом на фронте";
     }
     if (lower.includes("google account is linked") || lower.includes("другой аккаунт")) {
       return "Этот Google-аккаунт уже привязан к другому пользователю";
@@ -364,7 +369,10 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await fetch(`${API_BASE_URL}${API_AUTH_BASE}/logout`, {
+      const logoutUrl = API_BASE_URL
+        ? `${API_BASE_URL}${API_AUTH_BASE}/logout`
+        : `${API_AUTH_BASE}/logout`;
+      await fetch(logoutUrl, {
         method: "POST",
         credentials: "include",
       });
