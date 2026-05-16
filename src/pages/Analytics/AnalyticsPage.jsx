@@ -4,6 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSummaryApi } from "../../api/summaryApi";
 import { useExpensesApi } from "../../api/expensesApi";
+import { useIncomeApi } from "../../api/incomeApi";
 import { mapApiRow, unwrapList } from "../../lib/ftUtils";
 import {
   aggregateSummaries,
@@ -16,20 +17,27 @@ import {
 import PeriodSelector from "../../components/ft/PeriodSelector";
 import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 import CashflowChart from "../../components/ft/CashflowChart";
+import CategoryBreakdown from "../../components/ft/CategoryBreakdown";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { formatAmount } = useCurrency();
   const summaryApi = useSummaryApi();
   const expensesApi = useExpensesApi();
+  const incomeApi = useIncomeApi();
   const summaryRef = useRef(summaryApi);
   const expensesRef = useRef(expensesApi);
+  const incomeRef = useRef(incomeApi);
   summaryRef.current = summaryApi;
   expensesRef.current = expensesApi;
+  incomeRef.current = incomeApi;
 
   const [period, setPeriod] = useState(defaultPeriod);
   const [summaries, setSummaries] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [incomeCategories, setIncomeCategories] = useState([]);
+  const [catKind, setCatKind] = useState("expense");
+  const [catsLoading, setCatsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
 
@@ -37,7 +45,8 @@ export default function AnalyticsPage() {
     if (authLoading) return;
     if (!isAuthenticated) {
       setSummaries([]);
-      setCategories([]);
+      setExpenseCategories([]);
+      setIncomeCategories([]);
       setLoading(false);
       hasLoadedOnce.current = false;
       return;
@@ -89,42 +98,68 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || monthList.length === 0) {
-      setCategories([]);
+      setExpenseCategories([]);
+      setIncomeCategories([]);
+      setCatsLoading(false);
       return;
     }
 
     let cancelled = false;
 
+    const aggregate = (items, field) => {
+      const map = new Map();
+      items.forEach((e) => {
+        const key = (field === "source" ? e.source : e.category) || "Другое";
+        map.set(key, (map.get(key) || 0) + e.amount);
+      });
+      return [...map.entries()]
+        .map(([name, amount]) => ({ name, amount }))
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 8);
+    };
+
     const loadCats = async () => {
+      setCatsLoading(true);
       try {
         const monthsToLoad = monthList.slice(-6);
-        const results = await Promise.all(
-          monthsToLoad.map(async (ym) => {
-            const p = parseYM(ym);
-            if (!p) return [];
-            const res = await expensesRef.current.getMyExpensesByMonth(
-              p.year,
-              p.month,
-              0,
-              300
-            );
-            return unwrapList(res?.data ?? res).map((x) => mapApiRow(x, "expense"));
-          })
-        );
+        const [expResults, incResults] = await Promise.all([
+          Promise.all(
+            monthsToLoad.map(async (ym) => {
+              const p = parseYM(ym);
+              if (!p) return [];
+              const res = await expensesRef.current.getMyExpensesByMonth(
+                p.year,
+                p.month,
+                0,
+                300
+              );
+              return unwrapList(res?.data ?? res).map((x) => mapApiRow(x, "expense"));
+            })
+          ),
+          Promise.all(
+            monthsToLoad.map(async (ym) => {
+              const p = parseYM(ym);
+              if (!p) return [];
+              const res = await incomeRef.current.getMyIncomesByMonth(
+                p.year,
+                p.month,
+                0,
+                300
+              );
+              return unwrapList(res?.data ?? res).map((x) => mapApiRow(x, "income"));
+            })
+          ),
+        ]);
         if (cancelled) return;
-
-        const map = new Map();
-        results.flat().forEach((e) => {
-          const key = e.category || "Другое";
-          map.set(key, (map.get(key) || 0) + e.amount);
-        });
-        const sorted = [...map.entries()]
-          .map(([name, amount]) => ({ name, amount }))
-          .sort((a, b) => b.amount - a.amount)
-          .slice(0, 8);
-        setCategories(sorted);
+        setExpenseCategories(aggregate(expResults.flat(), "category"));
+        setIncomeCategories(aggregate(incResults.flat(), "source"));
       } catch {
-        if (!cancelled) setCategories([]);
+        if (!cancelled) {
+          setExpenseCategories([]);
+          setIncomeCategories([]);
+        }
+      } finally {
+        if (!cancelled) setCatsLoading(false);
       }
     };
 
@@ -134,7 +169,6 @@ export default function AnalyticsPage() {
     };
   }, [authLoading, isAuthenticated, monthList]);
 
-  const maxCat = categories[0]?.amount || 1;
   const todayStr = new Date().toLocaleDateString("ru-RU");
 
   if (authLoading || (loading && !hasLoadedOnce.current)) {
@@ -188,35 +222,14 @@ export default function AnalyticsPage() {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8">
-              <h2 className="text-lg font-bold mb-1">Топ категорий расходов</h2>
-              <p className="text-xs text-muted-foreground mb-5">за выбранный период</p>
-              {categories.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Нет расходов за период.</p>
-              ) : (
-                <ul className="space-y-3">
-                  {categories.map((c) => (
-                    <li key={c.name}>
-                      <div className="flex justify-between text-sm mb-1 gap-2">
-                        <span className="font-medium truncate">{c.name}</span>
-                        <span className="font-semibold tabular-nums shrink-0" style={{ color: "#f5a623" }}>
-                          {formatAmount(c.amount)}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${(c.amount / maxCat) * 100}%`,
-                            backgroundColor: "#f5a623",
-                          }}
-                        />
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <CategoryBreakdown
+              expenseCategories={expenseCategories}
+              incomeCategories={incomeCategories}
+              formatAmount={formatAmount}
+              kind={catKind}
+              onKindChange={setCatKind}
+              loading={catsLoading}
+            />
 
             <MonthHistoryPanel
               rows={summaries}
