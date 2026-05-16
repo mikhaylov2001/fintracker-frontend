@@ -121,7 +121,7 @@ function SidebarContent({ pathname, userName, dashTo, onLogout }) {
           <div className="size-3 rounded-sm bg-background/80" />
         </div>
         <div className="flex flex-col leading-none">
-          <span className="font-bold text-lg tracking-tight">
+          <span className="font-bold text-lg tracking-tight text-foreground">
             FinTracker<span className="text-emerald-glow">Pro</span>
           </span>
           <span className="text-[11px] text-muted-foreground mt-1">{userName}</span>

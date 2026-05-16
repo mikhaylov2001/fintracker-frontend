@@ -212,8 +212,6 @@ export default function AnalyticsPage() {
     [categories]
   );
 
-  const todayStr = new Date().toLocaleDateString("ru-RU");
-
   if (authLoading || (loading && !hasLoadedOnce.current)) {
     return <p className="text-sm text-muted-foreground py-12 text-center">Загрузка…</p>;
   }
@@ -224,18 +222,15 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-        <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
-            Аналитика
-          </h1>
-          <p className="text-xs sm:text-sm text-muted-foreground">
-            Динамика за {chartRows.length || 6} месяцев и распределение по категориям ·{" "}
-            {periodDescription(period)} · обновлено {todayStr}
-          </p>
-        </div>
-        <PeriodSelector period={period} onChange={setPeriod} variant="header" />
+      <header className="mb-8">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Динамика за {chartRows.length || 6} месяцев и распределение по категориям. Сегодня —{" "}
+          {periodDescription(period)}.
+        </p>
       </header>
+
+      <PeriodSelector period={period} onChange={setPeriod} />
 
       {!hasData ? (
         <div className="bg-surface rounded-3xl border border-border p-10 sm:p-14 text-center">
