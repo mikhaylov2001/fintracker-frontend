@@ -1,21 +1,22 @@
 import { alpha } from "@mui/material/styles";
+import { ftHex, ftOklch } from "./ftColors";
 
-/** Совместимость: те же oklch, что ft-theme / Lovable */
+/** MUI-совместимые hex; визуально совпадает с ft-theme / Lovable */
 export const bankingColors = {
-  bg0: "oklch(0.145 0.005 285)",
-  bg1: "oklch(0.18 0.006 285)",
-  card: "oklch(0.205 0.008 285)",
-  card2: "oklch(0.25 0.008 285)",
-  border: "oklch(1 0 0 / 7%)",
-  border2: "oklch(1 0 0 / 12%)",
-  text: "oklch(0.96 0.005 285)",
-  muted: "oklch(0.62 0.012 285)",
-  primary: "oklch(0.72 0.18 162)",
-  accent: "oklch(0.72 0.18 162)",
-  info: "oklch(0.65 0.18 250)",
-  warning: "oklch(0.78 0.16 75)",
-  danger: "oklch(0.65 0.21 25)",
-  success: "oklch(0.72 0.18 162)",
+  bg0: ftHex.bg,
+  bg1: ftHex.bg1,
+  card: ftHex.surface,
+  card2: ftHex.muted,
+  border: ftOklch.border,
+  border2: ftOklch.border2,
+  text: ftHex.foreground,
+  muted: ftHex.mutedFg,
+  primary: ftHex.primary,
+  accent: ftHex.primary,
+  info: ftHex.info,
+  warning: ftHex.warning,
+  danger: ftHex.danger,
+  success: ftHex.primary,
 };
 
 export const pageBackgroundSx = {
@@ -24,9 +25,9 @@ export const pageBackgroundSx = {
   overflow: "hidden",
   bgcolor: bankingColors.bg0,
   backgroundImage: `
-    radial-gradient(900px 520px at 14% 8%, oklch(0.72 0.18 162 / 0.2) 0%, transparent 60%),
-    radial-gradient(900px 520px at 82% 12%, oklch(0.72 0.18 162 / 0.14) 0%, transparent 62%),
-    radial-gradient(900px 520px at 50% 92%, oklch(0.72 0.18 162 / 0.08) 0%, transparent 62%),
+    radial-gradient(900px 520px at 14% 8%, ${alpha(ftHex.primary, 0.2)} 0%, transparent 60%),
+    radial-gradient(900px 520px at 82% 12%, ${alpha(ftHex.primary, 0.14)} 0%, transparent 62%),
+    radial-gradient(900px 520px at 50% 92%, ${alpha(ftHex.primary, 0.08)} 0%, transparent 62%),
     linear-gradient(180deg, ${bankingColors.bg1} 0%, ${bankingColors.bg0} 100%)
   `,
 };

@@ -1,9 +1,11 @@
 /** Общие MUI-стили для страниц авторизации — в духе Lovable / ft-theme */
 
+import { ftHex, ftOklch } from "./ftColors";
+
 export const authHeroSx = {
   borderRadius: "calc(var(--radius) + 8px)",
-  border: "1px solid oklch(1 0 0 / 8%)",
-  backgroundColor: "oklch(0.205 0.008 285 / 0.55)",
+  border: `1px solid ${ftOklch.border8}`,
+  backgroundColor: alphaSurface(0.55),
   backdropFilter: "blur(12px)",
 };
 
@@ -13,32 +15,32 @@ export const authPaperSx = {
   maxWidth: 420,
   mx: "auto",
   borderRadius: "calc(var(--radius) + 8px)",
-  backgroundColor: "oklch(0.205 0.008 285)",
-  border: "1px solid oklch(1 0 0 / 7%)",
+  backgroundColor: ftHex.surface,
+  border: `1px solid ${ftOklch.border}`,
   boxShadow: "0 18px 45px rgba(0,0,0,0.45)",
-  color: "oklch(0.96 0.005 285)",
+  color: ftHex.foreground,
 };
 
 export const authTitleSx = {
   fontSize: 26,
   fontWeight: 900,
   letterSpacing: 0.2,
-  color: "oklch(0.96 0.005 285)",
+  color: ftHex.foreground,
 };
 
 export const authSubtitleSx = {
   mt: 0.8,
   fontSize: 13,
-  color: "oklch(0.62 0.012 285)",
+  color: ftHex.mutedFg,
 };
 
 export const authHeroTitleSx = {
-  color: "oklch(0.96 0.005 285)",
+  color: ftHex.foreground,
   fontWeight: 950,
 };
 
 export const authHeroTextSx = {
-  color: "oklch(0.62 0.012 285)",
+  color: ftHex.mutedFg,
 };
 
 export const authPrimaryButtonSx = {
@@ -46,9 +48,16 @@ export const authPrimaryButtonSx = {
   py: 1.2,
   fontWeight: 800,
   borderRadius: 999,
-  backgroundColor: "oklch(0.72 0.18 162)",
-  color: "oklch(0.18 0.04 162)",
+  backgroundColor: ftHex.primary,
+  color: ftHex.primaryFg,
   "&:hover": {
-    backgroundColor: "oklch(0.76 0.18 162)",
+    backgroundColor: ftHex.primaryHover,
   },
 };
+
+function alphaSurface(opacity) {
+  const r = parseInt(ftHex.surface.slice(1, 3), 16);
+  const g = parseInt(ftHex.surface.slice(3, 5), 16);
+  const b = parseInt(ftHex.surface.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}

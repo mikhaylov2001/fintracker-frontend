@@ -1,14 +1,5 @@
 import { createTheme, alpha, responsiveFontSizes } from "@mui/material/styles";
-
-const FT = {
-  bg: "oklch(0.145 0.005 285)",
-  surface: "oklch(0.205 0.008 285)",
-  fg: "oklch(0.96 0.005 285)",
-  muted: "oklch(0.62 0.012 285)",
-  primary: "oklch(0.72 0.18 162)",
-  primaryFg: "oklch(0.18 0.04 162)",
-  border: "oklch(1 0 0 / 7%)",
-};
+import { ftHex, ftOklch } from "./styles/ftColors";
 
 export function buildTheme(mode = "dark") {
   const isDark = mode !== "light";
@@ -16,17 +7,17 @@ export function buildTheme(mode = "dark") {
   let t = createTheme({
     palette: {
       mode: isDark ? "dark" : "light",
-      primary: { main: FT.primary, contrastText: FT.primaryFg },
+      primary: { main: ftHex.primary, contrastText: ftHex.primaryFg },
       background: {
-        default: isDark ? FT.bg : "#F5F7FF",
-        paper: isDark ? FT.surface : "#FFFFFF",
+        default: isDark ? ftHex.bg : "#F5F7FF",
+        paper: isDark ? ftHex.surface : "#FFFFFF",
       },
       text: {
-        primary: isDark ? FT.fg : "#0F172A",
-        secondary: isDark ? FT.muted : alpha("#0F172A", 0.65),
+        primary: isDark ? ftHex.foreground : "#0F172A",
+        secondary: isDark ? ftHex.mutedFg : alpha("#0F172A", 0.65),
       },
-      divider: FT.border,
-      error: { main: "oklch(0.65 0.21 25)" },
+      divider: ftOklch.border,
+      error: { main: ftHex.danger },
     },
     shape: { borderRadius: 14 },
     typography: {
@@ -36,8 +27,8 @@ export function buildTheme(mode = "dark") {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: FT.bg,
-            color: FT.fg,
+            backgroundColor: ftHex.bg,
+            color: ftHex.foreground,
           },
         },
       },
@@ -50,9 +41,9 @@ export function buildTheme(mode = "dark") {
             fontWeight: 800,
           },
           containedPrimary: {
-            backgroundColor: FT.primary,
-            color: FT.primaryFg,
-            "&:hover": { backgroundColor: "oklch(0.76 0.18 162)" },
+            backgroundColor: ftHex.primary,
+            color: ftHex.primaryFg,
+            "&:hover": { backgroundColor: ftHex.primaryHover },
           },
         },
       },
@@ -63,22 +54,22 @@ export function buildTheme(mode = "dark") {
         styleOverrides: {
           root: {
             borderRadius: 10,
-            backgroundColor: "oklch(1 0 0 / 4%)",
-            "& fieldset": { borderColor: FT.border },
-            "&:hover fieldset": { borderColor: "oklch(0.72 0.18 162 / 40%)" },
-            "&.Mui-focused fieldset": { borderColor: FT.primary },
+            backgroundColor: ftOklch.inputBg,
+            "& fieldset": { borderColor: ftOklch.border },
+            "&:hover fieldset": { borderColor: ftOklch.primaryBorder40 },
+            "&.Mui-focused fieldset": { borderColor: ftHex.primary },
           },
-          input: { color: FT.fg },
+          input: { color: ftHex.foreground },
         },
       },
       MuiInputLabel: {
         styleOverrides: {
-          root: { color: FT.muted },
+          root: { color: ftHex.mutedFg },
         },
       },
       MuiFormHelperText: {
         styleOverrides: {
-          root: { color: FT.muted },
+          root: { color: ftHex.mutedFg },
         },
       },
       MuiPaper: {
@@ -90,7 +81,7 @@ export function buildTheme(mode = "dark") {
       },
       MuiLink: {
         styleOverrides: {
-          root: { color: FT.primary, fontWeight: 600 },
+          root: { color: ftHex.primary, fontWeight: 600 },
         },
       },
       MuiSnackbar: {
