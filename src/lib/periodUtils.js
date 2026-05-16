@@ -22,6 +22,9 @@ export const addMonthsYM = (ym, delta) => {
   return toYM({ year: d.getFullYear(), month: d.getMonth() + 1 });
 };
 
+export const orderYM = (a, b) =>
+  ymToNum(a) <= ymToNum(b) ? [a, b] : [b, a];
+
 export const monthsBetween = (fromYM, toYM) => {
   const fromN = ymToNum(fromYM);
   const toN = ymToNum(toYM);
