@@ -1,5 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { TrendingDown, TrendingUp, Wallet, Percent } from "lucide-react";
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Legend,
+} from "recharts";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSummaryApi } from "../../api/summaryApi";
@@ -14,10 +28,22 @@ import {
   resolvePeriodMonths,
   unwrapSummariesList,
 } from "../../lib/periodUtils";
+import {
+  CHART_EXPENSE,
+  CHART_GRID,
+  CHART_INCOME,
+  CHART_SAVINGS,
+  CHART_TICK,
+  PIE_COLORS,
+  chartTick,
+  chartTooltipStyle,
+  monthShortRu,
+} from "../../lib/analyticsCharts";
 import PeriodSelector from "../../components/ft/PeriodSelector";
-import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
-import CashflowChart from "../../components/ft/CashflowChart";
-import CategoryBreakdown from "../../components/ft/CategoryBreakdown";
+import AnalyticsCard from "../../components/ft/AnalyticsCard";
+import SegmentToggle from "../../components/ft/SegmentToggle";
+
+const SEGMENT_ACTIVE = "bg-[#22C55E] text-[#05140C]";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -86,7 +112,6 @@ export default function AnalyticsPage() {
     [summaries, monthList]
   );
 
-  /** График: последние 6 месяцев с данными (нагляднее, чем один месяц) */
   const chartRows = useMemo(
     () =>
       summaries
@@ -94,6 +119,17 @@ export default function AnalyticsPage() {
         .sort((a, b) => a.ym.localeCompare(b.ym))
         .slice(-6),
     [summaries]
+  );
+
+  const monthlyData = useMemo(
+    () =>
+      chartRows.map((r) => ({
+        month: monthShortRu(r.ym),
+        Доходы: r.totalIncome || 0,
+        Расходы: r.totalExpenses || 0,
+        Сбережения: Math.max(0, (r.totalIncome || 0) - (r.totalExpenses || 0)),
+      })),
+    [chartRows]
   );
 
   useEffect(() => {
@@ -113,8 +149,8 @@ export default function AnalyticsPage() {
         map.set(key, (map.get(key) || 0) + e.amount);
       });
       return [...map.entries()]
-        .map(([name, amount]) => ({ name, amount }))
-        .sort((a, b) => b.amount - a.amount)
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
         .slice(0, 8);
     };
 
@@ -169,6 +205,13 @@ export default function AnalyticsPage() {
     };
   }, [authLoading, isAuthenticated, monthList]);
 
+  const isExpense = catKind === "expense";
+  const categories = isExpense ? expenseCategories : incomeCategories;
+  const catTotal = useMemo(
+    () => categories.reduce((s, c) => s + c.value, 0),
+    [categories]
+  );
+
   const todayStr = new Date().toLocaleDateString("ru-RU");
 
   if (authLoading || (loading && !hasLoadedOnce.current)) {
@@ -177,93 +220,169 @@ export default function AnalyticsPage() {
 
   const hasData = agg.income > 0 || agg.expenses > 0 || summaries.length > 0;
 
+  const tooltipFmt = (v) => formatAmount(Number(v) || 0);
+
   return (
     <>
-      <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6 lg:mb-8">
+      <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
         <div className="min-w-0">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            Аналитика
+          </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Динамика и категории за выбранный период. Обновлено: {todayStr}
+            Динамика за {chartRows.length || 6} месяцев и распределение по категориям ·{" "}
+            {periodDescription(period)} · обновлено {todayStr}
           </p>
         </div>
         <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
 
       {!hasData ? (
-        <section className="bg-surface rounded-3xl border border-border p-10 sm:p-14 text-center mt-6">
+        <div className="bg-surface rounded-3xl border border-border p-10 sm:p-14 text-center">
           <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed">
-            Нет данных за выбранный период. Добавьте операции в «Доходы» и «Расходы» или выберите другой месяц.
+            Пока нет данных для аналитики. Добавьте операции на вкладках «Доходы» и «Расходы».
           </p>
-        </section>
+        </div>
       ) : (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6 mb-8">
-            <Kpi label="Доходы" hint="за период" value={formatAmount(agg.income)} icon={TrendingUp} color="emerald" />
-            <Kpi label="Расходы" hint="за период" value={formatAmount(agg.expenses)} icon={TrendingDown} color="warning" />
-            <Kpi label="Сбережения" hint="доходы − расходы" value={formatAmount(agg.savings)} icon={Wallet} color="info" />
-            <Kpi
-              label="Норма сбережений"
-              hint="% от дохода"
-              value={`${agg.rate}%`}
-              icon={Percent}
-              color="violet"
-            />
-          </div>
+        <motionless className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <AnalyticsCard
+            title="Доходы vs Расходы"
+            subtitle={`по месяцам · ${periodDescription(period)}`}
+          >
+            {monthlyData.length === 0 ? (
+              <EmptyChart />
+            ) : (
+              <ChartBox>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                  <XAxis dataKey="month" tick={chartTick} />
+                  <YAxis tick={chartTick} width={48} />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    formatter={tooltipFmt}
+                    labelStyle={{ color: CHART_TICK }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12, color: CHART_TICK }} />
+                  <Bar dataKey="Доходы" fill={CHART_INCOME} radius={[6, 6, 0, 0]} maxBarSize={48} />
+                  <Bar dataKey="Расходы" fill={CHART_EXPENSE} radius={[6, 6, 0, 0]} maxBarSize={48} />
+                </BarChart>
+              </ChartBox>
+            )}
+          </AnalyticsCard>
 
-          <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 mb-6">
-            <h2 className="text-lg font-bold mb-1">Динамика по месяцам</h2>
-            <p className="text-xs text-muted-foreground mb-6">
-              {chartRows.length > 0
-                ? `Последние ${chartRows.length} ${
-                    chartRows.length === 1 ? "месяц" : chartRows.length < 5 ? "месяца" : "месяцев"
-                  } с операциями · KPI: ${periodDescription(period)}`
-                : periodDescription(period)}
-            </p>
-            <CashflowChart rows={chartRows} formatAmount={formatAmount} />
-          </section>
+          <AnalyticsCard title="Динамика сбережений" subtitle="чистый остаток по месяцам">
+            {monthlyData.length === 0 ? (
+              <EmptyChart />
+            ) : (
+              <ChartBox>
+                <LineChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
+                  <XAxis dataKey="month" tick={chartTick} />
+                  <YAxis tick={chartTick} width={48} />
+                  <Tooltip
+                    contentStyle={chartTooltipStyle}
+                    formatter={tooltipFmt}
+                    labelStyle={{ color: CHART_TICK }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="Сбережения"
+                    stroke={CHART_SAVINGS}
+                    strokeWidth={2.5}
+                    dot={{ r: 4, fill: CHART_SAVINGS }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ChartBox>
+            )}
+          </AnalyticsCard>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <CategoryBreakdown
-              expenseCategories={expenseCategories}
-              incomeCategories={incomeCategories}
-              formatAmount={formatAmount}
-              kind={catKind}
-              onKindChange={setCatKind}
-              loading={catsLoading}
-            />
-
-            <MonthHistoryPanel
-              rows={summaries}
-              formatAmount={formatAmount}
-              updatedAt={todayStr}
-              className="h-full"
-            />
-          </div>
-        </>
+          <AnalyticsCard
+            title={isExpense ? "Расходы по категориям" : "Доходы по источникам"}
+            subtitle={periodDescription(period)}
+            className="lg:col-span-2"
+            action={
+              <SegmentToggle
+                value={catKind}
+                onChange={setCatKind}
+                options={[
+                  { id: "expense", label: "Расходы", activeClass: SEGMENT_ACTIVE },
+                  { id: "income", label: "Доходы", activeClass: SEGMENT_ACTIVE },
+                ]}
+              />
+            }
+          >
+            {catsLoading ? (
+              <p className="text-sm text-muted-foreground text-center py-12">Загрузка категорий…</p>
+            ) : categories.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-12">
+                {isExpense ? "Нет расходов за период." : "Нет доходов за период."}
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                <ChartBox>
+                  <PieChart>
+                    <Pie
+                      data={categories}
+                      dataKey="value"
+                      nameKey="name"
+                      innerRadius={60}
+                      outerRadius={110}
+                      paddingAngle={2}
+                    >
+                      {categories.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={chartTooltipStyle}
+                      formatter={tooltipFmt}
+                    />
+                  </PieChart>
+                </ChartBox>
+                <ul className="space-y-2.5 min-w-0">
+                  {categories.map((c, i) => {
+                    const pct = catTotal ? Math.round((c.value / catTotal) * 100) : 0;
+                    return (
+                      <li key={c.name} className="flex items-center gap-3 min-w-0">
+                        <span
+                          className="size-3 rounded-sm shrink-0"
+                          style={{ background: PIE_COLORS[i % PIE_COLORS.length] }}
+                        />
+                        <span className="text-sm flex-1 truncate">{c.name}</span>
+                        <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+                          {pct}%
+                        </span>
+                        <span className="text-sm font-semibold tabular-nums shrink-0 text-right min-w-[5.5rem]">
+                          {formatAmount(c.value)}
+                        </span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            )}
+          </AnalyticsCard>
+        </motionless>
       )}
     </>
   );
 }
 
-function Kpi({ label, hint, value, icon: Icon, color }) {
-  const iconClass =
-    color === "emerald"
-      ? "text-emerald-glow"
-      : color === "warning"
-        ? "text-warning"
-        : color === "violet"
-          ? "text-violet"
-          : "text-info";
+function ChartBox({ children }) {
   return (
-    <div className="bg-surface border border-border rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-        <div className="size-8 rounded-lg bg-white/[0.04] border border-border grid place-items-center">
-          <Icon className={`size-4 ${iconClass}`} />
-        </div>
-      </div>
-      <p className="text-2xl font-bold tabular-nums mb-1">{value}</p>
-      <p className="text-[11px] text-muted-foreground">{hint}</p>
+    <div className="w-full min-w-0" style={{ height: 280 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        {children}
+      </ResponsiveContainer>
     </div>
+  );
+}
+
+function EmptyChart() {
+  return (
+    <p className="text-sm text-muted-foreground text-center py-16">
+      Нет данных за выбранный период.
+    </p>
   );
 }
