@@ -93,25 +93,25 @@ export default function TransactionsPage({
         <PeriodSelector period={period} onChange={onPeriodChange} compact />
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-surface border border-border rounded-2xl p-5 relative overflow-hidden">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6 relative overflow-hidden">
           <div className={`absolute -right-6 -top-6 size-24 ${palette.glow} blur-3xl rounded-full`} />
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Всего за период</p>
           <p className={`text-2xl font-bold tabular-nums mb-1 ${palette.text}`}>{formatAmount(total)}</p>
           <p className="text-[11px] text-muted-foreground">сумма всех операций</p>
         </div>
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Операций</p>
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Операций</p>
           <p className="text-2xl font-bold tabular-nums mb-1">{items.length}</p>
           <p className="text-[11px] text-muted-foreground">количество записей</p>
         </div>
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">В среднем за день</p>
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">В среднем за день</p>
           <p className="text-2xl font-bold tabular-nums mb-1">{formatAmount(avgDay)}</p>
           <p className="text-[11px] text-muted-foreground">сумма ÷ дни с операциями</p>
         </div>
-        <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Средняя операция</p>
+        <div className="bg-surface border border-border rounded-2xl p-5 sm:p-6">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5">Средняя операция</p>
           <p className="text-2xl font-bold tabular-nums mb-1">{formatAmount(avgOp)}</p>
           <p className="text-[11px] text-muted-foreground">сумма ÷ число операций</p>
         </div>

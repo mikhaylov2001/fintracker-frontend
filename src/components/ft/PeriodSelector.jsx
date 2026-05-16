@@ -26,16 +26,19 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
   };
 
   const isCurrentMonth = anchor === currentYM();
+  const showMonthNav = period.mode !== "all" && period.mode !== "range";
 
   return (
-    <div className={`flex flex-col gap-3 ${compact ? "" : "mb-2"}`}>
-      <div className="flex flex-wrap items-center gap-2">
-        {period.mode !== "all" && period.mode !== "range" && (
-          <div className="flex items-center gap-1 bg-surface border border-border rounded-xl p-1">
+    <div
+      className={`flex flex-col gap-4 sm:gap-5 ${compact ? "mb-8" : "mb-6"}`}
+    >
+      {showMonthNav && (
+        <div className="flex justify-start sm:justify-center lg:justify-start">
+          <div className="inline-flex items-center gap-1.5 bg-surface border border-border rounded-2xl p-1.5 shadow-sm">
             <button
               type="button"
               onClick={() => shiftAnchor(-1)}
-              className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
+              className="size-9 grid place-items-center rounded-xl hover:bg-white/[0.06] text-muted-foreground transition"
               aria-label="Предыдущий месяц"
             >
               <ChevronLeft className="size-4" />
@@ -43,7 +46,7 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
             <button
               type="button"
               onClick={goCurrentMonth}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold min-w-[120px] text-center transition ${
+              className={`px-4 sm:px-5 py-2 rounded-xl text-sm font-semibold min-w-[148px] text-center transition ${
                 isCurrentMonth ? "text-emerald-glow" : "text-foreground hover:bg-white/[0.06]"
               }`}
               title="Перейти к текущему месяцу"
@@ -53,24 +56,26 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
             <button
               type="button"
               onClick={() => shiftAnchor(1)}
-              className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
+              className="size-9 grid place-items-center rounded-xl hover:bg-white/[0.06] text-muted-foreground transition"
               aria-label="Следующий месяц"
             >
               <ChevronRight className="size-4" />
             </button>
           </div>
-        )}
+        </div>
+      )}
 
-        <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border flex-wrap">
+      <div className="overflow-x-auto -mx-1 px-1 pb-0.5 scrollbar-none">
+        <div className="inline-flex min-w-full sm:min-w-0 items-center gap-1.5 bg-surface p-1.5 rounded-2xl border border-border">
           {MODES.map((m) => (
             <button
               key={m.id}
               type="button"
               onClick={() => setMode(m.id)}
-              className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`shrink-0 px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                 period.mode === m.id
                   ? "bg-emerald-glow text-primary-foreground shadow-[0_0_16px_oklch(0.72_0.18_162/0.25)]"
-                  : "text-muted-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
               }`}
             >
               {m.label}
@@ -80,7 +85,7 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
       </div>
 
       {period.mode === "range" && (
-        <div className="flex flex-wrap gap-3 items-end p-4 rounded-2xl border border-border bg-surface/60">
+        <div className="flex flex-wrap gap-4 sm:gap-5 items-end p-5 sm:p-6 rounded-2xl border border-border bg-surface/60">
           <FtMonthPicker
             label="С"
             value={period.fromYM}
@@ -94,12 +99,14 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
         </div>
       )}
 
-      {!compact && (
-        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-          <CalendarDays className="size-3.5 shrink-0" />
-          {periodDescription(period)}
-        </p>
-      )}
+      <p
+        className={`text-xs sm:text-sm text-muted-foreground flex items-start sm:items-center gap-2 leading-relaxed ${
+          compact ? "pt-0.5" : ""
+        }`}
+      >
+        <CalendarDays className="size-4 shrink-0 mt-0.5 sm:mt-0" />
+        {periodDescription(period)}
+      </p>
     </div>
   );
 }
