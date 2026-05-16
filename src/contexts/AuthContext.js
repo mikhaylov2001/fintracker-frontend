@@ -33,10 +33,22 @@ const normalizeToken = (t) => {
   return s.toLowerCase().startsWith("bearer ") ? s.slice(7).trim() : s;
 };
 
+const readApiErrorText = (err) => {
+  const data = err?.data;
+  if (typeof data === "string" && data.trim()) return data.trim();
+  if (data && typeof data === "object") {
+    const msg = data.message || data.error;
+    if (typeof msg === "string" && msg.trim()) return msg.trim();
+  }
+  const raw = err?.message || String(err || "");
+  return raw.trim();
+};
+
 const getHumanError = (err, context = "general") => {
   const status = err?.status;
   const code = err?.code;
-  const raw = err?.message || String(err || "");
+  const apiText = readApiErrorText(err);
+  const raw = apiText || err?.message || String(err || "");
   const lower = raw.toLowerCase();
 
   if (lower.includes("failed to fetch") || lower.includes("network")) {
@@ -72,6 +84,24 @@ const getHumanError = (err, context = "general") => {
     if (status === 401) return "Текущий пароль неверен";
     if (status === 400) return "Пароль слишком слабый. Минимум 8 символов";
     return "Не удалось изменить пароль. Попробуйте ещё раз";
+  }
+
+  if (context === "google") {
+    if (lower.includes("invalid google token") || lower.includes("google token")) {
+      return "Не удалось подтвердить вход через Google. Попробуйте ещё раз";
+    }
+    if (lower.includes("google account is linked") || lower.includes("другой аккаунт")) {
+      return "Этот Google-аккаунт уже привязан к другому пользователю";
+    }
+    if (lower.includes("email already") || status === 409) {
+      return "Этот email уже зарегистрирован. Войдите по паролю или используйте тот же Google-аккаунт";
+    }
+    if (status === 401) {
+      return "Не удалось войти через Google. Проверьте настройки входа и попробуйте снова";
+    }
+    if (status >= 500) return "Ошибка сервера при входе через Google. Попробуйте позже";
+    if (apiText && !lower.includes("auth failed")) return apiText;
+    return "Не удалось войти через Google. Попробуйте ещё раз";
   }
 
   if (status === 401) {
@@ -309,7 +339,7 @@ export const AuthProvider = ({ children }) => {
         saveAuthData(data);
         return data;
       } catch (e) {
-        throw new Error(getHumanError(e, "login"));
+        throw new Error(getHumanError(e, "google"));
       }
     },
     [saveAuthData]

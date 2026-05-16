@@ -36,10 +36,12 @@ const validateName = (v, label) => {
 
 // аккуратное чтение ошибки с бэка
 const mapApiError = (err, fallback) => {
-  const data = err?.response?.data;
-  if (data && typeof data === "object" && typeof data.message === "string") {
-    return data.message;
+  const data = err?.data ?? err?.response?.data;
+  if (data && typeof data === "object") {
+    const msg = data.message || data.error;
+    if (typeof msg === "string" && msg.trim()) return msg.trim();
   }
+  if (typeof data === "string" && data.trim()) return data.trim();
   if (err && typeof err.message === "string" && err.message) {
     return err.message;
   }
