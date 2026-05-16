@@ -7,19 +7,31 @@ import { useToast } from "../../contexts/ToastContext";
 import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
 
+/** Тип дохода — от активного к пассивному */
 const CATEGORIES = [
   "Работа",
   "Подработка",
-  "Вклады",
   "Бизнес",
-  "Рента",
+  "Аренда недвижимости",
   "Инвестиции",
+  "Пассивный доход",
+  "Вклады",
   "Продажа вещей",
   "Подарки",
-  "Налоги",
   "Другое",
 ];
-const SOURCES = ["Зарплата", "Премия", "Проценты", "Дивиденды", "Бизнес", "Другое"];
+
+/** Источник поступления — детализация для отчётов */
+const SOURCES = [
+  "Зарплата",
+  "Премия",
+  "Бизнес",
+  "Аренда недвижимости",
+  "Дивиденды",
+  "Проценты",
+  "Пассивный доход",
+  "Другое",
+];
 
 export default function IncomePage() {
   const toast = useToast();
