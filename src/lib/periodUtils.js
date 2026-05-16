@@ -158,6 +158,46 @@ export function unwrapSummariesList(raw) {
   return [];
 }
 
+/**
+ * Месяцы для графика «Динамика сбережений».
+ * Режим «Месяц» / «3 мес.» не сужает график до 1 точки — показываем год якоря или все месяцы с данными.
+ */
+export function resolveTrendChartMonths(period, summaries = []) {
+  const withData = summaries
+    .filter((s) => s.totalIncome > 0 || s.totalExpenses > 0)
+    .map((s) => s.ym);
+
+  const narrow = period.mode === "month" || period.mode === "3m";
+  if (!narrow) {
+    return resolvePeriodMonths(period, summaries);
+  }
+
+  const anchor = period.anchorYM || currentYM();
+  const p = parseYM(anchor);
+  if (p) {
+    const yearMonths = Array.from({ length: 12 }, (_, i) =>
+      toYM({ year: p.year, month: i + 1 })
+    );
+    const monthsInYear = withData.filter((ym) => parseYM(ym)?.year === p.year);
+    if (monthsInYear.length >= 2) return yearMonths;
+  }
+
+  const all = [...new Set(withData)].sort((a, b) => ymToNum(a) - ymToNum(b));
+  if (all.length >= 2) return all;
+
+  return resolvePeriodMonths(period, summaries);
+}
+
+/** Подпись под графиком динамики при узком KPI-периоде */
+export function trendChartSubtitle(period) {
+  if (period.mode === "month" || period.mode === "3m") {
+    const p = parseYM(period.anchorYM);
+    if (p) return `за ${p.year} год · KPI: ${periodDescription(period)}`;
+    return `за всё время · KPI: ${periodDescription(period)}`;
+  }
+  return `чистый остаток · ${periodDescription(period)}`;
+}
+
 /** Уникальные дни с операциями для «среднего в день» */
 export function avgPerDay(total, items) {
   const days = new Set(

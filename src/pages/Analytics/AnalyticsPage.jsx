@@ -27,6 +27,8 @@ import {
   parseYM,
   periodDescription,
   resolvePeriodMonths,
+  resolveTrendChartMonths,
+  trendChartSubtitle,
   unwrapSummariesList,
 } from "../../lib/periodUtils";
 import {
@@ -143,6 +145,24 @@ export default function AnalyticsPage() {
       })),
     [chartRows]
   );
+
+  const trendMonths = useMemo(
+    () => resolveTrendChartMonths(period, summaries),
+    [period, summaries]
+  );
+
+  const savingsTrendData = useMemo(() => {
+    const byYm = new Map(summaries.map((s) => [s.ym, s]));
+    return trendMonths.map((ym) => {
+      const s = byYm.get(ym);
+      const income = s?.totalIncome || 0;
+      const expenses = s?.totalExpenses || 0;
+      return {
+        month: monthShortRu(ym),
+        Сбережения: Math.max(0, income - expenses),
+      };
+    });
+  }, [summaries, trendMonths]);
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || monthsForCategories.length === 0) {
@@ -292,12 +312,15 @@ export default function AnalyticsPage() {
             )}
           </AnalyticsCard>
 
-          <AnalyticsCard title="Динамика сбережений" subtitle="чистый остаток по месяцам">
-            {monthlyData.length === 0 ? (
+          <AnalyticsCard
+            title="Динамика сбережений"
+            subtitle={trendChartSubtitle(period)}
+          >
+            {savingsTrendData.length === 0 ? (
               <EmptyChart />
             ) : (
               <ChartBox>
-                <LineChart data={monthlyData}>
+                <LineChart data={savingsTrendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
                   <XAxis dataKey="month" tick={chartTick} />
                   <YAxis tick={chartTick} width={48} />
