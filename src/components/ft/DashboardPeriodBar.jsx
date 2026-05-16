@@ -49,7 +49,7 @@ export default function DashboardPeriodBar({ period, onChange }) {
             onClick={() => setMode(m.id)}
             className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
               activeMode === m.id
-                ? "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]"
+                ? "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.35)]"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >

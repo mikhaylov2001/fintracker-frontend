@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { TrendingDown, TrendingUp, Wallet, Percent } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -41,9 +42,11 @@ import {
 } from "../../lib/analyticsCharts";
 import PeriodSelector from "../../components/ft/PeriodSelector";
 import AnalyticsCard from "../../components/ft/AnalyticsCard";
+import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 import SegmentToggle from "../../components/ft/SegmentToggle";
 
-const SEGMENT_ACTIVE = "bg-[#22C55E] text-[#05140C]";
+const SEGMENT_ACTIVE =
+  "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -219,6 +222,7 @@ export default function AnalyticsPage() {
   const hasData = agg.income > 0 || agg.expenses > 0 || summaries.length > 0;
 
   const tooltipFmt = (v) => formatAmount(Number(v) || 0);
+  const todayStr = new Date().toLocaleDateString("ru-RU");
 
   return (
     <>
@@ -239,7 +243,21 @@ export default function AnalyticsPage() {
           </p>
         </div>
       ) : (
-        <motionless className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+            <Kpi label="Доходы" hint="за период" value={formatAmount(agg.income)} icon={TrendingUp} color="emerald" />
+            <Kpi label="Расходы" hint="за период" value={formatAmount(agg.expenses)} icon={TrendingDown} color="warning" />
+            <Kpi label="Сбережения" hint="доходы − расходы" value={formatAmount(agg.savings)} icon={Wallet} color="info" />
+            <Kpi
+              label="Норма сбережений"
+              hint="% от дохода"
+              value={`${agg.rate}%`}
+              icon={Percent}
+              color="violet"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <AnalyticsCard
             title="Доходы vs Расходы"
             subtitle={`по месяцам · ${periodDescription(period)}`}
@@ -358,9 +376,40 @@ export default function AnalyticsPage() {
               </div>
             )}
           </AnalyticsCard>
-        </motionless>
+          </div>
+
+          <MonthHistoryPanel
+            rows={summaries}
+            formatAmount={formatAmount}
+            updatedAt={todayStr}
+            className="mt-5"
+          />
+        </>
       )}
     </>
+  );
+}
+
+function Kpi({ label, hint, value, icon: Icon, color }) {
+  const iconClass =
+    color === "emerald"
+      ? "text-emerald-glow"
+      : color === "warning"
+        ? "text-warning"
+        : color === "violet"
+          ? "text-violet"
+          : "text-info";
+  return (
+    <div className="bg-surface border border-border rounded-3xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
+        <div className="size-8 rounded-lg bg-white/[0.04] border border-border grid place-items-center">
+          <Icon className={`size-4 ${iconClass}`} />
+        </div>
+      </div>
+      <p className="text-2xl font-bold tabular-nums mb-1">{value}</p>
+      <p className="text-[11px] text-muted-foreground">{hint}</p>
+    </div>
   );
 }
 

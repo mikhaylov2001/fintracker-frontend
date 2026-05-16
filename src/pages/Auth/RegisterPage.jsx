@@ -3,6 +3,16 @@ import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
+import {
+  authHeroSx,
+  authPaperSx,
+  authTitleSx,
+  authSubtitleSx,
+  authHeroTitleSx,
+  authHeroTextSx,
+  authPrimaryButtonSx,
+} from "../../styles/authUi";
+
 
 const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
@@ -272,17 +282,13 @@ export default function RegisterPage() {
         <Box
           sx={{
             display: { xs: "block", md: "none" },
-            borderRadius: 5,
+            ...authHeroSx,
             p: 2.5,
-            border: "1px solid rgba(255,255,255,0.08)",
-            backgroundColor: "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(12px)",
           }}
         >
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontWeight: 950,
+              ...authHeroTitleSx,
               fontSize: 22,
               lineHeight: 1.15,
             }}
@@ -292,7 +298,7 @@ export default function RegisterPage() {
           <Typography
             sx={{
               mt: 0.8,
-              color: "rgba(255,255,255,0.72)",
+              ...authHeroTextSx,
               fontSize: 13.5,
               lineHeight: 1.35,
             }}
@@ -308,17 +314,13 @@ export default function RegisterPage() {
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             justifyContent: "center",
-            borderRadius: 5,
+            ...authHeroSx,
             p: 4,
-            border: "1px solid rgba(255,255,255,0.08)",
-            backgroundColor: "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(12px)",
           }}
         >
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
+              ...authHeroTitleSx,
               fontSize: 34,
               lineHeight: 1.1,
             }}
@@ -328,7 +330,7 @@ export default function RegisterPage() {
           <Typography
             sx={{
               mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
+              ...authHeroTextSx,
               fontSize: 15,
               maxWidth: 420,
             }}
@@ -339,38 +341,16 @@ export default function RegisterPage() {
         </Box>
 
         {/* Card */}
-        <Paper
-          elevation={8}
-          sx={{
-            p: { xs: 3, md: 4 },
-            width: "100%",
-            maxWidth: 420,
-            mx: "auto",
-            borderRadius: 5,
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
-            boxShadow:
-              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
-          }}
-        >
+        <Paper elevation={0} sx={authPaperSx}>
           <Box sx={{ mb: 2.5, textAlign: "center" }}>
             <Typography
               component="h1"
-              sx={{
-                fontSize: 26,
-                fontWeight: 900,
-                letterSpacing: 0.3,
-                color: "#111827",
-              }}
+              sx={authTitleSx}
             >
               Регистрация
             </Typography>
             <Typography
-              sx={{
-                mt: 0.8,
-                fontSize: 13,
-                color: "rgba(15,23,42,0.6)",
-              }}
+              sx={authSubtitleSx}
             >
               Создайте аккаунт, чтобы отслеживать финансы.
             </Typography>
@@ -447,15 +427,7 @@ export default function RegisterPage() {
               variant="contained"
               color="primary"
               disabled={!isFormValid}
-              sx={{
-                mt: 2.5,
-                mb: 1.5,
-                borderRadius: 999,
-                py: 1.1,
-                fontWeight: 800,
-                textTransform: "none",
-                fontSize: 15,
-              }}
+              sx={{ ...authPrimaryButtonSx, textTransform: "none", fontSize: 15 }}
             >
               Зарегистрироваться
             </Button>

@@ -9,7 +9,8 @@ const SEGMENTS = [
   { id: "all", label: "Всё" },
 ];
 
-const SEGMENT_ACTIVE = "bg-[#22C55E] text-[#05140C]";
+const SEGMENT_ACTIVE =
+  "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]";
 
 /**
  * Период: chip-календарь + Месяц | Год | Всё (как Lovable).

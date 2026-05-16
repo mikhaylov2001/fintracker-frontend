@@ -3,6 +3,16 @@ import React, { useState } from "react";
 import { Box, Button, TextField, Typography, Paper, Link } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import AppBackground from "../../layouts/AppBackground";
+import {
+  authHeroSx,
+  authPaperSx,
+  authTitleSx,
+  authSubtitleSx,
+  authHeroTitleSx,
+  authHeroTextSx,
+  authPrimaryButtonSx,
+} from "../../styles/authUi";
+
 import { requestPasswordReset } from "../../api/passwordResetApi";
 
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -80,27 +90,17 @@ export default function ForgotPasswordPage() {
             display: { xs: "none", md: "flex" },
             flexDirection: "column",
             justifyContent: "center",
-            borderRadius: 5,
+            ...authHeroSx,
             p: 4,
-            border: "1px solid rgba(255,255,255,0.08)",
-            backgroundColor: "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
-              fontSize: 32,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ ...authHeroTitleSx, fontSize: 32, lineHeight: 1.1 }}>
             Восстановление доступа к FinTracker
           </Typography>
           <Typography
             sx={{
               mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
+              ...authHeroTextSx,
               fontSize: 15,
               maxWidth: 420,
             }}
@@ -109,38 +109,13 @@ export default function ForgotPasswordPage() {
           </Typography>
         </Box>
 
-        <Paper
-          elevation={8}
-          sx={{
-            p: { xs: 3, md: 4 },
-            width: "100%",
-            maxWidth: 420,
-            mx: "auto",
-            borderRadius: 5,
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
-            boxShadow:
-              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
-          }}
-        >
+        <Paper elevation={0} sx={authPaperSx}>
           <Box sx={{ mb: 2.5, textAlign: "center" }}>
-            <Typography
-              component="h1"
-              sx={{
-                fontSize: 24,
-                fontWeight: 900,
-                letterSpacing: 0.3,
-                color: "#111827",
-              }}
-            >
+            <Typography component="h1" sx={authTitleSx}>
               Восстановление пароля
             </Typography>
             <Typography
-              sx={{
-                mt: 0.8,
-                fontSize: 13,
-                color: "rgba(15,23,42,0.6)",
-              }}
+              sx={authSubtitleSx}
             >
               Укажите email, на который зарегистрирован аккаунт.
             </Typography>
@@ -168,15 +143,7 @@ export default function ForgotPasswordPage() {
               variant="contained"
               color="primary"
               disabled={loading || !!validateEmail(email)}
-              sx={{
-                mt: 2.5,
-                mb: 1.5,
-                borderRadius: 999,
-                py: 1.1,
-                fontWeight: 800,
-                textTransform: "none",
-                fontSize: 15,
-              }}
+              sx={{ ...authPrimaryButtonSx, textTransform: "none", fontSize: 15 }}
             >
               {loading ? "Отправляем..." : "Отправить ссылку"}
             </Button>
@@ -185,7 +152,7 @@ export default function ForgotPasswordPage() {
           {status && (
             <Typography
               variant="body2"
-              sx={{ mt: 1, color: "rgba(15,23,42,0.7)" }}
+              sx={{ mt: 1, ...authSubtitleSx }}
             >
               {status}
             </Typography>
@@ -194,7 +161,7 @@ export default function ForgotPasswordPage() {
           <Typography
             variant="body2"
             align="center"
-            sx={{ mt: 2, color: "rgba(15,23,42,0.7)" }}
+            sx={{ mt: 2, ...authSubtitleSx }}
           >
             Вспомнили пароль?{" "}
             <Link
