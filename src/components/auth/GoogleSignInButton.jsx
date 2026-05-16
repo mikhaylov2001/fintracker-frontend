@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { Box, Button, CircularProgress } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 
 const GOOGLE_CLIENT_ID =
   process.env.REACT_APP_GOOGLE_CLIENT_ID ||
   "1096583300191-ecs88krahb9drbhbs873ma4mieb7lihj.apps.googleusercontent.com";
 
 const GIS_SRC = "https://accounts.google.com/gsi/client";
+
+let gisInitialized = false;
 
 function loadGisScript() {
   return new Promise((resolve, reject) => {
@@ -52,24 +54,43 @@ function GoogleLogo() {
 }
 
 /**
- * Стандартная кнопка «Войти через Google» + скрытый GIS для получения id_token.
+ * Кастомный вид + официальный GIS-клик поверх (прозрачный слой).
+ * @see https://developers.google.com/identity/gsi/web/guides/display-button#custom-button
  */
 export default function GoogleSignInButton({
   onCredential,
   label = "Войти через Google",
   disabled = false,
 }) {
-  const hiddenRef = useRef(null);
-  const gisInitedRef = useRef(false);
+  const containerRef = useRef(null);
+  const googleRef = useRef(null);
+  const callbackRef = useRef(onCredential);
   const [ready, setReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
-  const handleGoogleCallback = useCallback(
-    (response) => {
-      onCredential?.(response);
-    },
-    [onCredential]
-  );
+  callbackRef.current = onCredential;
+
+  const renderGoogleButton = useCallback(() => {
+    if (!googleRef.current || !window.google?.accounts?.id) return;
+
+    const width = Math.max(
+      240,
+      Math.floor(containerRef.current?.getBoundingClientRect().width || 400)
+    );
+
+    googleRef.current.innerHTML = "";
+
+    window.google.accounts.id.renderButton(googleRef.current, {
+      type: "standard",
+      theme: "outline",
+      size: "large",
+      shape: "rectangular",
+      text: "signin_with",
+      logo_alignment: "left",
+      width,
+      locale: "ru",
+    });
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,104 +98,111 @@ export default function GoogleSignInButton({
     (async () => {
       try {
         await loadGisScript();
-        if (cancelled || !hiddenRef.current || !window.google?.accounts?.id) return;
-        if (gisInitedRef.current) return;
-        gisInitedRef.current = true;
+        if (cancelled || !window.google?.accounts?.id) return;
 
-        hiddenRef.current.innerHTML = "";
+        if (!gisInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: (response) => callbackRef.current?.(response),
+            auto_select: false,
+            cancel_on_tap_outside: true,
+            itp_support: true,
+          });
+          gisInitialized = true;
+        }
 
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: handleGoogleCallback,
-          auto_select: false,
-          cancel_on_tap_outside: true,
-          itp_support: true,
-        });
-
-        window.google.accounts.id.renderButton(hiddenRef.current, {
-          type: "standard",
-          theme: "outline",
-          size: "large",
-          shape: "rectangular",
-          text: "signin_with",
-          logo_alignment: "left",
-          width: 400,
-          locale: "ru",
-        });
-
+        renderGoogleButton();
         if (!cancelled) setReady(true);
       } catch {
         if (!cancelled) setLoadError(true);
       }
     })();
 
+    const onResize = () => {
+      if (ready) renderGoogleButton();
+    };
+    window.addEventListener("resize", onResize);
+
     return () => {
       cancelled = true;
-      try {
-        window.google?.accounts?.id?.cancel();
-      } catch {}
+      window.removeEventListener("resize", onResize);
     };
-  }, [handleGoogleCallback]);
-
-  const handleClick = () => {
-    const btn =
-      hiddenRef.current?.querySelector('div[role="button"]') ||
-      hiddenRef.current?.querySelector("iframe")?.parentElement?.querySelector('[role="button"]');
-    btn?.click();
-  };
+  }, [renderGoogleButton, ready]);
 
   return (
-    <Box sx={{ width: "100%", position: "relative" }}>
-      <Button
-        type="button"
-        fullWidth
-        disabled={disabled || !ready || loadError}
-        onClick={handleClick}
-        startIcon={ready ? <GoogleLogo /> : <CircularProgress size={18} color="inherit" />}
+    <Box
+      ref={containerRef}
+      sx={{
+        position: "relative",
+        width: "100%",
+        minHeight: 48,
+        opacity: disabled ? 0.55 : 1,
+        pointerEvents: disabled ? "none" : "auto",
+      }}
+    >
+      {/* Визуальная кнопка — клики проходят сквозь неё */}
+      <Box
         sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 1.5,
           py: 1.25,
           px: 2,
           borderRadius: 1,
-          textTransform: "none",
-          fontSize: 15,
-          fontWeight: 500,
-          fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-          color: "#3c4043",
           bgcolor: "#fff",
           border: "1px solid #dadce0",
-          boxShadow: "none",
-          "&:hover": {
-            bgcolor: "#f8f9fa",
-            borderColor: "#dadce0",
-            boxShadow: "0 1px 2px rgba(60,64,67,0.15)",
-          },
-          "&:disabled": {
-            bgcolor: "#f1f3f4",
-            color: "#9aa0a6",
-            borderColor: "#dadce0",
-          },
-          "& .MuiButton-startIcon": {
-            mr: 1.5,
-            ml: 0.25,
-          },
+          pointerEvents: "none",
+          userSelect: "none",
         }}
       >
-        {label}
-      </Button>
+        {!ready && !loadError ? (
+          <CircularProgress size={20} sx={{ color: "#9aa0a6" }} />
+        ) : (
+          <GoogleLogo />
+        )}
+        <Typography
+          component="span"
+          sx={{
+            fontSize: 15,
+            fontWeight: 500,
+            fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+            color: loadError ? "#d93025" : "#3c4043",
+          }}
+        >
+          {loadError ? "Google недоступен" : label}
+        </Typography>
+      </Box>
 
-      <Box
-        ref={hiddenRef}
-        aria-hidden="true"
-        sx={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          overflow: "hidden",
-          opacity: 0,
-          pointerEvents: "none",
-          left: -9999,
-        }}
-      />
+      {/* Официальная кнопка Google поверх — принимает клики */}
+      {!loadError && (
+        <Box
+          ref={googleRef}
+          sx={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 2,
+            opacity: 0.0001,
+            overflow: "hidden",
+            display: "flex",
+            alignItems: "stretch",
+            justifyContent: "center",
+            cursor: "pointer",
+            "& > div": {
+              width: "100% !important",
+              height: "100% !important",
+              display: "flex !important",
+              alignItems: "center !important",
+              justifyContent: "center !important",
+            },
+            "& iframe": {
+              width: "100% !important",
+              minHeight: "48px !important",
+              margin: "0 !important",
+            },
+          }}
+        />
+      )}
     </Box>
   );
 }
