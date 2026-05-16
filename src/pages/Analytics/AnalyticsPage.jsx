@@ -259,8 +259,8 @@ export default function AnalyticsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <AnalyticsCard
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+            <AnalyticsCard
             title="Доходы vs Расходы"
             subtitle={`по месяцам · ${periodDescription(period)}`}
           >
@@ -308,13 +308,15 @@ export default function AnalyticsPage() {
                 </LineChart>
               </ChartBox>
             )}
-          </AnalyticsCard>
+            </AnalyticsCard>
+          </div>
 
-          <AnalyticsCard
-            title={isExpense ? "Расходы по категориям" : "Доходы по источникам"}
-            subtitle={periodDescription(period)}
-            className="lg:col-span-2"
-            action={
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+            <AnalyticsCard
+              title={isExpense ? "Расходы по категориям" : "Доходы по источникам"}
+              subtitle={periodDescription(period)}
+              className="h-full"
+              action={
               <SegmentToggle
                 value={catKind}
                 onChange={setCatKind}
@@ -332,15 +334,15 @@ export default function AnalyticsPage() {
                 {isExpense ? "Нет расходов за период." : "Нет доходов за период."}
               </p>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-                <ChartBox>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 items-center">
+                <ChartBox height={240}>
                   <PieChart>
                     <Pie
                       data={categories}
                       dataKey="value"
                       nameKey="name"
-                      innerRadius={60}
-                      outerRadius={110}
+                      innerRadius={52}
+                      outerRadius={92}
                       paddingAngle={2}
                     >
                       {categories.map((_, i) => (
@@ -375,15 +377,15 @@ export default function AnalyticsPage() {
                 </ul>
               </div>
             )}
-          </AnalyticsCard>
-          </div>
+            </AnalyticsCard>
 
-          <MonthHistoryPanel
-            rows={summaries}
-            formatAmount={formatAmount}
-            updatedAt={todayStr}
-            className="mt-5"
-          />
+            <MonthHistoryPanel
+              rows={summaries}
+              formatAmount={formatAmount}
+              updatedAt={todayStr}
+              className="h-full min-h-0"
+            />
+          </div>
         </>
       )}
     </>
@@ -413,9 +415,9 @@ function Kpi({ label, hint, value, icon: Icon, color }) {
   );
 }
 
-function ChartBox({ children }) {
+function ChartBox({ children, height = 280 }) {
   return (
-    <div className="w-full min-w-0" style={{ height: 280 }}>
+    <div className="w-full min-w-0" style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>
