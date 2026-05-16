@@ -5,9 +5,10 @@ import React, {
   useContext,
   useEffect,
   useCallback,
+  useMemo,
 } from "react";
 import { AuthErrorScreen } from "./AuthErrorScreen";
-import { apiFetch } from "../api/clientFetch";
+import { apiFetch, AUTH_LOGOUT_EVENT } from "../api/clientFetch";
 
 const AuthContext = createContext(null);
 
@@ -164,17 +165,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    const sync = () => {
-      try {
-        const savedToken = normalizeToken(localStorage.getItem("authToken"));
-        setToken(savedToken);
-      } catch {}
-    };
-    const id = setInterval(sync, 10000);
-    return () => clearInterval(id);
-  }, []);
-
   const hardResetState = useCallback(() => {
     setUser(null);
     setToken(null);
@@ -185,6 +175,15 @@ export const AuthProvider = ({ children }) => {
       sessionStorage.clear();
     } catch {}
   }, []);
+
+  useEffect(() => {
+    const onForceLogout = () => {
+      hardResetState();
+      setAuthError(false);
+    };
+    window.addEventListener(AUTH_LOGOUT_EVENT, onForceLogout);
+    return () => window.removeEventListener(AUTH_LOGOUT_EVENT, onForceLogout);
+  }, [hardResetState]);
 
   const saveAuthData = useCallback(
     (data) => {
@@ -392,24 +391,46 @@ export const AuthProvider = ({ children }) => {
     return { ok: true, status: 200, json: async () => data, data };
   }, []);
 
-  const value = {
-    user,
-    token,
-    login,
-    loginWithGoogle,
-    register,
-    logout,
-    updateProfile,
-    updateEmail,
-    updateSettings,
-    changePassword,
-    deleteData,
-    isAuthenticated: Boolean(user && token),
-    loading,
-    updateUserInState,
-    authFetch,
-    authError,
-  };
+  const isAuthenticated = Boolean(user && token);
+
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      login,
+      loginWithGoogle,
+      register,
+      logout,
+      updateProfile,
+      updateEmail,
+      updateSettings,
+      changePassword,
+      deleteData,
+      isAuthenticated,
+      loading,
+      updateUserInState,
+      authFetch,
+      authError,
+    }),
+    [
+      user,
+      token,
+      login,
+      loginWithGoogle,
+      register,
+      logout,
+      updateProfile,
+      updateEmail,
+      updateSettings,
+      changePassword,
+      deleteData,
+      isAuthenticated,
+      loading,
+      updateUserInState,
+      authFetch,
+      authError,
+    ]
+  );
 
   if (authError) {
     return (

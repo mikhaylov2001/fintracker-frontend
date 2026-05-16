@@ -7,7 +7,6 @@ import './index.css';
 import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { ColorModeProvider, useColorMode } from './contexts/ColorModeContext';
-import { AuthProvider } from './contexts/AuthContext'; // Импортируем твой новый контекст
 import { buildTheme } from './theme';
 
 function Root() {
@@ -21,10 +20,7 @@ function Root() {
       {/* CssBaseline нормализует стили и применяет фоновый цвет темы */}
       <CssBaseline enableColorScheme />
       <ToastProvider>
-        {/* AuthProvider внутри темы и тостов, чтобы иметь к ним доступ */}
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <App />
       </ToastProvider>
     </ThemeProvider>
   );

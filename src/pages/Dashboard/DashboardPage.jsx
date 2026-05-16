@@ -5,7 +5,6 @@ import {
   ArrowUpCircle,
   Wallet,
   Percent,
-  CalendarDays,
   CheckCircle2,
   Plus,
 } from "lucide-react";
@@ -15,19 +14,16 @@ import { useSummaryApi } from "../../api/summaryApi";
 import { useIncomeApi } from "../../api/incomeApi";
 import { useExpensesApi } from "../../api/expensesApi";
 import { formatDateRu, mapApiRow, monthLabel, unwrapList } from "../../lib/ftUtils";
-
-const periods = ["Месяц", "Год", "Всё"];
-
-const n = (v) => {
-  const x = Number(v);
-  return Number.isFinite(x) ? x : 0;
-};
-
-const unwrap = (raw) => {
-  if (!raw) return null;
-  if (raw.data && typeof raw.data === "object") return raw.data;
-  return raw;
-};
+import {
+  aggregateSummaries,
+  currentYM,
+  defaultPeriod,
+  parseYM,
+  periodDescription,
+  resolvePeriodMonths,
+  unwrapSummariesList,
+} from "../../lib/periodUtils";
+import PeriodSelector from "../../components/ft/PeriodSelector";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -43,16 +39,24 @@ export default function DashboardPage() {
   incomeRef.current = incomeApi;
   expensesRef.current = expensesApi;
 
-  const [period, setPeriod] = useState("Месяц");
+  const [period, setPeriod] = useState(defaultPeriod);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(null);
+  const [allSummaries, setAllSummaries] = useState([]);
   const [recent, setRecent] = useState([]);
+  const hasLoadedOnce = useRef(false);
 
-  const now = useMemo(() => new Date(), []);
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const ym = `${year}-${String(month).padStart(2, "0")}`;
-  const todayStr = now.toLocaleDateString("ru-RU");
+  const todayStr = useMemo(() => new Date().toLocaleDateString("ru-RU"), []);
+  const anchorYm = period.anchorYM || currentYM();
+
+  const monthList = useMemo(
+    () => resolvePeriodMonths(period, allSummaries),
+    [period, allSummaries]
+  );
+
+  const agg = useMemo(
+    () => aggregateSummaries(allSummaries, monthList),
+    [allSummaries, monthList]
+  );
 
   const displayName = useMemo(() => {
     if (user?.firstName) return user.firstName;
@@ -63,30 +67,34 @@ export default function DashboardPage() {
     if (authLoading) return;
 
     if (!isAuthenticated) {
+      hasLoadedOnce.current = false;
       setLoading(false);
-      setSummary(null);
+      setAllSummaries([]);
       setRecent([]);
       return;
     }
 
     let cancelled = false;
+    const anchor = parseYM(anchorYm);
+    if (!anchor) return;
 
     const run = async () => {
-      setLoading(true);
+      if (!hasLoadedOnce.current) setLoading(true);
       try {
         const [sumSettled, incSettled, expSettled] = await Promise.allSettled([
-          summaryRef.current.getMyMonthlySummary(year, month),
-          incomeRef.current.getMyIncomesByMonth(year, month, 0, 50),
-          expensesRef.current.getMyExpensesByMonth(year, month, 0, 50),
+          summaryRef.current.getMyMonthlySummaries(),
+          incomeRef.current.getMyIncomesByMonth(anchor.year, anchor.month, 0, 50),
+          expensesRef.current.getMyExpensesByMonth(anchor.year, anchor.month, 0, 50),
         ]);
 
         if (cancelled) return;
 
-        const sumRes = sumSettled.status === "fulfilled" ? sumSettled.value : null;
+        if (sumSettled.status === "fulfilled") {
+          setAllSummaries(unwrapSummariesList(sumSettled.value));
+        }
+
         const incRes = incSettled.status === "fulfilled" ? incSettled.value : null;
         const expRes = expSettled.status === "fulfilled" ? expSettled.value : null;
-
-        setSummary(sumRes ? unwrap(sumRes) : null);
 
         const incomes = unwrapList(incRes?.data ?? incRes).map((x) => ({
           ...mapApiRow(x, "income"),
@@ -102,11 +110,14 @@ export default function DashboardPage() {
         setRecent(merged);
       } catch {
         if (!cancelled) {
-          setSummary(null);
+          setAllSummaries([]);
           setRecent([]);
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          hasLoadedOnce.current = true;
+          setLoading(false);
+        }
       }
     };
 
@@ -114,20 +125,15 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, year, month]);
+  }, [authLoading, isAuthenticated, anchorYm]);
 
-  const incomeSum = n(summary?.total_income ?? summary?.totalIncome);
-  const expenseSum = n(summary?.total_expenses ?? summary?.totalExpenses);
-  const balance = n(summary?.balance ?? incomeSum - expenseSum);
-  const savings = Math.max(0, incomeSum - expenseSum);
-  const savingsRate =
-    summary?.savings_rate_percent != null
-      ? Math.round(n(summary.savings_rate_percent))
-      : incomeSum > 0
-        ? Math.round((savings / incomeSum) * 100)
-        : 0;
+  const incomeSum = agg.income;
+  const expenseSum = agg.expenses;
+  const balance = incomeSum - expenseSum;
+  const savings = agg.savings;
+  const savingsRate = agg.rate;
 
-  if (authLoading || loading) {
+  if (authLoading || (loading && !hasLoadedOnce.current)) {
     return <p className="text-sm text-muted-foreground py-12 text-center">Загрузка…</p>;
   }
 
@@ -145,37 +151,15 @@ export default function DashboardPage() {
             Состояние финансов
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
-            Привет, <span className="text-foreground font-medium">{displayName}</span>. Сегодня{" "}
-            {todayStr} · {monthLabel(ym)}
+            Привет, <span className="text-foreground font-medium">{displayName}</span>. Сегодня {todayStr}
           </p>
-        </div>
-
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-border text-xs text-muted-foreground">
-            <CalendarDays className="size-3.5" />
-            Режим: {period}
-          </div>
-          <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
-            {periods.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  p === period
-                    ? "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
         </div>
       </header>
 
+      <PeriodSelector period={period} onChange={setPeriod} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 lg:mb-10">
-        <KpiCard label="Баланс" value={formatAmount(balance)} icon={Wallet} accent="info" hint="на конец месяца" />
+        <KpiCard label="Баланс" value={formatAmount(balance)} icon={Wallet} accent="info" hint="доходы − расходы за период" />
         <KpiCard
           label="Доходы"
           value={formatAmount(incomeSum)}
@@ -203,11 +187,11 @@ export default function DashboardPage() {
         <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 lg:col-span-2">
           <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold tracking-tight">Итоги месяца</h2>
-              <p className="text-xs text-muted-foreground mt-1">Обновлено: {todayStr}</p>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight">Итоги за период</h2>
+              <p className="text-xs text-muted-foreground mt-1">{periodDescription(period)}</p>
             </div>
-            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-[0.18em]">
-              {monthLabel(ym)}
+            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-[0.18em] max-w-[140px] text-right leading-snug">
+              {monthList.length} мес.
             </span>
           </div>
           <div className="flex flex-col divide-y divide-border">
@@ -237,7 +221,8 @@ export default function DashboardPage() {
         </section>
 
         <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 lg:col-span-3">
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight mb-6">Последние операции</h2>
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight mb-1">Последние операции</h2>
+          <p className="text-xs text-muted-foreground mb-6">за {monthLabel(anchorYm)}</p>
           {recent.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-8">Операций пока нет.</p>
           ) : (

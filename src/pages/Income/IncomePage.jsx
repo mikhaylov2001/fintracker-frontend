@@ -5,6 +5,7 @@ import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
+import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
 
 const CATEGORIES = [
   "Работа",
@@ -22,6 +23,8 @@ const SOURCES = ["Зарплата", "Премия", "Проценты", "Див
 
 export default function IncomePage() {
   const toast = useToast();
+  const toastRef = useRef(toast);
+  toastRef.current = toast;
   const { formatAmount } = useCurrency();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const incomeApi = useIncomeApi();
@@ -30,10 +33,13 @@ export default function IncomePage() {
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState(defaultPeriod);
+  const hasLoadedOnce = useRef(false);
 
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
+      hasLoadedOnce.current = false;
       setLoading(false);
       setItems([]);
       return;
@@ -42,23 +48,27 @@ export default function IncomePage() {
     let cancelled = false;
 
     const run = async () => {
-      setLoading(true);
+      if (!hasLoadedOnce.current) setLoading(true);
       try {
-        const now = new Date();
-        const res = await incomeRef.current.getMyIncomesByMonth(
-          now.getFullYear(),
-          now.getMonth() + 1,
-          0,
-          200
+        const months = resolvePeriodMonths(period);
+        const results = await Promise.all(
+          months.map(async (ym) => {
+            const p = parseYM(ym);
+            if (!p) return [];
+            const res = await incomeRef.current.getMyIncomesByMonth(p.year, p.month, 0, 200);
+            return unwrapList(res?.data ?? res).map((x) => mapApiRow(x, "income"));
+          })
         );
         if (!cancelled) {
-          const raw = unwrapList(res?.data ?? res);
-          setItems(raw.map((x) => mapApiRow(x, "income")));
+          setItems(results.flat().sort((a, b) => (a.date < b.date ? 1 : -1)));
         }
       } catch (e) {
-        if (!cancelled) toast.error(mapApiError(e, "Ошибка загрузки доходов"));
+        if (!cancelled) toastRef.current.error(mapApiError(e, "Ошибка загрузки доходов"));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          hasLoadedOnce.current = true;
+          setLoading(false);
+        }
       }
     };
 
@@ -66,20 +76,21 @@ export default function IncomePage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, toast]);
+  }, [authLoading, isAuthenticated, period]);
 
   const fmt = useCallback((n) => formatAmount(n), [formatAmount]);
 
   const reload = async () => {
-    const now = new Date();
-    const res = await incomeRef.current.getMyIncomesByMonth(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      200
+    const months = resolvePeriodMonths(period);
+    const results = await Promise.all(
+      months.map(async (ym) => {
+        const p = parseYM(ym);
+        if (!p) return [];
+        const res = await incomeRef.current.getMyIncomesByMonth(p.year, p.month, 0, 200);
+        return unwrapList(res?.data ?? res).map((x) => mapApiRow(x, "income"));
+      })
     );
-    const raw = unwrapList(res?.data ?? res);
-    setItems(raw.map((x) => mapApiRow(x, "income")));
+    setItems(results.flat().sort((a, b) => (a.date < b.date ? 1 : -1)));
   };
 
   const onSave = async (tx, editing) => {
@@ -130,6 +141,8 @@ export default function IncomePage() {
       formatAmount={fmt}
       onSave={onSave}
       onDelete={onDelete}
+      period={period}
+      onPeriodChange={setPeriod}
     />
   );
 }

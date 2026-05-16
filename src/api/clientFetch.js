@@ -81,6 +81,18 @@ const extractMsg = (data, fallback = "") => {
 };
 
 let refreshPromise = null;
+let logoutDispatched = false;
+
+function dispatchLogoutOnce() {
+  if (logoutDispatched) return;
+  logoutDispatched = true;
+  clearAuthData();
+  window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
+  // Сброс флага через 3 с — чтобы после повторного входа снова ловить 401
+  window.setTimeout(() => {
+    logoutDispatched = false;
+  }, 3000);
+}
 
 async function refreshToken() {
   if (refreshPromise) return refreshPromise;
@@ -226,13 +238,9 @@ export async function apiFetch(path, options = {}) {
     throw err;
   }
 
-  // 2) форс-логаут только если это НЕ login/register/google
+  // 2) сессия истекла — без location.replace (иначе бесконечная перезагрузка страницы)
   if (!isAuthEndpoint(url) && (res.status === 401 || res.status === 403)) {
-    clearAuthData();
-    window.dispatchEvent(new Event(AUTH_LOGOUT_EVENT));
-
-    const isLoginPage = window.location.pathname.includes("/login");
-    if (!isLoginPage) window.location.replace("/login?expired=true");
+    dispatchLogoutOnce();
 
     const err = new Error("Session expired");
     err.status = res.status;

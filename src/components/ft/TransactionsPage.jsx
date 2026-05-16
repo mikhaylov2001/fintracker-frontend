@@ -1,6 +1,9 @@
 import React, { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { formatDateRu, todayISO } from "../../lib/ftUtils";
+import { avgPerDay } from "../../lib/periodUtils";
+import FtDatePicker from "./FtDatePicker";
+import PeriodSelector from "./PeriodSelector";
 
 export default function TransactionsPage({
   title,
@@ -14,6 +17,9 @@ export default function TransactionsPage({
   formatAmount,
   onSave,
   onDelete,
+  period,
+  onPeriodChange,
+  periodHint,
 }) {
   const [query, setQuery] = useState("");
   const [editing, setEditing] = useState(null);
@@ -21,6 +27,8 @@ export default function TransactionsPage({
   const [saving, setSaving] = useState(false);
 
   const total = items.reduce((s, t) => s + t.amount, 0);
+  const avgOp = items.length ? Math.round(total / items.length) : 0;
+  const avgDay = avgPerDay(total, items);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -81,21 +89,31 @@ export default function TransactionsPage({
         </button>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      {period && onPeriodChange && (
+        <PeriodSelector period={period} onChange={onPeriodChange} compact />
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-surface border border-border rounded-2xl p-5 relative overflow-hidden">
           <div className={`absolute -right-6 -top-6 size-24 ${palette.glow} blur-3xl rounded-full`} />
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Всего</p>
-          <p className={`text-2xl font-bold tabular-nums ${palette.text}`}>{formatAmount(total)}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Всего за период</p>
+          <p className={`text-2xl font-bold tabular-nums mb-1 ${palette.text}`}>{formatAmount(total)}</p>
+          <p className="text-[11px] text-muted-foreground">сумма всех операций</p>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Операций</p>
-          <p className="text-2xl font-bold tabular-nums">{items.length}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Операций</p>
+          <p className="text-2xl font-bold tabular-nums mb-1">{items.length}</p>
+          <p className="text-[11px] text-muted-foreground">количество записей</p>
         </div>
         <div className="bg-surface border border-border rounded-2xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Средняя</p>
-          <p className="text-2xl font-bold tabular-nums">
-            {formatAmount(items.length ? Math.round(total / items.length) : 0)}
-          </p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">В среднем за день</p>
+          <p className="text-2xl font-bold tabular-nums mb-1">{formatAmount(avgDay)}</p>
+          <p className="text-[11px] text-muted-foreground">сумма ÷ дни с операциями</p>
+        </div>
+        <div className="bg-surface border border-border rounded-2xl p-5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1">Средняя операция</p>
+          <p className="text-2xl font-bold tabular-nums mb-1">{formatAmount(avgOp)}</p>
+          <p className="text-[11px] text-muted-foreground">сумма ÷ число операций</p>
         </div>
       </div>
 
@@ -309,7 +327,7 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
             </Field>
           )}
           <Field label="Дата">
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="ft-input" />
+            <FtDatePicker value={date} onChange={setDate} maxDate={todayISO()} />
           </Field>
           <Field label={kind === "expense" ? "Описание" : "Комментарий"}>
             <input type="text" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Необязательно" className="ft-input" />
@@ -328,6 +346,7 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
     </div>
   );
 }
+
 
 function Field({ label, children }) {
   return (

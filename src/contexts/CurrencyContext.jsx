@@ -6,6 +6,7 @@ import React, {
   useState,
   useCallback,
   useEffect,
+  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 
@@ -25,19 +26,28 @@ const RATES = {
 };
 
 export const CurrencyProvider = ({ children }) => {
-  const { authFetch } = useAuth();
+  const { authFetch, isAuthenticated, loading: authLoading } = useAuth();
   const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const [hideAmounts, setHideAmounts] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const authFetchRef = useRef(authFetch);
+  authFetchRef.current = authFetch;
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      setCurrency(DEFAULT_CURRENCY);
+      setHideAmounts(false);
+      setLoaded(true);
+      return;
+    }
+
     let cancelled = false;
 
     const load = async () => {
       try {
-        if (!authFetch) return;
-
-        const res = await authFetch("/api/settings/me");
+        const res = await authFetchRef.current("/api/settings/me");
         if (!res.ok) {
           throw new Error("Не удалось загрузить настройки");
         }
@@ -60,7 +70,7 @@ export const CurrencyProvider = ({ children }) => {
     return () => {
       cancelled = true;
     };
-  }, [authFetch]);
+  }, [authLoading, isAuthenticated]);
 
   const toggleHideAmounts = useCallback(() => {
     setHideAmounts((prev) => !prev);
