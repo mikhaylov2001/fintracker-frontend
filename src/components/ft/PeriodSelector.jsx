@@ -1,6 +1,5 @@
 import React from "react";
-import { CalendarDays } from "lucide-react";
-import { currentYM, periodDescription } from "../../lib/periodUtils";
+import { currentYM } from "../../lib/periodUtils";
 import FtPeriodCalendar from "./FtPeriodCalendar";
 import SegmentToggle from "./SegmentToggle";
 
@@ -10,7 +9,13 @@ const SEGMENTS = [
   { id: "all", label: "Всё" },
 ];
 
-export default function PeriodSelector({ period, onChange, compact = false }) {
+const SEGMENT_ACTIVE = "bg-[#22C55E] text-[#05140C]";
+
+/**
+ * Период: chip-календарь + Месяц | Год | Всё (как Lovable).
+ * variant="header" — только контролы, для правой части шапки.
+ */
+export default function PeriodSelector({ period, onChange, variant = "default" }) {
   const setMode = (mode) => {
     const next = { ...period, mode };
     if (mode === "month" && !next.anchorYM) next.anchorYM = currentYM();
@@ -25,32 +30,24 @@ export default function PeriodSelector({ period, onChange, compact = false }) {
         ? period.mode
         : "month";
 
-  return (
-    <div className={`flex flex-col gap-3 ${compact ? "mb-8" : "mb-6"}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
-        <FtPeriodCalendar period={period} onChange={onChange} />
-
-        <SegmentToggle
-          value={segmentValue}
-          onChange={setMode}
-          className="w-full sm:w-auto"
-          options={SEGMENTS.map((s) => ({
-            id: s.id,
-            label: s.label,
-            activeClass:
-              "bg-emerald-glow text-black shadow-[0_0_20px_rgba(62,207,142,0.35)]",
-          }))}
-        />
-      </div>
-
-      <p
-        className={`text-xs text-muted-foreground flex items-start sm:items-center gap-2 leading-relaxed ${
-          compact ? "" : ""
-        }`}
-      >
-        <CalendarDays className="size-4 shrink-0 mt-0.5 sm:mt-0" />
-        {periodDescription(period)}
-      </p>
+  const controls = (
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5">
+      <FtPeriodCalendar period={period} onChange={onChange} />
+      <SegmentToggle
+        value={segmentValue}
+        onChange={setMode}
+        options={SEGMENTS.map((s) => ({
+          id: s.id,
+          label: s.label,
+          activeClass: SEGMENT_ACTIVE,
+        }))}
+      />
     </div>
   );
+
+  if (variant === "header") {
+    return <div className="shrink-0 w-full sm:w-auto">{controls}</div>;
+  }
+
+  return <div className="mb-6 lg:mb-8">{controls}</div>;
 }

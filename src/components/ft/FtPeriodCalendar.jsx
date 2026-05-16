@@ -62,7 +62,9 @@ export default function FtPeriodCalendar({ period, onChange, disabled = false })
   const buttonLabel =
     period.mode === "range" && period.fromYM && period.toYM
       ? periodDescription(period)
-      : `Режим: ${MODE_LABELS[period.mode] || "Месяц"}`;
+      : period.mode === "all"
+        ? "Режим: Всё"
+        : `Режим: ${MODE_LABELS[period.mode] || "Месяц"}`;
 
   const rangeFrom = period.fromYM;
   const rangeTo = period.toYM;
@@ -141,14 +143,14 @@ export default function FtPeriodCalendar({ period, onChange, disabled = false })
         type="button"
         onClick={openCalendar}
         disabled={disabled || period.mode === "all"}
-        className={`inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl border border-border bg-surface text-sm font-medium transition ${
+        className={`inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full border text-xs sm:text-sm font-bold transition whitespace-nowrap ${
           period.mode === "all"
-            ? "opacity-60 cursor-default"
-            : "hover:bg-white/[0.04] hover:border-white/10"
+            ? "opacity-70 cursor-default border-border bg-[oklch(0.25_0.008_285/0.72)] text-muted-foreground"
+            : "border-[oklch(0.72_0.18_162/0.18)] bg-[oklch(0.25_0.008_285/0.72)] text-foreground hover:border-[oklch(0.72_0.18_162/0.32)]"
         }`}
       >
-        <CalendarDays className="size-4 text-muted-foreground shrink-0" />
-        <span className="whitespace-nowrap">{buttonLabel}</span>
+        <CalendarDays className="size-4 text-emerald-glow shrink-0" strokeWidth={2} />
+        <span>{buttonLabel}</span>
       </button>
 
       {open && (

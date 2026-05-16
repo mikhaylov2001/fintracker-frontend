@@ -90,7 +90,7 @@ export default function TransactionsPage({
       </header>
 
       {period && onPeriodChange && (
-        <PeriodSelector period={period} onChange={onPeriodChange} compact />
+        <PeriodSelector period={period} onChange={onPeriodChange} />
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 mb-8">

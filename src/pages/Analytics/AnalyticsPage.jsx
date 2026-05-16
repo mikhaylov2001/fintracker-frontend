@@ -179,14 +179,15 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <header className="mb-6 lg:mb-8">
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
-        <p className="text-xs sm:text-sm text-muted-foreground">
-          Динамика и категории за выбранный период. Обновлено: {todayStr}
-        </p>
+      <header className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6 lg:mb-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Динамика и категории за выбранный период. Обновлено: {todayStr}
+          </p>
+        </div>
+        <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
-
-      <PeriodSelector period={period} onChange={setPeriod} />
 
       {!hasData ? (
         <section className="bg-surface rounded-3xl border border-border p-10 sm:p-14 text-center mt-6">

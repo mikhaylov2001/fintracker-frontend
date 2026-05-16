@@ -1,12 +1,14 @@
 import React from "react";
 
 /**
- * Переключатель-сегменты (Расходы / Доходы и т.п.)
+ * Переключатель-сегменты в стиле Lovable (pill).
  */
-export default function SegmentToggle({ value, onChange, options, className = "" }) {
+export default function SegmentToggle({ value, onChange, options, className = "", pill = true }) {
   return (
     <div
-      className={`inline-flex flex-wrap gap-1 p-1 rounded-xl bg-black/20 border border-border ${className}`}
+      className={`inline-flex gap-0.5 p-1 ${
+        pill ? "rounded-full" : "rounded-xl"
+      } bg-[oklch(0.25_0.008_285/0.72)] border border-[oklch(1_0_0/12%)] ${className}`}
       role="tablist"
     >
       {options.map((opt) => {
@@ -18,11 +20,13 @@ export default function SegmentToggle({ value, onChange, options, className = ""
             role="tab"
             aria-selected={active}
             onClick={() => onChange(opt.id)}
-            className={`px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
+            className={`px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
+              pill ? "rounded-full" : "rounded-lg"
+            } ${
               active
                 ? opt.activeClass ||
-                  "bg-emerald-glow text-primary-foreground shadow-[0_0_16px_oklch(0.72_0.18_162/0.3)]"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
+                  "bg-[#22C55E] text-[#05140C] shadow-[0_0_16px_rgba(34,197,94,0.35)]"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             {opt.label}
