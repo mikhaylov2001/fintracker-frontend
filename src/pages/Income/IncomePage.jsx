@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TransactionsPage from "../../components/ft/TransactionsPage";
 import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -25,29 +25,62 @@ export default function IncomePage() {
   const { formatAmount } = useCurrency();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const incomeApi = useIncomeApi();
+  const incomeRef = useRef(incomeApi);
+  incomeRef.current = incomeApi;
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      setLoading(true);
-      const now = new Date();
-      const res = await incomeApi.getMyIncomesByMonth(now.getFullYear(), now.getMonth() + 1, 0, 200);
-      const raw = unwrapList(res?.data ?? res);
-      setItems(raw.map((x) => mapApiRow(x, "income")));
-    } catch (e) {
-      toast.error(mapApiError(e, "Ошибка загрузки доходов"));
-    } finally {
-      setLoading(false);
-    }
-  }, [incomeApi, isAuthenticated, toast]);
-
   useEffect(() => {
-    if (!authLoading) load();
-  }, [authLoading, load]);
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setLoading(false);
+      setItems([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        const now = new Date();
+        const res = await incomeRef.current.getMyIncomesByMonth(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          200
+        );
+        if (!cancelled) {
+          const raw = unwrapList(res?.data ?? res);
+          setItems(raw.map((x) => mapApiRow(x, "income")));
+        }
+      } catch (e) {
+        if (!cancelled) toast.error(mapApiError(e, "Ошибка загрузки доходов"));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, toast]);
 
   const fmt = useCallback((n) => formatAmount(n), [formatAmount]);
+
+  const reload = async () => {
+    const now = new Date();
+    const res = await incomeRef.current.getMyIncomesByMonth(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      200
+    );
+    const raw = unwrapList(res?.data ?? res);
+    setItems(raw.map((x) => mapApiRow(x, "income")));
+  };
 
   const onSave = async (tx, editing) => {
     const payload = {
@@ -58,13 +91,13 @@ export default function IncomePage() {
     };
     try {
       if (editing?.id) {
-        await incomeApi.updateIncome(editing.id, payload);
+        await incomeRef.current.updateIncome(editing.id, payload);
         toast.success("Доход обновлён");
       } else {
-        await incomeApi.createIncome(payload);
+        await incomeRef.current.createIncome(payload);
         toast.success("Доход добавлен");
       }
-      await load();
+      await reload();
     } catch (e) {
       toast.error(mapApiError(e, "Ошибка сохранения"));
       throw e;
@@ -73,15 +106,13 @@ export default function IncomePage() {
 
   const onDelete = async (id) => {
     try {
-      await incomeApi.deleteIncome(id);
+      await incomeRef.current.deleteIncome(id);
       toast.success("Доход удалён");
-      await load();
+      await reload();
     } catch (e) {
       toast.error(mapApiError(e, "Ошибка удаления"));
     }
   };
-
-  const rows = useMemo(() => items, [items]);
 
   if (authLoading) return null;
   if (!isAuthenticated) return null;
@@ -91,7 +122,7 @@ export default function IncomePage() {
       title="Доходы"
       subtitle="Учёт всех поступлений: зарплата, бизнес, инвестиции."
       kind="income"
-      items={rows}
+      items={items}
       loading={loading}
       categories={CATEGORIES}
       sources={SOURCES}

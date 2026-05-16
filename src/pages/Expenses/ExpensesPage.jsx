@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import TransactionsPage from "../../components/ft/TransactionsPage";
 import { useExpensesApi } from "../../api/expensesApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -29,29 +29,62 @@ export default function ExpensesPage() {
   const { formatAmount } = useCurrency();
   const { isAuthenticated, loading: authLoading } = useAuth();
   const expensesApi = useExpensesApi();
+  const expensesRef = useRef(expensesApi);
+  expensesRef.current = expensesApi;
+
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      setLoading(true);
-      const now = new Date();
-      const res = await expensesApi.getMyExpensesByMonth(now.getFullYear(), now.getMonth() + 1, 0, 200);
-      const raw = unwrapList(res?.data ?? res);
-      setItems(raw.map((x) => mapApiRow(x, "expense")));
-    } catch (e) {
-      toast.error(mapApiError(e, "Ошибка загрузки расходов"));
-    } finally {
-      setLoading(false);
-    }
-  }, [expensesApi, isAuthenticated, toast]);
-
   useEffect(() => {
-    if (!authLoading) load();
-  }, [authLoading, load]);
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      setLoading(false);
+      setItems([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        const now = new Date();
+        const res = await expensesRef.current.getMyExpensesByMonth(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+          200
+        );
+        if (!cancelled) {
+          const raw = unwrapList(res?.data ?? res);
+          setItems(raw.map((x) => mapApiRow(x, "expense")));
+        }
+      } catch (e) {
+        if (!cancelled) toast.error(mapApiError(e, "Ошибка загрузки расходов"));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, toast]);
 
   const fmt = useCallback((n) => formatAmount(n), [formatAmount]);
+
+  const reload = async () => {
+    const now = new Date();
+    const res = await expensesRef.current.getMyExpensesByMonth(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      200
+    );
+    const raw = unwrapList(res?.data ?? res);
+    setItems(raw.map((x) => mapApiRow(x, "expense")));
+  };
 
   const onSave = async (tx, editing) => {
     const payload = {
@@ -62,13 +95,13 @@ export default function ExpensesPage() {
     };
     try {
       if (editing?.id) {
-        await expensesApi.updateExpense(editing.id, payload);
+        await expensesRef.current.updateExpense(editing.id, payload);
         toast.success("Расход обновлён");
       } else {
-        await expensesApi.createExpense(payload);
+        await expensesRef.current.createExpense(payload);
         toast.success("Расход добавлен");
       }
-      await load();
+      await reload();
     } catch (e) {
       toast.error(mapApiError(e, "Ошибка сохранения"));
       throw e;
@@ -77,15 +110,13 @@ export default function ExpensesPage() {
 
   const onDelete = async (id) => {
     try {
-      await expensesApi.deleteExpense(id);
+      await expensesRef.current.deleteExpense(id);
       toast.success("Расход удалён");
-      await load();
+      await reload();
     } catch (e) {
       toast.error(mapApiError(e, "Ошибка удаления"));
     }
   };
-
-  const rows = useMemo(() => items, [items]);
 
   if (authLoading) return null;
   if (!isAuthenticated) return null;
@@ -95,7 +126,7 @@ export default function ExpensesPage() {
       title="Расходы"
       subtitle="Контролируйте, на что уходят деньги каждый месяц."
       kind="expense"
-      items={rows}
+      items={items}
       loading={loading}
       categories={CATEGORIES}
       accent="warning"

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowDownCircle,
@@ -36,13 +36,22 @@ export default function DashboardPage() {
   const incomeApi = useIncomeApi();
   const expensesApi = useExpensesApi();
 
+  const summaryRef = useRef(summaryApi);
+  const incomeRef = useRef(incomeApi);
+  const expensesRef = useRef(expensesApi);
+  summaryRef.current = summaryApi;
+  incomeRef.current = incomeApi;
+  expensesRef.current = expensesApi;
+
   const [period, setPeriod] = useState("Месяц");
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState(null);
   const [recent, setRecent] = useState([]);
 
   const now = useMemo(() => new Date(), []);
-  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const ym = `${year}-${String(month).padStart(2, "0")}`;
   const todayStr = now.toLocaleDateString("ru-RU");
 
   const displayName = useMemo(() => {
@@ -50,44 +59,62 @@ export default function DashboardPage() {
     return user?.userName || "пользователь";
   }, [user]);
 
-  const load = useCallback(async () => {
-    if (!isAuthenticated) return;
-    try {
-      setLoading(true);
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
+  useEffect(() => {
+    if (authLoading) return;
 
-      const [sumRes, incRes, expRes] = await Promise.all([
-        summaryApi.getMyMonthlySummary(year, month),
-        incomeApi.getMyIncomesByMonth(year, month, 0, 50),
-        expensesApi.getMyExpensesByMonth(year, month, 0, 50),
-      ]);
-
-      setSummary(unwrap(sumRes));
-
-      const incomes = unwrapList(incRes?.data ?? incRes).map((x) => ({
-        ...mapApiRow(x, "income"),
-        kind: "income",
-      }));
-      const expenses = unwrapList(expRes?.data ?? expRes).map((x) => ({
-        ...mapApiRow(x, "expense"),
-        kind: "expense",
-      }));
-      const merged = [...incomes, ...expenses]
-        .sort((a, b) => (a.date < b.date ? 1 : -1))
-        .slice(0, 6);
-      setRecent(merged);
-    } catch {
+    if (!isAuthenticated) {
+      setLoading(false);
       setSummary(null);
       setRecent([]);
-    } finally {
-      setLoading(false);
+      return;
     }
-  }, [expensesApi, incomeApi, isAuthenticated, now, summaryApi]);
 
-  useEffect(() => {
-    if (!authLoading) load();
-  }, [authLoading, load]);
+    let cancelled = false;
+
+    const run = async () => {
+      setLoading(true);
+      try {
+        const [sumSettled, incSettled, expSettled] = await Promise.allSettled([
+          summaryRef.current.getMyMonthlySummary(year, month),
+          incomeRef.current.getMyIncomesByMonth(year, month, 0, 50),
+          expensesRef.current.getMyExpensesByMonth(year, month, 0, 50),
+        ]);
+
+        if (cancelled) return;
+
+        const sumRes = sumSettled.status === "fulfilled" ? sumSettled.value : null;
+        const incRes = incSettled.status === "fulfilled" ? incSettled.value : null;
+        const expRes = expSettled.status === "fulfilled" ? expSettled.value : null;
+
+        setSummary(sumRes ? unwrap(sumRes) : null);
+
+        const incomes = unwrapList(incRes?.data ?? incRes).map((x) => ({
+          ...mapApiRow(x, "income"),
+          kind: "income",
+        }));
+        const expenses = unwrapList(expRes?.data ?? expRes).map((x) => ({
+          ...mapApiRow(x, "expense"),
+          kind: "expense",
+        }));
+        const merged = [...incomes, ...expenses]
+          .sort((a, b) => (a.date < b.date ? 1 : -1))
+          .slice(0, 6);
+        setRecent(merged);
+      } catch {
+        if (!cancelled) {
+          setSummary(null);
+          setRecent([]);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, year, month]);
 
   const incomeSum = n(summary?.total_income ?? summary?.totalIncome);
   const expenseSum = n(summary?.total_expenses ?? summary?.totalExpenses);
