@@ -93,7 +93,10 @@ const getHumanError = (err, context = "general") => {
       return "На сервере не настроен Google OAuth. Добавьте GOOGLE_CLIENT_ID в Render и перезапустите бэкенд";
     }
     if (lower.includes("invalid google token") || lower.includes("google token")) {
-      return "Не удалось подтвердить вход через Google. Проверьте, что GOOGLE_CLIENT_ID на Render совпадает с клиентом на фронте";
+      return (
+        "Не удалось подтвердить вход через Google. На Render в GOOGLE_CLIENT_ID должно быть " +
+        "значение вида …apps.googleusercontent.com (как на Vercel), а не текст «GOOGLE_CLIENT_ID»"
+      );
     }
     if (lower.includes("google account is linked") || lower.includes("другой аккаунт")) {
       return "Этот Google-аккаунт уже привязан к другому пользователю";
