@@ -116,14 +116,22 @@ export default function AnalyticsPage() {
     [summaries, monthList]
   );
 
-  const chartRows = useMemo(
-    () =>
-      summaries
-        .filter((s) => s.totalIncome > 0 || s.totalExpenses > 0)
-        .sort((a, b) => a.ym.localeCompare(b.ym))
-        .slice(-6),
-    [summaries]
-  );
+  const chartRows = useMemo(() => {
+    const inPeriod = new Set(monthList);
+    return summaries
+      .filter(
+        (s) =>
+          inPeriod.has(s.ym) && (s.totalIncome > 0 || s.totalExpenses > 0)
+      )
+      .sort((a, b) => a.ym.localeCompare(b.ym));
+  }, [summaries, monthList]);
+
+  const monthsForCategories = useMemo(() => {
+    if (period.mode === "year" || period.mode === "range" || period.mode === "all") {
+      return monthList;
+    }
+    return monthList.slice(-6);
+  }, [monthList, period.mode]);
 
   const monthlyData = useMemo(
     () =>
@@ -137,7 +145,7 @@ export default function AnalyticsPage() {
   );
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated || monthList.length === 0) {
+    if (authLoading || !isAuthenticated || monthsForCategories.length === 0) {
       setExpenseCategories([]);
       setIncomeCategories([]);
       setCatsLoading(false);
@@ -161,7 +169,7 @@ export default function AnalyticsPage() {
     const loadCats = async () => {
       setCatsLoading(true);
       try {
-        const monthsToLoad = monthList.slice(-6);
+        const monthsToLoad = monthsForCategories;
         const [expResults, incResults] = await Promise.all([
           Promise.all(
             monthsToLoad.map(async (ym) => {
@@ -207,7 +215,7 @@ export default function AnalyticsPage() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, monthList]);
+  }, [authLoading, isAuthenticated, monthsForCategories]);
 
   const isExpense = catKind === "expense";
   const categories = isExpense ? expenseCategories : incomeCategories;
