@@ -1,3 +1,31 @@
+@import "./styles/ft-theme.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .ft-input {
+    width: 100%;
+    height: 2.75rem;
+    padding: 0 0.875rem;
+    border-radius: 0.625rem;
+    background: oklch(1 0 0 / 4%);
+    border: 1px solid var(--ft-border);
+    color: var(--ft-foreground);
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .ft-input:focus {
+    border-color: oklch(0.72 0.18 162 / 50%);
+    background: oklch(1 0 0 / 6%);
+  }
+  .ft-input::placeholder {
+    color: var(--ft-muted-foreground);
+  }
+}
+
 html,
 body,
 #root {
@@ -5,24 +33,16 @@ body,
   margin: 0;
 }
 
-/* Корень приложения: только вертикальный скролл */
 #root {
-  max-width: 1024px;       /* при желании измени ширину */
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   overflow-x: hidden;
-  touch-action: pan-y;
 }
 
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  background-color: var(--ft-background);
+  color: var(--ft-foreground);
 }

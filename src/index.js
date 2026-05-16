@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
+import './index.css';
 import App from './App';
 import { ToastProvider } from './contexts/ToastContext';
 import { ColorModeProvider, useColorMode } from './contexts/ColorModeContext';

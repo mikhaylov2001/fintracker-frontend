@@ -1,1169 +1,293 @@
-// src/pages/Dashboard/DashboardPage.jsx
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  memo,
-  useRef,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
-  Typography,
-  Box,
-  Chip,
-  Stack,
-  Skeleton,
-  TextField,
-} from "@mui/material";
-import { alpha } from "@mui/material/styles";
-import Accordion from "@mui/material/Accordion";
-import AccordionSummary from "@mui/material/AccordionSummary";
-import AccordionDetails from "@mui/material/AccordionDetails";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
-import ToggleButton from "@mui/material/ToggleButton";
-import { useNavigate } from "react-router-dom";
-
-import dayjs from "dayjs";
-import "dayjs/locale/ru";
-import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
-import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
-import ArrowCircleUpOutlinedIcon from "@mui/icons-material/ArrowCircleUpOutlined";
-import ArrowCircleDownOutlinedIcon from "@mui/icons-material/ArrowCircleDownOutlined";
-import PercentOutlinedIcon from "@mui/icons-material/PercentOutlined";
-import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
-
+  ArrowDownCircle,
+  ArrowUpCircle,
+  Wallet,
+  Percent,
+  CalendarDays,
+  CheckCircle2,
+  Plus,
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useSummaryApi } from "../../api/summaryApi";
-
-import {
-  bankingColors as colors,
-  surfaceOutlinedSx,
-  pillSx,
-} from "../../styles/bankingTokens";
-
 import { useCurrency } from "../../contexts/CurrencyContext";
+import { useSummaryApi } from "../../api/summaryApi";
+import { useIncomeApi } from "../../api/incomeApi";
+import { useExpensesApi } from "../../api/expensesApi";
+import { formatDateRu, mapApiRow, monthLabel, unwrapList } from "../../lib/ftUtils";
 
-dayjs.locale("ru");
-
-// ===== helpers =====
-
-const COLORS = {
-  income: colors.primary,
-  expenses: colors.warning,
-  balance: "#6366F1",
-  rate: "#A78BFA",
-};
+const periods = ["Месяц", "Год", "Всё"];
 
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
 };
-const unwrap = (raw) =>
-  raw?.data && typeof raw.data === "object" ? raw.data : raw;
 
-const ymKey = (y, m) => `${y}-${String(m).padStart(2, "0")}`;
-const parseYm = (s) => {
-  const m = String(s || "").trim().match(/^(\d{4})-(\d{1,2})$/);
-  if (!m) return null;
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  if (!Number.isFinite(year) || !Number.isFinite(month) || month < 1 || month > 12)
-    return null;
-  return { year, month };
+const unwrap = (raw) => {
+  if (!raw) return null;
+  if (raw.data && typeof raw.data === "object") return raw.data;
+  return raw;
 };
-const ymNum = (y, m) => y * 12 + (m - 1);
-
-const chunk = (arr, size) => {
-  const out = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
-};
-
-const parseDayjsToYMD = (d) => {
-  if (!d || !dayjs.isDayjs(d) || !d.isValid()) return null;
-  return { day: d.date(), month: d.month() + 1, year: d.year() };
-};
-
-// безопасное преобразование ошибки с API
-const mapApiError = (err) => {
-  const data = err?.response?.data;
-  if (data && typeof data === "object" && typeof data.message === "string") {
-    return data.message;
-  }
-  return "Ошибка загрузки данных. Попробуйте позже.";
-};
-
-// ===== UI мелочи =====
-
-const SectionTitle = memo(function SectionTitle({ title, right }) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="baseline"
-      justifyContent="space-between"
-      sx={{ mb: 1 }}
-    >
-      <Typography
-        variant="h6"
-        sx={{ fontWeight: 950, color: colors.text, letterSpacing: -0.2 }}
-      >
-        {title}
-      </Typography>
-      {right ? (
-        <Typography
-          variant="caption"
-          sx={{
-            color: colors.muted,
-            fontWeight: 900,
-            textTransform: "capitalize",
-          }}
-        >
-          {right}
-        </Typography>
-      ) : null}
-    </Stack>
-  );
-});
-
-const KpiCard = memo(function KpiCard({
-  label,
-  value,
-  sub,
-  icon,
-  accent,
-  onClick,
-}) {
-  const handleKeyDown = useCallback(
-    (e) => {
-      if (onClick && (e.key === "Enter" || e.key === " ")) {
-        e.preventDefault();
-        onClick();
-      }
-    },
-    [onClick]
-  );
-
-  const clickable = Boolean(onClick);
-
-  return (
-    <Box
-      component="div"
-      onClick={onClick}
-      role={clickable ? "button" : undefined}
-      tabIndex={clickable ? 0 : undefined}
-      onKeyDown={clickable ? handleKeyDown : undefined}
-      sx={{
-        ...surfaceOutlinedSx,
-        height: "100%",
-        minHeight: { xs: 96, sm: 104, md: 116 },
-        cursor: clickable ? "pointer" : "default",
-        position: "relative",
-        overflow: "hidden",
-        transition:
-          "transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease",
-        borderColor: alpha(accent, 0.34),
-        display: "flex",
-        flexDirection: "column",
-        p: { xs: 1.5, md: 2 },
-        "&:before": {
-          content: '""',
-          position: "absolute",
-          inset: 0,
-          background: `linear-gradient(135deg, ${alpha(
-            accent,
-            0.2
-          )} 0%, transparent 62%)`,
-          pointerEvents: "none",
-        },
-        "@media (hover: hover) and (pointer: fine)": clickable
-          ? {
-              "&:hover": {
-                transform: "translateY(-1px)",
-                boxShadow: "0 22px 70px rgba(0,0,0,0.58)",
-                borderColor: alpha(accent, 0.58),
-              },
-            }
-          : {},
-      }}
-    >
-      <Stack
-        direction="row"
-        spacing={1.1}
-        alignItems="center"
-        sx={{ position: "relative", zIndex: 1 }}
-      >
-        <Box
-          sx={{
-            width: { xs: 30, md: 34 },
-            height: { xs: 30, md: 34 },
-            borderRadius: 2.5,
-            display: "grid",
-            placeItems: "center",
-            bgcolor: alpha(accent, 0.14),
-            border: `1px solid ${alpha(accent, 0.28)}`,
-            flex: "0 0 auto",
-          }}
-        >
-          {icon
-            ? React.cloneElement(icon, {
-                sx: {
-                  fontSize: { xs: 17, md: 18 },
-                  color: alpha(accent, 0.98),
-                },
-              })
-            : null}
-        </Box>
-
-        <Typography
-          variant="overline"
-          sx={{
-            color: colors.muted,
-            fontWeight: 950,
-            letterSpacing: 0.55,
-            lineHeight: 1.1,
-            minWidth: 0,
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: { xs: 2, sm: 1 },
-            overflow: "hidden",
-          }}
-        >
-          {label}
-        </Typography>
-      </Stack>
-
-      <Typography
-        variant="h5"
-        sx={{
-          mt: { xs: 0.7, md: 0.9 },
-          fontWeight: 950,
-          color: colors.text,
-          lineHeight: 1.05,
-          letterSpacing: -0.25,
-          fontSize: { xs: "1.15rem", sm: "1.22rem", md: "1.35rem" },
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {value}
-      </Typography>
-
-      <Typography
-        variant="caption"
-        sx={{
-          mt: 0.5,
-          color: colors.muted,
-          display: { xs: "none", md: "block" },
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          position: "relative",
-          zIndex: 1,
-        }}
-      >
-        {sub && String(sub).trim() ? sub : "\u00A0"}
-      </Typography>
-    </Box>
-  );
-});
-
-const SummaryRow = memo(function SummaryRow({ label, value, color }) {
-  return (
-    <Box
-      sx={{
-        display: "grid",
-        gridTemplateColumns: "minmax(0, 1fr) auto",
-        alignItems: "center",
-        gap: 1.5,
-        py: 1.15,
-        px: { xs: 1.5, sm: 2 },
-        borderRadius: 14,
-        bgcolor: alpha("#FFFFFF", 0.04),
-      }}
-    >
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0 }}>
-        <Box sx={{ width: 8, height: 8, borderRadius: 999, bgcolor: color }} />
-        <Typography
-          variant="body2"
-          sx={{
-            color: alpha(colors.text, 0.92),
-            fontWeight: 900,
-            minWidth: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {label}
-        </Typography>
-      </Stack>
-
-      <Typography
-        variant="body2"
-        sx={{ fontWeight: 950, color: colors.text, whiteSpace: "nowrap" }}
-      >
-        {value}
-      </Typography>
-    </Box>
-  );
-});
-
-const accordionSx = {
-  borderRadius: 16,
-  mb: 1,
-  border: "none",
-  boxShadow: "none",
-  backgroundColor: "transparent",
-  "&:before": { display: "none" },
-};
-
-const HistoryAccordion = memo(function HistoryAccordion({
-  h,
-  monthTitle,
-  formatAmount,
-}) {
-  const raw = Number(h?.savings_rate_percent);
-  const has = Number.isFinite(raw);
-  const v = has ? Math.round(raw) : null;
-
-  const pctColor = !has
-    ? colors.muted
-    : v > 0
-    ? colors.success
-    : v < 0
-    ? colors.danger
-    : colors.muted;
-  const pctText = has ? `(${v}%)` : "(—%)";
-
-  return (
-    <Accordion
-      disableGutters
-      elevation={0}
-      sx={accordionSx}
-      TransitionProps={{ unmountOnExit: true }}
-    >
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon sx={{ color: colors.muted }} />}
-        sx={{ px: 2, "& .MuiAccordionSummary-content": { my: 1 } }}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          sx={{ width: "100%", gap: 1, minWidth: 0 }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 950,
-              color: colors.text,
-              textTransform: "capitalize",
-              minWidth: 0,
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {monthTitle(h.year, h.month)}
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ fontWeight: 950, color: pctColor, whiteSpace: "nowrap" }}
-          >
-            {pctText}
-          </Typography>
-        </Stack>
-      </AccordionSummary>
-
-      <AccordionDetails sx={{ pt: 0, px: 2, pb: 2 }}>
-        <Stack spacing={0.75} sx={{ color: alpha(colors.text, 0.84) }}>
-          <Typography variant="body2">
-            Доходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {formatAmount(n(h.total_income))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Расходы:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {formatAmount(n(h.total_expenses))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Баланс:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {formatAmount(n(h.balance))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Сбережения:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {formatAmount(n(h.savings))}
-            </Box>
-          </Typography>
-          <Typography variant="body2">
-            Норма сбережений:{" "}
-            <Box component="span" sx={{ fontWeight: 950, color: colors.text }}>
-              {has ? `${v}%` : "—%"}
-            </Box>
-          </Typography>
-        </Stack>
-      </AccordionDetails>
-    </Accordion>
-  );
-});
-
-function DashboardSkeleton() {
-  return (
-    <Box sx={{ p: { xs: 1, sm: 2 } }}>
-      <Skeleton
-        variant="rounded"
-        height={128}
-        sx={{ borderRadius: 4, mb: 2, bgcolor: alpha("#FFFFFF", 0.06) }}
-      />
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, 1fr)",
-            md: "repeat(4, 1fr)",
-          },
-          gap: 2,
-          mb: 2,
-        }}
-      >
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton
-            key={i}
-            variant="rounded"
-            height={116}
-            sx={{ borderRadius: 4, bgcolor: alpha("#FFFFFF", 0.06) }}
-          />
-        ))}
-      </Box>
-      <Skeleton
-        variant="rounded"
-        height={340}
-        sx={{ borderRadius: 4, bgcolor: alpha("#FFFFFF", 0.06) }}
-      />
-    </Box>
-  );
-}
-
-// ===== main =====
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const { formatAmount } = useCurrency();
   const summaryApi = useSummaryApi();
+  const incomeApi = useIncomeApi();
+  const expensesApi = useExpensesApi();
 
-  const getMyMonthlySummaryRef = useRef(summaryApi.getMyMonthlySummary);
-  const getMyMonthlySummariesRef = useRef(summaryApi.getMyMonthlySummaries);
-  const getMyUsedMonthsRef = useRef(summaryApi.getMyUsedMonths);
-
+  const [period, setPeriod] = useState("Месяц");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [summary, setSummary] = useState(null);
+  const [recent, setRecent] = useState([]);
 
-  const fmtToday = useMemo(
-    () =>
-      new Intl.DateTimeFormat("ru-RU", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      }),
-    []
-  );
-
-  const fmtMonth = useMemo(
-    () => new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }),
-    []
-  );
-  const monthTitle = useCallback(
-    (y, m) => fmtMonth.format(new Date(y, m - 1, 1)),
-    [fmtMonth]
-  );
-
-  const [period, setPeriod] = useState(() => {
-    const now = new Date();
-    return { year: now.getFullYear(), month: now.getMonth() + 1 };
-  });
-  useEffect(() => {
-    const now = new Date();
-    setPeriod({ year: now.getFullYear(), month: now.getMonth() + 1 });
-  }, []);
-  const year = period.year;
-  const month = period.month;
-  const todayLabel = fmtToday.format(new Date());
-
-  const kpiModeKey = useMemo(
-    () => `fintracker:kpiMode:${user?.id || "anon"}`,
-    [user?.id]
-  );
-  const [kpiMode, setKpiMode] = useState(() => {
-    try {
-      const v = window.localStorage.getItem(kpiModeKey);
-      return v === "month" || v === "year" || v === "range" ? v : "month";
-    } catch {
-      return "month";
-    }
-  });
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(kpiModeKey, kpiMode);
-    } catch {}
-  }, [kpiModeKey, kpiMode]);
-  const onKpiModeChange = useCallback(
-    (_e, next) => next && setKpiMode(next),
-    []
-  );
-
-  const [usedMonths, setUsedMonths] = useState([]);
-  const [summariesMap, setSummariesMap] = useState(() => new Map());
-
-  const [rangeFrom, setRangeFrom] = useState(() => dayjs().startOf("month"));
-  const [rangeTo, setRangeTo] = useState(() => dayjs());
+  const now = useMemo(() => new Date(), []);
+  const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const todayStr = now.toLocaleDateString("ru-RU");
 
   const displayName = useMemo(() => {
-    if (user?.firstName && user?.lastName) {
-      return `${user.firstName} ${user.lastName}`;
+    if (user?.firstName) return user.firstName;
+    return user?.userName || "пользователь";
+  }, [user]);
+
+  const load = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      setLoading(true);
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+
+      const [sumRes, incRes, expRes] = await Promise.all([
+        summaryApi.getMyMonthlySummary(year, month),
+        incomeApi.getMyIncomesByMonth(year, month, 0, 50),
+        expensesApi.getMyExpensesByMonth(year, month, 0, 50),
+      ]);
+
+      setSummary(unwrap(sumRes));
+
+      const incomes = unwrapList(incRes?.data ?? incRes).map((x) => ({
+        ...mapApiRow(x, "income"),
+        kind: "income",
+      }));
+      const expenses = unwrapList(expRes?.data ?? expRes).map((x) => ({
+        ...mapApiRow(x, "expense"),
+        kind: "expense",
+      }));
+      const merged = [...incomes, ...expenses]
+        .sort((a, b) => (a.date < b.date ? 1 : -1))
+        .slice(0, 6);
+      setRecent(merged);
+    } catch {
+      setSummary(null);
+      setRecent([]);
+    } finally {
+      setLoading(false);
     }
-    return user?.userName || user?.email || "пользователь";
-  }, [user?.firstName, user?.lastName, user?.userName, user?.email]);
+  }, [expensesApi, incomeApi, isAuthenticated, now, summaryApi]);
 
   useEffect(() => {
-    setUsedMonths([]);
-    setSummariesMap(new Map());
-    setLoading(true);
-    setError("");
-  }, [user?.id]);
+    if (!authLoading) load();
+  }, [authLoading, load]);
 
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) return;
+  const incomeSum = n(summary?.total_income ?? summary?.totalIncome);
+  const expenseSum = n(summary?.total_expenses ?? summary?.totalExpenses);
+  const balance = n(summary?.balance ?? incomeSum - expenseSum);
+  const savings = Math.max(0, incomeSum - expenseSum);
+  const savingsRate =
+    summary?.savings_rate_percent != null
+      ? Math.round(n(summary.savings_rate_percent))
+      : incomeSum > 0
+        ? Math.round((savings / incomeSum) * 100)
+        : 0;
 
-    let cancelled = false;
-
-    const run = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const getMyUsedMonths = getMyUsedMonthsRef.current;
-        const getMyMonthlySummaries = getMyMonthlySummariesRef.current;
-        const getMyMonthlySummary = getMyMonthlySummaryRef.current;
-
-        const [rawMonths, rawAll] = await Promise.all([
-          getMyUsedMonths(),
-          getMyMonthlySummaries(),
-        ]);
-
-        const monthsStr = unwrap(rawMonths);
-        const used = Array.isArray(monthsStr)
-          ? monthsStr.map(parseYm).filter(Boolean)
-          : [];
-        used.sort((a, b) => b.year - a.year || b.month - a.month);
-
-        const all = unwrap(rawAll);
-        const list = Array.isArray(all) ? all : [];
-
-        const map = new Map();
-        for (const item of list) {
-          if (!item || typeof item !== "object") continue;
-          const y = Number(item.year);
-          const m = Number(item.month);
-          if (!Number.isFinite(y) || !Number.isFinite(m)) continue;
-          map.set(ymKey(y, m), item);
-        }
-
-        const missing = used.filter(
-          ({ year: y, month: m }) => !map.has(ymKey(y, m))
-        );
-        for (const part of chunk(missing, 6)) {
-          const res = await Promise.all(
-            part.map(({ year: y, month: m }) =>
-              getMyMonthlySummary(y, m)
-                .then((r) => ({ y, m, dto: unwrap(r) }))
-                .catch(() => null)
-            )
-          );
-          for (const x of res) {
-            if (!x || !x.dto || typeof x.dto !== "object") continue;
-            map.set(ymKey(x.y, x.m), { ...x.dto, year: x.y, month: x.m });
-          }
-        }
-
-        const curKey = ymKey(year, month);
-        if (!map.has(curKey)) {
-          const rawCur = await getMyMonthlySummary(year, month).catch(
-            () => null
-          );
-          const dto = rawCur ? unwrap(rawCur) : null;
-          if (dto && typeof dto === "object")
-            map.set(curKey, { ...dto, year, month });
-        }
-
-        if (!cancelled) {
-          setUsedMonths(used);
-          setSummariesMap(map);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          const msg = mapApiError(e);
-          setError(msg);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [year, month, user?.id, authLoading, isAuthenticated]);
-
-  const historyDesc = useMemo(() => {
-    return usedMonths.map(({ year: y, month: m }) => {
-      const k = ymKey(y, m);
-      return (
-        summariesMap.get(k) || {
-          year: y,
-          month: m,
-          total_income: 0,
-          total_expenses: 0,
-          balance: 0,
-          savings: 0,
-          savings_rate_percent: 0,
-        }
-      );
-    });
-  }, [usedMonths, summariesMap]);
-
-  const rangeParsed = useMemo(() => {
-    const a = parseDayjsToYMD(rangeFrom);
-    const b = parseDayjsToYMD(rangeTo);
-    if (!a || !b) return null;
-
-    const fromN = ymNum(a.year, a.month);
-    const toN = ymNum(b.year, b.month);
-
-    if (fromN > toN) return null;
-
-    return {
-      from: { year: a.year, month: a.month },
-      to: { year: b.year, month: b.month },
-      fromN,
-      toN,
-    };
-  }, [rangeFrom, rangeTo]);
-
-  const rangeMonths = useMemo(() => {
-    if (!rangeParsed) return [];
-    return historyDesc.filter((h) => {
-      const x = ymNum(h.year, h.month);
-      return x >= rangeParsed.fromN && x <= rangeParsed.toN;
-    });
-  }, [historyDesc, rangeParsed]);
-
-  const curSummary = useMemo(
-    () => summariesMap.get(ymKey(year, month)) || null,
-    [summariesMap, year, month]
-  );
-
-  const incomeMonth = n(curSummary?.total_income);
-  const expenseMonth = n(curSummary?.total_expenses);
-  const balanceMonth = n(curSummary?.balance);
-  const savingsMonth = n(curSummary?.savings);
-  const savingsRateMonth = n(curSummary?.savings_rate_percent);
-
-  const yearMonths = useMemo(() => {
-    const cur = ymNum(year, month);
-    return historyDesc.filter(
-      (h) => h.year === year && ymNum(h.year, h.month) <= cur
-    );
-  }, [historyDesc, year, month]);
-
-  const yearIncome = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_income), 0),
-    [yearMonths]
-  );
-  const yearExpenses = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
-    [yearMonths]
-  );
-  const yearBalance = yearIncome - yearExpenses;
-  const yearSavings = useMemo(
-    () => yearMonths.reduce((acc, h) => acc + n(h.savings), 0),
-    [yearMonths]
-  );
-
-  const yearSavingsRate = useMemo(() => {
-    if (yearIncome <= 0) return 0;
-    const r = Math.round((yearBalance / yearIncome) * 100);
-    return Number.isFinite(r) ? r : 0;
-  }, [yearIncome, yearBalance]);
-
-  const rangeIncome = useMemo(
-    () => rangeMonths.reduce((acc, h) => acc + n(h.total_income), 0),
-    [rangeMonths]
-  );
-  const rangeExpenses = useMemo(
-    () => rangeMonths.reduce((acc, h) => acc + n(h.total_expenses), 0),
-    [rangeMonths]
-  );
-  const rangeBalance = rangeIncome - rangeExpenses;
-  const rangeSavings = useMemo(
-    () => rangeMonths.reduce((acc, h) => acc + n(h.savings), 0),
-    [rangeMonths]
-  );
-
-  const rangeSavingsRate = useMemo(() => {
-    if (rangeIncome <= 0) return 0;
-    const r = Math.round((rangeBalance / rangeIncome) * 100);
-    return Number.isFinite(r) ? r : 0;
-  }, [rangeIncome, rangeBalance]);
-
-  const isYear = kpiMode === "year";
-  const isRange = kpiMode === "range";
-
-  const periodLabel = isYear
-    ? `Показаны данные: ${year} год`
-    : isRange && rangeParsed
-    ? `Период: ${monthTitle(
-        rangeParsed.from.year,
-        rangeParsed.from.month
-      )} — ${monthTitle(rangeParsed.to.year, rangeParsed.to.month)}`
-    : `Показаны данные: ${monthTitle(year, month)}`;
-
-  const displayIncome = isYear
-    ? yearIncome
-    : isRange
-    ? rangeIncome
-    : incomeMonth;
-  const displayExpenses = isYear
-    ? yearExpenses
-    : isRange
-    ? rangeExpenses
-    : expenseMonth;
-  const displayBalance = isYear
-    ? yearBalance
-    : isRange
-    ? rangeBalance
-    : balanceMonth;
-  const displayRate = isYear
-    ? yearSavingsRate
-    : isRange
-    ? rangeSavingsRate
-    : savingsRateMonth;
-  const displaySavings = isYear
-    ? yearSavings
-    : isRange
-    ? rangeSavings
-    : savingsMonth;
-
-  const goIncome = useCallback(() => navigate("/income"), [navigate]);
-  const goExpenses = useCallback(() => navigate("/expenses"), [navigate]);
-
-  if (authLoading) return <DashboardSkeleton />;
-  if (!isAuthenticated) return null;
-  if (loading) return <DashboardSkeleton />;
+  if (authLoading || loading) {
+    return <p className="text-sm text-muted-foreground py-12 text-center">Загрузка…</p>;
+  }
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        color: colors.text,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        MsUserSelect: "none",
-      }}
-    >
-      {/* TOP */}
-      <Box
-        sx={{
-          mb: 2,
-          border: 0,
-          boxShadow: "none",
-          bgcolor: "transparent",
-          backgroundImage: "none",
-          backdropFilter: "none",
-          filter: "none",
-          "&::before, &::after": { content: "none", display: "none" },
-        }}
-      >
-        {/* ВАЖНО: на md+ всегда row и с переносом, правый блок прижат вправо */}
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ md: "flex-start" }}
-          sx={{
-            flexWrap: { md: "wrap" },
-          }}
-        >
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography
-              variant="h5"
-              sx={{
-                fontWeight: 950,
-                color: colors.text,
-                letterSpacing: -0.25,
-              }}
-            >
-              Состояние финансов
-            </Typography>
-            <Typography variant="body2" sx={{ color: colors.muted, mt: 0.5 }}>
-              Привет, {displayName} • Сегодня: {todayLabel}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{
-                color: alpha(colors.text, 0.78),
-                mt: 0.5,
-                fontWeight: 700,
-              }}
-            >
-              {periodLabel}
-            </Typography>
+    <>
+      <header className="flex justify-between items-end mb-8 lg:mb-10 flex-wrap gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-3">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-glow/10 border border-emerald-glow/20 text-emerald-glow text-[10px] font-semibold uppercase tracking-[0.15em]">
+              <CheckCircle2 className="size-3" />
+              Актуально
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">
+            Состояние финансов
+          </h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
+            Привет, <span className="text-foreground font-medium">{displayName}</span>. Сегодня{" "}
+            {todayStr} · {monthLabel(ym)}
+          </p>
+        </div>
 
-            {error ? (
-              <Box
-                role="alert"
-                sx={{
-                  mt: 1.25,
-                  p: 1.25,
-                  borderRadius: 3,
-                  border: `1px solid ${alpha(colors.danger, 0.3)}`,
-                  bgcolor: alpha(colors.danger, 0.1),
-                  color: colors.text,
-                  fontWeight: 750,
-                }}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-xl bg-surface border border-border text-xs text-muted-foreground">
+            <CalendarDays className="size-3.5" />
+            Режим: {period}
+          </div>
+          <div className="flex items-center gap-1 bg-surface p-1 rounded-xl border border-border">
+            {periods.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPeriod(p)}
+                className={`px-3 sm:px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  p === period
+                    ? "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {error}
-              </Box>
-            ) : null}
-          </Box>
+                {p}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
 
-          {/* Правый блок: на md+ всегда справа, даже при узком окне */}
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems={{ sm: "center" }}
-            sx={{
-              width: { xs: "100%", md: "auto" },
-              ml: { md: "auto" },          // <-- ключ: прижимаем вправо
-              flexShrink: 0,               // <-- не даём сжиматься и “уезжать”
-              justifyContent: { md: "flex-end" },
-            }}
-          >
-            <Chip
-              label="Актуально"
-              clickable={false}
-              sx={{
-                ...pillSx,
-                width: { xs: "100%", sm: "auto" },
-                borderColor: alpha(colors.primary, 0.18),
-                cursor: "default",
-              }}
-            />
-
-            <Chip
-              icon={
-                <CalendarMonthOutlinedIcon
-                  sx={{ color: alpha(colors.primary, 0.98) }}
-                />
-              }
-              label={
-                isYear
-                  ? "Режим: Год"
-                  : isRange
-                  ? "Режим: Период"
-                  : "Режим: Месяц"
-              }
-              sx={{
-                ...pillSx,
-                width: { xs: "100%", sm: "auto" },
-                borderColor: alpha(colors.primary, 0.18),
-                "& .MuiChip-icon": { ml: 1, mr: -0.25 },
-              }}
-            />
-
-            <ToggleButtonGroup
-              value={kpiMode}
-              exclusive
-              onChange={onKpiModeChange}
-              size="small"
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                bgcolor: alpha(colors.card2, 0.72),
-                border: `1px solid ${colors.border2}`,
-                borderRadius: 999,
-                "& .MuiToggleButton-root": {
-                  border: 0,
-                  px: 1.5,
-                  flex: { xs: 1, sm: "unset" },
-                  color: alpha(colors.text, 0.78),
-                  fontWeight: 900,
-                  textTransform: "none",
-                },
-                "& .MuiToggleButton-root.Mui-selected": {
-                  color: "#05140C",
-                  backgroundColor: colors.primary,
-                },
-              }}
-            >
-              <ToggleButton value="month">Месяц</ToggleButton>
-              <ToggleButton value="year">Год</ToggleButton>
-              <ToggleButton value="range">Период</ToggleButton>
-            </ToggleButtonGroup>
-          </Stack>
-        </Stack>
-
-        {isRange && (
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="ru">
-            <Stack direction="column" spacing={1.4} sx={{ mt: 2.5, maxWidth: 520 }}>
-              <Stack
-                direction="row"
-                spacing={1}
-                alignItems="center"
-                sx={{ width: "100%" }}
-              >
-                <DatePicker
-                  label={null}
-                  value={rangeFrom}
-                  onChange={(newValue) => {
-                    if (!newValue || !newValue.isValid()) return;
-                    setRangeFrom(newValue);
-                  }}
-                  format="DD.MM.YYYY"
-                  enableAccessibleFieldDOMStructure={false}
-                  slots={{
-                    textField: (params) => (
-                      <Box
-                        sx={{
-                          flex: 1,
-                          minWidth: 0,
-                          height: 40,
-                          borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
-                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          px: 2,
-                          transition: "all 140ms ease",
-                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
-                        }}
-                      >
-                        <TextField
-                          {...params}
-                          variant="standard"
-                          fullWidth
-                          InputProps={{
-                            ...params.InputProps,
-                            disableUnderline: true,
-                            sx: {
-                              "& .MuiInputBase-input": {
-                                textAlign: "center",
-                                padding: 0,
-                                fontWeight: 950,
-                                fontSize: 13,
-                                color: "#FFFFFF",
-                              },
-                              "& .MuiSvgIcon-root": {
-                                color: "rgba(255,255,255,0.9)",
-                                fontSize: 20,
-                              },
-                            },
-                          }}
-                        />
-                      </Box>
-                    ),
-                  }}
-                />
-
-                <Typography
-                  sx={{
-                    px: 0.5,
-                    color: colors.muted,
-                    fontWeight: 900,
-                    fontSize: 16,
-                    textAlign: "center",
-                  }}
-                >
-                  —
-                </Typography>
-
-                <DatePicker
-                  label={null}
-                  value={rangeTo}
-                  onChange={(newValue) => {
-                    if (!newValue || !newValue.isValid()) return;
-                    setRangeTo(newValue);
-                  }}
-                  format="DD.MM.YYYY"
-                  enableAccessibleFieldDOMStructure={false}
-                  slots={{
-                    textField: (params) => (
-                      <Box
-                        sx={{
-                          flex: 1,
-                          minWidth: 0,
-                          height: 40,
-                          borderRadius: 999,
-                          backgroundColor: "rgba(4,47,46,0.95)",
-                          boxShadow: "0 14px 42px rgba(0,0,0,0.35)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          cursor: "pointer",
-                          px: 2,
-                          transition: "all 140ms ease",
-                          "&:hover": { backgroundColor: "rgba(4,47,46,1)" },
-                        }}
-                      >
-                        <TextField
-                          {...params}
-                          variant="standard"
-                          fullWidth
-                          InputProps={{
-                            ...params.InputProps,
-                            disableUnderline: true,
-                            sx: {
-                              "& .MuiInputBase-input": {
-                                textAlign: "center",
-                                padding: 0,
-                                fontWeight: 950,
-                                fontSize: 13,
-                                color: "#FFFFFF",
-                              },
-                              "& .MuiSvgIcon-root": {
-                                color: "rgba(255,255,255,0.9)",
-                                fontSize: 20,
-                              },
-                            },
-                          }}
-                        />
-                      </Box>
-                    ),
-                  }}
-                />
-              </Stack>
-
-              <Typography
-                sx={{
-                  textAlign: "center",
-                  fontWeight: 900,
-                  fontSize: 13,
-                  color: "rgba(255,255,255,0.9)",
-                }}
-              >
-                Выберите даты в календаре
-              </Typography>
-            </Stack>
-          </LocalizationProvider>
-        )}
-      </Box>
-
-      {/* KPI */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: {
-            xs: "repeat(2, minmax(0, 1fr))",
-            md: "repeat(4, minmax(0, 1fr))",
-          },
-          gap: { xs: 1.5, sm: 1.75, md: 2 },
-          mb: 2,
-        }}
-      >
-        <KpiCard
-          label="Баланс"
-          value={formatAmount(displayBalance)}
-          sub=" "
-          accent={COLORS.balance}
-          icon={<AccountBalanceWalletOutlinedIcon />}
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 lg:mb-10">
+        <KpiCard label="Баланс" value={formatAmount(balance)} icon={Wallet} accent="info" hint="на конец месяца" />
         <KpiCard
           label="Доходы"
-          value={formatAmount(displayIncome)}
-          sub={`Расходы: ${formatAmount(displayExpenses)}`}
-          accent={COLORS.income}
-          onClick={goIncome}
-          icon={<ArrowCircleUpOutlinedIcon />}
+          value={formatAmount(incomeSum)}
+          icon={ArrowUpCircle}
+          accent="emerald"
+          hint={`${recent.filter((r) => r.kind === "income").length} операций`}
         />
         <KpiCard
           label="Расходы"
-          value={formatAmount(displayExpenses)}
-          sub=" "
-          accent={COLORS.expenses}
-          onClick={goExpenses}
-          icon={<ArrowCircleDownOutlinedIcon />}
+          value={formatAmount(expenseSum)}
+          icon={ArrowDownCircle}
+          accent="warning"
+          hint={`${recent.filter((r) => r.kind === "expense").length} операций`}
         />
         <KpiCard
           label="Норма сбережений"
-          value={`${displayRate}%`}
-          sub={`Сбережения: ${formatAmount(displaySavings)}`}
-          accent={COLORS.rate}
-          icon={<PercentOutlinedIcon />}
+          value={`${savingsRate}%`}
+          icon={Percent}
+          accent="violet"
+          hint={`Сбережения: ${formatAmount(savings)}`}
         />
-      </Box>
+      </div>
 
-      {/* MAIN */}
-      <Box>
-        <SectionTitle title="Итоги месяца" right={monthTitle(year, month)} />
-
-        <Stack spacing={1}>
-          <SummaryRow
-            label="Доходы"
-            value={formatAmount(incomeMonth)}
-            color={colors.primary}
-          />
-          <SummaryRow
-            label="Расходы"
-            value={formatAmount(expenseMonth)}
-            color={colors.warning}
-          />
-          <SummaryRow
-            label="Сбережения"
-            value={formatAmount(savingsMonth)}
-            color={colors.accent}
-          />
-        </Stack>
-
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 0.25, sm: 1.25 }}
-          sx={{ mt: 2, color: colors.muted }}
-        >
-          <Typography variant="caption" sx={{ fontWeight: 800 }}>
-            История сохранена: {historyDesc.length} месяцев
-          </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 800 }}>
-            Обновлено: {todayLabel}
-          </Typography>
-        </Stack>
-
-        <Box sx={{ mt: 1.25 }}>
-          {(isRange ? rangeMonths : historyDesc).length === 0 ? (
-            <Typography variant="body2" sx={{ color: colors.muted }}>
-              Пока нет сохранённых месяцев.
-            </Typography>
-          ) : (
-            (isRange ? rangeMonths : historyDesc).map((h) => (
-              <HistoryAccordion
-                key={`${h.year}-${h.month}`}
-                h={h}
-                monthTitle={monthTitle}
-                formatAmount={formatAmount}
-              />
-            ))
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 lg:col-span-2">
+          <div className="flex items-end justify-between mb-6 flex-wrap gap-2">
+            <div>
+              <h2 className="text-lg sm:text-xl font-bold tracking-tight">Итоги месяца</h2>
+              <p className="text-xs text-muted-foreground mt-1">Обновлено: {todayStr}</p>
+            </div>
+            <span className="text-[11px] font-mono text-muted-foreground uppercase tracking-[0.18em]">
+              {monthLabel(ym)}
+            </span>
+          </div>
+          <div className="flex flex-col divide-y divide-border">
+            <SummaryRow color="emerald" label="Доходы" value={formatAmount(incomeSum)} />
+            <SummaryRow color="warning" label="Расходы" value={formatAmount(expenseSum)} />
+            <SummaryRow color="info" label="Сбережения" value={formatAmount(savings)} />
+          </div>
+          {incomeSum === 0 && expenseSum === 0 && (
+            <div className="mt-6 pt-6 border-t border-border text-center">
+              <p className="text-sm text-muted-foreground">Пока нет операций в этом месяце.</p>
+              <div className="flex gap-2 justify-center mt-3">
+                <Link
+                  to="/income"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-glow/10 text-emerald-glow text-xs font-semibold hover:bg-emerald-glow/20 transition"
+                >
+                  <Plus className="size-3.5" /> Доход
+                </Link>
+                <Link
+                  to="/expenses"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/10 text-warning text-xs font-semibold hover:bg-warning/20 transition"
+                >
+                  <Plus className="size-3.5" /> Расход
+                </Link>
+              </div>
+            </div>
           )}
-        </Box>
-      </Box>
-    </Box>
+        </section>
+
+        <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 lg:col-span-3">
+          <h2 className="text-lg sm:text-xl font-bold tracking-tight mb-6">Последние операции</h2>
+          {recent.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Операций пока нет.</p>
+          ) : (
+            <ul className="divide-y divide-border">
+              {recent.map((t) => (
+                <li key={`${t.kind}-${t.id}`} className="flex items-center justify-between py-3 gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div
+                      className={`size-9 rounded-xl grid place-items-center shrink-0 ${
+                        t.kind === "income" ? "bg-emerald-glow/10 text-emerald-glow" : "bg-warning/10 text-warning"
+                      }`}
+                    >
+                      {t.kind === "income" ? (
+                        <ArrowUpCircle className="size-4" />
+                      ) : (
+                        <ArrowDownCircle className="size-4" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{t.category}</p>
+                      <p className="text-xs text-muted-foreground">{formatDateRu(t.date)}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-sm font-semibold tabular-nums shrink-0 ${
+                      t.kind === "income" ? "text-emerald-glow" : "text-warning"
+                    }`}
+                  >
+                    {t.kind === "income" ? "+" : "−"}
+                    {formatAmount(t.amount)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+    </>
+  );
+}
+
+const accentMap = {
+  info: { dot: "bg-info", glow: "bg-info/10", ring: "hover:border-info/30", text: "text-info" },
+  emerald: { dot: "bg-emerald-glow", glow: "bg-emerald-glow/10", ring: "hover:border-emerald-glow/40", text: "text-emerald-glow" },
+  warning: { dot: "bg-warning", glow: "bg-warning/10", ring: "hover:border-warning/30", text: "text-warning" },
+  violet: { dot: "bg-violet", glow: "bg-violet/10", ring: "hover:border-violet/30", text: "text-violet" },
+};
+
+function KpiCard({ label, value, icon: Icon, accent, hint }) {
+  const a = accentMap[accent];
+  return (
+    <div className={`relative overflow-hidden bg-surface p-5 sm:p-6 rounded-3xl border border-border ${a.ring} transition-all`}>
+      <div className={`absolute -right-8 -top-8 size-32 ${a.glow} blur-3xl rounded-full pointer-events-none`} />
+      <div className="flex items-center justify-between mb-4 sm:mb-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground flex items-center gap-2">
+          <span className={`size-1.5 rounded-full ${a.dot}`} />
+          {label}
+        </p>
+        <div className="size-8 rounded-lg bg-white/[0.04] border border-border grid place-items-center">
+          <Icon className={`size-4 ${a.text}`} strokeWidth={2} />
+        </div>
+      </div>
+      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1.5 tabular-nums break-all">{value}</h2>
+      <p className="text-xs text-muted-foreground">{hint}</p>
+    </div>
+  );
+}
+
+function SummaryRow({ color, label, value }) {
+  const dot = color === "emerald" ? "bg-emerald-glow" : color === "warning" ? "bg-warning" : "bg-info";
+  return (
+    <div className="flex items-center justify-between py-4">
+      <div className="flex items-center gap-3">
+        <span className={`size-2 rounded-full ${dot}`} />
+        <span className="text-sm font-medium">{label}</span>
+      </div>
+      <span className="text-sm font-semibold tabular-nums">{value}</span>
+    </div>
   );
 }
