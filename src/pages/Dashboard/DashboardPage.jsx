@@ -24,7 +24,6 @@ import {
   unwrapSummariesList,
 } from "../../lib/periodUtils";
 import PeriodSelector from "../../components/ft/PeriodSelector";
-import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -262,11 +261,6 @@ export default function DashboardPage() {
         </section>
       </div>
 
-      <MonthHistoryPanel
-        rows={allSummaries}
-        formatAmount={formatAmount}
-        className="mt-6"
-      />
     </>
   );
 }

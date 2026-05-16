@@ -12,13 +12,6 @@ function savingsRate(row) {
   return 0;
 }
 
-function rateTone(rate) {
-  if (rate >= 70) return "text-emerald-glow";
-  if (rate >= 40) return "text-emerald-glow/90";
-  if (rate > 0) return "text-warning";
-  return "text-muted-foreground";
-}
-
 /**
  * История месяцев: норма сбережений %, раскрывающиеся детали.
  * rows — нормализованные summary из periodUtils (ym, totalIncome, …).
@@ -79,7 +72,6 @@ export default function MonthHistoryPanel({
         {sorted.map((row) => {
           const rate = savingsRate(row);
           const open = expandedYm === row.ym;
-          const tone = rateTone(rate);
 
           return (
             <li key={row.ym}>
@@ -92,8 +84,20 @@ export default function MonthHistoryPanel({
                 <span className="text-sm sm:text-base font-semibold text-foreground capitalize">
                   {monthLabelLong(row.ym)}
                 </span>
-                <span className="flex items-center gap-2 shrink-0">
-                  <span className={`text-sm font-bold tabular-nums ${tone}`}>({rate}%)</span>
+                <span className="flex items-center gap-2.5 shrink-0 ml-2">
+                  <span
+                    className="text-sm sm:text-base font-bold tabular-nums min-w-[3.5rem] text-right"
+                    style={{
+                      color:
+                        rate >= 40
+                          ? "#3ecf8e"
+                          : rate > 0
+                            ? "#f5a623"
+                            : "var(--ft-muted-foreground)",
+                    }}
+                  >
+                    ({rate}%)
+                  </span>
                   <ChevronDown
                     className={`size-4 text-muted-foreground transition-transform duration-200 ${
                       open ? "rotate-180" : ""
@@ -106,10 +110,12 @@ export default function MonthHistoryPanel({
                 <div className="px-5 sm:px-7 pb-5 -mt-1">
                   <div className="h-2 rounded-full bg-white/[0.06] overflow-hidden mb-4">
                     <div
-                      className={`h-full rounded-full transition-all ${
-                        rate >= 40 ? "bg-emerald-glow" : rate > 0 ? "bg-warning" : "bg-muted-foreground/40"
-                      }`}
-                      style={{ width: `${Math.min(100, Math.max(0, rate))}%` }}
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${Math.min(100, Math.max(0, rate))}%`,
+                        backgroundColor:
+                          rate >= 40 ? "#3ecf8e" : rate > 0 ? "#f5a623" : "rgba(255,255,255,0.2)",
+                      }}
                     />
                   </div>
 

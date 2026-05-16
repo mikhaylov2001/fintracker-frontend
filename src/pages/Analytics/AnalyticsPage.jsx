@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useSummaryApi } from "../../api/summaryApi";
 import { useExpensesApi } from "../../api/expensesApi";
-import { mapApiRow, monthLabel, unwrapList } from "../../lib/ftUtils";
+import { mapApiRow, unwrapList } from "../../lib/ftUtils";
 import {
   aggregateSummaries,
   defaultPeriod,
@@ -15,6 +15,7 @@ import {
 } from "../../lib/periodUtils";
 import PeriodSelector from "../../components/ft/PeriodSelector";
 import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
+import CashflowChart from "../../components/ft/CashflowChart";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -76,20 +77,15 @@ export default function AnalyticsPage() {
     [summaries, monthList]
   );
 
-  const chartRows = useMemo(() => {
-    const set = new Set(monthList);
-    return summaries
-      .filter((s) => set.has(s.ym))
-      .sort((a, b) => a.ym.localeCompare(b.ym));
-  }, [summaries, monthList]);
-
-  const maxBar = useMemo(() => {
-    let m = 1;
-    chartRows.forEach((r) => {
-      m = Math.max(m, r.totalIncome, r.totalExpenses);
-    });
-    return m;
-  }, [chartRows]);
+  /** График: последние 6 месяцев с данными (нагляднее, чем один месяц) */
+  const chartRows = useMemo(
+    () =>
+      summaries
+        .filter((s) => s.totalIncome > 0 || s.totalExpenses > 0)
+        .sort((a, b) => a.ym.localeCompare(b.ym))
+        .slice(-6),
+    [summaries]
+  );
 
   useEffect(() => {
     if (authLoading || !isAuthenticated || monthList.length === 0) {
@@ -181,43 +177,14 @@ export default function AnalyticsPage() {
 
           <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 mb-6">
             <h2 className="text-lg font-bold mb-1">Динамика по месяцам</h2>
-            <p className="text-xs text-muted-foreground mb-6">{periodDescription(period)}</p>
-            {chartRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-6">Нет помесячных данных.</p>
-            ) : (
-              <ul className="space-y-4">
-                {chartRows.map((row) => (
-                  <li key={row.ym}>
-                    <div className="flex justify-between text-xs mb-1.5 gap-2">
-                      <span className="font-medium capitalize">{monthLabel(row.ym)}</span>
-                      <span className="text-muted-foreground tabular-nums shrink-0">
-                        +{formatAmount(row.totalIncome)} / −{formatAmount(row.totalExpenses)}
-                      </span>
-                    </div>
-                    <div className="flex gap-1 h-3 rounded-full overflow-hidden bg-white/[0.04]">
-                      <div
-                        className="bg-emerald-glow/80 rounded-l-full transition-all"
-                        style={{ width: `${(row.totalIncome / maxBar) * 100}%` }}
-                        title="Доходы"
-                      />
-                      <div
-                        className="bg-warning/80 rounded-r-full transition-all"
-                        style={{ width: `${(row.totalExpenses / maxBar) * 100}%` }}
-                        title="Расходы"
-                      />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex gap-4 mt-5 text-[11px] text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-emerald-glow" /> Доходы
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="size-2 rounded-full bg-warning" /> Расходы
-              </span>
-            </div>
+            <p className="text-xs text-muted-foreground mb-6">
+              {chartRows.length > 0
+                ? `Последние ${chartRows.length} ${
+                    chartRows.length === 1 ? "месяц" : chartRows.length < 5 ? "месяца" : "месяцев"
+                  } с операциями · KPI: ${periodDescription(period)}`
+                : periodDescription(period)}
+            </p>
+            <CashflowChart rows={chartRows} formatAmount={formatAmount} />
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
@@ -232,14 +199,17 @@ export default function AnalyticsPage() {
                     <li key={c.name}>
                       <div className="flex justify-between text-sm mb-1 gap-2">
                         <span className="font-medium truncate">{c.name}</span>
-                        <span className="text-warning font-semibold tabular-nums shrink-0">
+                        <span className="font-semibold tabular-nums shrink-0" style={{ color: "#f5a623" }}>
                           {formatAmount(c.amount)}
                         </span>
                       </div>
                       <div className="h-2 rounded-full bg-white/[0.04] overflow-hidden">
                         <div
-                          className="h-full bg-warning/70 rounded-full"
-                          style={{ width: `${(c.amount / maxCat) * 100}%` }}
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(c.amount / maxCat) * 100}%`,
+                            backgroundColor: "#f5a623",
+                          }}
                         />
                       </div>
                     </li>
