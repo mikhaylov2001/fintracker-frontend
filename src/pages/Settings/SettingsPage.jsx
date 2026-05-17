@@ -176,7 +176,7 @@ export default function SettingsPage() {
               type="button"
               onClick={onSaveProfile}
               disabled={savingProfile}
-              className="px-5 py-2 rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60"
+              className="w-full sm:w-auto px-5 py-3 min-h-[2.75rem] rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60"
             >
               {savingProfile ? "Сохранение…" : "Сохранить профиль"}
             </button>
@@ -223,7 +223,7 @@ export default function SettingsPage() {
               type="button"
               onClick={onChangePassword}
               disabled={savingPassword}
-              className="px-5 py-2 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-white/[0.04] transition disabled:opacity-60"
+              className="w-full sm:w-auto px-5 py-3 min-h-[2.75rem] rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-white/[0.04] transition disabled:opacity-60"
             >
               {savingPassword ? "Сохранение…" : "Сменить пароль"}
             </button>

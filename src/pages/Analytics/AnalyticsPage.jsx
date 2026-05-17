@@ -47,6 +47,7 @@ import AnalyticsCard from "../../components/ft/AnalyticsCard";
 import ChartTooltip from "../../components/ft/ChartTooltip";
 import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 import SegmentToggle from "../../components/ft/SegmentToggle";
+import { useIsMobile } from "../../hooks/useIsMobile";
 
 const SEGMENT_ACTIVE =
   "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]";
@@ -72,6 +73,12 @@ export default function AnalyticsPage() {
   const [catsLoading, setCatsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const hasLoadedOnce = useRef(false);
+  const isMobile = useIsMobile();
+  const axisTick = isMobile ? { fill: CHART_TICK, fontSize: 9 } : chartTick;
+  const yAxisWidth = isMobile ? 36 : 48;
+  const xAxisMobile = isMobile
+    ? { angle: -35, textAnchor: "end", height: 52, interval: "preserveStartEnd" }
+    : {};
 
   useEffect(() => {
     if (authLoading) return;
@@ -255,8 +262,8 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <header className="flex justify-between items-end mb-8 flex-wrap gap-4">
-        <div>
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 sm:flex-row sm:justify-between sm:items-end">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Динамика за {chartRows.length || 6} месяцев и распределение по категориям. Сегодня —{" "}
@@ -298,15 +305,15 @@ export default function AnalyticsPage() {
               <ChartBox>
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
-                  <XAxis dataKey="month" tick={chartTick} />
-                  <YAxis tick={chartTick} width={48} />
+                  <XAxis dataKey="month" tick={axisTick} {...xAxisMobile} />
+                  <YAxis tick={axisTick} width={yAxisWidth} />
                   <Tooltip
                     content={<ChartTooltip formatter={tooltipFmt} />}
                     {...chartTooltipProps}
                   />
-                  <Legend wrapperStyle={{ fontSize: 12, color: CHART_TICK }} />
-                  <Bar dataKey="Доходы" fill={CHART_INCOME} radius={[6, 6, 0, 0]} maxBarSize={48} />
-                  <Bar dataKey="Расходы" fill={CHART_EXPENSE} radius={[6, 6, 0, 0]} maxBarSize={48} />
+                  <Legend wrapperStyle={{ fontSize: isMobile ? 10 : 12, color: CHART_TICK }} />
+                  <Bar dataKey="Доходы" fill={CHART_INCOME} radius={[6, 6, 0, 0]} maxBarSize={isMobile ? 28 : 48} />
+                  <Bar dataKey="Расходы" fill={CHART_EXPENSE} radius={[6, 6, 0, 0]} maxBarSize={isMobile ? 28 : 48} />
                 </BarChart>
               </ChartBox>
             )}
@@ -322,8 +329,8 @@ export default function AnalyticsPage() {
               <ChartBox>
                 <LineChart data={savingsTrendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} />
-                  <XAxis dataKey="month" tick={chartTick} />
-                  <YAxis tick={chartTick} width={48} />
+                  <XAxis dataKey="month" tick={axisTick} {...xAxisMobile} />
+                  <YAxis tick={axisTick} width={yAxisWidth} />
                   <Tooltip
                     content={<ChartTooltip formatter={tooltipFmt} />}
                     {...chartTooltipProps}
@@ -440,15 +447,17 @@ function Kpi({ label, hint, value, icon: Icon, color }) {
           <Icon className={`size-4 ${iconClass}`} />
         </div>
       </div>
-      <p className="text-2xl font-bold tabular-nums mb-1">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold tabular-nums mb-1 break-all">{value}</p>
       <p className="text-[11px] text-muted-foreground">{hint}</p>
     </div>
   );
 }
 
 function ChartBox({ children, height = 280 }) {
+  const isMobile = useIsMobile();
+  const h = isMobile ? Math.min(height, 220) : height;
   return (
-    <div className="w-full min-w-0" style={{ height }}>
+    <div className="w-full min-w-0" style={{ height: h }}>
       <ResponsiveContainer width="100%" height="100%">
         {children}
       </ResponsiveContainer>

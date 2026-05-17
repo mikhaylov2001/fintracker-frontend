@@ -45,6 +45,12 @@ export function ToastProvider({ children }) {
         onClose={onClose}
         autoHideDuration={state.autoHideDuration}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        sx={{
+          bottom: { xs: 'calc(12px + env(safe-area-inset-bottom, 0px))', sm: 24 },
+          left: { xs: 12, sm: 'auto' },
+          right: { xs: 12, sm: 'auto' },
+          maxWidth: { xs: 'calc(100% - 24px)', sm: 560 },
+        }}
       >
         <Alert onClose={onClose} severity={state.severity} variant="filled" sx={{ width: '100%' }}>
           {state.message}

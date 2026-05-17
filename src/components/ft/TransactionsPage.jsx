@@ -71,12 +71,12 @@ export default function TransactionsPage({
 
   return (
     <>
-      <header className="flex justify-between items-end mb-8 flex-wrap gap-4">
-        <div>
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 sm:flex-row sm:justify-between sm:items-end">
+        <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">{title}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
+        <div className="flex flex-col w-full sm:w-auto sm:flex-row items-stretch sm:items-end gap-3 min-w-0">
           {period && onPeriodChange && (
             <PeriodSelector period={period} onChange={onPeriodChange} variant="header" />
           )}
@@ -86,7 +86,7 @@ export default function TransactionsPage({
               setEditing(null);
               setOpen(true);
             }}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all shrink-0 ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[2.75rem] rounded-xl font-semibold text-sm transition-all shrink-0 w-full sm:w-auto ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
           >
             <Plus className="size-4" />
             Добавить
@@ -98,19 +98,19 @@ export default function TransactionsPage({
         <div className="bg-surface border border-border rounded-3xl p-5 relative overflow-hidden">
           <div className={`absolute -right-6 -top-6 size-24 ${palette.glow} blur-3xl rounded-full`} />
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Всего</p>
-          <p className={`text-2xl font-bold tabular-nums ${palette.text}`}>{formatAmount(total)}</p>
+          <p className={`text-xl sm:text-2xl font-bold tabular-nums break-all ${palette.text}`}>{formatAmount(total)}</p>
         </div>
         <div className="bg-surface border border-border rounded-3xl p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Операций</p>
-          <p className="text-2xl font-bold tabular-nums">{items.length}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums">{items.length}</p>
         </div>
         <div className="bg-surface border border-border rounded-3xl p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">В среднем за день</p>
-          <p className="text-2xl font-bold tabular-nums">{formatAmount(avgDay)}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums break-all">{formatAmount(avgDay)}</p>
         </div>
         <div className="bg-surface border border-border rounded-3xl p-5">
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Средняя операция</p>
-          <p className="text-2xl font-bold tabular-nums">{formatAmount(avgOp)}</p>
+          <p className="text-xl sm:text-2xl font-bold tabular-nums break-all">{formatAmount(avgOp)}</p>
         </div>
       </div>
 
@@ -141,7 +141,7 @@ export default function TransactionsPage({
           </div>
         ) : (
           <>
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden lg:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground border-b border-border">
@@ -172,7 +172,7 @@ export default function TransactionsPage({
                               setEditing(t);
                               setOpen(true);
                             }}
-                            className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition"
+                            className="ft-touch grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground hover:text-foreground transition"
                             aria-label="Редактировать"
                           >
                             <Pencil className="size-3.5" />
@@ -180,7 +180,7 @@ export default function TransactionsPage({
                           <button
                             type="button"
                             onClick={() => handleDelete(t.id)}
-                            className="size-8 grid place-items-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition"
+                            className="ft-touch grid place-items-center rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition"
                             aria-label="Удалить"
                           >
                             <Trash2 className="size-3.5" />
@@ -193,7 +193,7 @@ export default function TransactionsPage({
               </table>
             </div>
 
-            <ul className="md:hidden divide-y divide-border">
+            <ul className="lg:hidden divide-y divide-border">
               {filtered.map((t) => (
                 <li key={t.id} className="p-4 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -216,14 +216,16 @@ export default function TransactionsPage({
                           setEditing(t);
                           setOpen(true);
                         }}
-                        className="size-7 grid place-items-center rounded-md hover:bg-white/[0.06] text-muted-foreground"
+                        className="ft-touch grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
+                        aria-label="Редактировать"
                       >
-                        <Pencil className="size-3.5" />
+                        <Pencil className="size-4" />
                       </button>
                       <button
                         type="button"
                         onClick={() => handleDelete(t.id)}
-                        className="size-7 grid place-items-center rounded-md hover:bg-destructive/10 text-destructive"
+                        className="ft-touch grid place-items-center rounded-lg hover:bg-destructive/10 text-destructive"
+                        aria-label="Удалить"
                       >
                         <Trash2 className="size-3.5" />
                       </button>
@@ -283,18 +285,21 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-md bg-surface border border-border rounded-3xl p-6 sm:p-8 shadow-2xl"
+        className="w-full max-w-md max-h-[min(92dvh,640px)] overflow-y-auto bg-surface border border-border rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl pb-[calc(1.25rem+var(--safe-bottom))]"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold tracking-tight">
             {initial ? "Изменить" : "Новая"}{" "}
             {kind === "income" ? "запись о доходе" : "запись о расходе"}
           </h2>
-          <button type="button" onClick={onClose} className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground">
+          <button type="button" onClick={onClose} className="ft-touch grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground" aria-label="Закрыть">
             <X className="size-4" />
           </button>
         </div>
@@ -332,10 +337,10 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
         </div>
 
         <div className="mt-7 flex items-center gap-3 justify-end">
-          <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition">
+          <button type="button" onClick={onClose} className="px-4 py-3 min-h-[2.75rem] rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition">
             Отмена
           </button>
-          <button type="submit" disabled={saving} className="px-5 py-2 rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60">
+          <button type="submit" disabled={saving} className="px-5 py-3 min-h-[2.75rem] rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60">
             {saving ? "Сохранение…" : "Сохранить"}
           </button>
         </div>

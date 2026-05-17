@@ -182,6 +182,7 @@ export default function RegisterPage() {
         justifyContent: "center",
         px: 2,
         py: 2,
+        pb: "calc(16px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Box

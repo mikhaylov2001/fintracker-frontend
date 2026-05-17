@@ -43,6 +43,15 @@ export default function AppLayout() {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.classList.add("ft-menu-open");
+    } else {
+      document.body.classList.remove("ft-menu-open");
+    }
+    return () => document.body.classList.remove("ft-menu-open");
+  }, [mobileOpen]);
+
   const handleLogout = useCallback(async () => {
     await logout();
     navigate("/login");
@@ -67,11 +76,11 @@ export default function AppLayout() {
             onClick={() => setMobileOpen(false)}
             aria-hidden
           />
-          <aside className="relative w-72 max-w-[85vw] bg-background border-r border-border flex flex-col p-6 gap-8 overflow-y-auto">
+          <aside className="relative w-72 max-w-[85vw] bg-background border-r border-border flex flex-col p-6 gap-8 overflow-y-auto pt-[calc(1rem+var(--safe-top))] pb-[calc(1.5rem+var(--safe-bottom))]">
             <button
               type="button"
               onClick={() => setMobileOpen(false)}
-              className="absolute top-4 right-4 size-9 grid place-items-center rounded-lg hover:bg-white/[0.05] text-muted-foreground"
+              className="absolute top-[calc(0.75rem+var(--safe-top))] right-4 ft-touch grid place-items-center rounded-xl hover:bg-white/[0.05] text-muted-foreground"
               aria-label="Закрыть меню"
             >
               <X className="size-5" />
@@ -91,20 +100,20 @@ export default function AppLayout() {
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 h-14 border-b border-border bg-background/80 backdrop-blur-xl">
+        <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 pt-[var(--safe-top)] min-h-[calc(3.5rem+var(--safe-top))] border-b border-border bg-background/80 backdrop-blur-xl">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="size-9 grid place-items-center rounded-lg hover:bg-white/[0.05]"
+            className="ft-touch grid place-items-center rounded-xl hover:bg-white/[0.05]"
             aria-label="Открыть меню"
           >
             <Menu className="size-5" />
           </button>
           <AppLogo compact className="px-1" />
-          <div className="size-9" />
+          <div className="ft-touch shrink-0" aria-hidden />
         </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 overflow-x-hidden">
+        <main className="flex-1 p-4 sm:p-6 lg:p-10 pb-[calc(1rem+var(--safe-bottom))] min-w-0">
           <Outlet />
         </main>
       </div>
@@ -129,7 +138,7 @@ function SidebarContent({ pathname, userName, dashTo, onLogout, onUpgrade }) {
             <Link
               key={item.label}
               to={to}
-              className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              className={`flex items-center gap-3 px-3.5 py-3 min-h-[2.75rem] rounded-xl text-sm font-medium transition-all ${
                 active
                   ? "bg-white/[0.06] text-foreground ring-1 ring-emerald-glow/20"
                   : "text-muted-foreground hover:text-foreground hover:bg-white/[0.04]"
@@ -156,7 +165,7 @@ function SidebarContent({ pathname, userName, dashTo, onLogout, onUpgrade }) {
           <button
             type="button"
             onClick={onUpgrade}
-            className="w-full py-2 bg-emerald-glow text-primary-foreground font-bold text-[11px] rounded-lg uppercase tracking-[0.15em] hover:brightness-110 transition-all"
+            className="w-full py-2.5 min-h-[2.75rem] bg-emerald-glow text-primary-foreground font-bold text-xs rounded-lg uppercase tracking-[0.12em] hover:brightness-110 transition-all"
           >
             Улучшить
           </button>
@@ -164,7 +173,7 @@ function SidebarContent({ pathname, userName, dashTo, onLogout, onUpgrade }) {
         <button
           type="button"
           onClick={onLogout}
-          className="flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition"
+          className="flex items-center justify-center gap-2 px-3 py-3 min-h-[2.75rem] rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition"
         >
           <LogOut className="size-4" />
           Выйти

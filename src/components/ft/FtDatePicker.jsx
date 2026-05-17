@@ -96,7 +96,7 @@ export default function FtDatePicker({ value, onChange, maxDate, minDate, placeh
             <button
               type="button"
               onClick={() => setView((v) => new Date(v.getFullYear(), v.getMonth() - 1, 1))}
-              className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
+              className="ft-touch grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
               aria-label="Предыдущий месяц"
             >
               <ChevronLeft className="size-4" />
@@ -105,7 +105,7 @@ export default function FtDatePicker({ value, onChange, maxDate, minDate, placeh
             <button
               type="button"
               onClick={() => setView((v) => new Date(v.getFullYear(), v.getMonth() + 1, 1))}
-              className="size-8 grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
+              className="ft-touch grid place-items-center rounded-lg hover:bg-white/[0.06] text-muted-foreground"
               aria-label="Следующий месяц"
             >
               <ChevronRight className="size-4" />
@@ -133,7 +133,7 @@ export default function FtDatePicker({ value, onChange, maxDate, minDate, placeh
                   type="button"
                   disabled={off}
                   onClick={() => pick(date)}
-                  className={`h-9 rounded-lg text-sm font-medium transition ${
+                  className={`min-h-[2.75rem] h-11 rounded-lg text-sm font-medium transition ${
                     isSel
                       ? "bg-emerald-glow text-primary-foreground"
                       : isToday

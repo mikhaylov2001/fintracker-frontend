@@ -8,20 +8,39 @@
   * {
     border-color: var(--ft-border);
   }
+
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+  }
 }
 
 @layer components {
   .ft-input {
     width: 100%;
+    min-height: 2.75rem;
     height: 2.75rem;
     padding: 0 0.875rem;
     border-radius: 0.625rem;
     background: oklch(1 0 0 / 4%);
     border: 1px solid var(--ft-border);
     color: var(--ft-foreground);
-    font-size: 0.875rem;
+    font-size: 1rem;
     outline: none;
     transition: border-color 0.15s, background 0.15s;
+  }
+
+  @media (min-width: 640px) {
+    .ft-input {
+      font-size: 0.875rem;
+    }
+  }
+
+  .ft-touch {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
   }
   .ft-input:focus {
     border-color: oklch(0.72 0.18 162 / 50%);
@@ -51,6 +70,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--ft-background);
   color: var(--ft-foreground);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+body.ft-menu-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
 }
 
 /* Recharts: светлый текст в тултипах */

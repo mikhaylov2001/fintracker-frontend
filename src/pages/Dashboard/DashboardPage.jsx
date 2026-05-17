@@ -148,8 +148,8 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="flex justify-between items-end mb-8 lg:mb-10 flex-wrap gap-4">
-        <div>
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 lg:mb-10 sm:flex-row sm:justify-between sm:items-end">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-glow/10 border border-emerald-glow/20 text-emerald-glow text-[10px] font-semibold uppercase tracking-[0.15em]">
               <CheckCircle2 className="size-3" />

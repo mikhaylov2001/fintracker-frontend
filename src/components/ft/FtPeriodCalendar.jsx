@@ -171,11 +171,11 @@ export default function FtPeriodCalendar({ period, onChange }) {
   const openCalendar = () => setOpen((o) => !o);
 
   return (
-    <div ref={rootRef} className="relative shrink-0">
+    <div ref={rootRef} className="relative shrink-0 w-full sm:w-auto">
       <button
         type="button"
         onClick={openCalendar}
-        className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 rounded-full border text-xs sm:text-sm font-bold transition whitespace-nowrap border-emerald-glow/20 bg-muted/80 text-foreground hover:border-emerald-glow/35"
+        className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 px-3.5 sm:px-4 py-2.5 min-h-[2.75rem] rounded-full border text-xs sm:text-sm font-bold transition border-emerald-glow/20 bg-muted/80 text-foreground hover:border-emerald-glow/35"
       >
         <CalendarDays className="size-4 text-emerald-glow shrink-0" strokeWidth={2} />
         <span className="max-w-[min(52vw,14rem)] truncate">{buttonLabel}</span>
@@ -183,7 +183,7 @@ export default function FtPeriodCalendar({ period, onChange }) {
 
       {open && (
         <div
-          className="absolute z-[70] left-0 sm:left-auto sm:right-0 mt-2 p-4 sm:p-5 rounded-3xl border border-border bg-surface shadow-2xl w-[min(100vw-1.5rem,360px)]"
+          className="fixed sm:absolute z-[70] left-3 right-3 bottom-[calc(0.75rem+var(--safe-bottom))] sm:left-0 sm:right-0 sm:bottom-auto sm:mt-2 p-4 sm:p-5 rounded-3xl border border-border bg-surface shadow-2xl sm:w-[min(100vw-1.5rem,360px)] max-h-[min(85dvh,520px)] overflow-y-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-muted-foreground mb-3">

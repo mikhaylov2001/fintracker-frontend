@@ -134,6 +134,7 @@ export default function LoginPage() {
         justifyContent: "center",
         px: 2,
         py: 2,
+        pb: "calc(16px + env(safe-area-inset-bottom, 0px))",
       }}
     >
       <Box
