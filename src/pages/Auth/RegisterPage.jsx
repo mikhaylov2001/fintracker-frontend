@@ -4,6 +4,19 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import AppBackground from "../../layouts/AppBackground";
 import GoogleSignInButton from "../../components/auth/GoogleSignInButton";
+import {
+  authPaperSx,
+  authTitleSx,
+  authSubtitleSx,
+  authTextFieldSx,
+  authSubmitBtnSx,
+  authLinkSx,
+  authFooterTextSx,
+  authErrorSx,
+  authDividerLabelSx,
+  authHeroTitleSx,
+  authHeroTextSx,
+} from "../../styles/authFormStyles";
 
 // ===== валидация =====
 const EMAIL_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -206,24 +219,10 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.92)",
-              fontWeight: 950,
-              fontSize: 22,
-              lineHeight: 1.15,
-            }}
-          >
+          <Typography sx={{ ...authHeroTitleSx, fontSize: 22, lineHeight: 1.15 }}>
             Начните путь к осознанным финансам
           </Typography>
-          <Typography
-            sx={{
-              mt: 0.8,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 13.5,
-              lineHeight: 1.35,
-            }}
-          >
+          <Typography sx={{ ...authHeroTextSx, mt: 0.8, fontSize: 14, lineHeight: 1.4 }}>
             Создайте аккаунт, задайте цели и отслеживайте, сколько вы
             зарабатываете, тратите и откладываете каждый месяц.
           </Typography>
@@ -242,63 +241,22 @@ export default function RegisterPage() {
             backdropFilter: "blur(12px)",
           }}
         >
-          <Typography
-            sx={{
-              color: "rgba(255,255,255,0.9)",
-              fontWeight: 950,
-              fontSize: 34,
-              lineHeight: 1.1,
-            }}
-          >
+          <Typography sx={{ ...authHeroTitleSx, fontSize: 34, lineHeight: 1.1 }}>
             Начните путь к осознанным финансам
           </Typography>
-          <Typography
-            sx={{
-              mt: 1.25,
-              color: "rgba(255,255,255,0.72)",
-              fontSize: 15,
-              maxWidth: 420,
-            }}
-          >
+          <Typography sx={{ ...authHeroTextSx, mt: 1.25, fontSize: 15, maxWidth: 420 }}>
             Создайте аккаунт, задайте цели и отслеживайте, сколько вы
             зарабатываете, тратите и откладываете каждый месяц.
           </Typography>
         </Box>
 
         {/* Card */}
-        <Paper
-          elevation={8}
-          sx={{
-            p: { xs: 3, md: 4 },
-            width: "100%",
-            maxWidth: 420,
-            mx: "auto",
-            borderRadius: 5,
-            background:
-              "linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,244,255,0.98))",
-            boxShadow:
-              "0 18px 45px rgba(15,23,42,0.42), 0 0 0 1px rgba(15,23,42,0.06)",
-          }}
-        >
+        <Paper elevation={0} className="auth-card" sx={authPaperSx}>
           <Box sx={{ mb: 2.5, textAlign: "center" }}>
-            <Typography
-              component="h1"
-              sx={{
-                fontSize: 26,
-                fontWeight: 900,
-                letterSpacing: 0.3,
-                color: "#111827",
-              }}
-            >
+            <Typography component="h1" sx={authTitleSx}>
               Регистрация
             </Typography>
-            <Typography
-              sx={{
-                mt: 0.8,
-                fontSize: 13,
-                color: "rgba(15,23,42,0.6)",
-              }}
-            >
+            <Typography sx={authSubtitleSx}>
               Создайте аккаунт, чтобы отслеживать финансы.
             </Typography>
           </Box>
@@ -316,6 +274,7 @@ export default function RegisterPage() {
               helperText={fieldErrors.firstName}
               required
               autoComplete="given-name"
+              sx={authTextFieldSx}
             />
             <TextField
               margin="dense"
@@ -329,6 +288,7 @@ export default function RegisterPage() {
               helperText={fieldErrors.lastName}
               required
               autoComplete="family-name"
+              sx={authTextFieldSx}
             />
             <TextField
               margin="dense"
@@ -343,6 +303,7 @@ export default function RegisterPage() {
               helperText={fieldErrors.email || "Например: user@example.com"}
               required
               autoComplete="email"
+              sx={authTextFieldSx}
             />
             <TextField
               margin="dense"
@@ -360,10 +321,11 @@ export default function RegisterPage() {
               }
               required
               autoComplete="new-password"
+              sx={authTextFieldSx}
             />
 
             {error && (
-              <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+              <Typography component="p" sx={authErrorSx}>
                 {error}
               </Typography>
             )}
@@ -372,17 +334,9 @@ export default function RegisterPage() {
               type="submit"
               fullWidth
               variant="contained"
-              color="primary"
+              disableElevation
               disabled={!isFormValid}
-              sx={{
-                mt: 2.5,
-                mb: 1.5,
-                borderRadius: 999,
-                py: 1.1,
-                fontWeight: 800,
-                textTransform: "none",
-                fontSize: 15,
-              }}
+              sx={authSubmitBtnSx}
             >
               Зарегистрироваться
             </Button>
@@ -398,10 +352,7 @@ export default function RegisterPage() {
             }}
           >
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
-            <Typography
-              variant="caption"
-              sx={{ color: "rgba(15,23,42,0.5)", textTransform: "uppercase" }}
-            >
+            <Typography variant="caption" sx={authDividerLabelSx}>
               или
             </Typography>
             <Box sx={{ flex: 1, height: 1, bgcolor: "rgba(15,23,42,0.08)" }} />
@@ -415,17 +366,13 @@ export default function RegisterPage() {
             />
           </Box>
 
-          <Typography
-            variant="body2"
-            align="center"
-            sx={{ mt: 0.5, color: "rgba(15,23,42,0.7)" }}
-          >
+          <Typography variant="body2" align="center" sx={authFooterTextSx}>
             Уже есть аккаунт?{" "}
             <Link
               component="button"
               type="button"
               onClick={() => navigate("/login")}
-              sx={{ fontWeight: 600 }}
+              sx={authLinkSx}
             >
               Войти
             </Link>
