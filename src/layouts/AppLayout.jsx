@@ -59,7 +59,7 @@ export default function AppLayout() {
 
   return (
     <div className="min-h-screen bg-background text-foreground flex">
-      <aside className="hidden lg:flex w-72 shrink-0 border-r border-border flex-col p-6 gap-8 sticky top-0 h-screen">
+      <aside className="hidden md:flex w-72 shrink-0 border-r border-border flex-col p-6 gap-8 sticky top-0 h-screen">
         <SidebarContent
           pathname={pathname}
           userName={userName}
@@ -70,7 +70,7 @@ export default function AppLayout() {
       </aside>
 
       {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="md:hidden fixed inset-0 z-50 flex">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
@@ -100,7 +100,7 @@ export default function AppLayout() {
       )}
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="lg:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 pt-[var(--safe-top)] min-h-[calc(3.5rem+var(--safe-top))] border-b border-border bg-background/80 backdrop-blur-xl">
+        <div className="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 pt-[var(--safe-top)] min-h-[calc(3.5rem+var(--safe-top))] border-b border-border bg-background/80 backdrop-blur-xl">
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -113,7 +113,7 @@ export default function AppLayout() {
           <div className="ft-touch shrink-0" aria-hidden />
         </div>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-10 pb-[calc(1rem+var(--safe-bottom))] min-w-0">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 pb-[calc(1rem+var(--safe-bottom))] min-w-0 overflow-x-hidden">
           <Outlet />
         </main>
       </div>

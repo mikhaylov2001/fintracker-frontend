@@ -31,7 +31,7 @@ export default function PeriodSelector({ period, onChange, variant = "default" }
         : "month";
 
   const controls = (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:flex-wrap sm:justify-end">
+    <div className="flex flex-col gap-2.5 w-full md:flex-row md:items-center md:flex-wrap md:justify-end lg:flex-nowrap">
       <FtPeriodCalendar period={period} onChange={onChange} />
       <SegmentToggle
         stretch
@@ -48,7 +48,7 @@ export default function PeriodSelector({ period, onChange, variant = "default" }
   );
 
   if (variant === "header") {
-    return <div className="w-full min-w-0 sm:w-auto sm:shrink-0">{controls}</div>;
+    return <div className="w-full min-w-0 md:w-auto md:max-w-xl lg:max-w-none lg:shrink-0">{controls}</div>;
   }
 
   return <div className="mb-6 lg:mb-8">{controls}</div>;

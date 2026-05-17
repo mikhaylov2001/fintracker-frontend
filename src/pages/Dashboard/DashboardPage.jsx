@@ -149,7 +149,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="flex flex-col gap-4 mb-6 sm:mb-8 lg:mb-10 sm:flex-row sm:justify-between sm:items-end">
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 lg:mb-10 lg:flex-row lg:justify-between lg:items-end">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-glow/10 border border-emerald-glow/20 text-emerald-glow text-[10px] font-semibold uppercase tracking-[0.15em]">
@@ -169,7 +169,7 @@ export default function DashboardPage() {
         <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
 
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8 lg:mb-10">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 lg:mb-10">
         <KpiStat
           label="Баланс"
           value={formatAmount(balance)}

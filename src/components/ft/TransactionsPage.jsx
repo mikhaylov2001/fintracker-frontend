@@ -79,12 +79,12 @@ export default function TransactionsPage({
 
   return (
     <>
-      <header className="flex flex-col gap-4 mb-6 sm:mb-8 sm:flex-row sm:justify-between sm:items-end">
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 lg:flex-row lg:justify-between lg:items-end">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">{title}</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">{subtitle}</p>
         </div>
-        <div className="flex flex-col w-full sm:w-auto sm:flex-row items-stretch sm:items-end gap-3 min-w-0">
+        <div className="flex flex-col w-full min-w-0 gap-3 lg:w-auto lg:flex-row lg:items-end lg:justify-end lg:shrink-0">
           {period && onPeriodChange && (
             <PeriodSelector period={period} onChange={onPeriodChange} variant="header" />
           )}
@@ -94,7 +94,7 @@ export default function TransactionsPage({
               setEditing(null);
               setOpen(true);
             }}
-            className={`inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[2.75rem] rounded-xl font-semibold text-sm transition-all shrink-0 w-full sm:w-auto ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
+            className={`inline-flex items-center justify-center gap-2 px-4 py-3 min-h-[2.75rem] rounded-xl font-semibold text-sm transition-all shrink-0 w-full lg:w-auto ${palette.btn} text-primary-foreground shadow-[0_0_24px_oklch(0.72_0.18_162/0.25)] hover:brightness-110`}
           >
             <Plus className="size-4" />
             Добавить
@@ -108,7 +108,7 @@ export default function TransactionsPage({
         </p>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <KpiStat
           label="Всего"
           value={formatAmount(total)}
@@ -154,7 +154,7 @@ export default function TransactionsPage({
           </div>
         ) : (
           <>
-            <div className="hidden lg:block overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-[10px] uppercase tracking-[0.15em] text-muted-foreground border-b border-border">
@@ -206,7 +206,7 @@ export default function TransactionsPage({
               </table>
             </div>
 
-            <ul className="lg:hidden divide-y divide-border">
+            <ul className="md:hidden divide-y divide-border">
               {filtered.map((t) => (
                 <li key={t.id} className="p-4 flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
