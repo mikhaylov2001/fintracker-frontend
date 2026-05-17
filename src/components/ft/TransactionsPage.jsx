@@ -1,7 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { formatDateRu, todayISO } from "../../lib/ftUtils";
-import { avgPerDay } from "../../lib/periodUtils";
+import {
+  avgPerDayInPeriod,
+  calendarDaysInPeriod,
+  periodDescription,
+} from "../../lib/periodUtils";
 import FtDatePicker from "./FtDatePicker";
 import PeriodSelector from "./PeriodSelector";
 
@@ -27,8 +31,11 @@ export default function TransactionsPage({
   const [saving, setSaving] = useState(false);
 
   const total = items.reduce((s, t) => s + t.amount, 0);
-  const avgOp = items.length ? Math.round(total / items.length) : 0;
-  const avgDay = avgPerDay(total, items);
+  const opCount = items.length;
+  const avgOp = opCount ? Math.round(total / opCount) : 0;
+  const calDays = period ? calendarDaysInPeriod(period) : 1;
+  const avgDay = period ? avgPerDayInPeriod(total, items, period) : 0;
+  const periodLabel = period ? periodDescription(period) : "";
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -94,24 +101,30 @@ export default function TransactionsPage({
         </div>
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-surface border border-border rounded-3xl p-5 relative overflow-hidden">
-          <div className={`absolute -right-6 -top-6 size-24 ${palette.glow} blur-3xl rounded-full`} />
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Всего</p>
-          <p className={`text-xl sm:text-2xl font-bold tabular-nums break-all ${palette.text}`}>{formatAmount(total)}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-3xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Операций</p>
-          <p className="text-xl sm:text-2xl font-bold tabular-nums">{items.length}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-3xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">В среднем за день</p>
-          <p className="text-xl sm:text-2xl font-bold tabular-nums break-all">{formatAmount(avgDay)}</p>
-        </div>
-        <div className="bg-surface border border-border rounded-3xl p-5">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-2">Средняя операция</p>
-          <p className="text-xl sm:text-2xl font-bold tabular-nums break-all">{formatAmount(avgOp)}</p>
-        </div>
+      {periodLabel && (
+        <p className="text-xs text-muted-foreground mb-3 -mt-2">
+          Показатели за период: <span className="text-foreground/90">{periodLabel}</span>
+        </p>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+        <KpiStat
+          label="Всего"
+          value={formatAmount(total)}
+          valueClass={palette.text}
+          glow={palette.glow}
+        />
+        <KpiStat label="Операций" value={String(opCount)} />
+        <KpiStat
+          label="В среднем за день"
+          value={formatAmount(avgDay)}
+          hint={calDays > 0 ? `за ${calDays} календ. дн.` : undefined}
+        />
+        <KpiStat
+          label="Средняя операция"
+          value={formatAmount(avgOp)}
+          hint={opCount > 0 ? `на ${opCount} оп.` : undefined}
+        />
       </div>
 
       <div className="relative mb-5">
@@ -349,6 +362,21 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
   );
 }
 
+
+function KpiStat({ label, value, hint, valueClass = "text-foreground", glow }) {
+  return (
+    <div className="bg-surface border border-border rounded-3xl p-4 sm:p-5 relative overflow-hidden min-w-0">
+      {glow && (
+        <div className={`absolute -right-6 -top-6 size-24 ${glow} blur-3xl rounded-full pointer-events-none`} />
+      )}
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5 sm:mb-2 leading-tight">
+        {label}
+      </p>
+      <p className={`text-lg sm:text-2xl font-bold tabular-nums break-all ${valueClass}`}>{value}</p>
+      {hint ? <p className="text-[10px] text-muted-foreground mt-1">{hint}</p> : null}
+    </div>
+  );
+}
 
 function Field({ label, children }) {
   return (

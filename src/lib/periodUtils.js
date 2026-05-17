@@ -202,13 +202,47 @@ export function trendChartSubtitle(period) {
   return `чистый остаток · ${periodDescription(period)}`;
 }
 
-/** Уникальные дни с операциями для «среднего в день» */
-export function avgPerDay(total, items) {
-  const days = new Set(
-    (items || [])
-      .map((t) => t.date)
-      .filter(Boolean)
+/** Уникальные дни с операциями */
+export function daysWithTransactions(items) {
+  return new Set((items || []).map((t) => t.date).filter(Boolean)).size;
+}
+
+/** Календарных дней в выбранном периоде (для «среднего за день») */
+export function calendarDaysInPeriod(period, allSummaries = []) {
+  if (!period) return 1;
+
+  if (period.mode === "range" && period.fromYM && period.toYM) {
+    const months = monthsBetween(period.fromYM, period.toYM);
+    return (
+      months.reduce((sum, ym) => {
+        const p = parseYM(ym);
+        if (!p) return sum;
+        return sum + new Date(p.year, p.month, 0).getDate();
+      }, 0) || 1
+    );
+  }
+
+  const months = resolvePeriodMonths(period, allSummaries);
+  if (months.length === 0) return 1;
+
+  return (
+    months.reduce((sum, ym) => {
+      const p = parseYM(ym);
+      if (!p) return sum;
+      return sum + new Date(p.year, p.month, 0).getDate();
+    }, 0) || 1
   );
-  const count = days.size || 1;
+}
+
+/** Среднее за календарный день периода (не только дни с операциями) */
+export function avgPerDayInPeriod(total, items, period, allSummaries = []) {
+  const cal = calendarDaysInPeriod(period, allSummaries);
+  if (cal > 0) return Math.round(total / cal);
+  return avgPerDay(total, items);
+}
+
+/** Уникальные дни с операциями для «среднего в день» (legacy) */
+export function avgPerDay(total, items) {
+  const count = daysWithTransactions(items) || 1;
   return Math.round(total / count);
 }
