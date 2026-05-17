@@ -171,11 +171,11 @@ export default function FtPeriodCalendar({ period, onChange }) {
   const openCalendar = () => setOpen((o) => !o);
 
   return (
-    <div ref={rootRef} className="relative shrink-0 w-full md:w-auto">
+    <div ref={rootRef} className="relative shrink-0 w-full sm:w-auto">
       <button
         type="button"
         onClick={openCalendar}
-        className="inline-flex w-full md:w-auto items-center justify-center md:justify-start gap-2 px-3.5 md:px-4 py-2.5 min-h-[2.75rem] rounded-full border text-xs md:text-sm font-bold transition border-emerald-glow/20 bg-muted/80 text-foreground hover:border-emerald-glow/35"
+        className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 px-3.5 sm:px-4 py-2.5 min-h-[2.75rem] rounded-full border text-xs sm:text-sm font-bold transition border-emerald-glow/20 bg-muted/80 text-foreground hover:border-emerald-glow/35"
       >
         <CalendarDays className="size-4 text-emerald-glow shrink-0" strokeWidth={2} />
         <span className="max-w-[min(52vw,14rem)] truncate">{buttonLabel}</span>

@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <header className="flex flex-col gap-4 mb-6 sm:mb-8 lg:flex-row lg:justify-between lg:items-end">
+      <header className="flex flex-col gap-4 mb-6 sm:mb-8 sm:flex-row sm:justify-between sm:items-end">
         <div className="min-w-0">
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight mb-2">Аналитика</h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -281,7 +281,7 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <KpiStat
               label="Доходы"
               hint="за период"

@@ -17,8 +17,8 @@ export default function SegmentToggle({
   classicDesktop = false,
 }) {
   if (classicDesktop) {
-    const mobileBar = `ft-segment-bar md:hidden ${stretch ? "w-full" : ""}`;
-    const desktopBar = `hidden md:inline-flex max-w-full gap-0.5 p-1 ${
+    const mobileBar = `ft-segment-bar ${stretch ? "w-full" : ""}`;
+    const desktopBar = `hidden sm:inline-flex max-w-full gap-0.5 p-1 ${
       pill ? "rounded-full" : "rounded-xl"
     } bg-surface/80 border border-border ${className}`;
 
@@ -55,7 +55,7 @@ export default function SegmentToggle({
 
     return (
       <>
-        <div className={mobileBar} role="tablist">
+        <div className={`sm:hidden ${mobileBar}`} role="tablist">
           {renderButtons("mobile")}
         </div>
         <div className={desktopBar} role="tablist">
@@ -67,7 +67,7 @@ export default function SegmentToggle({
 
   return (
     <div
-      className={`ft-segment-bar max-md:w-full md:w-auto ${stretch ? "max-md:!w-full" : ""} ${className}`}
+      className={`ft-segment-bar ${stretch ? "!w-full" : ""} ${className}`}
       role="tablist"
     >
       {options.map((opt) => {
