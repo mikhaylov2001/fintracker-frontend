@@ -35,6 +35,7 @@ export default function PeriodSelector({ period, onChange, variant = "default" }
       <FtPeriodCalendar period={period} onChange={onChange} />
       <SegmentToggle
         stretch
+        classicDesktop
         value={segmentValue}
         onChange={setMode}
         options={SEGMENTS.map((s) => ({
