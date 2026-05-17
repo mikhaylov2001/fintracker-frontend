@@ -174,6 +174,7 @@ export default function DashboardPage() {
           label="Баланс"
           value={formatAmount(balance)}
           icon={Wallet}
+          iconAccent="info"
           highlight
           hint={periodHint}
         />
@@ -181,18 +182,21 @@ export default function DashboardPage() {
           label="Доходы"
           value={formatAmount(incomeSum)}
           icon={ArrowUpCircle}
+          iconAccent="emerald"
           hint={`${incomeOpCount} операций`}
         />
         <KpiStat
           label="Расходы"
           value={formatAmount(expenseSum)}
           icon={ArrowDownCircle}
+          iconAccent="warning"
           hint={`${expenseOpCount} операций`}
         />
         <KpiStat
           label="Норма сбережений"
           value={`${savingsRate}%`}
           icon={Percent}
+          iconAccent="violet"
           hint={`Сбережения: ${formatAmount(savings)}`}
         />
       </div>
