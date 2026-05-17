@@ -8,6 +8,7 @@ import {
 } from "../../lib/periodUtils";
 import FtDatePicker from "./FtDatePicker";
 import PeriodSelector from "./PeriodSelector";
+import KpiStat from "./KpiStat";
 
 export default function TransactionsPage({
   title,
@@ -111,8 +112,7 @@ export default function TransactionsPage({
         <KpiStat
           label="Всего"
           value={formatAmount(total)}
-          valueClass={palette.text}
-          glow={palette.glow}
+          highlight
         />
         <KpiStat label="Операций" value={String(opCount)} />
         <KpiStat
@@ -358,22 +358,6 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
           </button>
         </div>
       </form>
-    </div>
-  );
-}
-
-
-function KpiStat({ label, value, hint, valueClass = "text-foreground", glow }) {
-  return (
-    <div className="bg-surface border border-border rounded-3xl p-4 sm:p-5 relative overflow-hidden min-w-0">
-      {glow && (
-        <div className={`absolute -right-6 -top-6 size-24 ${glow} blur-3xl rounded-full pointer-events-none`} />
-      )}
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-1.5 sm:mb-2 leading-tight">
-        {label}
-      </p>
-      <p className={`text-lg sm:text-2xl font-bold tabular-nums break-all ${valueClass}`}>{value}</p>
-      {hint ? <p className="text-[10px] text-muted-foreground mt-1">{hint}</p> : null}
     </div>
   );
 }

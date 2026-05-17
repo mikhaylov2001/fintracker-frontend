@@ -47,10 +47,10 @@ import AnalyticsCard from "../../components/ft/AnalyticsCard";
 import ChartTooltip from "../../components/ft/ChartTooltip";
 import MonthHistoryPanel from "../../components/ft/MonthHistoryPanel";
 import SegmentToggle from "../../components/ft/SegmentToggle";
+import KpiStat from "../../components/ft/KpiStat";
 import { useIsMobile } from "../../hooks/useIsMobile";
 
-const SEGMENT_ACTIVE =
-  "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]";
+const SEGMENT_ACTIVE = "ft-segment-active";
 
 export default function AnalyticsPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();
@@ -281,16 +281,31 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
-            <Kpi label="Доходы" hint="за период" value={formatAmount(agg.income)} icon={TrendingUp} color="emerald" />
-            <Kpi label="Расходы" hint="за период" value={formatAmount(agg.expenses)} icon={TrendingDown} color="warning" />
-            <Kpi label="Сбережения" hint="доходы − расходы" value={formatAmount(agg.savings)} icon={Wallet} color="info" />
-            <Kpi
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-6">
+            <KpiStat
+              label="Доходы"
+              hint="за период"
+              value={formatAmount(agg.income)}
+              icon={TrendingUp}
+              highlight
+            />
+            <KpiStat
+              label="Расходы"
+              hint="за период"
+              value={formatAmount(agg.expenses)}
+              icon={TrendingDown}
+            />
+            <KpiStat
+              label="Сбережения"
+              hint="доходы − расходы"
+              value={formatAmount(agg.savings)}
+              icon={Wallet}
+            />
+            <KpiStat
               label="Норма сбережений"
               hint="% от дохода"
               value={`${agg.rate}%`}
               icon={Percent}
-              color="violet"
             />
           </div>
 
@@ -356,6 +371,7 @@ export default function AnalyticsPage() {
               className="h-full"
               action={
               <SegmentToggle
+                stretch
                 value={catKind}
                 onChange={setCatKind}
                 options={[
@@ -427,29 +443,6 @@ export default function AnalyticsPage() {
         </>
       )}
     </>
-  );
-}
-
-function Kpi({ label, hint, value, icon: Icon, color }) {
-  const iconClass =
-    color === "emerald"
-      ? "text-emerald-glow"
-      : color === "warning"
-        ? "text-warning"
-        : color === "violet"
-          ? "text-violet"
-          : "text-info";
-  return (
-    <div className="bg-surface border border-border rounded-3xl p-5">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-        <div className="size-8 rounded-lg bg-white/[0.04] border border-border grid place-items-center">
-          <Icon className={`size-4 ${iconClass}`} />
-        </div>
-      </div>
-      <p className="text-xl sm:text-2xl font-bold tabular-nums mb-1 break-all">{value}</p>
-      <p className="text-[11px] text-muted-foreground">{hint}</p>
-    </div>
   );
 }
 

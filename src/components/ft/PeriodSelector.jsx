@@ -9,8 +9,7 @@ const SEGMENTS = [
   { id: "all", label: "Всё" },
 ];
 
-const SEGMENT_ACTIVE =
-  "bg-emerald-glow text-primary-foreground shadow-[0_0_20px_oklch(0.72_0.18_162/0.3)]";
+const SEGMENT_ACTIVE = "ft-segment-active";
 
 /**
  * Период: chip-календарь + Месяц | Год | Всё (как Lovable).
@@ -35,6 +34,7 @@ export default function PeriodSelector({ period, onChange, variant = "default" }
     <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:flex-wrap sm:justify-end">
       <FtPeriodCalendar period={period} onChange={onChange} />
       <SegmentToggle
+        stretch
         value={segmentValue}
         onChange={setMode}
         options={SEGMENTS.map((s) => ({

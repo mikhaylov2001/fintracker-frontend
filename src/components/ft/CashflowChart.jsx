@@ -133,6 +133,7 @@ export default function CashflowChart({ rows = [], formatAmount }) {
     <div className="w-full min-w-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <SegmentToggle
+          stretch
           value={view}
           onChange={setView}
           options={[

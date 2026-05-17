@@ -23,6 +23,7 @@ import {
   unwrapSummariesList,
 } from "../../lib/periodUtils";
 import PeriodSelector from "../../components/ft/PeriodSelector";
+import KpiStat from "../../components/ft/KpiStat";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -168,33 +169,30 @@ export default function DashboardPage() {
         <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-8 lg:mb-10">
-        <KpiCard
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8 lg:mb-10">
+        <KpiStat
           label="Баланс"
           value={formatAmount(balance)}
           icon={Wallet}
-          accent="info"
+          highlight
           hint={periodHint}
         />
-        <KpiCard
+        <KpiStat
           label="Доходы"
           value={formatAmount(incomeSum)}
           icon={ArrowUpCircle}
-          accent="emerald"
           hint={`${incomeOpCount} операций`}
         />
-        <KpiCard
+        <KpiStat
           label="Расходы"
           value={formatAmount(expenseSum)}
           icon={ArrowDownCircle}
-          accent="warning"
           hint={`${expenseOpCount} операций`}
         />
-        <KpiCard
+        <KpiStat
           label="Норма сбережений"
           value={`${savingsRate}%`}
           icon={Percent}
-          accent="violet"
           hint={`Сбережения: ${formatAmount(savings)}`}
         />
       </div>
@@ -290,42 +288,6 @@ export default function DashboardPage() {
         </section>
       </div>
     </>
-  );
-}
-
-const accentMap = {
-  info: { dot: "bg-info", glow: "bg-info/10", ring: "hover:border-info/30", text: "text-info" },
-  emerald: {
-    dot: "bg-emerald-glow",
-    glow: "bg-emerald-glow/10",
-    ring: "hover:border-emerald-glow/40",
-    text: "text-emerald-glow",
-  },
-  warning: { dot: "bg-warning", glow: "bg-warning/10", ring: "hover:border-warning/30", text: "text-warning" },
-  violet: { dot: "bg-violet", glow: "bg-violet/10", ring: "hover:border-violet/30", text: "text-violet" },
-};
-
-function KpiCard({ label, value, icon: Icon, accent, hint }) {
-  const a = accentMap[accent];
-  return (
-    <div
-      className={`relative overflow-hidden bg-surface p-5 sm:p-6 rounded-3xl border border-border ${a.ring} transition-all`}
-    >
-      <div className={`absolute -right-8 -top-8 size-32 ${a.glow} blur-3xl rounded-full pointer-events-none`} />
-      <div className="flex items-center justify-between mb-4 sm:mb-5">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground flex items-center gap-2">
-          <span className={`size-1.5 rounded-full ${a.dot}`} />
-          {label}
-        </p>
-        <div className="size-8 rounded-lg bg-white/[0.04] border border-border grid place-items-center">
-          <Icon className={`size-4 ${a.text}`} strokeWidth={2} />
-        </div>
-      </div>
-      <h2 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-1.5 tabular-nums break-all">
-        {value}
-      </h2>
-      <p className="text-xs text-muted-foreground">{hint}</p>
-    </div>
   );
 }
 

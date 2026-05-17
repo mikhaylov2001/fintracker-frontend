@@ -105,6 +105,7 @@ export default function CategoryBreakdown({
             />
           )}
           <SegmentToggle
+            stretch
             value={kind}
             onChange={onKindChange}
             options={[

@@ -42,6 +42,70 @@
     min-height: 2.75rem;
     min-width: 2.75rem;
   }
+
+  /* KPI 2×2 на мобильных */
+  .ft-kpi-card {
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    min-width: 0;
+    background: oklch(0.22 0.008 285);
+    border: 1px solid oklch(1 0 0 / 6%);
+  }
+
+  @media (min-width: 640px) {
+    .ft-kpi-card {
+      padding: 1.35rem 1.5rem;
+    }
+  }
+
+  /* Переключатель Месяц | Год | Всё */
+  .ft-segment-bar {
+    width: 100%;
+    display: inline-flex;
+    gap: 0.125rem;
+    padding: 0.25rem;
+    border-radius: 9999px;
+    background: oklch(0.12 0.005 285);
+    border: 1px solid oklch(1 0 0 / 8%);
+  }
+
+  @media (min-width: 640px) {
+    .ft-segment-bar {
+      width: auto;
+    }
+  }
+
+  .ft-segment-btn {
+    flex: 1 1 0;
+    min-height: 2.75rem;
+    padding: 0.625rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    transition: color 0.15s, background 0.15s;
+    color: var(--ft-muted-foreground);
+  }
+
+  @media (min-width: 640px) {
+    .ft-segment-btn {
+      flex: 0 0 auto;
+      padding: 0.625rem 1rem;
+      font-size: 0.875rem;
+    }
+  }
+
+  .ft-segment-btn:hover:not(.ft-segment-active) {
+    color: var(--ft-foreground);
+  }
+
+  .ft-segment-active {
+    background: var(--ft-primary);
+    color: var(--ft-primary-fg);
+    font-weight: 700;
+    box-shadow: none;
+  }
   .ft-input:focus {
     border-color: oklch(0.72 0.18 162 / 50%);
     background: oklch(1 0 0 / 6%);
