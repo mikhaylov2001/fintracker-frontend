@@ -27,6 +27,7 @@ import {
   importBackupFile,
   toBackupPayload,
 } from "../../lib/dataBackup";
+import CategoryManager from "../../components/ft/CategoryManager";
 
 export default function SettingsPage() {
   const toast = useToast();
@@ -425,6 +426,18 @@ export default function SettingsPage() {
             </button>
           </form>
         </section>
+
+        {/* Категории */}
+        <CategoryManager
+          type="EXPENSE"
+          title="Категории расходов"
+          description="Стандартные и ваши категории для учёта расходов."
+        />
+        <CategoryManager
+          type="INCOME"
+          title="Категории доходов"
+          description="Стандартные и ваши категории для учёта доходов."
+        />
 
         {/* Данные */}
         <section className="bg-surface rounded-3xl border border-border p-6 sm:p-8 lg:col-span-2">

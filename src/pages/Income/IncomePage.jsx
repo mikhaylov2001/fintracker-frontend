@@ -4,22 +4,9 @@ import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useTransactionCategories } from "../../hooks/useTransactionCategories";
 import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
-
-/** Тип дохода — от активного к пассивному */
-const CATEGORIES = [
-  "Работа",
-  "Подработка",
-  "Бизнес",
-  "Аренда недвижимости",
-  "Инвестиции",
-  "Пассивный доход",
-  "Вклады",
-  "Продажа вещей",
-  "Подарки",
-  "Другое",
-];
 
 /** Источник поступления — детализация для отчётов */
 const SOURCES = [
@@ -42,6 +29,15 @@ export default function IncomePage() {
   const incomeApi = useIncomeApi();
   const incomeRef = useRef(incomeApi);
   incomeRef.current = incomeApi;
+
+  const {
+    categoryNames,
+    loading: categoriesLoading,
+    addCategory,
+  } = useTransactionCategories("INCOME", {
+    enabled: isAuthenticated && !authLoading,
+    onError: (msg) => toastRef.current.error(msg),
+  });
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,7 +143,9 @@ export default function IncomePage() {
       kind="income"
       items={items}
       loading={loading}
-      categories={CATEGORIES}
+      categories={categoryNames}
+      categoriesLoading={categoriesLoading}
+      onAddCategory={addCategory}
       sources={SOURCES}
       accent="emerald"
       formatAmount={fmt}

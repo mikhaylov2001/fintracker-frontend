@@ -4,26 +4,9 @@ import { useExpensesApi } from "../../api/expensesApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
+import { useTransactionCategories } from "../../hooks/useTransactionCategories";
 import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
-
-const CATEGORIES = [
-  "Продукты",
-  "Коммунальные услуги",
-  "Транспорт",
-  "Фитнес",
-  "Здоровье",
-  "Подписка на ИИ",
-  "Образование",
-  "Ипотека",
-  "Кредит",
-  "Рестораны",
-  "Дом",
-  "Кафе",
-  "Налоги",
-  "Развлечения",
-  "Другое",
-];
 
 export default function ExpensesPage() {
   const toast = useToast();
@@ -34,6 +17,15 @@ export default function ExpensesPage() {
   const expensesApi = useExpensesApi();
   const expensesRef = useRef(expensesApi);
   expensesRef.current = expensesApi;
+
+  const {
+    categoryNames,
+    loading: categoriesLoading,
+    addCategory,
+  } = useTransactionCategories("EXPENSE", {
+    enabled: isAuthenticated && !authLoading,
+    onError: (msg) => toastRef.current.error(msg),
+  });
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +132,9 @@ export default function ExpensesPage() {
       kind="expense"
       items={items}
       loading={loading}
-      categories={CATEGORIES}
+      categories={categoryNames}
+      categoriesLoading={categoriesLoading}
+      onAddCategory={addCategory}
       accent="warning"
       formatAmount={fmt}
       onSave={onSave}

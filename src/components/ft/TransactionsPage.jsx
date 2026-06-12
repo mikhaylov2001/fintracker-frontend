@@ -17,6 +17,8 @@ export default function TransactionsPage({
   items,
   loading,
   categories,
+  categoriesLoading,
+  onAddCategory,
   sources,
   accent,
   formatAmount,
@@ -256,6 +258,8 @@ export default function TransactionsPage({
           initial={editing}
           kind={kind}
           categories={categories}
+          categoriesLoading={categoriesLoading}
+          onAddCategory={onAddCategory}
           sources={sources}
           saving={saving}
           onSave={handleSave}
@@ -269,33 +273,85 @@ export default function TransactionsPage({
   );
 }
 
-function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose }) {
+function TxDialog({
+  initial,
+  kind,
+  categories,
+  categoriesLoading,
+  onAddCategory,
+  sources,
+  saving,
+  onSave,
+  onClose,
+}) {
+  const CUSTOM_VALUE = "__custom__";
+  const baseCategories = useMemo(() => {
+    const set = new Set(categories || []);
+    if (initial?.category) set.add(initial.category);
+    return [...set].sort((a, b) => a.localeCompare(b, "ru"));
+  }, [categories, initial?.category]);
+
+  const initialIsCustom =
+    initial?.category && !baseCategories.includes(initial.category);
+
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
-  const [category, setCategory] = useState(initial?.category ?? categories[0] ?? "");
+  const [category, setCategory] = useState(() => {
+    if (initialIsCustom) return CUSTOM_VALUE;
+    return initial?.category ?? baseCategories[0] ?? "";
+  });
+  const [customCategory, setCustomCategory] = useState(initialIsCustom ? initial.category : "");
   const [source, setSource] = useState(initial?.source ?? sources?.[0] ?? "");
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
+  const [addingCategory, setAddingCategory] = useState(false);
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     const n = Number(String(amount).replace(",", "."));
     if (!Number.isFinite(n) || n <= 0) {
       window.alert("Введите корректную сумму");
       return;
     }
-    if (!category.trim()) {
+
+    let finalCategory = category;
+    if (category === CUSTOM_VALUE) {
+      const trimmed = customCategory.trim().replace(/\s+/g, " ");
+      if (!trimmed) {
+        window.alert("Введите название категории");
+        return;
+      }
+      if (onAddCategory) {
+        try {
+          setAddingCategory(true);
+          const created = await onAddCategory(trimmed);
+          finalCategory = created?.name ?? trimmed;
+        } catch (err) {
+          window.alert(err?.message || "Не удалось создать категорию");
+          return;
+        } finally {
+          setAddingCategory(false);
+        }
+      } else {
+        finalCategory = trimmed;
+      }
+    }
+
+    if (!finalCategory.trim()) {
       window.alert("Выберите категорию");
       return;
     }
+
     onSave({
       id: initial?.id,
       amount: n,
-      category: category.trim(),
+      category: finalCategory.trim(),
       source: source.trim() || undefined,
       comment: comment.trim() || undefined,
       date,
     });
   };
+
+  const busy = saving || addingCategory;
 
   return (
     <div
@@ -322,13 +378,31 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
             <input type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus placeholder="0" className="ft-input" />
           </Field>
           <Field label="Категория">
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className="ft-input">
-              {categories.map((c) => (
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="ft-input"
+              disabled={categoriesLoading}
+            >
+              {baseCategories.map((c) => (
                 <option key={c} value={c} className="bg-background">
                   {c}
                 </option>
               ))}
+              <option value={CUSTOM_VALUE} className="bg-background">
+                ➕ Своя категория…
+              </option>
             </select>
+            {category === CUSTOM_VALUE && (
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Название новой категории"
+                className="ft-input mt-2"
+                maxLength={50}
+              />
+            )}
           </Field>
           {sources && (
             <Field label="Источник">
@@ -353,8 +427,8 @@ function TxDialog({ initial, kind, categories, sources, saving, onSave, onClose 
           <button type="button" onClick={onClose} className="px-4 py-3 min-h-[2.75rem] rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition">
             Отмена
           </button>
-          <button type="submit" disabled={saving} className="px-5 py-3 min-h-[2.75rem] rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60">
-            {saving ? "Сохранение…" : "Сохранить"}
+          <button type="submit" disabled={busy} className="px-5 py-3 min-h-[2.75rem] rounded-lg bg-emerald-glow text-primary-foreground text-sm font-semibold hover:brightness-110 transition disabled:opacity-60">
+            {busy ? "Сохранение…" : "Сохранить"}
           </button>
         </div>
       </form>
