@@ -1,4 +1,5 @@
 import { canonicalCategoryName } from "./defaultCategories";
+import { canonicalSourceName } from "./defaultIncomeSources";
 
 export function buildOptionList(defaults, ...nameSources) {
   const seen = new Set(defaults.map((n) => n.toLowerCase()));
@@ -102,11 +103,17 @@ function normalizeCategory(kind, category) {
   return raw;
 }
 
+function normalizeSource(source) {
+  const raw = String(source || "").trim();
+  if (!raw) return "—";
+  return canonicalSourceName(raw) || raw;
+}
+
 export const mapApiRow = (item, kind) => ({
   id: item.id,
   amount: Number(item.amount || 0),
   category: normalizeCategory(kind, item.category),
-  source: kind === "income" ? item.source : undefined,
+  source: kind === "income" ? normalizeSource(item.source) : undefined,
   comment: kind === "expense" ? item.description || item.comment : item.comment,
   date: normalizeDateOnly(
     item.date ?? item.operationDate ?? item.incomeDate ?? item.createdAt

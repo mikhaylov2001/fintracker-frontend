@@ -1,11 +1,11 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { useAuth } from "./AuthContext";
-import { buildSourceList, DEFAULT_INCOME_SOURCES, isDefaultSource } from "../lib/defaultIncomeSources";
+import { buildSourceList, canonicalSourceName, DEFAULT_INCOME_SOURCES, isDefaultSource } from "../lib/defaultIncomeSources";
 
 const IncomeSourcesContext = createContext(null);
 
 function cacheKey(userId) {
-  return userId ? `ft_income_sources_v1_${userId}` : null;
+  return userId ? `ft_income_sources_v2_${userId}` : null;
 }
 
 function readCache(userId) {
@@ -49,7 +49,7 @@ export function IncomeSourcesProvider({ children }) {
 
   const addSource = useCallback(
     async (name) => {
-      const trimmed = String(name || "").trim().replace(/\s+/g, " ");
+      const trimmed = canonicalSourceName(name);
       if (!trimmed) throw new Error("Введите название источника");
 
       const existing = [...DEFAULT_INCOME_SOURCES, ...customSources].find(
@@ -58,7 +58,10 @@ export function IncomeSourcesProvider({ children }) {
       if (existing) return { name: existing };
 
       if (isDefaultSource(trimmed)) {
-        return { name: DEFAULT_INCOME_SOURCES.find((s) => s.toLowerCase() === trimmed.toLowerCase()) || trimmed };
+        return {
+          name:
+            DEFAULT_INCOME_SOURCES.find((s) => s.toLowerCase() === trimmed.toLowerCase()) || trimmed,
+        };
       }
 
       setCustomSources((prev) => {
