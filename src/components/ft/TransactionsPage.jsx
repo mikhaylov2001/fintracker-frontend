@@ -293,6 +293,14 @@ function TxDialog({
     return list;
   }, [categories, initial?.category]);
 
+  const baseSources = useMemo(() => {
+    const list = [...(sources || [])];
+    if (initial?.source && !list.some((s) => s === initial.source)) {
+      list.push(initial.source);
+    }
+    return list;
+  }, [sources, initial?.source]);
+
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
   const [category, setCategory] = useState(initial?.category ?? "");
   const [source, setSource] = useState(initial?.source ?? sources?.[0] ?? "");
@@ -318,6 +326,18 @@ function TxDialog({
     const exists = baseCategories.some(
       (c) => c.localeCompare(trimmed, "ru", { sensitivity: "accent" }) === 0
     );
+
+    if (sources?.length) {
+      const trimmedSource = String(source || "").trim();
+      if (!trimmedSource) {
+        window.alert("Выберите источник");
+        return;
+      }
+      if (!baseSources.some((s) => s.localeCompare(trimmedSource, "ru", { sensitivity: "accent" }) === 0)) {
+        window.alert("Выберите источник из списка");
+        return;
+      }
+    }
 
     if (!exists && onAddCategory) {
       try {
@@ -378,13 +398,13 @@ function TxDialog({
           </Field>
           {sources && (
             <Field label="Источник">
-              <select value={source} onChange={(e) => setSource(e.target.value)} className="ft-input">
-                {sources.map((c) => (
-                  <option key={c} value={c} className="bg-background">
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <CategoryField
+                value={source}
+                onChange={setSource}
+                options={baseSources}
+                allowCustom={false}
+                placeholder="Выберите источник"
+              />
             </Field>
           )}
           <Field label="Дата">

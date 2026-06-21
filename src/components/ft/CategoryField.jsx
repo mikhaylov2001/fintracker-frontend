@@ -6,7 +6,8 @@ export default function CategoryField({
   onChange,
   options = [],
   disabled = false,
-  placeholder = "Выберите или введите категорию",
+  allowCustom = true,
+  placeholder = allowCustom ? "Выберите или введите категорию" : "Выберите из списка",
 }) {
   const rootRef = useRef(null);
   const inputRef = useRef(null);
@@ -34,6 +35,7 @@ export default function CategoryField({
   }, [options, text]);
 
   const isNew =
+    allowCustom &&
     text.trim() &&
     !options.some((c) => c.localeCompare(text.trim(), "ru", { sensitivity: "accent" }) === 0);
 
@@ -56,12 +58,16 @@ export default function CategoryField({
           type="text"
           value={text}
           disabled={disabled}
+          readOnly={!allowCustom}
           placeholder={placeholder}
           maxLength={50}
-          className="ft-input pr-10 appearance-none"
+          className={`ft-input pr-10 appearance-none ${!allowCustom ? "cursor-pointer" : ""}`}
           onFocus={() => setOpen(true)}
           onClick={() => setOpen(true)}
-          onChange={(e) => sync(e.target.value)}
+          onChange={(e) => {
+            if (!allowCustom) return;
+            sync(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" && open && filtered.length === 1) {
               e.preventDefault();
@@ -96,7 +102,7 @@ export default function CategoryField({
         </ul>
       )}
 
-      {open && filtered.length === 0 && !disabled && (
+      {open && filtered.length === 0 && !disabled && allowCustom && (
         <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
           Список пуст. Введите название — оно сохранится на сервере.
         </p>

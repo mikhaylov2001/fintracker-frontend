@@ -6,7 +6,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useTransactionCategories } from "../../hooks/useTransactionCategories";
 import { buildCategoryList } from "../../lib/defaultCategories";
-import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
+import { buildOptionList, mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
 
 /** Источник поступления — детализация для отчётов */
@@ -41,6 +41,11 @@ export default function IncomePage() {
     [items]
   );
 
+  const usedSourceNames = useMemo(
+    () => [...new Set(items.map((i) => i.source).filter(Boolean))],
+    [items]
+  );
+
   const {
     categories: serverCategories,
     loading: categoriesLoading,
@@ -52,6 +57,11 @@ export default function IncomePage() {
   const categoryNames = useMemo(
     () => buildCategoryList("INCOME", usedCategoryNames, serverCategories.map((c) => c.name)),
     [usedCategoryNames, serverCategories]
+  );
+
+  const sourceNames = useMemo(
+    () => buildOptionList(SOURCES, usedSourceNames),
+    [usedSourceNames]
   );
 
   useEffect(() => {
@@ -156,7 +166,7 @@ export default function IncomePage() {
       categories={categoryNames}
       categoriesLoading={categoriesLoading}
       onAddCategory={addCategory}
-      sources={SOURCES}
+      sources={sourceNames}
       accent="emerald"
       formatAmount={fmt}
       onSave={onSave}
