@@ -97,6 +97,12 @@ export default function CategoryField({
         </ul>
       )}
 
+      {open && filtered.length === 0 && !disabled && (
+        <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
+          Список пуст. Введите название — оно сохранится на сервере.
+        </p>
+      )}
+
       {isNew && (
         <p className="mt-1.5 text-[11px] text-muted-foreground">
           Новая категория: <span className="text-emerald-glow font-medium">{text.trim()}</span>
