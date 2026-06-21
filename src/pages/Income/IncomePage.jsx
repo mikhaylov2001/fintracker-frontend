@@ -12,8 +12,8 @@ import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUti
 const SOURCES = [
   "Зарплата",
   "Премия",
+  "Рента",
   "Бизнес",
-  "Аренда недвижимости",
   "Дивиденды",
   "Проценты",
   "Пассивный доход",
