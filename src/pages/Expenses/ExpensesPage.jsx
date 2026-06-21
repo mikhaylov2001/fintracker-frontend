@@ -5,6 +5,7 @@ import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useTransactionCategories } from "../../hooks/useTransactionCategories";
+import { buildCategoryList } from "../../lib/defaultCategories";
 import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
 
@@ -29,12 +30,17 @@ export default function ExpensesPage() {
   );
 
   const {
-    categoryNames,
+    categories: serverCategories,
     loading: categoriesLoading,
     addCategory,
   } = useTransactionCategories("EXPENSE", {
     extraNames: usedCategoryNames,
   });
+
+  const categoryNames = useMemo(
+    () => buildCategoryList("EXPENSE", usedCategoryNames, serverCategories.map((c) => c.name)),
+    [usedCategoryNames, serverCategories]
+  );
 
   useEffect(() => {
     if (authLoading) return;

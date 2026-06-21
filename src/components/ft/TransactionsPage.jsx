@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { formatDateRu, todayISO } from "../../lib/ftUtils";
 import {

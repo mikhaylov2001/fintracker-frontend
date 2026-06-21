@@ -1,13 +1,13 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/clientFetch";
 import { useAuth } from "./AuthContext";
-import { defaultCategoryObjects, mergeCategoriesInOrder } from "../lib/defaultCategories";
+import { buildCategoryObjects, buildCategoryList, defaultCategoryObjects } from "../lib/defaultCategories";
 import { unwrapList } from "../lib/ftUtils";
 
 const CategoriesContext = createContext(null);
 
 function cacheKey(userId) {
-  return userId ? `ft_categories_v4_${userId}` : null;
+  return userId ? `ft_categories_v5_${userId}` : null;
 }
 
 function readCache(userId) {
@@ -82,8 +82,8 @@ export function CategoriesProvider({ children }) {
     const defaultsExpense = defaultCategoryObjects("EXPENSE");
     const cached = uid ? readCache(uid) : null;
     if (cached && (cached.income.length || cached.expense.length)) {
-      setIncomeCategories(mergeCategoriesInOrder("INCOME", defaultsIncome, cached.income));
-      setExpenseCategories(mergeCategoriesInOrder("EXPENSE", defaultsExpense, cached.expense));
+      setIncomeCategories(buildCategoryObjects("INCOME", cached.income));
+      setExpenseCategories(buildCategoryObjects("EXPENSE", cached.expense));
       setFromCache(true);
     } else {
       setIncomeCategories(defaultsIncome);
@@ -110,16 +110,8 @@ export function CategoriesProvider({ children }) {
         apiFetch("/api/categories/me?type=INCOME"),
         apiFetch("/api/categories/me?type=EXPENSE"),
       ]);
-      const income = mergeCategoriesInOrder(
-        "INCOME",
-        defaultCategoryObjects("INCOME"),
-        normalizeCategories(incData)
-      );
-      const expense = mergeCategoriesInOrder(
-        "EXPENSE",
-        defaultCategoryObjects("EXPENSE"),
-        normalizeCategories(expData)
-      );
+      const income = buildCategoryObjects("INCOME", normalizeCategories(incData));
+      const expense = buildCategoryObjects("EXPENSE", normalizeCategories(expData));
       setIncomeCategories(income);
       setExpenseCategories(expense);
       setSynced(true);
@@ -140,17 +132,18 @@ export function CategoriesProvider({ children }) {
 
   const getCategories = useCallback(
     (type, extraNames = []) => {
-      const defaults = defaultCategoryObjects(type);
       const base = type === "INCOME" ? incomeCategories : expenseCategories;
-      const extras = (extraNames || []).map((name) => ({ id: null, name, system: false }));
-      return mergeCategoriesInOrder(type, defaults, base, extras);
+      return buildCategoryObjects(type, extraNames, base);
     },
     [incomeCategories, expenseCategories]
   );
 
   const getCategoryNames = useCallback(
-    (type, extraNames = []) => getCategories(type, extraNames).map((c) => c.name),
-    [getCategories]
+    (type, extraNames = []) => {
+      const base = type === "INCOME" ? incomeCategories : expenseCategories;
+      return buildCategoryList(type, extraNames, base.map((c) => c.name));
+    },
+    [incomeCategories, expenseCategories]
   );
 
   const addCategory = useCallback(
@@ -176,7 +169,7 @@ export function CategoriesProvider({ children }) {
         };
         const apply = (prev) => {
           if (prev.some((c) => c.name.toLowerCase() === created.name.toLowerCase())) return prev;
-          return mergeCategoriesInOrder(type, prev, [created]);
+          return buildCategoryObjects(type, prev, [created]);
         };
         if (type === "INCOME") {
           setIncomeCategories((prev) => {
@@ -199,7 +192,7 @@ export function CategoriesProvider({ children }) {
         const created = { id: null, name: trimmed, system: false };
         const apply = (prev) => {
           if (prev.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
-          return mergeCategoriesInOrder(type, prev, [created]);
+          return buildCategoryObjects(type, prev, [created]);
         };
         if (type === "INCOME") {
           setIncomeCategories(apply);

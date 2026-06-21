@@ -49,65 +49,79 @@ export function defaultCategoryObjects(type) {
   return names.map((name) => ({ id: null, name, system: true }));
 }
 
-function defaultOrderFor(type) {
-  return type === "INCOME" ? DEFAULT_INCOME_CATEGORIES : DEFAULT_EXPENSE_CATEGORIES;
+export function defaultCategoryNames(type) {
+  return type === "INCOME" ? [...DEFAULT_INCOME_CATEGORIES] : [...DEFAULT_EXPENSE_CATEGORIES];
 }
 
 function isDefaultName(type, name) {
   const canonical = canonicalCategoryName(type, name);
   const key = canonical.toLowerCase();
-  return defaultOrderFor(type).some((d) => d.toLowerCase() === key);
+  return defaultCategoryNames(type).some((d) => d.toLowerCase() === key);
 }
 
-export function defaultCategoryNames(type) {
-  return type === "INCOME" ? [...DEFAULT_INCOME_CATEGORIES] : [...DEFAULT_EXPENSE_CATEGORIES];
-}
+/**
+ * Список для UI: сначала стандартные в фиксированном порядке, затем остальные.
+ * Источники (API, кэш, операции) не меняют порядок стандартных категорий.
+ */
+export function buildCategoryList(type, ...nameSources) {
+  const defaults = defaultCategoryNames(type);
+  const seen = new Set(defaults.map((n) => n.toLowerCase()));
+  const result = [...defaults];
 
-/** Стандартные категории — в оригинальном порядке UI, свои — в конце */
-export function mergeCategoriesInOrder(type, ...lists) {
-  const defaultOrder = defaultOrderFor(type);
-  const map = new Map();
-
-  for (const list of lists) {
-    for (const item of list || []) {
-      const raw = String(item?.name || item || "").trim();
-      if (!raw) continue;
-      const name = canonicalCategoryName(type, raw);
+  for (const source of nameSources) {
+    const list = Array.isArray(source) ? source : [source];
+    for (const raw of list) {
+      const name = canonicalCategoryName(type, String(raw || "").trim());
+      if (!name) continue;
       const key = name.toLowerCase();
-      if (!map.has(key)) {
-        map.set(
-          key,
-          typeof item === "string"
-            ? { id: null, name, system: isDefaultName(type, name) }
-            : { ...item, name, system: item.system || isDefaultName(type, name) }
-        );
-      }
-    }
-  }
-
-  const result = [];
-  const used = new Set();
-
-  for (const name of defaultOrder) {
-    const key = name.toLowerCase();
-    if (map.has(key)) {
-      result.push(map.get(key));
-      used.add(key);
-    }
-  }
-
-  for (const list of lists) {
-    for (const item of list || []) {
-      const raw = String(item?.name || item || "").trim();
-      if (!raw) continue;
-      const name = canonicalCategoryName(type, raw);
-      const key = name.toLowerCase();
-      if (!used.has(key)) {
-        result.push(map.get(key));
-        used.add(key);
-      }
+      if (seen.has(key)) continue;
+      seen.add(key);
+      result.push(name);
     }
   }
 
   return result;
+}
+
+export function buildCategoryObjects(type, ...sources) {
+  const objectSources = sources.map((source) => {
+    const list = Array.isArray(source) ? source : [source];
+    return list.map((item) => {
+      if (item && typeof item === "object" && item.name) {
+        const name = canonicalCategoryName(type, item.name);
+        return {
+          id: item.id ?? null,
+          name,
+          system: !!item.system || isDefaultName(type, name),
+        };
+      }
+      const name = canonicalCategoryName(type, String(item || "").trim());
+      return { id: null, name, system: isDefaultName(type, name) };
+    });
+  });
+
+  const names = buildCategoryList(
+    type,
+    ...objectSources.map((list) => list.map((item) => item.name))
+  );
+
+  const byName = new Map();
+  for (const list of objectSources) {
+    for (const item of list) {
+      if (!item?.name) continue;
+      const key = item.name.toLowerCase();
+      if (!byName.has(key)) byName.set(key, item);
+    }
+  }
+
+  return names.map((name) => {
+    const existing = byName.get(name.toLowerCase());
+    if (existing) return existing;
+    return { id: null, name, system: isDefaultName(type, name) };
+  });
+}
+
+/** @deprecated используйте buildCategoryList / buildCategoryObjects */
+export function mergeCategoriesInOrder(type, ...lists) {
+  return buildCategoryObjects(type, ...lists);
 }
