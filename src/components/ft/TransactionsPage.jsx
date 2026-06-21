@@ -350,7 +350,7 @@ function TxDialog({
       <form
         onSubmit={submit}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg max-h-[min(92dvh,720px)] overflow-y-auto bg-surface border border-border rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl pb-[calc(1.25rem+var(--safe-bottom))]"
+        className="w-full max-w-md max-h-[min(92dvh,640px)] overflow-y-auto bg-surface border border-border rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl pb-[calc(1.25rem+var(--safe-bottom))]"
       >
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold tracking-tight">
@@ -386,7 +386,7 @@ function TxDialog({
             </Field>
           )}
           <Field label="Дата">
-            <FtDatePicker value={date} onChange={setDate} maxDate={todayISO()} inline />
+            <FtDatePicker value={date} onChange={setDate} maxDate={todayISO()} />
           </Field>
           <Field label={kind === "expense" ? "Описание" : "Комментарий"}>
             <input type="text" value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Необязательно" className="ft-input" />
