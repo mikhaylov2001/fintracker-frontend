@@ -20,7 +20,6 @@ export default function TransactionsPage({
   categories,
   categoriesLoading,
   onAddCategory,
-  onCategoriesReload,
   sources,
   accent,
   formatAmount,
@@ -34,12 +33,6 @@ export default function TransactionsPage({
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (open && onCategoriesReload) {
-      onCategoriesReload();
-    }
-  }, [open, onCategoriesReload]);
 
   const total = items.reduce((s, t) => s + t.amount, 0);
   const opCount = items.length;

@@ -44,7 +44,6 @@ export default function IncomePage() {
     categoryNames,
     loading: categoriesLoading,
     addCategory,
-    reload: reloadCategories,
   } = useTransactionCategories("INCOME", {
     extraNames: usedCategoryNames,
   });
@@ -151,7 +150,6 @@ export default function IncomePage() {
       categories={categoryNames}
       categoriesLoading={categoriesLoading}
       onAddCategory={addCategory}
-      onCategoriesReload={reloadCategories}
       sources={SOURCES}
       accent="emerald"
       formatAmount={fmt}

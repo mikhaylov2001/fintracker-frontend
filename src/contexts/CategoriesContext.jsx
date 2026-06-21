@@ -81,32 +81,37 @@ export function CategoriesProvider({ children }) {
   const { isAuthenticated, loading: authLoading, user } = useAuth();
   const userId = user?.id ?? null;
 
-  const [incomeCategories, setIncomeCategories] = useState([]);
-  const [expenseCategories, setExpenseCategories] = useState([]);
+  const [incomeCategories, setIncomeCategories] = useState(() =>
+    defaultCategoryObjects("INCOME")
+  );
+  const [expenseCategories, setExpenseCategories] = useState(() =>
+    defaultCategoryObjects("EXPENSE")
+  );
   const [loading, setLoading] = useState(false);
   const [synced, setSynced] = useState(false);
   const [fromCache, setFromCache] = useState(false);
   const [error, setError] = useState(null);
 
   const applyFallback = useCallback((uid) => {
+    const defaultsIncome = defaultCategoryObjects("INCOME");
+    const defaultsExpense = defaultCategoryObjects("EXPENSE");
     const cached = uid ? readCache(uid) : null;
     if (cached && (cached.income.length || cached.expense.length)) {
-      setIncomeCategories(cached.income);
-      setExpenseCategories(cached.expense);
+      setIncomeCategories(mergeCategoryLists(defaultsIncome, cached.income));
+      setExpenseCategories(mergeCategoryLists(defaultsExpense, cached.expense));
       setFromCache(true);
-      setSynced(false);
-      return;
+    } else {
+      setIncomeCategories(defaultsIncome);
+      setExpenseCategories(defaultsExpense);
+      setFromCache(false);
     }
-    setIncomeCategories(defaultCategoryObjects("INCOME"));
-    setExpenseCategories(defaultCategoryObjects("EXPENSE"));
-    setFromCache(false);
     setSynced(false);
   }, []);
 
   const loadAll = useCallback(async () => {
     if (!isAuthenticated || !userId) {
-      setIncomeCategories([]);
-      setExpenseCategories([]);
+      setIncomeCategories(defaultCategoryObjects("INCOME"));
+      setExpenseCategories(defaultCategoryObjects("EXPENSE"));
       setSynced(false);
       setFromCache(false);
       setError(null);
@@ -120,8 +125,14 @@ export function CategoriesProvider({ children }) {
         apiFetch("/api/categories/me?type=INCOME"),
         apiFetch("/api/categories/me?type=EXPENSE"),
       ]);
-      const income = normalizeCategories(incData);
-      const expense = normalizeCategories(expData);
+      const income = mergeCategoryLists(
+        defaultCategoryObjects("INCOME"),
+        normalizeCategories(incData)
+      );
+      const expense = mergeCategoryLists(
+        defaultCategoryObjects("EXPENSE"),
+        normalizeCategories(expData)
+      );
       setIncomeCategories(income);
       setExpenseCategories(expense);
       setSynced(true);
@@ -142,9 +153,10 @@ export function CategoriesProvider({ children }) {
 
   const getCategories = useCallback(
     (type, extraNames = []) => {
+      const defaults = defaultCategoryObjects(type);
       const base = type === "INCOME" ? incomeCategories : expenseCategories;
       const extras = (extraNames || []).map((name) => ({ id: null, name, system: false }));
-      return mergeCategoryLists(base, extras);
+      return mergeCategoryLists(defaults, base, extras);
     },
     [incomeCategories, expenseCategories]
   );

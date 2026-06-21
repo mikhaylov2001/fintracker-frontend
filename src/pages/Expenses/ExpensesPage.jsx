@@ -32,7 +32,6 @@ export default function ExpensesPage() {
     categoryNames,
     loading: categoriesLoading,
     addCategory,
-    reload: reloadCategories,
   } = useTransactionCategories("EXPENSE", {
     extraNames: usedCategoryNames,
   });
@@ -140,7 +139,6 @@ export default function ExpensesPage() {
       categories={categoryNames}
       categoriesLoading={categoriesLoading}
       onAddCategory={addCategory}
-      onCategoriesReload={reloadCategories}
       accent="warning"
       formatAmount={fmt}
       onSave={onSave}
