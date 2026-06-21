@@ -15,6 +15,7 @@ export const DEFAULT_INCOME_CATEGORIES = [
 export const DEFAULT_EXPENSE_CATEGORIES = [
   "Продукты",
   "Коммунальные услуги",
+  "Аренда",
   "Транспорт",
   "Фитнес",
   "Здоровье",
