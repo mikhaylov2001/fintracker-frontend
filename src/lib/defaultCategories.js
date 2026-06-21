@@ -44,6 +44,10 @@ function isDefaultName(type, name) {
   return defaultOrderFor(type).some((d) => d.toLowerCase() === key);
 }
 
+export function defaultCategoryNames(type) {
+  return type === "INCOME" ? [...DEFAULT_INCOME_CATEGORIES] : [...DEFAULT_EXPENSE_CATEGORIES];
+}
+
 /** Стандартные категории — в порядке бэкенда, свои — в конце */
 export function mergeCategoriesInOrder(type, ...lists) {
   const defaultOrder = defaultOrderFor(type);
