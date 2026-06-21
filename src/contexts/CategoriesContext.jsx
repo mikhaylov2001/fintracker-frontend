@@ -7,7 +7,7 @@ import { unwrapList } from "../lib/ftUtils";
 const CategoriesContext = createContext(null);
 
 function cacheKey(userId) {
-  return userId ? `ft_categories_v3_${userId}` : null;
+  return userId ? `ft_categories_v4_${userId}` : null;
 }
 
 function readCache(userId) {
