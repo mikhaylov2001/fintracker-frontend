@@ -69,7 +69,7 @@ export function useTransactionCategories(type, { enabled = true, onError } = {})
       return next;
     } catch (e) {
       onErrorRef.current?.(mapApiError(e, "Ошибка загрузки категорий"));
-      return [];
+      return normalizeCategories(null, fallback);
     }
   }, [enabled, type, fallback]);
 
@@ -90,7 +90,7 @@ export function useTransactionCategories(type, { enabled = true, onError } = {})
         }
       } catch (e) {
         if (!cancelled) {
-          onErrorRef.current?.(mapApiError(e, "Ошибка загрузки категорий"));
+          setCategories(normalizeCategories(null, fallback));
         }
       } finally {
         if (!cancelled) setLoading(false);
