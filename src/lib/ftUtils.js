@@ -1,3 +1,5 @@
+import { canonicalCategoryName } from "./defaultCategories";
+
 export const normalizeDateOnly = (d) => {
   if (!d) return "";
   const s = String(d);
@@ -74,10 +76,19 @@ export const mapApiError = (err, fallback) => {
   return fallback;
 };
 
+function normalizeCategory(kind, category) {
+  const raw = String(category || "").trim();
+  if (!raw) return "—";
+  if (kind === "income") {
+    return canonicalCategoryName("INCOME", raw) || raw;
+  }
+  return raw;
+}
+
 export const mapApiRow = (item, kind) => ({
   id: item.id,
   amount: Number(item.amount || 0),
-  category: item.category || "—",
+  category: normalizeCategory(kind, item.category),
   source: kind === "income" ? item.source : undefined,
   comment: kind === "expense" ? item.description || item.comment : item.comment,
   date: normalizeDateOnly(

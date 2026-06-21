@@ -3,7 +3,7 @@ export const DEFAULT_INCOME_CATEGORIES = [
   "Работа",
   "Подработка",
   "Бизнес",
-  "Аренда недвижимости",
+  "Рента",
   "Инвестиции",
   "Пассивный доход",
   "Вклады",
@@ -32,7 +32,7 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
 
 /** Старые названия с бэкенда → каноническое имя из UI */
 const INCOME_NAME_ALIASES = {
-  рента: "Аренда недвижимости",
+  "аренда недвижимости": "Рента",
 };
 
 export function canonicalCategoryName(type, name) {
