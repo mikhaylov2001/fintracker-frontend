@@ -372,7 +372,6 @@ function TxDialog({
               onChange={setCategory}
               options={baseCategories}
               disabled={categoriesLoading}
-              autoOpen
             />
           </Field>
           {sources && (
