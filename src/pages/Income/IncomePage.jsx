@@ -5,21 +5,10 @@ import { useCurrency } from "../../contexts/CurrencyContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
 import { useTransactionCategories } from "../../hooks/useTransactionCategories";
+import { useIncomeSources } from "../../contexts/IncomeSourcesContext";
 import { buildCategoryList } from "../../lib/defaultCategories";
-import { buildOptionList, mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
+import { mapApiError, mapApiRow, normalizeDateOnly, unwrapList } from "../../lib/ftUtils";
 import { defaultPeriod, parseYM, resolvePeriodMonths } from "../../lib/periodUtils";
-
-/** Источник поступления — детализация для отчётов */
-const SOURCES = [
-  "Зарплата",
-  "Премия",
-  "Рента",
-  "Бизнес",
-  "Дивиденды",
-  "Проценты",
-  "Пассивный доход",
-  "Другое",
-];
 
 export default function IncomePage() {
   const toast = useToast();
@@ -59,10 +48,9 @@ export default function IncomePage() {
     [usedCategoryNames, serverCategories]
   );
 
-  const sourceNames = useMemo(
-    () => buildOptionList(SOURCES, usedSourceNames),
-    [usedSourceNames]
-  );
+  const { sourceNames, addSource } = useIncomeSources({
+    extraNames: usedSourceNames,
+  });
 
   useEffect(() => {
     if (authLoading) return;
@@ -167,6 +155,7 @@ export default function IncomePage() {
       categoriesLoading={categoriesLoading}
       onAddCategory={addCategory}
       sources={sourceNames}
+      onAddSource={addSource}
       accent="emerald"
       formatAmount={fmt}
       onSave={onSave}

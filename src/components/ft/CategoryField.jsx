@@ -8,6 +8,8 @@ export default function CategoryField({
   disabled = false,
   allowCustom = true,
   placeholder = allowCustom ? "Выберите или введите категорию" : "Выберите из списка",
+  newValueHint = "Новая категория",
+  emptyHint = "Список пуст. Введите название — оно сохранится на сервере.",
 }) {
   const rootRef = useRef(null);
   const inputRef = useRef(null);
@@ -62,7 +64,6 @@ export default function CategoryField({
           placeholder={placeholder}
           maxLength={50}
           className={`ft-input pr-10 appearance-none ${!allowCustom ? "cursor-pointer" : ""}`}
-          onFocus={() => setOpen(true)}
           onClick={() => setOpen(true)}
           onChange={(e) => {
             if (!allowCustom) return;
@@ -103,14 +104,12 @@ export default function CategoryField({
       )}
 
       {open && filtered.length === 0 && !disabled && allowCustom && (
-        <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">
-          Список пуст. Введите название — оно сохранится на сервере.
-        </p>
+        <p className="mt-1.5 text-[11px] text-muted-foreground px-0.5">{emptyHint}</p>
       )}
 
       {isNew && (
         <p className="mt-1.5 text-[11px] text-muted-foreground">
-          Новая категория: <span className="text-emerald-glow font-medium">{text.trim()}</span>
+          {newValueHint}: <span className="text-emerald-glow font-medium">{text.trim()}</span>
         </p>
       )}
     </div>

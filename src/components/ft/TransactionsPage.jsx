@@ -21,6 +21,7 @@ export default function TransactionsPage({
   categoriesLoading,
   onAddCategory,
   sources,
+  onAddSource,
   accent,
   formatAmount,
   onSave,
@@ -262,6 +263,7 @@ export default function TransactionsPage({
           categoriesLoading={categoriesLoading}
           onAddCategory={onAddCategory}
           sources={sources}
+          onAddSource={onAddSource}
           saving={saving}
           onSave={handleSave}
           onClose={() => {
@@ -281,6 +283,7 @@ function TxDialog({
   categoriesLoading,
   onAddCategory,
   sources,
+  onAddSource,
   saving,
   onSave,
   onClose,
@@ -303,10 +306,11 @@ function TxDialog({
 
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
   const [category, setCategory] = useState(initial?.category ?? "");
-  const [source, setSource] = useState(initial?.source ?? sources?.[0] ?? "");
+  const [source, setSource] = useState(initial?.source ?? "");
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [addingCategory, setAddingCategory] = useState(false);
+  const [addingSource, setAddingSource] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -328,13 +332,9 @@ function TxDialog({
     );
 
     if (sources?.length) {
-      const trimmedSource = String(source || "").trim();
+      const trimmedSource = String(source || "").trim().replace(/\s+/g, " ");
       if (!trimmedSource) {
-        window.alert("Выберите источник");
-        return;
-      }
-      if (!baseSources.some((s) => s.localeCompare(trimmedSource, "ru", { sensitivity: "accent" }) === 0)) {
-        window.alert("Выберите источник из списка");
+        window.alert("Введите источник");
         return;
       }
     }
@@ -352,17 +352,36 @@ function TxDialog({
       }
     }
 
+    let finalSource = String(source || "").trim().replace(/\s+/g, " ");
+    if (sources?.length && finalSource) {
+      const sourceExists = baseSources.some(
+        (s) => s.localeCompare(finalSource, "ru", { sensitivity: "accent" }) === 0
+      );
+      if (!sourceExists && onAddSource) {
+        try {
+          setAddingSource(true);
+          const created = await onAddSource(finalSource);
+          finalSource = created?.name ?? finalSource;
+        } catch (err) {
+          window.alert(err?.message || "Не удалось сохранить источник");
+          return;
+        } finally {
+          setAddingSource(false);
+        }
+      }
+    }
+
     onSave({
       id: initial?.id,
       amount: n,
       category: finalCategory,
-      source: source.trim() || undefined,
+      source: finalSource || undefined,
       comment: comment.trim() || undefined,
       date,
     });
   };
 
-  const busy = saving || addingCategory;
+  const busy = saving || addingCategory || addingSource;
 
   return (
     <div
@@ -402,8 +421,9 @@ function TxDialog({
                 value={source}
                 onChange={setSource}
                 options={baseSources}
-                allowCustom={false}
-                placeholder="Выберите источник"
+                placeholder="Выберите или введите источник"
+                newValueHint="Новый источник"
+                emptyHint="Список пуст. Введите название — оно сохранится в вашем списке."
               />
             </Field>
           )}

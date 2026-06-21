@@ -23,6 +23,7 @@ import ProPlanPage from "./pages/Pro/ProPlanPage";
 
 import { CurrencyProvider } from "./contexts/CurrencyContext";
 import { CategoriesProvider } from "./contexts/CategoriesContext";
+import { IncomeSourcesProvider } from "./contexts/IncomeSourcesContext";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
       <AuthProvider>
         <CurrencyProvider>
           <CategoriesProvider>
+          <IncomeSourcesProvider>
           <Routes>
             <Route path="/" element={<HomeRedirect />} />
 
@@ -53,6 +55,7 @@ function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </IncomeSourcesProvider>
           </CategoriesProvider>
         </CurrencyProvider>
       </AuthProvider>
