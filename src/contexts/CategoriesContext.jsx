@@ -1,9 +1,39 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { apiFetch } from "../api/clientFetch";
 import { useAuth } from "./AuthContext";
+import { defaultCategoryObjects } from "../lib/defaultCategories";
 import { unwrapList } from "../lib/ftUtils";
 
 const CategoriesContext = createContext(null);
+
+function cacheKey(userId) {
+  return userId ? `ft_categories_v2_${userId}` : null;
+}
+
+function readCache(userId) {
+  const key = cacheKey(userId);
+  if (!key) return null;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+    return {
+      income: Array.isArray(parsed.income) ? parsed.income : [],
+      expense: Array.isArray(parsed.expense) ? parsed.expense : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(userId, income, expense) {
+  const key = cacheKey(userId);
+  if (!key) return;
+  try {
+    localStorage.setItem(key, JSON.stringify({ income, expense, ts: Date.now() }));
+  } catch {}
+}
 
 function normalizeCategories(raw) {
   const list = unwrapList(raw);
@@ -17,19 +47,68 @@ function normalizeCategories(raw) {
     .filter((item) => item.name);
 }
 
+function mergeCategoryLists(...lists) {
+  const map = new Map();
+  for (const list of lists) {
+    for (const item of list || []) {
+      const name = String(item?.name || item || "").trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (!map.has(key)) {
+        map.set(key, typeof item === "string" ? { id: null, name, system: false } : item);
+      }
+    }
+  }
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+}
+
+function friendlyError(err) {
+  const status = err?.status;
+  const msg = String(err?.message || "");
+  if (status === 503 || msg.includes("503") || msg.toLowerCase().includes("suspended")) {
+    return "Сервер FinTrackerPro недоступен. Включите бэкенд на Render или запустите локально.";
+  }
+  if (status === 404) {
+    return "API категорий не найден. Обновите бэкенд (миграция V11).";
+  }
+  if (msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("network")) {
+    return "Нет связи с сервером. Проверьте интернет или запустите бэкенд.";
+  }
+  return msg || "Не удалось загрузить категории с сервера";
+}
+
 export function CategoriesProvider({ children }) {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
+  const userId = user?.id ?? null;
+
   const [incomeCategories, setIncomeCategories] = useState([]);
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [synced, setSynced] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
   const [error, setError] = useState(null);
 
+  const applyFallback = useCallback((uid) => {
+    const cached = uid ? readCache(uid) : null;
+    if (cached && (cached.income.length || cached.expense.length)) {
+      setIncomeCategories(cached.income);
+      setExpenseCategories(cached.expense);
+      setFromCache(true);
+      setSynced(false);
+      return;
+    }
+    setIncomeCategories(defaultCategoryObjects("INCOME"));
+    setExpenseCategories(defaultCategoryObjects("EXPENSE"));
+    setFromCache(false);
+    setSynced(false);
+  }, []);
+
   const loadAll = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || !userId) {
       setIncomeCategories([]);
       setExpenseCategories([]);
       setSynced(false);
+      setFromCache(false);
       setError(null);
       return;
     }
@@ -41,31 +120,37 @@ export function CategoriesProvider({ children }) {
         apiFetch("/api/categories/me?type=INCOME"),
         apiFetch("/api/categories/me?type=EXPENSE"),
       ]);
-      setIncomeCategories(normalizeCategories(incData));
-      setExpenseCategories(normalizeCategories(expData));
+      const income = normalizeCategories(incData);
+      const expense = normalizeCategories(expData);
+      setIncomeCategories(income);
+      setExpenseCategories(expense);
       setSynced(true);
+      setFromCache(false);
+      writeCache(userId, income, expense);
     } catch (e) {
-      setIncomeCategories([]);
-      setExpenseCategories([]);
-      setSynced(false);
-      setError(e?.message || "Не удалось загрузить категории");
+      applyFallback(userId);
+      setError(friendlyError(e));
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, userId, applyFallback]);
 
   useEffect(() => {
     if (authLoading) return;
     loadAll();
-  }, [authLoading, isAuthenticated, loadAll]);
+  }, [authLoading, isAuthenticated, userId, loadAll]);
 
   const getCategories = useCallback(
-    (type) => (type === "INCOME" ? incomeCategories : expenseCategories),
+    (type, extraNames = []) => {
+      const base = type === "INCOME" ? incomeCategories : expenseCategories;
+      const extras = (extraNames || []).map((name) => ({ id: null, name, system: false }));
+      return mergeCategoryLists(base, extras);
+    },
     [incomeCategories, expenseCategories]
   );
 
   const getCategoryNames = useCallback(
-    (type) => getCategories(type).map((c) => c.name),
+    (type, extraNames = []) => getCategories(type, extraNames).map((c) => c.name),
     [getCategories]
   );
 
@@ -80,48 +165,80 @@ export function CategoriesProvider({ children }) {
       );
       if (existing) return existing;
 
-      const data = await apiFetch("/api/categories", {
-        method: "POST",
-        body: JSON.stringify({ name: trimmed, type }),
-      });
-
-      const created = {
-        id: data?.id ?? null,
-        name: data?.name ?? trimmed,
-        system: !!data?.system,
-      };
-
-      const apply = (prev) => {
-        if (prev.some((c) => c.name.toLowerCase() === created.name.toLowerCase())) return prev;
-        return [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ru"));
-      };
-
-      if (type === "INCOME") {
-        setIncomeCategories(apply);
-      } else {
-        setExpenseCategories(apply);
+      try {
+        const data = await apiFetch("/api/categories", {
+          method: "POST",
+          body: JSON.stringify({ name: trimmed, type }),
+        });
+        const created = {
+          id: data?.id ?? null,
+          name: data?.name ?? trimmed,
+          system: !!data?.system,
+        };
+        const apply = (prev) => {
+          if (prev.some((c) => c.name.toLowerCase() === created.name.toLowerCase())) return prev;
+          return [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+        };
+        if (type === "INCOME") {
+          setIncomeCategories((prev) => {
+            const next = apply(prev);
+            writeCache(userId, next, expenseCategories);
+            return next;
+          });
+        } else {
+          setExpenseCategories((prev) => {
+            const next = apply(prev);
+            writeCache(userId, incomeCategories, next);
+            return next;
+          });
+        }
+        setSynced(true);
+        setFromCache(false);
+        setError(null);
+        return created;
+      } catch (e) {
+        const created = { id: null, name: trimmed, system: false };
+        const apply = (prev) => {
+          if (prev.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
+          return [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+        };
+        if (type === "INCOME") {
+          setIncomeCategories(apply);
+        } else {
+          setExpenseCategories(apply);
+        }
+        throw new Error(friendlyError(e));
       }
-      setSynced(true);
-      setError(null);
-      return created;
     },
-    [incomeCategories, expenseCategories]
+    [incomeCategories, expenseCategories, userId]
   );
 
-  const deleteCategory = useCallback(async (type, categoryId) => {
-    await apiFetch(`/api/categories/${categoryId}`, { method: "DELETE" });
-    const filter = (prev) => prev.filter((c) => c.id !== categoryId);
-    if (type === "INCOME") {
-      setIncomeCategories(filter);
-    } else {
-      setExpenseCategories(filter);
-    }
-  }, []);
+  const deleteCategory = useCallback(
+    async (type, categoryId) => {
+      await apiFetch(`/api/categories/${categoryId}`, { method: "DELETE" });
+      const filter = (prev) => prev.filter((c) => c.id !== categoryId);
+      if (type === "INCOME") {
+        setIncomeCategories((prev) => {
+          const next = filter(prev);
+          writeCache(userId, next, expenseCategories);
+          return next;
+        });
+      } else {
+        setExpenseCategories((prev) => {
+          const next = filter(prev);
+          writeCache(userId, incomeCategories, next);
+          return next;
+        });
+      }
+    },
+    [userId, incomeCategories, expenseCategories]
+  );
 
   const value = useMemo(
     () => ({
       loading: loading || authLoading,
       synced,
+      fromCache,
       error,
       reload: loadAll,
       getCategories,
@@ -133,6 +250,7 @@ export function CategoriesProvider({ children }) {
       loading,
       authLoading,
       synced,
+      fromCache,
       error,
       loadAll,
       getCategories,
@@ -151,10 +269,11 @@ export function useCategories() {
   return ctx;
 }
 
-export function useTransactionCategories(type, { onError } = {}) {
+export function useTransactionCategories(type, { extraNames = [], onError } = {}) {
   const {
     loading,
     synced,
+    fromCache,
     error,
     reload,
     getCategories,
@@ -174,14 +293,22 @@ export function useTransactionCategories(type, { onError } = {}) {
     if (synced) warnedRef.current = false;
   }, [loading, synced, error]);
 
-  const categories = useMemo(() => getCategories(type), [getCategories, type]);
-  const categoryNames = useMemo(() => getCategoryNames(type), [getCategoryNames, type]);
+  const categories = useMemo(
+    () => getCategories(type, extraNames),
+    [getCategories, type, extraNames]
+  );
+
+  const categoryNames = useMemo(
+    () => getCategoryNames(type, extraNames),
+    [getCategoryNames, type, extraNames]
+  );
 
   return {
     categories,
     categoryNames,
     loading,
     synced,
+    fromCache,
     error,
     reload,
     addCategory: (name) => addCategory(type, name),

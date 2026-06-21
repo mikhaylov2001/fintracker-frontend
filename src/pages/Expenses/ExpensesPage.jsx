@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TransactionsPage from "../../components/ft/TransactionsPage";
 import { useExpensesApi } from "../../api/expensesApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -23,12 +23,18 @@ export default function ExpensesPage() {
   const [period, setPeriod] = useState(defaultPeriod);
   const hasLoadedOnce = useRef(false);
 
+  const usedCategoryNames = useMemo(
+    () => [...new Set(items.map((i) => i.category).filter(Boolean))],
+    [items]
+  );
+
   const {
     categoryNames,
     loading: categoriesLoading,
     addCategory,
     reload: reloadCategories,
   } = useTransactionCategories("EXPENSE", {
+    extraNames: usedCategoryNames,
     onError: (msg) => toastRef.current.error(msg),
   });
 
