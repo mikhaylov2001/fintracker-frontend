@@ -22,12 +22,14 @@ import SettingsPage from "./pages/Settings/SettingsPage";
 import ProPlanPage from "./pages/Pro/ProPlanPage";
 
 import { CurrencyProvider } from "./contexts/CurrencyContext";
+import { CategoriesProvider } from "./contexts/CategoriesContext";
 
 function App() {
   return (
     <Router>
       <AuthProvider>
         <CurrencyProvider>
+          <CategoriesProvider>
           <Routes>
             <Route path="/" element={<HomeRedirect />} />
 
@@ -51,6 +53,7 @@ function App() {
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </CategoriesProvider>
         </CurrencyProvider>
       </AuthProvider>
     </Router>

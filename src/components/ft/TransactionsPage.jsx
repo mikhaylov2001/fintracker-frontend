@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { formatDateRu, todayISO } from "../../lib/ftUtils";
 import {
@@ -20,6 +20,7 @@ export default function TransactionsPage({
   categories,
   categoriesLoading,
   onAddCategory,
+  onCategoriesReload,
   sources,
   accent,
   formatAmount,
@@ -261,6 +262,7 @@ export default function TransactionsPage({
           categories={categories}
           categoriesLoading={categoriesLoading}
           onAddCategory={onAddCategory}
+          onCategoriesReload={onCategoriesReload}
           sources={sources}
           saving={saving}
           onSave={handleSave}
@@ -280,6 +282,7 @@ function TxDialog({
   categories,
   categoriesLoading,
   onAddCategory,
+  onCategoriesReload,
   sources,
   saving,
   onSave,
@@ -297,6 +300,12 @@ function TxDialog({
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [addingCategory, setAddingCategory] = useState(false);
+
+  useEffect(() => {
+    if (onCategoriesReload) {
+      onCategoriesReload();
+    }
+  }, [onCategoriesReload]);
 
   const submit = async (e) => {
     e.preventDefault();

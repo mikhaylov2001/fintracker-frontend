@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import TransactionsPage from "../../components/ft/TransactionsPage";
 import { useIncomeApi } from "../../api/incomeApi";
 import { useCurrency } from "../../contexts/CurrencyContext";
@@ -30,19 +30,25 @@ export default function IncomePage() {
   const incomeRef = useRef(incomeApi);
   incomeRef.current = incomeApi;
 
-  const {
-    categoryNames,
-    loading: categoriesLoading,
-    addCategory,
-  } = useTransactionCategories("INCOME", {
-    enabled: isAuthenticated && !authLoading,
-    onError: (msg) => toastRef.current.error(msg),
-  });
-
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState(defaultPeriod);
   const hasLoadedOnce = useRef(false);
+
+  const usedCategoryNames = useMemo(
+    () => [...new Set(items.map((i) => i.category).filter(Boolean))],
+    [items]
+  );
+
+  const {
+    categoryNames,
+    loading: categoriesLoading,
+    addCategory,
+    reload: reloadCategories,
+  } = useTransactionCategories("INCOME", {
+    extraNames: usedCategoryNames,
+    onError: (msg) => toastRef.current.error(msg),
+  });
 
   useEffect(() => {
     if (authLoading) return;
@@ -146,6 +152,7 @@ export default function IncomePage() {
       categories={categoryNames}
       categoriesLoading={categoriesLoading}
       onAddCategory={addCategory}
+      onCategoriesReload={reloadCategories}
       sources={SOURCES}
       accent="emerald"
       formatAmount={fmt}

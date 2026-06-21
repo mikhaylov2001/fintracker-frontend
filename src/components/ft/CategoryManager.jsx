@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
-import { useTransactionCategories } from "../../hooks/useTransactionCategories";
+import { useCategories } from "../../contexts/CategoriesContext";
 
 export default function CategoryManager({ type, title, description }) {
   const [newName, setNewName] = useState("");
@@ -8,10 +8,8 @@ export default function CategoryManager({ type, title, description }) {
   const [deletingId, setDeletingId] = useState(null);
   const [error, setError] = useState("");
 
-  const { categories, loading, addCategory, deleteCategory } = useTransactionCategories(type, {
-    enabled: true,
-    onError: (msg) => setError(msg),
-  });
+  const { getCategories, loading, addCategory, deleteCategory } = useCategories();
+  const categories = getCategories(type);
 
   const onAdd = async (e) => {
     e.preventDefault();
@@ -24,7 +22,7 @@ export default function CategoryManager({ type, title, description }) {
 
     setAdding(true);
     try {
-      await addCategory(trimmed);
+      await addCategory(type, trimmed);
       setNewName("");
     } catch (err) {
       setError(err?.message || "Не удалось добавить категорию");
@@ -40,7 +38,7 @@ export default function CategoryManager({ type, title, description }) {
     setDeletingId(category.id);
     setError("");
     try {
-      await deleteCategory(category.id);
+      await deleteCategory(type, category.id);
     } catch (err) {
       setError(err?.message || "Не удалось удалить категорию");
     } finally {
@@ -76,6 +74,10 @@ export default function CategoryManager({ type, title, description }) {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Загрузка категорий…</p>
+      ) : categories.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Категорий пока нет. Добавьте свою или создайте при записи дохода/расхода.
+        </p>
       ) : (
         <ul className="divide-y divide-border rounded-2xl border border-border overflow-hidden">
           {categories.map((category) => (
