@@ -47,6 +47,9 @@ export default function CategoryField({
     setOpen(false);
   };
 
+  const isSelected = (name) =>
+    String(value || "").localeCompare(name, "ru", { sensitivity: "accent" }) === 0;
+
   const sync = (next) => {
     setText(next);
     onChange(next);
@@ -93,7 +96,7 @@ export default function CategoryField({
                 type="button"
                 onClick={() => pick(name)}
                 className={`w-full text-left px-3 py-2.5 text-sm transition hover:bg-white/[0.06] ${
-                  name === value ? "text-emerald-glow font-medium bg-emerald-glow/10" : "text-foreground"
+                  isSelected(name) ? "text-emerald-glow font-medium bg-emerald-glow/10" : "text-foreground"
                 }`}
               >
                 {name}

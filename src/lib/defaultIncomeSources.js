@@ -1,4 +1,4 @@
-import { buildOptionList } from "./ftUtils";
+import { buildOptionList } from "./optionList";
 
 /** Источник поступления — как на странице «Доходы» (commit 4728742, «Рента» вместо «Аренда недвижимости») */
 export const DEFAULT_INCOME_SOURCES = [
