@@ -7,15 +7,22 @@ export default function CategoryField({
   options = [],
   disabled = false,
   placeholder = "Выберите или введите категорию",
+  autoOpen = false,
 }) {
   const rootRef = useRef(null);
   const inputRef = useRef(null);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [text, setText] = useState(value || "");
 
   useEffect(() => {
     setText(value || "");
   }, [value]);
+
+  useEffect(() => {
+    if (autoOpen && !disabled && options.length > 0) {
+      setOpen(true);
+    }
+  }, [autoOpen, disabled, options.length]);
 
   useEffect(() => {
     const onDoc = (e) => {

@@ -292,7 +292,7 @@ function TxDialog({
   }, [categories, initial?.category]);
 
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
-  const [category, setCategory] = useState(initial?.category ?? baseCategories[0] ?? "");
+  const [category, setCategory] = useState(initial?.category ?? "");
   const [source, setSource] = useState(initial?.source ?? sources?.[0] ?? "");
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
@@ -372,6 +372,7 @@ function TxDialog({
               onChange={setCategory}
               options={baseCategories}
               disabled={categoriesLoading}
+              autoOpen
             />
           </Field>
           {sources && (
