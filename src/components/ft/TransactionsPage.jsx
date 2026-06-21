@@ -7,7 +7,6 @@ import {
   periodDescription,
 } from "../../lib/periodUtils";
 import FtDatePicker from "./FtDatePicker";
-import CategoryCombobox from "./CategoryCombobox";
 import PeriodSelector from "./PeriodSelector";
 import KpiStat from "./KpiStat";
 
@@ -285,14 +284,22 @@ function TxDialog({
   onSave,
   onClose,
 }) {
+  const CUSTOM_VALUE = "__custom__";
   const baseCategories = useMemo(() => {
     const set = new Set(categories || []);
     if (initial?.category) set.add(initial.category);
     return [...set].sort((a, b) => a.localeCompare(b, "ru"));
   }, [categories, initial?.category]);
 
+  const initialIsCustom =
+    initial?.category && !baseCategories.includes(initial.category);
+
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
-  const [category, setCategory] = useState(initial?.category ?? baseCategories[0] ?? "");
+  const [category, setCategory] = useState(() => {
+    if (initialIsCustom) return CUSTOM_VALUE;
+    return initial?.category ?? baseCategories[0] ?? "";
+  });
+  const [customCategory, setCustomCategory] = useState(initialIsCustom ? initial.category : "");
   const [source, setSource] = useState(initial?.source ?? sources?.[0] ?? "");
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
@@ -306,28 +313,32 @@ function TxDialog({
       return;
     }
 
-    const trimmed = category.trim().replace(/\s+/g, " ");
-    if (!trimmed) {
-      window.alert("Введите категорию");
-      return;
+    let finalCategory = category;
+    if (category === CUSTOM_VALUE) {
+      const trimmed = customCategory.trim().replace(/\s+/g, " ");
+      if (!trimmed) {
+        window.alert("Введите название категории");
+        return;
+      }
+      if (onAddCategory) {
+        try {
+          setAddingCategory(true);
+          const created = await onAddCategory(trimmed);
+          finalCategory = created?.name ?? trimmed;
+        } catch (err) {
+          window.alert(err?.message || "Не удалось создать категорию");
+          return;
+        } finally {
+          setAddingCategory(false);
+        }
+      } else {
+        finalCategory = trimmed;
+      }
     }
 
-    let finalCategory = trimmed;
-    const exists = baseCategories.some(
-      (c) => c.localeCompare(trimmed, "ru", { sensitivity: "accent" }) === 0
-    );
-
-    if (!exists && onAddCategory) {
-      try {
-        setAddingCategory(true);
-        const created = await onAddCategory(trimmed);
-        finalCategory = created?.name ?? trimmed;
-      } catch (err) {
-        window.alert(err?.message || "Не удалось создать категорию");
-        return;
-      } finally {
-        setAddingCategory(false);
-      }
+    if (!finalCategory.trim()) {
+      window.alert("Выберите категорию");
+      return;
     }
 
     onSave({
@@ -367,12 +378,32 @@ function TxDialog({
             <input type="text" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} autoFocus placeholder="0" className="ft-input" />
           </Field>
           <Field label="Категория">
-            <CategoryCombobox
+            <select
               value={category}
-              onChange={setCategory}
-              options={baseCategories}
+              onChange={(e) => setCategory(e.target.value)}
+              className="ft-input"
               disabled={categoriesLoading}
-            />
+            >
+              {baseCategories.map((c) => (
+                <option key={c} value={c} className="bg-background">
+                  {c}
+                </option>
+              ))}
+              <option value={CUSTOM_VALUE} className="bg-background">
+                ➕ Своя категория…
+              </option>
+            </select>
+            {category === CUSTOM_VALUE && (
+              <input
+                type="text"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                placeholder="Название вашей категории"
+                className="ft-input mt-2"
+                maxLength={50}
+                autoFocus
+              />
+            )}
           </Field>
           {sources && (
             <Field label="Источник">
