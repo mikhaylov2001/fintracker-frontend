@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/clientFetch";
 import { useAuth } from "./AuthContext";
-import { defaultCategoryObjects } from "../lib/defaultCategories";
+import { defaultCategoryObjects, mergeCategoriesInOrder } from "../lib/defaultCategories";
 import { unwrapList } from "../lib/ftUtils";
 
 const CategoriesContext = createContext(null);
@@ -47,21 +47,6 @@ function normalizeCategories(raw) {
     .filter((item) => item.name);
 }
 
-function mergeCategoryLists(...lists) {
-  const map = new Map();
-  for (const list of lists) {
-    for (const item of list || []) {
-      const name = String(item?.name || item || "").trim();
-      if (!name) continue;
-      const key = name.toLowerCase();
-      if (!map.has(key)) {
-        map.set(key, typeof item === "string" ? { id: null, name, system: false } : item);
-      }
-    }
-  }
-  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, "ru"));
-}
-
 function friendlyError(err) {
   const status = err?.status;
   const msg = String(err?.message || "");
@@ -97,8 +82,8 @@ export function CategoriesProvider({ children }) {
     const defaultsExpense = defaultCategoryObjects("EXPENSE");
     const cached = uid ? readCache(uid) : null;
     if (cached && (cached.income.length || cached.expense.length)) {
-      setIncomeCategories(mergeCategoryLists(defaultsIncome, cached.income));
-      setExpenseCategories(mergeCategoryLists(defaultsExpense, cached.expense));
+      setIncomeCategories(mergeCategoriesInOrder("INCOME", defaultsIncome, cached.income));
+      setExpenseCategories(mergeCategoriesInOrder("EXPENSE", defaultsExpense, cached.expense));
       setFromCache(true);
     } else {
       setIncomeCategories(defaultsIncome);
@@ -125,11 +110,13 @@ export function CategoriesProvider({ children }) {
         apiFetch("/api/categories/me?type=INCOME"),
         apiFetch("/api/categories/me?type=EXPENSE"),
       ]);
-      const income = mergeCategoryLists(
+      const income = mergeCategoriesInOrder(
+        "INCOME",
         defaultCategoryObjects("INCOME"),
         normalizeCategories(incData)
       );
-      const expense = mergeCategoryLists(
+      const expense = mergeCategoriesInOrder(
+        "EXPENSE",
         defaultCategoryObjects("EXPENSE"),
         normalizeCategories(expData)
       );
@@ -156,7 +143,7 @@ export function CategoriesProvider({ children }) {
       const defaults = defaultCategoryObjects(type);
       const base = type === "INCOME" ? incomeCategories : expenseCategories;
       const extras = (extraNames || []).map((name) => ({ id: null, name, system: false }));
-      return mergeCategoryLists(defaults, base, extras);
+      return mergeCategoriesInOrder(type, defaults, base, extras);
     },
     [incomeCategories, expenseCategories]
   );
@@ -189,7 +176,7 @@ export function CategoriesProvider({ children }) {
         };
         const apply = (prev) => {
           if (prev.some((c) => c.name.toLowerCase() === created.name.toLowerCase())) return prev;
-          return [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+          return mergeCategoriesInOrder(type, prev, [created]);
         };
         if (type === "INCOME") {
           setIncomeCategories((prev) => {
@@ -212,7 +199,7 @@ export function CategoriesProvider({ children }) {
         const created = { id: null, name: trimmed, system: false };
         const apply = (prev) => {
           if (prev.some((c) => c.name.toLowerCase() === trimmed.toLowerCase())) return prev;
-          return [...prev, created].sort((a, b) => a.name.localeCompare(b.name, "ru"));
+          return mergeCategoriesInOrder(type, prev, [created]);
         };
         if (type === "INCOME") {
           setIncomeCategories(apply);

@@ -29,9 +29,8 @@ export default function CategoryField({
 
   const filtered = useMemo(() => {
     const q = text.trim().toLowerCase();
-    const sorted = [...options].sort((a, b) => a.localeCompare(b, "ru"));
-    if (!q) return sorted;
-    return sorted.filter((c) => c.toLowerCase().includes(q));
+    if (!q) return options;
+    return options.filter((c) => c.toLowerCase().includes(q));
   }, [options, text]);
 
   const isNew =

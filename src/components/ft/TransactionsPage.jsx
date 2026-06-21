@@ -286,9 +286,11 @@ function TxDialog({
   onClose,
 }) {
   const baseCategories = useMemo(() => {
-    const set = new Set(categories || []);
-    if (initial?.category) set.add(initial.category);
-    return [...set].sort((a, b) => a.localeCompare(b, "ru"));
+    const list = [...(categories || [])];
+    if (initial?.category && !list.some((c) => c === initial.category)) {
+      list.push(initial.category);
+    }
+    return list;
   }, [categories, initial?.category]);
 
   const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : "");
