@@ -35,6 +35,12 @@ export default function TransactionsPage({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    if (open && onCategoriesReload) {
+      onCategoriesReload();
+    }
+  }, [open, onCategoriesReload]);
+
   const total = items.reduce((s, t) => s + t.amount, 0);
   const opCount = items.length;
   const avgOp = opCount ? Math.round(total / opCount) : 0;
@@ -262,7 +268,6 @@ export default function TransactionsPage({
           categories={categories}
           categoriesLoading={categoriesLoading}
           onAddCategory={onAddCategory}
-          onCategoriesReload={onCategoriesReload}
           sources={sources}
           saving={saving}
           onSave={handleSave}
@@ -282,7 +287,6 @@ function TxDialog({
   categories,
   categoriesLoading,
   onAddCategory,
-  onCategoriesReload,
   sources,
   saving,
   onSave,
@@ -300,12 +304,6 @@ function TxDialog({
   const [comment, setComment] = useState(initial?.comment ?? "");
   const [date, setDate] = useState(initial?.date ?? todayISO());
   const [addingCategory, setAddingCategory] = useState(false);
-
-  useEffect(() => {
-    if (onCategoriesReload) {
-      onCategoriesReload();
-    }
-  }, [onCategoriesReload]);
 
   const submit = async (e) => {
     e.preventDefault();

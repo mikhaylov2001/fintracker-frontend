@@ -35,7 +35,6 @@ export default function ExpensesPage() {
     reload: reloadCategories,
   } = useTransactionCategories("EXPENSE", {
     extraNames: usedCategoryNames,
-    onError: (msg) => toastRef.current.error(msg),
   });
 
   useEffect(() => {

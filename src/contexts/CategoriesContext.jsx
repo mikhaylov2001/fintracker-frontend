@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { apiFetch } from "../api/clientFetch";
 import { useAuth } from "./AuthContext";
 import { defaultCategoryObjects } from "../lib/defaultCategories";
@@ -129,7 +129,7 @@ export function CategoriesProvider({ children }) {
       writeCache(userId, income, expense);
     } catch (e) {
       applyFallback(userId);
-      setError(friendlyError(e));
+      setError(null);
     } finally {
       setLoading(false);
     }
@@ -269,29 +269,17 @@ export function useCategories() {
   return ctx;
 }
 
-export function useTransactionCategories(type, { extraNames = [], onError } = {}) {
+export function useTransactionCategories(type, { extraNames = [] } = {}) {
   const {
     loading,
     synced,
     fromCache,
-    error,
     reload,
     getCategories,
     getCategoryNames,
     addCategory,
     deleteCategory,
   } = useCategories();
-  const onErrorRef = useRef(onError);
-  onErrorRef.current = onError;
-  const warnedRef = useRef(false);
-
-  useEffect(() => {
-    if (!loading && !synced && error && !warnedRef.current) {
-      warnedRef.current = true;
-      onErrorRef.current?.(error);
-    }
-    if (synced) warnedRef.current = false;
-  }, [loading, synced, error]);
 
   const categories = useMemo(
     () => getCategories(type, extraNames),
@@ -309,7 +297,6 @@ export function useTransactionCategories(type, { extraNames = [], onError } = {}
     loading,
     synced,
     fromCache,
-    error,
     reload,
     addCategory: (name) => addCategory(type, name),
     deleteCategory: (id) => deleteCategory(type, id),

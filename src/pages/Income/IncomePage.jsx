@@ -47,7 +47,6 @@ export default function IncomePage() {
     reload: reloadCategories,
   } = useTransactionCategories("INCOME", {
     extraNames: usedCategoryNames,
-    onError: (msg) => toastRef.current.error(msg),
   });
 
   useEffect(() => {

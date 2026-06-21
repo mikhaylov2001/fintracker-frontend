@@ -60,6 +60,10 @@ export const unwrapList = (raw) => {
 };
 
 export const mapApiError = (err, fallback) => {
+  const status = err?.status;
+  if (status === 503) {
+    return "Сервер временно недоступен. Включите бэкенд на Render или попробуйте позже.";
+  }
   const data = err?.data ?? err?.response?.data;
   if (data && typeof data === "object") {
     const msg = data.message || data.error;
