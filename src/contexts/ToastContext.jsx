@@ -44,15 +44,33 @@ export function ToastProvider({ children }) {
         open={state.open}
         onClose={onClose}
         autoHideDuration={state.autoHideDuration}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         sx={{
-          bottom: { xs: 'calc(12px + env(safe-area-inset-bottom, 0px))', sm: 24 },
-          left: { xs: 12, sm: 'auto' },
-          right: { xs: 12, sm: 'auto' },
-          maxWidth: { xs: 'calc(100% - 24px)', sm: 560 },
+          /* мобилка — не трогаем позицию MUI, просто прижимаем к краям */
+          bottom: { xs: 'calc(72px + env(safe-area-inset-bottom, 0px))', sm: 32 },
+          left:   { xs: 12, sm: 'auto' },
+          right:  { xs: 12, sm: 32 },
+          width:  { xs: 'calc(100% - 24px)', sm: 'auto' },
+          maxWidth: { xs: '100%', sm: 420 },
         }}
       >
-        <Alert onClose={onClose} severity={state.severity} variant="filled" sx={{ width: '100%' }}>
+        <Alert
+          onClose={onClose}
+          severity={state.severity}
+          variant="filled"
+          sx={{
+            width: '100%',
+            /* Десктоп — нормальный вид */
+            display: { xs: 'flex', sm: 'flex' },
+            alignItems: 'center',
+            fontSize: { sm: 14 },
+            fontWeight: { sm: 500 },
+            borderRadius: { sm: '10px' },
+            boxShadow: { sm: '0 4px 24px rgba(0,0,0,0.22)' },
+            py: { sm: 1.25 },
+            px: { sm: 2 },
+          }}
+        >
           {state.message}
         </Alert>
       </Snackbar>
