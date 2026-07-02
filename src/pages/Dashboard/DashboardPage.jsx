@@ -18,7 +18,6 @@ import {
   aggregateSummaries,
   currentYM,
   defaultPeriod,
-  latestYmWithData,
   parseYM,
   resolvePeriodMonths,
   unwrapSummariesList,
@@ -46,10 +45,10 @@ export default function DashboardPage() {
   const [recent, setRecent] = useState([]);
   const [apiUnavailable, setApiUnavailable] = useState(false);
   const hasLoadedOnce = useRef(false);
-  const autoPeriodAdjusted = useRef(false);
 
-  const todayStr = useMemo(() => new Date().toLocaleDateString("ru-RU"), []);
-  const anchorYm = period.anchorYM || currentYM();
+  const todayStr = new Date().toLocaleDateString("ru-RU");
+  const currentMonthYm = currentYM();
+  const anchorYm = period.anchorYM || currentMonthYm;
 
   const monthList = useMemo(
     () => resolvePeriodMonths(period, allSummaries),
@@ -72,6 +71,14 @@ export default function DashboardPage() {
       : period.mode === "all"
         ? "за всё время"
         : "на конец месяца";
+
+  useEffect(() => {
+    const now = currentYM();
+    setPeriod((p) => {
+      if (p.mode !== "month" || p.anchorYM === now) return p;
+      return { ...p, anchorYM: now, toYM: now };
+    });
+  }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -146,23 +153,6 @@ export default function DashboardPage() {
     };
   }, [authLoading, isAuthenticated, anchorYm, period]);
 
-  useEffect(() => {
-    if (loading || apiUnavailable || autoPeriodAdjusted.current) return;
-    if (period.mode !== "month" || allSummaries.length === 0) return;
-
-    const currentHasData = allSummaries.some(
-      (s) =>
-        s.ym === anchorYm && (s.totalIncome > 0 || s.totalExpenses > 0)
-    );
-    if (currentHasData) return;
-
-    const latestYm = latestYmWithData(allSummaries);
-    if (!latestYm || latestYm === anchorYm) return;
-
-    autoPeriodAdjusted.current = true;
-    setPeriod((p) => ({ ...p, anchorYM: latestYm }));
-  }, [loading, apiUnavailable, period.mode, allSummaries, anchorYm]);
-
   const incomeSum = agg.income;
   const expenseSum = agg.expenses;
   const balance = incomeSum - expenseSum;
@@ -191,7 +181,7 @@ export default function DashboardPage() {
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground">
             Привет, <span className="text-foreground font-medium">{displayName}</span>. Сегодня{" "}
-            {todayStr} · {monthLabel(anchorYm)}
+            {todayStr} · {monthLabel(currentMonthYm)}
           </p>
         </div>
 

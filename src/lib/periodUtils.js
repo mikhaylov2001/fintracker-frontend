@@ -121,14 +121,6 @@ export const defaultPeriod = () => ({
   toYM: currentYM(),
 });
 
-/** Последний месяц, в котором есть доходы или расходы */
-export function latestYmWithData(summaries = []) {
-  const rows = (summaries || [])
-    .filter((s) => (s?.totalIncome ?? 0) > 0 || (s?.totalExpenses ?? 0) > 0)
-    .sort((a, b) => ymToNum(b.ym) - ymToNum(a.ym));
-  return rows[0]?.ym || null;
-}
-
 const n = (v) => {
   const x = Number(v);
   return Number.isFinite(x) ? x : 0;
