@@ -18,6 +18,7 @@ import {
   aggregateSummaries,
   currentYM,
   defaultPeriod,
+  latestYmWithData,
   parseYM,
   resolvePeriodMonths,
   unwrapSummariesList,
@@ -43,7 +44,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [allSummaries, setAllSummaries] = useState([]);
   const [recent, setRecent] = useState([]);
+  const [apiUnavailable, setApiUnavailable] = useState(false);
   const hasLoadedOnce = useRef(false);
+  const autoPeriodAdjusted = useRef(false);
 
   const todayStr = useMemo(() => new Date().toLocaleDateString("ru-RU"), []);
   const anchorYm = period.anchorYM || currentYM();
@@ -96,8 +99,16 @@ export default function DashboardPage() {
 
         if (cancelled) return;
 
+        const summaries =
+          sumSettled.status === "fulfilled"
+            ? unwrapSummariesList(sumSettled.value)
+            : [];
+
         if (sumSettled.status === "fulfilled") {
-          setAllSummaries(unwrapSummariesList(sumSettled.value));
+          setAllSummaries(summaries);
+          setApiUnavailable(false);
+        } else {
+          setApiUnavailable(true);
         }
 
         const incRes = incSettled.status === "fulfilled" ? incSettled.value : null;
@@ -119,6 +130,7 @@ export default function DashboardPage() {
         if (!cancelled) {
           setAllSummaries([]);
           setRecent([]);
+          setApiUnavailable(true);
         }
       } finally {
         if (!cancelled) {
@@ -133,6 +145,23 @@ export default function DashboardPage() {
       cancelled = true;
     };
   }, [authLoading, isAuthenticated, anchorYm, period]);
+
+  useEffect(() => {
+    if (loading || apiUnavailable || autoPeriodAdjusted.current) return;
+    if (period.mode !== "month" || allSummaries.length === 0) return;
+
+    const currentHasData = allSummaries.some(
+      (s) =>
+        s.ym === anchorYm && (s.totalIncome > 0 || s.totalExpenses > 0)
+    );
+    if (currentHasData) return;
+
+    const latestYm = latestYmWithData(allSummaries);
+    if (!latestYm || latestYm === anchorYm) return;
+
+    autoPeriodAdjusted.current = true;
+    setPeriod((p) => ({ ...p, anchorYM: latestYm }));
+  }, [loading, apiUnavailable, period.mode, allSummaries, anchorYm]);
 
   const incomeSum = agg.income;
   const expenseSum = agg.expenses;
@@ -168,6 +197,13 @@ export default function DashboardPage() {
 
         <PeriodSelector period={period} onChange={setPeriod} variant="header" />
       </header>
+
+      {apiUnavailable && (
+        <div className="mb-6 rounded-2xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+          Сервер недоступен (Render выключен или не отвечает). Включите сервис на Render и
+          проверьте переменные PGHOST/PGUSER/PGPASSWORD.
+        </div>
+      )}
 
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mb-8 lg:mb-10">
         <KpiStat
@@ -221,9 +257,12 @@ export default function DashboardPage() {
             <SummaryRow color="info" label="Сбережения" value={formatAmount(savings)} />
           </div>
 
-          {incomeSum === 0 && expenseSum === 0 && (
+          {incomeSum === 0 && expenseSum === 0 && !apiUnavailable && (
             <div className="mt-6 pt-6 border-t border-border text-center">
-              <p className="text-sm text-muted-foreground">Пока нет операций в этом месяце.</p>
+              <p className="text-sm text-muted-foreground">
+                Пока нет операций за {monthLabel(anchorYm)}. Попробуйте «Всё» или выберите другой
+                месяц в календаре.
+              </p>
               <div className="flex gap-2 justify-center mt-3">
                 <Link
                   to="/income"
